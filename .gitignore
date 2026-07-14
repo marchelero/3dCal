@@ -46,8 +46,7 @@ app.*.map.json
 /android/app/release
 
 # Local config (project-specific, mantener fuera del repo)
-.agents/
-.opencode/
+
 opencode.json
 
 # Coverage reports

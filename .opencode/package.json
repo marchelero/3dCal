@@ -1,0 +1,19 @@
+{
+  "name": "opencode-starter-pack-plugins",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Optional plugins for the opencode starter pack. Run `node .opencode/bin/install-plugins.js` after cloning.",
+  "scripts": {
+    "postinstall": "node .opencode/bin/install-plugins.js"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "1.17.11",
+    "@tarquinen/opencode-dcp": "*",
+    "@zenobius/opencode-skillful": "*",
+    "opencode-pty": "*",
+    "opencode-vibeguard": "*"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "command": "fail-test",
+  "started": "2026-06-30T04:59:05.511Z",
+  "prd": null,
+  "currentPhase": 0,
+  "completed": [],
+  "context": {
+    "userRequest": "test",
+    "agentsInvoked": [],
+    "filesModified": []
+  },
+  "error": "test error",
+  "failedAt": "2026-06-30T04:59:05.623Z"
+}

@@ -6,6 +6,28 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+### Sprint 3 — Calculator single-material (2026-07-14)
+
+#### Added
+- `lib/features/calculation/presentation/state/calculator_state.dart` — state inmutable con `mode` (express/advanced placeholder), `materials` (1 sola en Sprint 3), `totalHours`, `printerId?`, `discountPercentage`. Valida `isValid` cuando todos los campos requeridos son > 0.
+- `lib/features/calculation/presentation/state/calculator_notifier.dart` — `ChangeNotifier` (Riverpod 2.x manual, sin codegen) con metodos `setWeight`, `setTime`, `setPrice`, `setGrams`, `setWatts`, `setKwhRate`, `setProfit`, `setDiscount`, `reset`, `loadFilamentDefaults`. Output derivado via getter, recalcula reactivo.
+- `lib/features/calculation/presentation/widgets/decimal_input_field.dart` — input reutilizable para `Decimal`, integra con notifier, soporta teclado numerico y validacion en vivo.
+- `lib/features/calculation/presentation/pages/calculator_page.dart` — pagina principal del calculator. Express form con 8 inputs (peso, tiempo, precio bobina, gramos/bobina, watts, kWh, profit, descuento). Output card con desglose (Costo material, Costo electrico, Costo base, Profit efectivo, Precio final) formateado en BOB. Hint cuando form invalido. Boton reset.
+- `lib/features/calculation/presentation/pages/home_page.dart` — actualizado de placeholder Sprint 0 a launcher con boton "Nueva cotizacion" que navega a `CalculatorPage`.
+- `test/unit/calculator_notifier_test.dart` — 12 tests: estado inicial, setters, validacion, output derivado, clamp descuento agresivo 50%, reset, loadFilamentDefaults, recompute al cambiar kwhRate, inmutabilidad.
+- `test/unit/calculator_page_test.dart` — 4 tests: render con todos los labels, output live al cambiar kwh, output desaparece al borrar weight, reset restaura defaults, descuento agresivo muestra warning.
+- `test/widget/sprint0_smoke_test.dart` — extendido de 2 a 3 tests: smoke launcher + smoke navigation + smoke form vacio→lleno→output BOB visible.
+
+#### Notes
+- **Reorganizacion del plan original**: el plan `.opencode/plans/2026-07-13_2206-3dcal-app.plan.md` ponia calculator en Sprint 4 y CRUD de catalogos en Sprint 3. La implementacion los invirtio: calculator (single material) en Sprint 3, CRUD de filaments/printers queda absorbido en Sprint 4 (cuando se conecte con los repos ya existentes).
+- **Single material**: el modo multi-material con `AnimatedList` queda pendiente para sprint posterior. En Sprint 3 la cotizacion usa 1 filamento a la vez, con `loadFilamentDefaults` placeholder hasta que se conecte con `FilamentRepository` (Sprint 4).
+- **Riverpod manual**: este sprint usa `ChangeNotifier` + `Provider` manuales en vez de `@riverpod` codegen. Migracion a codegen queda para sprint posterior si se justifica.
+- **No se commiteo** — cambio de CHANGELOG queda working tree, esperando instruccion explicita del usuario.
+
+#### Verified
+- `flutter test` — 80/80 passed (~4s). Distribucion: 29 Sprint 1 (engine) + 32 Sprint 2 (db repos) + 16 Sprint 3 (notifier 12 + page 4) + 3 smoke (Sprint 0 extendido).
+- `flutter analyze` — 0 issues.
+
 ### Sprint 1 — Motor de calculo + Money (2026-07-13)
 
 #### Added
