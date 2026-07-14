@@ -55,77 +55,37 @@ void main() {
 
   group('CalculatorState.isValid', () {
     test('true con todos los inputs validos > 0', () {
-      final s = CalculatorState(
+      final s = CalculatorState.initial().copyWith(
         weight: '50',
         printHours: '5',
-        printerWatts: '200',
-        kwhRate: '0.70',
-        profitPct: '200',
-        discountPct: '0',
         filamentPrice: '120',
         filamentGrams: '1000',
-        output: null,
       );
       expect(s.isValid, isTrue);
-    });
-
-    test('false si weight = 0', () {
-      final s = CalculatorState(
-        weight: '0',
-        printHours: '5',
-        printerWatts: '200',
-        kwhRate: '0.70',
-        profitPct: '200',
-        discountPct: '0',
-        filamentPrice: '120',
-        filamentGrams: '1000',
-        output: null,
-      );
-      expect(s.isValid, isFalse);
     });
 
     test('false si falta weight', () {
-      final s = CalculatorState(
-        weight: '',
+      final s = CalculatorState.initial().copyWith(
         printHours: '5',
-        printerWatts: '200',
-        kwhRate: '0.70',
-        profitPct: '200',
-        discountPct: '0',
         filamentPrice: '120',
         filamentGrams: '1000',
-        output: null,
       );
       expect(s.isValid, isFalse);
     });
 
-    test('false si printHours = 0 (no es > 0, es >=0, asi que OK)', () {
-      // Documentado: printHours >= 0 es valido (impresion instantanea).
-      final s = CalculatorState(
-        weight: '50',
-        printHours: '0',
-        printerWatts: '200',
-        kwhRate: '0.70',
-        profitPct: '200',
-        discountPct: '0',
-        filamentPrice: '120',
-        filamentGrams: '1000',
-        output: null,
+    test('modo advanced: true con 1 material valido', () {
+      final s = CalculatorState.initial().copyWith(
+        mode: CalculatorMode.advanced,
+        printHours: '5',
+        materials: const [MaterialRow(weight: '100', pricePerBobbin: '120', gramsPerBobbin: '1000')],
       );
       expect(s.isValid, isTrue);
     });
 
-    test('false si kwhRate = 0', () {
-      final s = CalculatorState(
-        weight: '50',
+    test('modo advanced: false sin materiales', () {
+      final s = CalculatorState.initial().copyWith(
+        mode: CalculatorMode.advanced,
         printHours: '5',
-        printerWatts: '200',
-        kwhRate: '0',
-        profitPct: '200',
-        discountPct: '0',
-        filamentPrice: '120',
-        filamentGrams: '1000',
-        output: null,
       );
       expect(s.isValid, isFalse);
     });

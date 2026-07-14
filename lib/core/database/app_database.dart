@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
 
@@ -63,15 +60,13 @@ class AppDatabase extends _$AppDatabase {
       );
 }
 
-/// Abre la conexion a la base de datos. Cross-platform.
+/// Abre la conexion a la base de datos. Cross-platform via [driftDatabase].
+///
+/// **Web**: requiere `web/sqlite3.wasm` y `web/drift_worker.dart.js`. Ambos
+/// se generan/download en setup del proyecto (ver `web/drift_worker.dart`).
+/// **Desktop/mobile**: drift_flutter usa `NativeDatabase` con path en
+/// app docs dir.
 QueryExecutor _openConnection() {
-  if (kIsWeb) {
-    return driftDatabase(name: 'tresdcal');
-  }
-  // En tests desktop (no-web, no-mobile) usamos NativeDatabase en memoria.
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    return NativeDatabase.memory();
-  }
   return driftDatabase(name: 'tresdcal');
 }
 

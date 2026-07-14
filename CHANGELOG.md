@@ -6,6 +6,50 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+### Sprint 4 — Catalogo UI + Calculator wiring + Multi-material (2026-07-14)
+
+#### Added
+- `lib/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart` — `AsyncNotifier<List<Filament>>` con `build/create/updateFilament/delete/setAsDefault/refresh`. Rename `updateFilament` (no `update`) para evitar colision con `AsyncNotifier.update` de Riverpod.
+- `lib/features/catalog/filaments/presentation/pages/filaments_page.dart` — catalogo (lista + estrella default + menu default/eliminar). Empty state + pull-to-refresh.
+- `lib/features/catalog/filaments/presentation/pages/filament_form_page.dart` — form create/edit con 4 campos + switch default.
+- `lib/features/catalog/printers/presentation/notifiers/printers_notifier.dart` — espejo de filaments, sin Decimal/watts.
+- `lib/features/catalog/printers/presentation/pages/printers_page.dart` — espejo de filaments_page.
+- `lib/features/catalog/printers/presentation/pages/printer_form_page.dart` — espejo de filament_form_page.
+- `lib/core/providers.dart` — agrega `defaultFilamentProvider`, `defaultPrinterProvider`, `printersListProvider`, `activePrinterIdProvider`, `activePrinterProvider`.
+- `lib/features/calculation/presentation/pages/calculator_page.dart` — rewire:
+  - `initState` auto-popula precio/gramos desde filamento default y watts desde impresora activa.
+  - AppBar action `_PrinterSelector`: dropdown con impresoras disponibles.
+  - `_ModeSelector` (SegmentedButton) en el body: `express` (1 material) o `advanced` (multi-material AnimatedList).
+  - `_MaterialRowTile` + `_MaterialCtrls` para filas advanced.
+  - Common fields (Tiempo, Watts, kWh, Profit, Descuento) compartidos entre ambos modos.
+  - ListView → SingleChildScrollView + Column (eager build).
+- `lib/features/calculation/presentation/state/calculator_state.dart` — refactor:
+  - Agrega `CalculatorMode { express, advanced }`.
+  - Agrega `MaterialRow` (label, weight, price, grams como strings).
+  - `materials: List<MaterialRow>` para modo advanced.
+  - `isValid` depende del modo (express: 1 material, advanced: >=1 valido).
+  - `==` y `hashCode` extendidos con `_listEq` para `materials`.
+- `lib/features/calculation/presentation/state/calculator_notifier.dart` — agrega `setMode`, `addMaterial`, `removeMaterial(index)`, `updateMaterial(index, ...)`. `loadFilamentDefaults` ahora switch-ea segun modo.
+- `test/unit/filaments_notifier_test.dart` — 8 tests (build, create, setAsDefault, update, delete, refresh, brand opcional, asDefault desmarca).
+- `test/unit/printers_notifier_test.dart` — 2 tests (build+create, setAsDefault desmarca).
+- `test/widget/filaments_page_test.dart` — 6 tests (appbar, empty state, lista, estrella default, "+" navega, row edita).
+- `test/widget/filament_form_page_test.dart` — 5 tests (titulo, inputs, validar, crear, editar prefill).
+- `test/unit/calculator_notifier_test.dart` — extendido: 4 nuevos para advanced mode (true con 1 material, false sin materiales).
+- `test/unit/calculator_page_test.dart` — extendido con `pumpAndSettle` para que el AsyncNotifier de default providers termine.
+- `test/widget/sprint0_smoke_test.dart` — usa `widgetWithText(DecimalInputField, ...)` en vez de `fields.at(N)` (cambio de orden por refactor).
+
+#### Notes
+- **Filament/Printer state con AsyncNotifier**: build reactivo lee `repo.listAll()`. CRUD via `_reload()` explicito (no `invalidateSelf`) para tener control del error handling. La unica mutacion es el notifier mismo, asi que un stream no aporta.
+- **Active printer en memoria**: `activePrinterIdProvider` (StateProvider) vive en Riverpod; se resetea al cerrar la app. Si se quiere persistir, sprint futuro lo migra a SettingsRepository.
+- **Multi-material refactor**: el `CalculatorState` crecio (mode + materials). Tests de isValid viejos se simplificaron a `copyWith` en vez de constructor directo. `==` agrega `_listEq` para `List<MaterialRow>`.
+- **Eager build en calculator page**: cambio de `ListView` a `SingleChildScrollView + Column` para que `find.text` encuentre widgets aunque esten fuera del viewport (test env = 600px).
+- **No se commiteo** — el CHANGELOG actualizado queda working tree, esperando instruccion explicita del usuario.
+
+#### Verified
+- `flutter test` — 100/100 passed. Distribucion: 32 db repos + 23 calculator notifier (4 nuevos advanced) + 8 calculator page + 3 smoke + 8 filaments notifier + 6 filaments page + 5 filament form + 2 printers notifier + 13 calculator state/engine/decimal (legacy).
+- `flutter analyze` — 0 issues.
+- Smoke manual: app abre, calculator auto-popula con "PLA Generico" (150 BOB / 1000 g) y "Anycubic Kobra 3" (200W). Toggle Express/Advanced funciona, "+ Agregar material" inserta filas en AnimatedList con animacion. Printer selector cambia watts.
+
 ### Sprint 3 — Calculator single-material (2026-07-14)
 
 #### Added

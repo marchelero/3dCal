@@ -49,7 +49,7 @@ void main() {
       expect(find.text('Cotizacion express'), findsOneWidget);
       expect(find.text('Parametros de la pieza'), findsOneWidget);
       expect(find.text('Filamento'), findsOneWidget);
-      expect(find.text('Equipo y operacion'), findsOneWidget);
+      expect(find.text('Tiempo y equipo'), findsOneWidget);
       expect(find.text('Peso'), findsOneWidget);
       expect(find.text('Tiempo'), findsOneWidget);
       expect(find.text('Precio bobina'), findsOneWidget);
@@ -75,19 +75,19 @@ void main() {
       );
       expect(find.text('Precio final'), findsNothing);
 
-      // Llenar los inputs requeridos (peso, tiempo, precio, gramos)
-      final fields = find.byType(DecimalInputField);
-      expect(fields, findsNWidgets(8));
-
-      // Orden del form: peso, tiempo, precio bobina, gramos/bobina, watts, kWh, profit, descuento
-      // (segun la lectura del CalculatorPage en lib/features/calculation/presentation/pages/calculator_page.dart)
-      await tester.enterText(fields.at(0), '100'); // peso
+      // Llenar los inputs requeridos por label (Sprint 4 cambio el orden
+      // del form a: peso, precio, gramos, tiempo, watts, kWh, profit, descuento).
+      await tester.enterText(
+          find.widgetWithText(DecimalInputField, 'Peso'), '100');
       await tester.pumpAndSettle();
-      await tester.enterText(fields.at(1), '5'); // tiempo
+      await tester.enterText(
+          find.widgetWithText(DecimalInputField, 'Tiempo'), '5');
       await tester.pumpAndSettle();
-      await tester.enterText(fields.at(2), '120'); // precio bobina
+      await tester.enterText(
+          find.widgetWithText(DecimalInputField, 'Precio bobina'), '120');
       await tester.pumpAndSettle();
-      await tester.enterText(fields.at(3), '1000'); // gramos por bobina
+      await tester.enterText(
+          find.widgetWithText(DecimalInputField, 'Gramos / bobina'), '1000');
       await tester.pumpAndSettle();
 
       // Output card visible con formato BOB

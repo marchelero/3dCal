@@ -11,7 +11,7 @@ Future<void> _pumpPage(WidgetTester tester) async {
       child: MaterialApp(home: CalculatorPage()),
     ),
   );
-  await tester.pump();
+  await tester.pumpAndSettle();
 }
 
 Future<void> _fillValid(WidgetTester tester) async {

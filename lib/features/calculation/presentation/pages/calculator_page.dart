@@ -4,20 +4,19 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/providers.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/decimal_input_field.dart';
 
-/// Pantalla principal del calculator (modo express, single material).
+/// Pantalla principal del calculator.
 ///
-/// **Comportamiento**:
-/// - Form con 8 inputs (peso, tiempo, watts, kwh, profit%, descuento%,
-///   precio bobina, gramos por bobina).
-/// - El output aparece abajo **solo cuando el form es valido** y muestra:
-///   materialCost, electricCost, baseCost, effProfit%, profitAmount, totalPrice.
-/// - Advertencia visual si `effProfit < 0` (descuento agresivo vs profit base).
-/// - Boton "Reset" restaura los defaults MVP.
+/// **Modos** (toggle en AppBar):
+/// - `express`: 1 material con 8 inputs top-level.
+/// - `advanced`: lista de materiales con [AnimatedList], inputs comunes
+///   (tiempo, watts, kwh, profit, descuento) abajo.
 class CalculatorPage extends ConsumerStatefulWidget {
   const CalculatorPage({super.key});
 
@@ -26,14 +25,21 @@ class CalculatorPage extends ConsumerStatefulWidget {
 }
 
 class _CalculatorPageState extends ConsumerState<CalculatorPage> {
-  late final TextEditingController _weightCtrl;
+  // Common controllers (ambos modos).
   late final TextEditingController _hoursCtrl;
   late final TextEditingController _wattsCtrl;
   late final TextEditingController _kwhCtrl;
   late final TextEditingController _profitCtrl;
   late final TextEditingController _discountCtrl;
+
+  // Express controllers.
+  late final TextEditingController _weightCtrl;
   late final TextEditingController _priceCtrl;
   late final TextEditingController _gramsCtrl;
+
+  // Advanced controllers: List<MaterialCtrls>, uno por material.
+  final List<_MaterialCtrls> _materialCtrls = [];
+  final _advancedListKey = GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -47,6 +53,34 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _discountCtrl = TextEditingController(text: initial.discountPct);
     _priceCtrl = TextEditingController(text: initial.filamentPrice);
     _gramsCtrl = TextEditingController(text: initial.filamentGrams);
+
+    // Auto-poblar filamento default.
+    final defaultFilament = ref.read(defaultFilamentProvider);
+    if (defaultFilament != null) {
+      ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
+            pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(2),
+            gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(0),
+          );
+      final updated = ref.read(calculatorNotifierProvider);
+      _priceCtrl.text = updated.filamentPrice;
+      _gramsCtrl.text = updated.filamentGrams;
+    }
+
+    // Auto-poblar impresora activa.
+    final activePrinter = ref.read(activePrinterProvider);
+    if (activePrinter != null) {
+      ref
+          .read(calculatorNotifierProvider.notifier)
+          .setPrinterWatts(activePrinter.averageWatts.toString());
+      _wattsCtrl.text = activePrinter.averageWatts.toString();
+    }
+
+    // Si ya esta en advanced mode con materials, sincronizar controllers.
+    if (initial.mode == CalculatorMode.advanced) {
+      for (final m in initial.materials) {
+        _materialCtrls.add(_MaterialCtrls.fromRow(m));
+      }
+    }
   }
 
   @override
@@ -59,7 +93,74 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _discountCtrl.dispose();
     _priceCtrl.dispose();
     _gramsCtrl.dispose();
+    for (final c in _materialCtrls) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  void _switchMode(CalculatorMode mode) {
+    final notifier = ref.read(calculatorNotifierProvider.notifier);
+    if (mode == CalculatorMode.advanced &&
+        _materialCtrls.isEmpty) {
+      // Inicializar 1 material vacio al entrar a advanced.
+      notifier.addMaterial();
+      _materialCtrls.add(_MaterialCtrls.empty());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _advancedListKey.currentState?.insertItem(0);
+      });
+    }
+    notifier.setMode(mode);
+  }
+
+  void _addMaterial() {
+    ref.read(calculatorNotifierProvider.notifier).addMaterial();
+    _materialCtrls.add(_MaterialCtrls.empty());
+    final newIndex = _materialCtrls.length - 1;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _advancedListKey.currentState?.insertItem(newIndex);
+    });
+  }
+
+  void _removeMaterial(int index) {
+    ref.read(calculatorNotifierProvider.notifier).removeMaterial(index);
+    if (index < 0 || index >= _materialCtrls.length) return;
+    final removed = _materialCtrls.removeAt(index);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _advancedListKey.currentState?.removeItem(
+        index,
+        (context, animation) => SizeTransition(
+          sizeFactor: animation,
+          child: _MaterialRowTile(
+            index: index,
+            ctrls: removed,
+            onChanged: (_) {},
+            onRemove: () {},
+            pending: true,
+          ),
+        ),
+        duration: const Duration(milliseconds: 200),
+      );
+    });
+    removed.dispose();
+  }
+
+  void _resetAll() {
+    ref.read(calculatorNotifierProvider.notifier).reset();
+    final i = CalculatorState.initial();
+    _weightCtrl.text = i.weight;
+    _hoursCtrl.text = i.printHours;
+    _wattsCtrl.text = i.printerWatts;
+    _kwhCtrl.text = i.kwhRate;
+    _profitCtrl.text = i.profitPct;
+    _discountCtrl.text = i.discountPct;
+    _priceCtrl.text = i.filamentPrice;
+    _gramsCtrl.text = i.filamentGrams;
+    // Dispose advanced ctrls.
+    for (final c in _materialCtrls) {
+      c.dispose();
+    }
+    _materialCtrls.clear();
   }
 
   @override
@@ -67,142 +168,361 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final state = ref.watch(calculatorNotifierProvider);
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cotizacion express'),
         actions: [
+          _PrinterSelector(
+            onSelected: (printer) {
+              ref.read(activePrinterIdProvider.notifier).state = printer.id;
+              notifier.setPrinterWatts(printer.averageWatts.toString());
+              _wattsCtrl.text = printer.averageWatts.toString();
+            },
+          ),
           IconButton(
             tooltip: 'Reset',
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              notifier.reset();
-              // Sincronizar controllers con el state reseteado.
-              final i = CalculatorState.initial();
-              _weightCtrl.text = i.weight;
-              _hoursCtrl.text = i.printHours;
-              _wattsCtrl.text = i.printerWatts;
-              _kwhCtrl.text = i.kwhRate;
-              _profitCtrl.text = i.profitPct;
-              _discountCtrl.text = i.discountPct;
-              _priceCtrl.text = i.filamentPrice;
-              _gramsCtrl.text = i.filamentGrams;
-            },
+            onPressed: _resetAll,
           ),
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: state.mode == CalculatorMode.express
+            ? _buildExpressForm(state, notifier, theme)
+            : _buildAdvancedForm(state, notifier, theme),
+      ),
+    );
+  }
+
+  Widget _buildExpressForm(
+    CalculatorState state,
+    CalculatorNotifier notifier,
+    ThemeData theme,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ModeSelector(
+            mode: state.mode,
+            onChanged: _switchMode,
+          ),
+          const SizedBox(height: 16),
+          Text('Parametros de la pieza', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          DecimalInputField(
+            label: 'Peso',
+            controller: _weightCtrl,
+            onChanged: notifier.setWeight,
+            suffix: 'g',
+            helperText: 'Gramos de la pieza',
+          ),
+        const SizedBox(height: 24),
+        Text('Filamento', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+        Row(
           children: [
-            Text('Parametros de la pieza',
-                style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
+            Expanded(
+              child: DecimalInputField(
+                label: 'Precio bobina',
+                controller: _priceCtrl,
+                onChanged: notifier.setFilamentPrice,
+                suffix: 'BOB',
+                helperText: 'Costo del rollo',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DecimalInputField(
+                label: 'Gramos / bobina',
+                controller: _gramsCtrl,
+                onChanged: notifier.setFilamentGrams,
+                suffix: 'g',
+                helperText: 'Tipico 1000',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _commonFields(notifier),
+        const SizedBox(height: 24),
+        _OutputCard(state: state),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdvancedForm(
+    CalculatorState state,
+    CalculatorNotifier notifier,
+    ThemeData theme,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ModeSelector(
+            mode: state.mode,
+            onChanged: _switchMode,
+          ),
+          const SizedBox(height: 16),
+          Text('Materiales', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          AnimatedList(
+            key: _advancedListKey,
+            initialItemCount: _materialCtrls.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index, animation) {
+              if (index >= _materialCtrls.length) {
+                return const SizedBox.shrink();
+              }
+              return SizeTransition(
+                sizeFactor: animation,
+                child: _MaterialRowTile(
+                  index: index,
+                  ctrls: _materialCtrls[index],
+                  onChanged: (m) => notifier.updateMaterial(
+                    index,
+                    label: m.label,
+                    weight: m.weight,
+                    pricePerBobbin: m.pricePerBobbin,
+                    gramsPerBobbin: m.gramsPerBobbin,
+                  ),
+                  onRemove: () => _removeMaterial(index),
+                  pending: false,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _addMaterial,
+            icon: const Icon(Icons.add),
+            label: const Text('Agregar material'),
+          ),
+          const SizedBox(height: 24),
+          _commonFields(notifier),
+          const SizedBox(height: 24),
+          _OutputCard(state: state),
+        ],
+      ),
+    );
+  }
+
+  Widget _commonFields(CalculatorNotifier notifier) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Tiempo y equipo', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: DecimalInputField(
+                label: 'Tiempo',
+                controller: _hoursCtrl,
+                onChanged: notifier.setPrintHours,
+                suffix: 'h',
+                helperText: 'Horas de impresion',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DecimalInputField(
+                label: 'Watts',
+                controller: _wattsCtrl,
+                onChanged: notifier.setPrinterWatts,
+                suffix: 'W',
+                helperText: 'Consumo impresora',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: DecimalInputField(
+                label: 'Tarifa kWh',
+                controller: _kwhCtrl,
+                onChanged: notifier.setKwhRate,
+                suffix: 'BOB',
+                helperText: '0.60-0.80 BOB/kWh',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DecimalInputField(
+                label: 'Profit',
+                controller: _profitCtrl,
+                onChanged: notifier.setProfitPct,
+                suffix: '%',
+                helperText: 'Markup sobre costo',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DecimalInputField(
+                label: 'Descuento',
+                controller: _discountCtrl,
+                onChanged: notifier.setDiscountPct,
+                suffix: '%',
+                helperText: 'Penaliza profit x2',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Bundle de controllers para 1 fila de material en modo advanced.
+class _MaterialCtrls {
+  _MaterialCtrls({
+    required this.label,
+    required this.weight,
+    required this.price,
+    required this.grams,
+  });
+
+  factory _MaterialCtrls.empty() => _MaterialCtrls(
+        label: TextEditingController(),
+        weight: TextEditingController(),
+        price: TextEditingController(),
+        grams: TextEditingController(),
+      );
+
+  factory _MaterialCtrls.fromRow(MaterialRow r) => _MaterialCtrls(
+        label: TextEditingController(text: r.label),
+        weight: TextEditingController(text: r.weight),
+        price: TextEditingController(text: r.pricePerBobbin),
+        grams: TextEditingController(text: r.gramsPerBobbin),
+      );
+
+  final TextEditingController label;
+  final TextEditingController weight;
+  final TextEditingController price;
+  final TextEditingController grams;
+
+  void dispose() {
+    label.dispose();
+    weight.dispose();
+    price.dispose();
+    grams.dispose();
+  }
+}
+
+class _MaterialUpdate {
+  const _MaterialUpdate({
+    required this.label,
+    required this.weight,
+    required this.pricePerBobbin,
+    required this.gramsPerBobbin,
+  });
+  final String label;
+  final String weight;
+  final String pricePerBobbin;
+  final String gramsPerBobbin;
+}
+
+class _MaterialRowTile extends StatelessWidget {
+  const _MaterialRowTile({
+    required this.index,
+    required this.ctrls,
+    required this.onChanged,
+    required this.onRemove,
+    required this.pending,
+  });
+
+  final int index;
+  final _MaterialCtrls ctrls;
+  final ValueChanged<_MaterialUpdate> onChanged;
+  final VoidCallback onRemove;
+  final bool pending;
+
+  @override
+  Widget build(BuildContext context) {
+    if (pending) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Text('Material ${index + 1}',
+                    style: Theme.of(context).textTheme.titleSmall),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Quitar',
+                  onPressed: onRemove,
+                ),
+              ],
+            ),
+            TextField(
+              controller: ctrls.label,
+              decoration: const InputDecoration(
+                labelText: 'Etiqueta',
+                helperText: 'Opcional (ej: PLA base)',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              onChanged: (v) => _emit(),
+            ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: DecimalInputField(
                     label: 'Peso',
-                    controller: _weightCtrl,
-                    onChanged: notifier.setWeight,
+                    controller: ctrls.weight,
+                    onChanged: (v) => _emit(),
                     suffix: 'g',
-                    helperText: 'Gramos de la pieza',
+                    helperText: 'Gramos en la pieza',
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Tiempo',
-                    controller: _hoursCtrl,
-                    onChanged: notifier.setPrintHours,
-                    suffix: 'h',
-                    helperText: 'Horas de impresion',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text('Filamento', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            Row(
-              children: [
+                const SizedBox(width: 8),
                 Expanded(
                   child: DecimalInputField(
                     label: 'Precio bobina',
-                    controller: _priceCtrl,
-                    onChanged: notifier.setFilamentPrice,
+                    controller: ctrls.price,
+                    onChanged: (v) => _emit(),
                     suffix: 'BOB',
                     helperText: 'Costo del rollo',
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: DecimalInputField(
                     label: 'Gramos / bobina',
-                    controller: _gramsCtrl,
-                    onChanged: notifier.setFilamentGrams,
+                    controller: ctrls.grams,
+                    onChanged: (v) => _emit(),
                     suffix: 'g',
                     helperText: 'Tipico 1000',
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Text('Equipo y operacion', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Watts',
-                    controller: _wattsCtrl,
-                    onChanged: notifier.setPrinterWatts,
-                    suffix: 'W',
-                    helperText: 'Consumo impresora',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Tarifa kWh',
-                    controller: _kwhCtrl,
-                    onChanged: notifier.setKwhRate,
-                    suffix: 'BOB',
-                    helperText: '0.60-0.80 BOB/kWh',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Profit',
-                    controller: _profitCtrl,
-                    onChanged: notifier.setProfitPct,
-                    suffix: '%',
-                    helperText: 'Markup sobre costo',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Descuento',
-                    controller: _discountCtrl,
-                    onChanged: notifier.setDiscountPct,
-                    suffix: '%',
-                    helperText: 'Penaliza profit x2',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _OutputCard(state: state),
           ],
         ),
       ),
     );
+  }
+
+  void _emit() {
+    onChanged(_MaterialUpdate(
+      label: ctrls.label.text,
+      weight: ctrls.weight.text,
+      pricePerBobbin: ctrls.price.text,
+      gramsPerBobbin: ctrls.grams.text,
+    ));
   }
 }
 
@@ -259,12 +579,13 @@ class _OutputCard extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
-            _Row(label: 'Costo material', value: formatBob(output.materialCost)),
-            _Row(
+            _OutputRow(
+                label: 'Costo material', value: formatBob(output.materialCost)),
+            _OutputRow(
                 label: 'Costo electrico',
                 value: formatBob(output.electricCost)),
-            _Row(label: 'Costo base', value: formatBob(output.baseCost)),
-            _Row(
+            _OutputRow(label: 'Costo base', value: formatBob(output.baseCost)),
+            _OutputRow(
               label: 'Profit efectivo',
               value:
                   '${formatPercentage(output.effectiveProfitPercentage)}  '
@@ -306,8 +627,8 @@ class _OutputCard extends StatelessWidget {
   }
 }
 
-class _Row extends StatelessWidget {
-  const _Row({required this.label, required this.value, this.valueColor});
+class _OutputRow extends StatelessWidget {
+  const _OutputRow({required this.label, required this.value, this.valueColor});
 
   final String label;
   final String value;
@@ -332,6 +653,87 @@ class _Row extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Selector de impresora en el AppBar del calculator.
+class _PrinterSelector extends ConsumerWidget {
+  const _PrinterSelector({required this.onSelected});
+
+  final ValueChanged<PrinterProfile> onSelected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = ref.watch(activePrinterProvider);
+    final async = ref.watch(printersListProvider);
+    final printers = async.valueOrNull ?? const <PrinterProfile>[];
+    final label = active?.name ?? 'Sin impresora';
+    return PopupMenuButton<PrinterProfile>(
+      tooltip: 'Impresora activa',
+      onSelected: onSelected,
+      itemBuilder: (_) => [
+        for (final p in printers)
+          PopupMenuItem<PrinterProfile>(
+            value: p,
+            child: Row(
+              children: [
+                Icon(
+                  p.isDefault ? Icons.star : Icons.print,
+                  size: 18,
+                  color: p.id == active?.id
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text(p.name)),
+                Text('${p.averageWatts} W',
+                    style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.print, size: 20),
+            const SizedBox(width: 6),
+            Text(label, style: Theme.of(context).textTheme.bodyMedium),
+            const Icon(Icons.arrow_drop_down, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Selector de modo (Express / Advanced) mostrado al inicio del body.
+class _ModeSelector extends StatelessWidget {
+  const _ModeSelector({required this.mode, required this.onChanged});
+
+  final CalculatorMode mode;
+  final ValueChanged<CalculatorMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<CalculatorMode>(
+      segments: const [
+        ButtonSegment(
+          value: CalculatorMode.express,
+          label: Text('Express'),
+          icon: Icon(Icons.flash_on),
+        ),
+        ButtonSegment(
+          value: CalculatorMode.advanced,
+          label: Text('Advanced'),
+          icon: Icon(Icons.layers),
+        ),
+      ],
+      selected: {mode},
+      onSelectionChanged: (s) => onChanged(s.first),
+      showSelectedIcon: false,
     );
   }
 }
