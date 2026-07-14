@@ -897,7 +897,15 @@ file:///D:/dev/2026/3dCal/lib/app.dart
 file:///D:/dev/2026/3dCal/lib/core/constants/app_constants.dart
 file:///D:/dev/2026/3dCal/lib/core/money/currency_formatter.dart
 file:///D:/dev/2026/3dCal/lib/core/theme/app_theme.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/domain/calculation_engine.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/domain/entities/calculation_input.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/domain/entities/calculation_output.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/domain/entities/material_input.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/presentation/pages/calculator_page.dart
 file:///D:/dev/2026/3dCal/lib/features/calculation/presentation/pages/home_page.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/presentation/state/calculator_notifier.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/presentation/state/calculator_state.dart
+file:///D:/dev/2026/3dCal/lib/features/calculation/presentation/widgets/decimal_input_field.dart
 file:///D:/dev/2026/3dCal/lib/main.dart
 org-dartlang-sdk:///dart-sdk/lib/_http/crypto.dart
 org-dartlang-sdk:///dart-sdk/lib/_http/embedder_config.dart

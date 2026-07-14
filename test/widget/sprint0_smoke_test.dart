@@ -1,31 +1,106 @@
+// ignore_for_file: public_member_api_docs
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/app.dart';
 
+import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
+import 'package:tresdcal/features/calculation/presentation/widgets/decimal_input_field.dart';
+
 void main() {
-  testWidgets('Sprint 0: app arranca y muestra 3dcal en appbar', (
+  Future<void> navigateToCalculator(WidgetTester tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TresdcalApp()));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Nueva cotizacion'),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Smoke: home muestra launcher con boton', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: TresdcalApp()),
-    );
+    await navigateToCalculator(tester);
 
-    // Pump inicial + settle para que cualquier animacion termine.
-    await tester.pumpAndSettle();
+    // Re-pump el home para chequear (navigateToCalculator ya dejo calculator)
+    // Volvemos atras para inspeccionar el launcher.
+    final backBtn = find.byType(BackButton);
+    if (backBtn.evaluate().isNotEmpty) {
+      await tester.tap(backBtn);
+      await tester.pumpAndSettle();
+    }
 
     expect(find.text('3dcal'), findsOneWidget);
-    expect(find.text('Sprint 0 listo'), findsOneWidget);
-  });
-
-  testWidgets('Sprint 0: smoke test formateador BOB en placeholder', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: TresdcalApp()),
+    expect(find.text('Cotizador 3D'), findsOneWidget);
+    expect(
+      find.widgetWithText(FilledButton, 'Nueva cotizacion'),
+      findsOneWidget,
     );
-    await tester.pumpAndSettle();
-
-    // Bs. 1.234,00 — formato es_BO.
-    expect(find.textContaining('Bs.'), findsWidgets);
   });
+
+  testWidgets(
+    'Smoke: tap launcher navega a CalculatorPage con form completo',
+    (WidgetTester tester,
+    ) async {
+      await navigateToCalculator(tester);
+
+      expect(find.byType(CalculatorPage), findsOneWidget);
+      expect(find.text('Cotizacion express'), findsOneWidget);
+      expect(find.text('Parametros de la pieza'), findsOneWidget);
+      expect(find.text('Filamento'), findsOneWidget);
+      expect(find.text('Equipo y operacion'), findsOneWidget);
+      expect(find.text('Peso'), findsOneWidget);
+      expect(find.text('Tiempo'), findsOneWidget);
+      expect(find.text('Precio bobina'), findsOneWidget);
+      expect(find.text('Gramos / bobina'), findsOneWidget);
+      expect(find.text('Watts'), findsOneWidget);
+      expect(find.text('Tarifa kWh'), findsOneWidget);
+      expect(find.text('Profit'), findsOneWidget);
+      expect(find.text('Descuento'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Smoke: form vacio muestra hint, form completo muestra output BOB',
+    (WidgetTester tester,
+    ) async {
+      await navigateToCalculator(tester);
+
+      // Default: form vacio (peso/tiempo/precio vacios) → hint visible
+      expect(
+        find.textContaining('Completa peso, tiempo, precio y gramos'),
+        findsOneWidget,
+        reason: 'Sin inputs validos debe aparecer el hint',
+      );
+      expect(find.text('Precio final'), findsNothing);
+
+      // Llenar los inputs requeridos (peso, tiempo, precio, gramos)
+      final fields = find.byType(DecimalInputField);
+      expect(fields, findsNWidgets(8));
+
+      // Orden del form: peso, tiempo, precio bobina, gramos/bobina, watts, kWh, profit, descuento
+      // (segun la lectura del CalculatorPage en lib/features/calculation/presentation/pages/calculator_page.dart)
+      await tester.enterText(fields.at(0), '100'); // peso
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(1), '5'); // tiempo
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(2), '120'); // precio bobina
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(3), '1000'); // gramos por bobina
+      await tester.pumpAndSettle();
+
+      // Output card visible con formato BOB
+      expect(find.text('Precio final'), findsOneWidget);
+      expect(find.text('Costo material'), findsOneWidget);
+      expect(find.text('Costo electrico'), findsOneWidget);
+      expect(find.text('Costo base'), findsOneWidget);
+      expect(find.text('Profit efectivo'), findsOneWidget);
+      expect(
+        find.textContaining('Bs.'),
+        findsWidgets,
+        reason: 'Output live debe usar CurrencyFormatter BOB',
+      );
+    },
+  );
 }

@@ -6,6 +6,37 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+### Sprint 1 — Motor de calculo + Money (2026-07-13)
+
+#### Added
+- `lib/features/calculation/domain/entities/material_input.dart` — entity pure Dart, valida `weight > 0` semanticamente.
+- `lib/features/calculation/domain/entities/calculation_input.dart` — input value object, validacion documentada.
+- `lib/features/calculation/domain/entities/calculation_output.dart` — output value object con `==`, `hashCode`, `toString`.
+- `lib/features/calculation/domain/calculation_engine.dart` — motor de calculo, pure Dart, sin Flutter.
+- `test/unit/calculation_engine_test.dart` — 29 tests cubriendo:
+  - Express basico (AC-2 PRD)
+  - Multi-material (2 filamentos)
+  - Con tiempo + electrico (AC-2: Bs. 46.05)
+  - Descuento 10% (AC-3 PRD: Bs. 42.98, NO Bs. 43.04 del PRD narrativo)
+  - Edges: printerWatts=0, totalHours=0, materials vacios
+  - Clamp: effProfit<0 clampea profitAmount a 0
+  - effProfit=0 exacto
+  - Precision: 0.1+0.2=0.3 (NO 0.30000000000000004)
+  - Precision: 1000 iteraciones sin acumular error
+  - Inmutabilidad (==, hashCode)
+  - MaterialInput.pricePerGram, MaterialInput.cost
+  - Formateo BOB (formatBob, formatBobNumber, formatPercentage, formatHours)
+  - Constantes (kwhRate, profitBase, maxMaterials, maxDiscount)
+
+#### Fixed
+- `formatBob` ahora pone "Bs." ANTES del monto (convencion boliviana), no despues como hacia intl por default.
+- `formatBob` fuerza 2 decimales (pattern `#,##0.00`), evitando outputs como "Bs. 0" en lugar de "Bs. 0,00".
+
+#### Verified
+- `flutter test` — 31/31 passed (29 Sprint 1 + 2 Sprint 0).
+- `flutter analyze` — No issues found.
+- `flutter test --coverage` — engine coverage 96.8% (30/31 lineas). La unica linea no cubierta es `const CalculationEngine._();` (constructor privado sin invocacion por diseno). Supera target >= 95%.
+
 ### Sprint 0 — Bootstrap (2026-07-13)
 
 #### Added

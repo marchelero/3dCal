@@ -5,6 +5,9 @@ import 'package:decimal/decimal.dart';
 /// **Pure Dart, NO Flutter.** Esta clase se usa en el motor de calculo
 /// y se testea sin WidgetTester.
 class MaterialInput {
+  /// Construye un material con sus parametros de calculo. Todos los campos
+  /// son requeridos; [weightGrams], [pricePerBobbin] y [gramsPerBobbin] deben
+  /// ser > 0 (validado en el motor, no aca).
   const MaterialInput({
     required this.label,
     required this.weightGrams,

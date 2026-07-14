@@ -9,28 +9,26 @@ import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 
 /// Formateador unico para montos BOB.
-final NumberFormat _bobFormatter = NumberFormat.currency(
-  locale: 'es_BO',
-  symbol: kCurrencySymbol,
-  decimalDigits: kCurrencyDecimalPlaces,
-);
+/// Pattern explicito con 2 decimales forzados.
+final NumberFormat _bobFormatter = NumberFormat('#,##0.00', 'es_BO');
 
 /// Formatea un [Decimal] como BOB legible.
 ///
-/// Ejemplos:
+/// **Convención boliviana**: simbolo "Bs." antes del monto.
 ///   1234.56  -> "Bs. 1.234,56"
 ///   0        -> "Bs. 0,00"
 ///   1000000  -> "Bs. 1.000.000,00"
+///
+/// Usamos pattern custom en lugar de `NumberFormat.currency` porque intl
+/// pone el simbolo DESPUES en locales `es*`. Bolivia usa "Bs. X" antes
+/// (convencion de recibos y facturacion local).
 String formatBob(Decimal amount) {
-  return _bobFormatter.format(amount.toDouble());
+  return '$kCurrencySymbol ${_bobFormatter.format(amount.toDouble())}';
 }
 
 /// Formatea un [Decimal] como BOB sin el simbolo.
 String formatBobNumber(Decimal amount) {
-  return _bobFormatter
-      .format(amount.toDouble())
-      .replaceAll(kCurrencySymbol, '')
-      .trim();
+  return _bobFormatter.format(amount.toDouble());
 }
 
 /// Formatea un [Decimal] como porcentaje.
