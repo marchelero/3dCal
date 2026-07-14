@@ -1,72 +1,87 @@
-# Calculadora Móvil de Precios para Impresión 3D
+# tresdcal
 
-Aplicación móvil ágil, reactiva y eficiente desarrollada en **Flutter** orientada a simplificar la cotización de trabajos de impresión 3D sin depender de servidores externos. Optimizada para el flujo de trabajo real del operador mediante la **Regla del 95%**.
+Calculadora de precios para impresiones 3D. **100% local, mobile + web, sin backend.**
 
-## 🚀 Características Clave
+Stack: Flutter 3.44 · Dart 3.12 · drift 2.28 (SQLite) · Riverpod 2.6 · fl_chart 0.68 · go_router 14.
 
-* **Regla del 95% (Modo Express):** Interfaz limpia por defecto centrada en los 3 campos mágicos esenciales para velocidad diaria: Peso (g), Tiempo (hrs/min) y Descuento (%).
-* **Modo Avanzado Dinámico:** Expansión visual fluida mediante `AnimatedList` para manejar múltiples filamentos en simultáneo (ideal para sistemas multi-color como Anycubic ACE Pro) y selección de perfiles de impresora.
-* **Proformas Parciales:** Guarda cotizaciones rápidas en el historial sin requerir metadatos obligatorios (nombres nullables).
-* **Control de Ventas & Dashboard:** Un toggle rápido en el historial permite marcar las cotizaciones como "Vendidas" para alimentar un gráfico de barras analítico (`fl_chart`) de Ganancias Reales vs. Cotizadas.
-* **Privacidad Absoluta:** Arquitectura 100% local, No Cloud, No Auth.
+## Status
 
----
+**Sprint 0 / 9** — bootstrap completo. `flutter analyze` y `flutter test` verdes. `flutter build web --release` exitoso.
 
-## 🛠️ Stack Tecnológico & Decisiones de Arquitectura
+Proxima fase: Sprint 1 = motor de calculo con TDD puro.
 
-1. **Persistencia Local (Isar Database):** Se prefiere firmemente sobre Hive por su soporte nativo avanzado de índices y manejo elegante de objetos embebidos (`@Embedded`) para la lista de materiales, evitando la creación manual de TypeAdapters.
-2. **Gestión de Estado (Riverpod / BLoC):** Enfoque exclusivo de formularios dinámicos e inmutables (`CalculationFormNotifier`) para asegurar un recalculo reactivo inmediato en la UI al mover sliders o añadir filas, eliminando el uso ineficiente de `setState`.
-3. **Precisión Numérica Financiera:** Queda estrictamente **prohibido el uso del tipo primitivo `double`** para operaciones aritméticas del motor de cálculo. Se implementa el paquete [`decimal`](https://pub.dev/packages/decimal) o conversión interna a enteros (`int` en centavos) para evitar errores de punto flotante de Dart.
+## Documentacion del proyecto
 
----
+- **PRD**: [`.opencode/prds/2026-07-13_2206-3dcal-app.prd.md`](.opencode/prds/2026-07-13_2206-3dcal-app.prd.md) — requisitos ejecutables.
+- **Plan de implementacion**: [`.opencode/plans/2026-07-13_2206-3dcal-app.plan.md`](.opencode/plans/2026-07-13_2206-3dcal-app.plan.md) — 9 sprints, 13-18 sesiones.
+- **Specs originales** (guias iniciales): [`_docs/README.md`](_docs/README.md) y [`_docs/read.md`](_docs/read.md).
+- **Reports**: [`.opencode/reports/2026-07-13_2215-3dcal-app.report.md`](.opencode/reports/2026-07-13_2215-3dcal-app.report.md) — trazabilidad del flujo /orchestrate.
 
-## 📂 Estructura de Datos (Isar Models)
+## Decisiones arquitectonicas
 
-```dart
-import 'package:isar/isar.dart';
+- **Flutter only** (web + mobile = mismo codebase).
+- **drift** en lugar de Isar (Isar no compila en web).
+- **Decimal package** obligatorio en motor de calculo (prohibido `double`).
+- **Riverpod 2.x con codegen** para estado.
+- **Material 3** con seed color deep purple (provisional).
 
-part 'calculation_models.g.dart';
+## Build
 
-@collection
-class PrinterProfile {
-  Id id = Isar.autoIncrement;
-  late String name;
-  late int averageWatts; 
-}
+```bash
+# Dependencias (primera vez)
+flutter pub get
 
-@embedded
-class MaterialInput {
-  String? filamentId; 
-  late String label;  
-  late double weightGrams;
-  late double pricePerBobbin;
-  late double gramsPerBobbin;
-}
+# Analisis estatico
+flutter analyze
 
-@collection
-class CalculationRecord {
-  Id id = Isar.autoIncrement;
-  late DateTime createdAt;
-  String? pieceName;   
-  String? clientName;  
-  late int printerId;  
-  late List<MaterialInput> materials;
-  late double totalHours;
-  late double discountPercentage;
-  late bool isSold;    
-}
+# Tests
+flutter test
+
+# Web (release)
+flutter build web --release
+# Output: build/web/
+
+# Mobile (debug APK, requiere Android SDK)
+flutter build apk --debug
+# Output: build/app/outputs/flutter-apk/app-debug.apk
 ```
 
----
+## Estructura
 
-## 📐 Motor de Cálculo (Fórmulas Matemáticas)
+```
+lib/
+  main.dart                    # ProviderScope + runApp
+  app.dart                     # MaterialApp + tema M3
+  core/
+    constants/                 # kDefaultKwhRate, etc
+    money/                     # Decimal helpers, BOB formatter
+    theme/                     # AppTheme.light/dark
+    database/                  # (Sprint 2)
+  features/
+    calculation/               # core: motor + HomePage
+    catalog/
+      filaments/               # (Sprint 3)
+      printers/                # (Sprint 3)
+    history/                   # (Sprint 5)
+    dashboard/                 # (Sprint 6)
+    settings/                  # (Sprint 7)
+  shared/
+    widgets/                   # (Sprint 4)
+test/
+  unit/                        # (Sprint 1: motor)
+  widget/                      # (Sprint 3+)
+  integration/                 # (Sprint 9)
+_docs/                         # specs originales movidas
+```
 
-### Costo Base
-$$Costo\_Base = \left( \sum_{i=1}^{n} Peso\_Gramos_i \times \frac{Precio\_Bobina_i}{Gramos\_Bobina_i} \right) + \left( Tiempo\_Horas \times \frac{Potencia\_Watts}{1000} \times Tarifa\_kWh \right)$$
+## Convenciones
 
-### Penalización de Ganancia por Descuento
-$$Ganancia\_Efectiva = Ganancia\_Base\_Global - (Descuento \times 2)$$
+- Codigo (variables, funciones) en **ingles**.
+- UI y comentarios en **espanol**.
+- `dart format` + `dart analyze` (line_length 100, lints estrictos).
+- Commits conventional (`feat:`, `fix:`, `refactor:`, etc) en espanol.
+- Branch: `main` estable, `feature/sprint-N-desc` para trabajo.
 
-### Matriz de Salida
-* **Costo Ganancia (Monto):** $Costo\_Base \times (Ganancia\_Efectiva / 100)$
-* **Precio Total Final:** $Costo\_Base + Costo\_Ganancia$
+## Licencia
+
+A definir por el usuario. Sugerencia: MIT para codigo abierto.
