@@ -105,6 +105,7 @@ app.*.map.json
 secrets.yaml
 .opencode/
 .agents/
+opencode.json
 
 # ─── Misc ─────────────────────────────────────────────────────
 *.class
