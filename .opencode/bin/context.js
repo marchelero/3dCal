@@ -63,11 +63,10 @@ function fmtBytes(n) {
 }
 
 function skillsReport() {
-  const localSkills = exists(path.join(CWD, '.opencode', 'skills')) ? readDir(path.join(CWD, '.opencode', 'skills')).filter(d => d.isDirectory()).map(d => d.name) : [];
   const userSkills = exists(path.join(CWD, '.agents', 'skills')) ? readDir(path.join(CWD, '.agents', 'skills')).filter(d => d.isDirectory()).map(d => d.name) : [];
   const globalSkills = exists(path.join(HOME, '.config', 'opencode', 'skills')) ? readDir(path.join(HOME, '.config', 'opencode', 'skills')).filter(d => d.isDirectory()).map(d => d.name) : [];
-  const all = [...new Set([...localSkills, ...userSkills, ...globalSkills])].sort();
-  return { local: localSkills, user: userSkills, global: globalSkills, all };
+  const all = [...new Set([...userSkills, ...globalSkills])].sort();
+  return { user: userSkills, global: globalSkills, all };
 }
 
 function agentsReport() {
@@ -89,7 +88,7 @@ function commandsReport() {
 }
 
 function sessionReport() {
-  const sessDir = path.join(CWD, '.agents', 'sessions');
+  const sessDir = path.join(CWD, 'docs', 'sessions');
   if (!exists(sessDir)) return { count: 0, latest: null };
   const files = readDir(sessDir).filter(f => f.isFile() && f.name.endsWith('.md') && f.name !== 'LATEST.md' && f.name !== 'README.md');
   files.sort((a, b) => b.name.localeCompare(a.name));
@@ -115,15 +114,14 @@ function full() {
   const cmds = commandsReport();
   const sessions = sessionReport();
   const recs = recommend(skills, agents, cmds, sessions);
-  const totalBytes = skills.local.reduce((s, n) => s + 0, 0) + agents.totalBytes + cmds.totalBytes;
+  const totalBytes = agents.totalBytes + cmds.totalBytes;
   const projectSize = dirSize(CWD) - dirSize(path.join(CWD, '.git')) - dirSize(path.join(CWD, '.opencode', 'node_modules'));
 
   console.log('Context Budget Report');
   console.log('=====================');
   console.log('');
   console.log('Skills available:', skills.all.length);
-  console.log('  local (.opencode/skills):', skills.local.length, skills.local.join(', '));
-  console.log('  user  (.agents/skills):   ', skills.user.length, skills.user.join(', ') || '(none)');
+  console.log('  local (.agents/skills):  ', skills.user.length, skills.user.join(', ') || '(none)');
   console.log('  global (~/.config/...):  ', skills.global.length, skills.global.join(', ') || '(none)');
   console.log('');
   console.log(`Agents: ${agents.count} (${fmtBytes(agents.totalBytes)}, ~${estimateTokens(agents.totalBytes)} tokens if all loaded -- DO NOT load all; trust the description-trigger)`);

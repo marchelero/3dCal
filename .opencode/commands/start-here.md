@@ -15,10 +15,10 @@ When: "agregar X" / "implementar Y" / "build Z" (non-trivial, >3 archivos)
 
 ```bash
 /prd "agregar busqueda con filtros a la tabla de usuarios"
-# → generates .opencode/prds/{ts}-busqueda-filtros.prd.md
+# → generates docs/prds/{ts}-busqueda-filtros.prd.md
 #   after you confirm the intention map
 
-/plan .opencode/prds/{ts}-busqueda-filtros.prd.md
+/plan docs/prds/{ts}-busqueda-filtros.prd.md
 # → phased plan with risks
 
 /tdd "implementar filtro por nombre y email"
@@ -94,7 +94,7 @@ When: "como esta el pack" / "que tengo disponible" / "se comporta raro"
 # → 69 agentes agrupados por categoria, con triggers
 
 /list-skills
-# → 14 skills con trigger map
+# → 17 skills con trigger map
 
 /help
 # → overview, o ruta libre si decis que queres hacer
@@ -104,7 +104,7 @@ When: "como esta el pack" / "que tengo disponible" / "se comporta raro"
 
 Si todavia no estas seguro, corre `/route "<lo que queres hacer>"` — matchea contra el catalogo y te da 1 opcion + 2 alternativas.
 
-Si es tu primera vez con el pack, lee `.opencode/docs/START-HERE.md` (5-min deep dive) despues de este command.
+Si es tu primera vez con el pack, lee `.opencode/manual/START-HERE.md` (5-min deep dive) despues de este command.
 
 ## Behavior
 
@@ -123,5 +123,5 @@ Si es tu primera vez con el pack, lee `.opencode/docs/START-HERE.md` (5-min deep
 ## When NOT to Use
 
 - You already know what to do. Just run the command.
-- Deep dive needed. Read `.opencode/docs/START-HERE.md` instead.
+- Deep dive needed. Read `.opencode/manual/START-HERE.md` instead.
 - Specific question. Just ask.

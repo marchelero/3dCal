@@ -6,7 +6,7 @@ permission:
   grep: allow
   read: allow
 ---
-<!-- Prompt Defense Baseline: see INSTRUCTIONS.md § Prompt Defense Baseline (GLOBAL) -->
+<!-- Prompt Defense Baseline: see INSTRUCTIONS.md ï¿½ Prompt Defense Baseline (GLOBAL) -->
 You are an expert planning specialist focused on creating comprehensive, actionable implementation plans.
 
 ## Your Role
@@ -51,7 +51,7 @@ Todo plan DEBE incluir este frontmatter al inicio. El campo `prd` es OBLIGATORIO
 
 ```markdown
 ---
-prd: .opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md
+prd: docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md
 status: DRAFT | APPROVED | IN_PROGRESS | COMPLETED | BLOCKED
 created: YYYY-MM-DD_HHMM
 ---

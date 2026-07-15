@@ -1,5 +1,5 @@
 ---
-description: "Archiva reports viejos a .opencode/reports/_archive/. NO borra, solo mueve. Use when .opencode/reports/ tenga >20 archivos o antes de un commit grande para mantener el directorio limpio."
+description: "Archiva reports viejos a docs/reports/_archive/. NO borra, solo mueve. Use when docs/reports/ tenga >20 archivos o antes de un commit grande para mantener el directorio limpio."
 agent: build
 ---
 
@@ -14,9 +14,9 @@ Mover reports viejos a archivo: $ARGUMENTS
 Archivar reports con >30 dias de antiguedad Y status `COMPLETADO`.
 
 ```
-for each .opencode/reports/*.md:
+for each docs/reports/*.md:
   if status == "COMPLETADO" and mtime < (now - 30d):
-    move to .opencode/reports/_archive/{YYYY}/  (por año del archivo)
+    move to docs/reports/_archive/{YYYY}/  (por año del archivo)
     log: "[archivo] movido a _archive/YYYY/{name}.report.md"
 ```
 
@@ -41,15 +41,15 @@ Solo listar lo que se moveria. NO mover nada.
 
 ## Comportamiento
 
-1. Crear `.opencode/reports/_archive/{YYYY}/` si no existe.
+1. Crear `docs/reports/_archive/{YYYY}/` si no existe.
 2. Para cada candidato a archivar:
    - Verificar que NO esta abierto (no se esta editando).
    - Mover con `mv` (preservar mtime con `mv -p` si la version lo soporta).
-3. Actualizar `.opencode/reports/INDEX.md` (quitar los movidos, agregar linea "Archivados: N en YYYY/").
+3. Actualizar `docs/reports/INDEX.md` (quitar los movidos, agregar linea "Archivados: N en YYYY/").
 4. Reportar al usuario:
    ```
    Archivados: N reports
-   Destino: .opencode/reports/_archive/{YYYY}/
+   Destino: docs/reports/_archive/{YYYY}/
    
    Lista:
    - {name}.report.md ({dias}d, status: COMPLETADO)
@@ -58,7 +58,7 @@ Solo listar lo que se moveria. NO mover nada.
    rollback? (s/n) — los archivos siguen aca, faciles de restaurar
    ```
 
-5. Si el user dice `s` rollback: `mv _archive/YYYY/*.report.md .opencode/reports/`. Solo si estan en la misma sesion.
+5. Si el user dice `s` rollback: `mv _archive/YYYY/*.report.md docs/reports/`. Solo si estan en la misma sesion.
 
 ## Garantias
 
@@ -69,6 +69,6 @@ Solo listar lo que se moveria. NO mover nada.
 
 ## Cuando correr
 
-- Cada 1-2 meses cuando `.opencode/reports/` tenga >20 archivos.
+- Cada 1-2 meses cuando `docs/reports/` tenga >20 archivos.
 - Antes de un commit grande (limpiar el directorio).
 - Cuando el user dice "limpia reports" / "archiva lo viejo" / "los reports estan muchos".

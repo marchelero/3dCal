@@ -1,11 +1,11 @@
 ---
-description: "Refresh .agents/PROJECT.md from current project state. Scans package.json/pubspec/pyproject/etc to detect stack, conventions, and directory layout. Use when project grows, new module added, or context feels stale."
+description: "Refresh docs/PROJECT.md from current project state. Scans package.json/pubspec/pyproject/etc to detect stack, conventions, and directory layout. Use when project grows, new module added, or context feels stale."
 agent: build
 ---
 
 # Refresh Project Command
 
-Regenerate `.agents/PROJECT.md` from the current project state. The CLI scans the actual project files (package.json, pubspec.yaml, etc.) and updates the context doc that the prd-agent and other specialists read.
+Regenerate `docs/PROJECT.md` from the current project state. The CLI scans the actual project files (package.json, pubspec.yaml, etc.) and updates the context doc that the prd-agent and other specialists read.
 
 ## Your Task
 
@@ -34,7 +34,7 @@ node .opencode/bin/refresh-project.js
 ## Behavior
 
 - **Manual sections preserved** across refreshes: `Non-Negotiables`, `Architecture Notes`, `Open Questions`. The CLI only regenerates `Identity`, `Stack`, `Conventions`, `Directory Layout`, `License`.
-- **Backup created automatically** before overwrite: `.agents/PROJECT.md.bak.{timestamp}`.
+- **Backup created automatically** before overwrite: `docs/PROJECT.md.bak.{timestamp}`.
 - **Idempotent**: if PROJECT.md is already up to date, the CLI reports "no changes" and exits.
 - **Safe**: never deletes user content. Only updates detected fields (stack name, version, etc.).
 
@@ -59,8 +59,8 @@ node .opencode/bin/refresh-project.js
 After running, the CLI outputs:
 
 ```
-Backup: .agents/PROJECT.md.bak.1719087600000
-Updated: .agents/PROJECT.md
+Backup: docs/PROJECT.md.bak.1719087600000
+Updated: docs/PROJECT.md
 
 --- REPORT ---
 Lines added: 12
@@ -72,7 +72,7 @@ Sections preserved: Non-Negotiables, Architecture Notes, Open Questions (manual 
 
 If `--dry-run`:
 ```
---- DRY RUN: would write to .agents/PROJECT.md ---
+--- DRY RUN: would write to docs/PROJECT.md ---
 
 --- DIFF ---
 - L8: - **Name**: (your project name)
@@ -85,8 +85,8 @@ If `--dry-run`:
 ## Integration
 
 - `/session-end` — invokes this automatically (Step 6) and shows the result
-- `prd-agent` — reads `.agents/PROJECT.md` for project context (refreshed version gets fresh stack info)
-- `/session-start` — loads `.agents/PROJECT.md` (Capa 1 of the 4-layer hierarchy)
+- `prd-agent` — reads `docs/PROJECT.md` for project context (refreshed version gets fresh stack info)
+- `/session-start` — loads `docs/PROJECT.md` (Capa 1 of the 4-layer hierarchy)
 
 ## Behavior Notes
 

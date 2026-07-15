@@ -1,6 +1,6 @@
 # open
 
-Pack portable de opencode: **69 agentes, 14 skills, 65 slash commands, 0 MCPs, 5 plugins, 9 CLIs cero-deps**.
+Pack portable de opencode: **72 agentes, 17 skills, 69 slash commands, 2 MCPs activos + 2 opcionales, 3 plugins, 9 CLIs cero-deps**.
 
 Cópialo a cualquier proyecto, reinicia opencode y empieza a trabajar.
 
@@ -8,23 +8,42 @@ Cópialo a cualquier proyecto, reinicia opencode y empieza a trabajar.
 
 ```bash
 # copia las partes portables a tu proyecto
-cp -r .opencode opencode.json AGENTS.md instructions/ /ruta/a/tu/proyecto/
+cp -r .opencode opencode.json /ruta/a/tu/proyecto/
 
 # abre opencode en ese proyecto
 cd /ruta/a/tu/proyecto && opencode .
 ```
 
-> Windows PowerShell: `Copy-Item -Path ".opencode","opencode.json","AGENTS.md","instructions" -Destination "C:\ruta\a\tu\proyecto" -Recurse -Force`
+> Windows PowerShell: `Copy-Item -Path ".opencode","opencode.json" -Destination "C:\ruta\a\tu\proyecto" -Recurse -Force`
 
-> Si tu proyecto ya tiene un `README.md`, no se toca. Fusiona `AGENTS.md` con tus reglas propias si quieres mantener ambos.
+> Si tu proyecto ya tiene un `README.md`, no se toca. Fusiona `.opencode/AGENTS.md` con tus reglas propias si quieres mantener ambos.
+
+## Copiar a otro proyecto
+
+Después de copiar el pack, **corré esto una vez** en el proyecto destino:
+
+```bash
+cd .opencode && npm install
+```
+
+Baja los plugins (vibeguard, pty, dcp) + `@opencode-ai/plugin` peer. Sin esto opencode puede colgarse al boot porque los plugins no cargan. El script `install-plugins.js` es idempotente — si `node_modules/` ya existe, skip.
+
+### Si opencode se cuelga al boot
+
+1. `cd .opencode && npm install` — ¿lo corriste? Sin esto, sin plugins.
+2. `opencode debug config` — verifica config mergeada (plugins, MCPs, instructions)
+3. `opencode debug skill` — verifica skill discovery
+4. Node 20+ recomendado (Node 18 funciona con warnings `EBADENGINE`)
+5. MCPs context7 / playwright = 10-30s en el primer boot del proyecto (npx descarga). Después es instant (versiones pineadas).
+6. Si el proyecto destino tiene su propio `node_modules/` con +10K archivos, el file watcher se satura. Mover a `.gitignore` + `npm prune` ayuda.
 
 ## Documentación
 
-Toda la documentación del pack vive dentro de `.opencode/docs/`, así se copia junto con el resto al instalar:
+Toda la documentación del pack vive dentro de `.opencode/manual/`, así se copia junto con el resto al instalar:
 
-- **[.opencode/docs/README.md](./.opencode/docs/README.md)** — punto de entrada, instalación, comandos principales
-- **[.opencode/docs/ROUTE.md](./.opencode/docs/ROUTE.md)** — qué sub-agente usar según la intención
-- **[.opencode/docs/COMMANDS.md](./.opencode/docs/COMMANDS.md)** — los 65 slash commands por intención
-- **[.opencode/docs/EXAMPLES.md](./.opencode/docs/EXAMPLES.md)** — 5 flujos completos de proyectos reales
-- **[.opencode/docs/ARCH.md](./.opencode/docs/ARCH.md)** — 4 capas de memoria, flujo PRD, ciclo de instintos
-- **[.opencode/docs/SURFACES.md](./.opencode/docs/SURFACES.md)** — cuándo usar regla vs skill vs MCP vs agente vs CLI
+- **[.opencode/manual/README.md](./.opencode/manual/README.md)** — punto de entrada, instalación, comandos principales
+- **[.opencode/manual/ROUTE.md](./.opencode/manual/ROUTE.md)** — qué sub-agente usar según la intención
+- **[.opencode/manual/COMMANDS.md](./.opencode/manual/COMMANDS.md)** — los 65 slash commands por intención
+- **[.opencode/manual/EXAMPLES.md](./.opencode/manual/EXAMPLES.md)** — 5 flujos completos de proyectos reales
+- **[.opencode/manual/ARCH.md](./.opencode/manual/ARCH.md)** — 4 capas de memoria, flujo PRD, ciclo de instintos
+- **[.opencode/manual/SURFACES.md](./.opencode/manual/SURFACES.md)** — cuándo usar regla vs skill vs MCP vs agente vs CLI

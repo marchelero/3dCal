@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * build-skills-index.js - regenerate .opencode/skills/INDEX.md
+ * build-skills-index.js - regenerate .agents/skills/INDEX.md
  *
- * Reads all SKILL.md files in .opencode/skills subdirs, extracts the
+ * Reads all SKILL.md files in .agents/skills subdirs, extracts the
  * description and triggers from frontmatter, and writes a sorted INDEX.md.
  *
  * Usage:
@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SKILLS_DIR = path.join(__dirname, '..', 'skills');
+const SKILLS_DIR = path.join(__dirname, '..', '..', '.agents', 'skills');
 const OUT_MD = path.join(SKILLS_DIR, 'INDEX.md');
 
 const CATEGORIES = [
@@ -144,8 +144,8 @@ function renderMarkdown(skills) {
   lines.push('');
   lines.push('## See also');
   lines.push('');
-  lines.push('- [Agents index](../AGENTS_INDEX.md) — 69 starter-pack agents');
-  lines.push('- [Commands index](../commands/) — 63 starter-pack commands');
+  lines.push('- [Agents index](../../docs/AGENTS_INDEX.md) — 69 starter-pack agents');
+  lines.push('- [Commands index](../../.opencode/commands/) — 63 starter-pack commands');
   lines.push('- `/list-skills` — interactive catalog with filters');
   lines.push('');
 

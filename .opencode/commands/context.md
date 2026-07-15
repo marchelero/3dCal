@@ -37,8 +37,7 @@ Context Budget Report
 =====================
 
 Skills available: 11
-  local (.opencode/skills): 10
-  user  (.agents/skills):    1 (caveman)
+  local (.agents/skills): 15
   global (~/.config/...):   0
 
 Agents: 65 (393.3 KB, ~96K tokens if all loaded — DO NOT load all)

@@ -76,7 +76,7 @@ Execute comprehensive verification:
 
 - Status final: **PASS** (todo verde) o **PASS-WITH-NITS** (1-2 nits, 0 fail).
 - Hubo archivos modificados: `git diff --name-only HEAD~1` no vacio.
-- Existe un PRD activo: `.opencode/prds/*.prd.md` con status != COMPLETADO.
+- Existe un PRD activo: `docs/prds/*.prd.md` con status != COMPLETADO.
 
 ### Cuando NO aplica
 
@@ -88,7 +88,7 @@ Execute comprehensive verification:
 
 Al pasar verify:
 
-1. Generar automaticamente `.opencode/reports/{YYYY-MM-DD_HHMM}-{kebab-name}.report.md` con:
+1. Generar automaticamente `docs/reports/{YYYY-MM-DD_HHMM}-{kebab-name}.report.md` con:
    - Status: `COMPLETADO`
    - Agentes usados: solo `build` (verify)
    - Criterios PRD: marcar como PASS los que el verify cubre (build, tests, lint, typecheck)

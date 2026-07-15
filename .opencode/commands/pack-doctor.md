@@ -62,7 +62,7 @@ done
 - **Excluir** paths con placeholders (`{name}`, `{slug}`, `YYYY-MM-DD`, `HHMM`, etc).
 
 ```bash
-grep -rohE '`[^`]+\.(md|ts|js|json|jsonc|yml|yaml)`' .opencode/commands/ .opencode/agents/ .opencode/skills/ .opencode/AGENTS.md .opencode/instructions/ 2>/dev/null | tr -d '`' | sort -u | while read p; do
+grep -rohE '`[^`]+\.(md|ts|js|json|jsonc|yml|yaml)`' .opencode/commands/ .opencode/agents/ .agents/skills/ .opencode/AGENTS.md 2>/dev/null | tr -d '`' | sort -u | while read p; do
   # Skip templates placeholders
   case "$p" in
     *"{name}"*|*"YYYY-MM-DD"*|*"HHMM"*|*"${ARGUMENTS}"*|*"YYYY"*|*"HHMM"*|*{slug}*) continue ;;
@@ -76,7 +76,7 @@ done
 - Commands no deben superar 400 lineas (son prompts).
 
 ```bash
-find .opencode/agents .opencode/skills -name "*.md" -exec wc -l {} \; | awk '$1 > 800 {print "WARN:", $2, $1, "lineas"}'
+find .opencode/agents .agents/skills -name "*.md" -exec wc -l {} \; | awk '$1 > 800 {print "WARN:", $2, $1, "lineas"}'
 ```
 
 #### 8. Stats del pack
@@ -84,11 +84,11 @@ find .opencode/agents .opencode/skills -name "*.md" -exec wc -l {} \; | awk '$1 
 
 ```bash
 echo "Agents: $(ls .opencode/agents/*.md | wc -l)"
-echo "Skills: $(ls -d .opencode/skills/*/ 2>/dev/null | wc -l)"
+echo "Skills: $(ls -d .agents/skills/*/ 2>/dev/null | wc -l)"
 echo "Commands: $(ls .opencode/commands/*.md | wc -l)"
-echo "PRDs: $(ls .opencode/prds/*.md 2>/dev/null | wc -l)"
-echo "Reports: $(ls .opencode/reports/*.md 2>/dev/null | grep -v INDEX | wc -l)"
-echo "Audits: $(ls .opencode/audits/*.md 2>/dev/null | wc -l)"
+echo "PRDs: $(ls docs/prds/*.md 2>/dev/null | wc -l)"
+echo "Reports: $(ls docs/reports/*.md 2>/dev/null | grep -v INDEX | wc -l)"
+echo "Audits: $(ls docs/audits/*.md 2>/dev/null | wc -l)"
 ```
 
 #### 9. PRDs y reports huerfanos
@@ -96,7 +96,7 @@ echo "Audits: $(ls .opencode/audits/*.md 2>/dev/null | wc -l)"
 - Reports con `## Auditoria` y veredicto FAIL mas de 14 dias sin accion.
 
 ```bash
-find .opencode/prds -name "*.md" -mtime +7 -exec grep -l "Status.*DRAFT" {} \;
+find docs/prds -name "*.md" -mtime +7 -exec grep -l "Status.*DRAFT" {} \;
 ```
 
 #### 10. Junctions
@@ -119,7 +119,7 @@ find .opencode/prds -name "*.md" -mtime +7 -exec grep -l "Status.*DRAFT" {} \;
 [5/10] Commands huerfanos    PASS
 [6/10] Permalinks rotos      WARN: 2 paths posiblemente rotos
 [7/10] Tamanio archivos      PASS
-[8/10] Stats                 66 agents, 11 skills, 55 commands, 3 PRDs, 7 reports, 0 audits
+[8/10] Stats                 72 agents, 17 skills, 69 commands, 3 PRDs, 7 reports, 0 audits
 [9/10] PRDs huerfanos        WARN: 1 PRD en DRAFT >7d (ex006-csv-import)
 [10/10] Junctions            PASS
 

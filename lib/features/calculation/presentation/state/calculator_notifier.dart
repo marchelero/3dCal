@@ -1,7 +1,11 @@
 // ignore_for_file: public_member_api_docs
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/database/app_database.dart';
+import '../../../../core/providers.dart';
+import '../../data/calculation_repository.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_input.dart';
 import '../../domain/entities/material_input.dart';
@@ -124,6 +128,122 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// Resetea el form a los defaults (limpia output y campos numericos user-input).
   void reset() {
     state = CalculatorState.initial();
+  }
+
+  /// Carga el state desde una cotizacion guardada (para "Reusar").
+  ///
+  /// Lee los snapshots de [calc] + los materiales de la DB y reconstruye un
+  /// [CalculatorState] valido. Si hay 1 material, va a modo `express`; si hay
+  /// mas, va a `advanced`.
+  Future<void> loadFromCalculation(Calculation calc) async {
+    final repo = ref.read(calculationRepositoryProvider);
+    final mats = await repo.materialsOf(calc.id);
+    final mode = mats.length > 1
+        ? CalculatorMode.advanced
+        : CalculatorMode.express;
+    final kwh = CalculatorState.parseDecimal(
+          calc.kwhRateSnapshot.toStringAsFixed(2),
+        ) ??
+        Decimal.zero;
+    final profit = CalculatorState.parseDecimal(
+          calc.profitBaseSnapshot.toStringAsFixed(2),
+        ) ??
+        Decimal.zero;
+    final discount = CalculatorState.parseDecimal(
+          calc.discountPercentage.toStringAsFixed(2),
+        ) ??
+        Decimal.zero;
+    final watts = CalculatorState.parseDecimal(
+          calc.printerWattsSnapshot.toStringAsFixed(2),
+        ) ??
+        Decimal.zero;
+    final hours = CalculatorState.parseDecimal(
+          calc.totalHours.toStringAsFixed(2),
+        ) ??
+        Decimal.zero;
+    if (mode == CalculatorMode.express) {
+      final m = mats.isEmpty
+          ? null
+          : mats.first;
+      state = _recompute(
+        CalculatorState(
+          mode: CalculatorMode.express,
+          printHours: hours.toString(),
+          printerWatts: watts.toString(),
+          kwhRate: kwh.toString(),
+          profitPct: profit.toString(),
+          discountPct: discount.toString(),
+          weight: m == null ? '' : m.weightGrams.toStringAsFixed(0),
+          filamentPrice:
+              m == null ? '' : m.pricePerBobbinSnapshot.toStringAsFixed(2),
+          filamentGrams:
+              m == null ? '' : m.gramsPerBobbinSnapshot.toStringAsFixed(0),
+          materials: const <MaterialRow>[],
+          output: null,
+        ),
+      );
+      return;
+    }
+    // Advanced: una fila por material.
+    final rows = mats
+        .map(
+          (m) => MaterialRow(
+            label: m.label,
+            weight: m.weightGrams.toStringAsFixed(0),
+            pricePerBobbin: m.pricePerBobbinSnapshot.toStringAsFixed(2),
+            gramsPerBobbin: m.gramsPerBobbinSnapshot.toStringAsFixed(0),
+          ),
+        )
+        .toList();
+    state = _recompute(
+      CalculatorState(
+        mode: CalculatorMode.advanced,
+        printHours: hours.toString(),
+        printerWatts: watts.toString(),
+        kwhRate: kwh.toString(),
+        profitPct: profit.toString(),
+        discountPct: discount.toString(),
+        weight: '',
+        filamentPrice: '',
+        filamentGrams: '',
+        materials: rows,
+        output: null,
+      ),
+    );
+  }
+
+  /// Guarda la cotizacion actual en la DB. Devuelve el id, o `null` si el
+  /// form no es valido. Lanza si la DB falla.
+  ///
+  /// **Snapshots**: precio kWh, profit base, watts de impresora y descuento
+  /// se copian del state al momento de guardar. Cambios futuros en catalogos
+  /// NO afectan cotizaciones historicas.
+  ///
+  /// **Active printer**: si el user eligio una impresora en el AppBar, sus
+  /// snapshots se incluyen. Si no, `printerId` queda `null` (proforma rapida).
+  Future<int?> save({String? pieceName, String? clientName}) async {
+    if (!state.isValid || state.output == null) return null;
+    final input = _buildInput(state);
+    final printer = ref.read(activePrinterProvider);
+    final draft = CalculationDraft(
+      materials: input.materials,
+      totalHours: input.totalHours,
+      printerId: printer?.id,
+      printerNameSnapshot: printer?.name,
+      printerWattsSnapshot: input.printerWatts,
+      discountPercentage: input.discountPercentage,
+      kwhRateSnapshot: input.kwhRate,
+      profitBaseSnapshot: input.profitBasePercentage,
+      output: state.output!,
+      pieceName: (pieceName == null || pieceName.trim().isEmpty)
+          ? null
+          : pieceName.trim(),
+      clientName: (clientName == null || clientName.trim().isEmpty)
+          ? null
+          : clientName.trim(),
+    );
+    final repo = ref.read(calculationRepositoryProvider);
+    return repo.create(draft);
   }
 
   /// Recalcula el output si el form es valido, si no limpia el output.

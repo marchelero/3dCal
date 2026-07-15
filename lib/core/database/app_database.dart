@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../features/calculation/data/tables/calculation_materials_table.dart';
 import '../../features/calculation/data/tables/calculations_table.dart';
@@ -62,12 +61,19 @@ class AppDatabase extends _$AppDatabase {
 
 /// Abre la conexion a la base de datos. Cross-platform via [driftDatabase].
 ///
-/// **Web**: requiere `web/sqlite3.wasm` y `web/drift_worker.dart.js`. Ambos
-/// se generan/download en setup del proyecto (ver `web/drift_worker.dart`).
+/// **Web**: requiere `web/sqlite3.wasm` y `web/drift_worker.js` (pre-compilado
+/// de drift releases, NO un dart_compile local — `package:web` v1.x necesita
+/// plataforma web configurada que `dart compile js` no provee).
 /// **Desktop/mobile**: drift_flutter usa `NativeDatabase` con path en
-/// app docs dir.
+/// app docs dir. El parametro `web` se ignora en estas plataformas.
 QueryExecutor _openConnection() {
-  return driftDatabase(name: 'tresdcal');
+  return driftDatabase(
+    name: 'tresdcal',
+    web: DriftWebOptions(
+      sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+      driftWorker: Uri.parse('drift_worker.js'),
+    ),
+  );
 }
 
 /// Inserta filamento + impresora default si las tablas estan vacias.

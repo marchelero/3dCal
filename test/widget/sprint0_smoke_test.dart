@@ -1,16 +1,36 @@
 // ignore_for_file: public_member_api_docs
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/app.dart';
+import 'package:tresdcal/core/database/app_database.dart';
+import 'package:tresdcal/core/providers.dart';
 
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/decimal_input_field.dart';
 
 void main() {
+  late AppDatabase db;
+
+  setUp(() {
+    db = AppDatabase.forTesting(NativeDatabase.memory());
+  });
+
+  tearDown(() async {
+    await db.close();
+  });
+
   Future<void> navigateToCalculator(WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: TresdcalApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+        ],
+        child: const TresdcalApp(),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(
       find.widgetWithText(FilledButton, 'Nueva cotizacion'),

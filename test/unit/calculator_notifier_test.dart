@@ -1,6 +1,9 @@
 import 'package:decimal/decimal.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tresdcal/core/database/app_database.dart';
+import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
@@ -243,6 +246,65 @@ void main() {
         totalPrice: Decimal.fromInt(22),
       );
       expect(a, b);
+    });
+  });
+
+  group('CalculatorNotifier.save', () {
+    late AppDatabase db;
+    late ProviderContainer container;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      container = ProviderContainer(overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+      ]);
+    });
+
+    tearDown(() async {
+      container.dispose();
+      await db.close();
+    });
+
+    test('form invalido: save() retorna null y no inserta nada', () async {
+      final id = await container
+          .read(calculatorNotifierProvider.notifier)
+          .save(pieceName: 'X');
+      expect(id, isNull);
+      final all = await db.select(db.calculations).get();
+      expect(all, isEmpty);
+    });
+
+    test('form valido: save() inserta y retorna id > 0', () async {
+      final n = container.read(calculatorNotifierProvider.notifier);
+      n.setWeight('100');
+      n.setPrintHours('5');
+      n.setFilamentPrice('120');
+      n.setFilamentGrams('1000');
+
+      final id = await n.save(pieceName: 'Pieza Test', clientName: 'Juan');
+      expect(id, isPositive);
+
+      final all = await db.select(db.calculations).get();
+      expect(all, hasLength(1));
+      final c = all.first;
+      expect(c.pieceName, 'Pieza Test');
+      expect(c.clientName, 'Juan');
+      expect(c.printerId, isNull); // sin impresora activa
+      expect(c.totalHours, 5.0);
+      expect(c.totalPriceSnapshot, 38.1);
+    });
+
+    test('pieceName vacio se persiste como null', () async {
+      final n = container.read(calculatorNotifierProvider.notifier);
+      n.setWeight('100');
+      n.setPrintHours('5');
+      n.setFilamentPrice('120');
+      n.setFilamentGrams('1000');
+
+      await n.save(pieceName: '   ', clientName: '');
+      final c = (await db.select(db.calculations).get()).first;
+      expect(c.pieceName, isNull);
+      expect(c.clientName, isNull);
     });
   });
 }

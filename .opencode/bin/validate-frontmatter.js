@@ -29,9 +29,9 @@ const CWD = process.cwd();
 const QUIET = process.argv.includes('--quiet');
 
 const AGENTS_DIR = path.join(CWD, '.opencode', 'agents');
-const SKILLS_DIR = path.join(CWD, '.opencode', 'skills');
+const SKILLS_DIR = path.join(CWD, '.agents', 'skills');
 const COMMANDS_DIR = path.join(CWD, '.opencode', 'commands');
-const USER_SKILLS_DIR = path.join(CWD, '.agents', 'skills');
+const MANUAL_DIR = path.join(CWD, '.opencode', 'manual');
 
 let passed = 0, failed = 0, warnings = 0;
 
@@ -226,13 +226,13 @@ function validateCommand(file) {
 
 function validateCrossRefs() {
   const refPattern = /\.opencode\/(skills|agents|commands)\/([a-z0-9-]+)/g;
-  // Also check relative markdown links to other docs in .opencode/docs/
-  // and to the root README/AGENTS (e.g. `[x](./foo.md)`, `[x](.opencode/docs/foo.md)`).
+  // Also check relative markdown links to other docs in .opencode/manual/
+  // and to the root README/AGENTS (e.g. `[x](./foo.md)`, `[x](.opencode/manual/foo.md)`).
   const docLinkPattern = /\[([^\]]+)\]\((?:\.{1,2}\/|\.opencode\/docs\/|#?[\w./-]+\.md)\)/g;
   const checkDirs = [
-    path.join(CWD, '.opencode', 'skills'),
-    path.join(CWD, '.opencode', 'docs'),
+    path.join(CWD, '.opencode', 'agents'),
     path.join(CWD, '.opencode', 'commands'),
+    MANUAL_DIR,
     path.join(CWD, 'INSTRUCTIONS.md'.replace(/^/, CWD)),
     path.join(CWD, 'AGENTS.md'),
     path.join(CWD, 'README.md'),
@@ -252,10 +252,10 @@ function validateCrossRefs() {
       const content = readFile(dir);
       if (!content) continue;
       const scan = stripCodeBlocks(content);
-      const isInDocs = dir.includes(`${path.sep}docs${path.sep}`) || dir.endsWith(`${path.sep}docs`);
-      const isInDocsRoot = path.basename(dir) === 'docs' && stat.isDirectory();
+      const isInManual = dir.includes(`${path.sep}manual${path.sep}`) || dir.endsWith(`${path.sep}manual`);
+      const isInManualRoot = path.basename(dir) === 'manual' && stat.isDirectory();
 
-      if (isInDocsRoot) continue; // handled below by directory walk
+      if (isInManualRoot) continue; // handled below by directory walk
 
       // Pattern 1: .opencode/{skills,agents,commands}/<name>
       let m;
@@ -272,8 +272,8 @@ function validateCrossRefs() {
         checked++;
       }
 
-      // Pattern 2: markdown links to local .md files (only when in .opencode/docs/)
-      if (isInDocs) {
+      // Pattern 2: markdown links to local .md files (only when in .opencode/manual/)
+      if (isInManual) {
         const baseDir = path.dirname(dir);
         docLinkPattern.lastIndex = 0;
         while ((m = docLinkPattern.exec(scan)) !== null) {
@@ -288,7 +288,7 @@ function validateCrossRefs() {
         }
       }
     } else if (stat.isDirectory()) {
-      // Walk .opencode/docs/ — each .md inside may link to siblings
+      // Walk .opencode/manual/ — each .md inside may link to siblings
       const mdFiles = fs.readdirSync(dir).filter(f => f.endsWith('.md')).map(f => path.join(dir, f));
       for (const f of mdFiles) {
         const content = readFile(f);
@@ -322,7 +322,7 @@ function main() {
   console.log(`  ${agents.length} agents checked\n`);
 
   console.log('[Skills]');
-  const skillDirs = [...listDirs(SKILLS_DIR), ...listDirs(USER_SKILLS_DIR)];
+  const skillDirs = listDirs(SKILLS_DIR);
   for (const d of skillDirs) {
     const f = path.join(d, 'SKILL.md');
     if (fs.existsSync(f)) validateSkillFile(f);

@@ -53,7 +53,7 @@ Create a detailed implementation plan for: $ARGUMENTS
 
 Despues de que el plan sea aprobado y se implemente, el flujo termina idealmente con `/verify` que auto-genera un report (ver `/verify` command). Si no se corre verify, documentar manualmente:
 
-1. Al cerrar la implementacion, generar `.opencode/reports/{YYYY-MM-DD_HHMM}-{name}.report.md` referenciando el plan.
+1. Al cerrar la implementacion, generar `docs/reports/{YYYY-MM-DD_HHMM}-{name}.report.md` referenciando el plan.
 2. Ofrecer: "¿Audito contra el PRD origen con `/audit-report {name}`? (s/n)".
 
 El auditor verifica que TODOS los milestones del PRD (no solo los del plan) quedaron cumplidos.
@@ -65,7 +65,7 @@ El auditor verifica que TODOS los milestones del PRD (no solo los del plan) qued
 
 ## State Persistence (REQUIRED)
 
-This flow writes to `.opencode/state/` so it can be resumed after interruption. See `.opencode/state/README.md` for the schema.
+This flow writes to `docs/state/` so it can be resumed after interruption. See `docs/state/README.md` for the schema.
 
 ``bash
 # At flow start
@@ -82,4 +82,4 @@ node .opencode/bin/state.js complete ""
 node .opencode/bin/state.js fail "" "<error message>"
 ``
 
-The flow is resumable: if interrupted, `/session-start` detects active states in `.opencode/state/` and offers to resume from `currentPhase`.
+The flow is resumable: if interrupted, `/session-start` detects active states in `docs/state/` and offers to resume from `currentPhase`.

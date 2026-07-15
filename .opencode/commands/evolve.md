@@ -17,11 +17,11 @@ node .opencode/bin/instinct.js evolve $ARGUMENTS
 
 - no args: analysis only
 - `--domain <name>`: filter by category
-- `--generate`: also write candidates to `.opencode/instincts/evolved/candidates.json`
+- `--generate`: also write candidates to `docs/instincts/evolved/candidates.json`
 
 ## Behavior Notes
 
 - Uses project + global instincts for analysis.
 - Shows skill/command/agent candidates from trigger and domain clustering.
 - Shows project → global promotion candidates.
-- Output path: `.opencode/instincts/evolved/candidates.json` (with `--generate`)
+- Output path: `docs/instincts/evolved/candidates.json` (with `--generate`)

@@ -25,7 +25,7 @@ Generar un mini-PRD para: $ARGUMENTS
 
 NO invocar `prd-agent`. NO hacer intent map. NO hacer preguntas bloqueantes.
 
-1. Escribir directamente `.opencode/prds/{YYYY-MM-DD_HHMM}-quick-{kebab-name}.prd.md` con este template:
+1. Escribir directamente `docs/prds/{YYYY-MM-DD_HHMM}-quick-{kebab-name}.prd.md` con este template:
 
 ```markdown
 # {Quick title}

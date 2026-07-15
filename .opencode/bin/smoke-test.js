@@ -90,19 +90,17 @@ console.log('');
 console.log('[Structure]');
 check('opencode.json exists', () => fs.existsSync('opencode.json'));
 check('.opencode/AGENTS.md exists', () => fs.existsSync('.opencode/AGENTS.md'));
-check('.opencode/docs/README.md exists', () => fs.existsSync('.opencode/docs/README.md'));
+check('.opencode/manual/README.md exists', () => fs.existsSync('.opencode/manual/README.md'));
 check('.opencode/README.md exists', () => fs.existsSync('.opencode/README.md'));
 check('.opencode/CHANGELOG.md exists', () => fs.existsSync('.opencode/CHANGELOG.md'));
 check('.opencode/ folder', () => fs.existsSync('.opencode'));
 check('.agents/ folder', () => fs.existsSync('.agents'));
-check('.opencode/instructions/ folder', () => fs.existsSync('.opencode/instructions'));
-check('.opencode/instructions/INSTRUCTIONS.md exists', () => fs.existsSync('.opencode/instructions/INSTRUCTIONS.md'));
 
 console.log('');
 console.log('[Counts]');
 const agents = countFiles('.opencode/agents', '.md');
-const skills = fs.existsSync('.opencode/skills') ? fs.readdirSync('.opencode/skills').filter(d => {
-  try { return fs.statSync(path.join('.opencode/skills', d)).isDirectory(); } catch { return false; }
+const skills = fs.existsSync('.agents/skills') ? fs.readdirSync('.agents/skills').filter(d => {
+  try { return fs.statSync(path.join('.agents/skills', d)).isDirectory(); } catch { return false; }
 }).length : 0;
 const commands = countFiles('.opencode/commands', '.md');
 const binScripts = countFiles('.opencode/bin', '.js');
@@ -130,12 +128,12 @@ console.log('[Frontmatter]');
 check('agents have description:', () => hasFrontmatter('.opencode/agents', 'description'));
 check('commands have description:', () => hasFrontmatter('.opencode/commands', 'description'));
 check('SKILL.md files have name:', () => {
-  if (!fs.existsSync('.opencode/skills')) return { warn: '.opencode/skills missing' };
-  const dirs = fs.readdirSync('.opencode/skills').filter(d => {
-    try { return fs.statSync(path.join('.opencode/skills', d)).isDirectory(); } catch { return false; }
+  if (!fs.existsSync('.agents/skills')) return { warn: '.agents/skills missing' };
+  const dirs = fs.readdirSync('.agents/skills').filter(d => {
+    try { return fs.statSync(path.join('.agents/skills', d)).isDirectory(); } catch { return false; }
   });
   return dirs.every(d => {
-    const skill = path.join('.opencode/skills', d, 'SKILL.md');
+    const skill = path.join('.agents/skills', d, 'SKILL.md');
     if (!fs.existsSync(skill)) return { warn: `${d}/SKILL.md missing` };
     return readFile(skill).match(/^name:/m);
   });

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * refresh-project.js - regenerate .agents/PROJECT.md from current project state
+ * refresh-project.js - regenerate docs/PROJECT.md from current project state
  *
  * Scans:
- *   - package.json (Node/JS/TS)
+ *   - package.json (Node/JS/TS, including workspaces)
  *   - pubspec.yaml (Flutter/Dart)
  *   - pyproject.toml / requirements.txt / setup.py (Python)
  *   - Cargo.toml (Rust)
@@ -12,14 +12,26 @@
  *   - pom.xml / build.gradle* (Java/Kotlin)
  *   - index.html (Web)
  *   - README.*.md
+ *   - tsconfig.json (TypeScript strict mode)
+ *   - turbo.json / nx.json / pnpm-workspace.yaml (monorepo)
+ *   - .eslintrc* / eslint.config.* / biome.json (lint)
+ *   - .prettierrc* / prettier.config.* (format)
+ *   - vitest.config.* / jest.config.* / pytest.ini (test)
+ *   - .github/workflows / .gitlab-ci.yml / .circleci (CI)
+ *   - Dockerfile / docker-compose*.yml (container)
+ *   - .env.example / .env.sample (env vars)
  *
- * Generates a fresh .agents/PROJECT.md and (in --dry-run) shows the diff
- * without writing. In normal mode, writes a backup then overwrites.
+ * Generates a fresh docs/PROJECT.md and (in --dry-run) shows the diff
+ * without writing. Manual sections (Non-Negotiables, Architecture Notes,
+ * Open Questions) are preserved across refreshes.
  *
  * Usage:
- *   node .opencode/bin/refresh-project.js          # scan + write
- *   node .opencode/bin/refresh-project.js --dry-run  # scan + show diff, no write
- *   node .opencode/bin/refresh-project.js --check    # exit 0 if up to date, 1 if stale
+ *   node .opencode/bin/refresh-project.js              # scan + write
+ *   node .opencode/bin/refresh-project.js --dry-run    # scan + show diff, no write
+ *   node .opencode/bin/refresh-project.js --check      # exit 0 if up to date, 1 if stale
+ *   node .opencode/bin/refresh-project.js --status     # show freshness + summary, no write
+ *   node .opencode/bin/refresh-project.js --auto       # silent write, only logs changes
+ *   node .opencode/bin/refresh-project.js --help       # this help
  */
 
 const fs = require('fs');
@@ -30,23 +42,35 @@ const CWD = process.cwd();
 const ARGS = process.argv.slice(2);
 const DRY_RUN = ARGS.includes('--dry-run');
 const CHECK_ONLY = ARGS.includes('--check');
+const STATUS_ONLY = ARGS.includes('--status');
+const AUTO = ARGS.includes('--auto');
+const STALE_DAYS = 7;
 
 if (ARGS.includes('--help') || ARGS.includes('-h')) {
   console.log(`Usage:
   node .opencode/bin/refresh-project.js              # scan + write
   node .opencode/bin/refresh-project.js --dry-run    # scan + show diff, no write
   node .opencode/bin/refresh-project.js --check      # exit 0 if up to date, 1 if stale
+  node .opencode/bin/refresh-project.js --status     # show freshness + summary, no write
+  node .opencode/bin/refresh-project.js --auto       # silent write, only log changes
   node .opencode/bin/refresh-project.js --help       # this help
 
 Scans: package.json, pubspec.yaml, pyproject.toml, requirements.txt, setup.py,
-       Cargo.toml, go.mod, *.csproj, *.sln, pom.xml, build.gradle*, index.html, README.*.md
-Writes: .agents/PROJECT.md (backup at .agents/PROJECT.md.bak.<ts>)`);
+       Cargo.toml, go.mod, *.csproj, *.sln, pom.xml, build.gradle*, index.html,
+       README.*.md, tsconfig.json, turbo.json, nx.json, pnpm-workspace.yaml,
+       eslint config, prettier config, test config, CI dirs, Dockerfile,
+       docker-compose*.yml, .env.example, .env.sample
+Writes: docs/PROJECT.md (backup at docs/PROJECT.md.bak.<ts>)
+
+Sections regenerated: Identity, Stack, Tooling, Directory Layout, License, Entry Points
+Sections preserved: Non-Negotiables, Architecture Notes, Open Questions (manual edits kept)
+`);
   process.exit(0);
 }
 
 const HOME = os.homedir();
-const PROJECT_MD = path.join(CWD, '.agents', 'PROJECT.md');
-const BACKUP_MD = path.join(CWD, '.agents', `PROJECT.md.bak.${Date.now()}`);
+const PROJECT_MD = path.join(CWD, 'docs', 'PROJECT.md');
+const BACKUP_MD = path.join(CWD, 'docs', `PROJECT.md.bak.${Date.now()}`);
 
 function exists(p) { return fs.existsSync(p); }
 function read(p) { try { return fs.readFileSync(p, 'utf8'); } catch { return ''; } }
@@ -67,11 +91,13 @@ function detectType() {
   if (exists('pubspec.yaml')) return 'flutter-app';
   if (exists('package.json')) {
     const pkg = readJSON('package.json');
+    if (pkg && pkg.workspaces) return 'node-monorepo';
     if (pkg && pkg.dependencies && pkg.dependencies['next']) return 'web-app';
     if (pkg && pkg.dependencies && pkg.dependencies['express']) return 'api-service';
     if (pkg && pkg.bin) return 'cli';
     return 'node-app';
   }
+  if (exists('turbo.json') || exists('nx.json') || exists('pnpm-workspace.yaml')) return 'node-monorepo';
   if (exists('pyproject.toml') || exists('setup.py')) return 'python-app';
   if (exists('Cargo.toml')) return 'rust-app';
   if (exists('go.mod')) return 'go-app';
@@ -125,11 +151,26 @@ function detectStack(type) {
   const stack = { language: '?', framework: '?', runtime: '?', package_manager: '?' };
   if (exists('package.json')) {
     const pkg = readJSON('package.json') || {};
-    stack.language = 'JavaScript/TypeScript';
-    stack.framework = pkg.dependencies && pkg.dependencies['next'] ? `Next.js ${pkg.dependencies['next']}` :
-                     pkg.dependencies && pkg.dependencies['express'] ? `Express ${pkg.dependencies['express']}` :
-                     pkg.dependencies && pkg.dependencies['react'] ? `React ${pkg.dependencies['react']}` : '(none)';
-    stack.package_manager = exists('pnpm-lock.yaml') ? 'pnpm' : exists('yarn.lock') ? 'yarn' : exists('bun.lockb') ? 'bun' : 'npm';
+    stack.language = exists('tsconfig.json') ? 'TypeScript' : 'JavaScript';
+    const deps = pkg.dependencies || {};
+    const fw = [];
+    if (deps['next']) fw.push(`Next.js ${deps['next']}`);
+    if (deps['react'] && !deps['next']) fw.push(`React ${deps['react']}`);
+    if (deps['vue']) fw.push(`Vue ${deps['vue']}`);
+    if (deps['svelte']) fw.push(`Svelte ${deps['svelte']}`);
+    if (deps['@angular/core']) fw.push(`Angular ${deps['@angular/core']}`);
+    if (deps['express']) fw.push(`Express ${deps['express']}`);
+    if (deps['fastify']) fw.push(`Fastify ${deps['fastify']}`);
+    if (deps['koa']) fw.push(`Koa ${deps['koa']}`);
+    if (deps['hono']) fw.push(`Hono ${deps['hono']}`);
+    if (deps['@nestjs/core']) fw.push(`NestJS ${deps['@nestjs/core']}`);
+    if (deps['electron']) fw.push(`Electron ${deps['electron']}`);
+    stack.framework = fw.length ? fw.join(' + ') : '(none)';
+    stack.runtime = pkg.engines && pkg.engines.node ? `Node ${pkg.engines.node}` : 'Node';
+    stack.package_manager = exists('pnpm-lock.yaml') ? 'pnpm' :
+                           exists('yarn.lock') ? 'yarn' :
+                           exists('bun.lockb') ? 'bun' :
+                           exists('bun.lock') ? 'bun' : 'npm';
   } else if (exists('pubspec.yaml')) {
     const pub = readYAML('pubspec.yaml') || {};
     stack.language = 'Dart';
@@ -138,7 +179,9 @@ function detectStack(type) {
     stack.package_manager = 'pub';
   } else if (exists('pyproject.toml')) {
     stack.language = 'Python';
-    stack.package_manager = exists('poetry.lock') ? 'poetry' : exists('uv.lock') ? 'uv' : 'pip';
+    stack.package_manager = exists('poetry.lock') ? 'poetry' :
+                           exists('uv.lock') ? 'uv' :
+                           exists('Pipfile.lock') ? 'pipenv' : 'pip';
   } else if (exists('Cargo.toml')) {
     stack.language = 'Rust';
     stack.package_manager = 'cargo';
@@ -155,11 +198,150 @@ function detectStack(type) {
   return stack;
 }
 
+function detectTypeScriptStrict() {
+  if (!exists('tsconfig.json')) return null;
+  const txt = read('tsconfig.json');
+  const strictMatch = txt.match(/"strict":\s*true/);
+  if (strictMatch) return true;
+  // also check via extends or compilerOptions block
+  const blockMatch = txt.match(/"strict":\s*(true|false)/);
+  if (blockMatch) return blockMatch[1] === 'true';
+  return false;
+}
+
+function detectMonorepo(stack) {
+  if (exists('turbo.json')) return 'Turbo';
+  if (exists('nx.json')) return 'Nx';
+  if (exists('pnpm-workspace.yaml')) return 'pnpm workspaces';
+  if (exists('package.json')) {
+    const pkg = readJSON('package.json');
+    if (pkg && pkg.workspaces) {
+      if (Array.isArray(pkg.workspaces)) return 'npm workspaces';
+      if (pkg.workspaces.packages) return 'yarn workspaces';
+    }
+  }
+  return null;
+}
+
+function detectTestRunner() {
+  if (exists('vitest.config.ts') || exists('vitest.config.js')) return 'vitest';
+  if (exists('jest.config.js') || exists('jest.config.ts') || exists('jest.config.cjs')) return 'jest';
+  if (exists('playwright.config.ts') || exists('playwright.config.js')) return 'playwright';
+  if (exists('pytest.ini') || exists('conftest.py')) return 'pytest';
+  if (exists('phpunit.xml') || exists('phpunit.xml.dist')) return 'phpunit';
+  // check package.json scripts
+  if (exists('package.json')) {
+    const pkg = readJSON('package.json') || {};
+    const scripts = pkg.scripts || {};
+    if (scripts.test) {
+      if (scripts.test.includes('vitest')) return 'vitest';
+      if (scripts.test.includes('jest')) return 'jest';
+      if (scripts.test.includes('mocha')) return 'mocha';
+      if (scripts.test.includes('ava')) return 'ava';
+      return 'npm test (custom)';
+    }
+  }
+  return null;
+}
+
+function detectCoverage() {
+  if (exists('c8.config.json') || exists('.c8rc.json')) return 'c8';
+  if (exists('nyc.config.js') || exists('.nycrc')) return 'nyc';
+  if (exists('vitest.config.ts') || exists('vitest.config.js')) return 'vitest --coverage';
+  if (exists('coverage/')) return 'coverage/ dir present';
+  if (exists('codecov.yml') || exists('.codecov.yml')) return 'codecov';
+  return null;
+}
+
+function detectLinter() {
+  if (exists('eslint.config.js') || exists('eslint.config.mjs') || exists('eslint.config.cjs')) return 'eslint (flat config)';
+  if (exists('.eslintrc') || exists('.eslintrc.json') || exists('.eslintrc.js') || exists('.eslintrc.yml')) return 'eslint';
+  if (exists('biome.json') || exists('biome.jsonc')) return 'biome';
+  if (exists('ruff.toml') || exists('.ruff.toml')) return 'ruff';
+  if (exists('.pylintrc')) return 'pylint';
+  if (exists('.golangci.yml') || exists('.golangci.yaml')) return 'golangci-lint';
+  if (exists('clippy.toml')) return 'clippy';
+  return null;
+}
+
+function detectFormatter() {
+  if (exists('.prettierrc') || exists('.prettierrc.json') || exists('.prettierrc.js') ||
+      exists('.prettierrc.yml') || exists('prettier.config.js') || exists('prettier.config.cjs')) return 'prettier';
+  if (exists('biome.json') || exists('biome.jsonc')) return 'biome';
+  if (exists('black.toml') || exists('pyproject.toml')) {
+    const py = readYAML('pyproject.toml');
+    if (py && (py['black'] || (py.tool && py.tool.black))) return 'black';
+  }
+  if (exists('.rustfmt.toml')) return 'rustfmt';
+  if (exists('.gofmt')) return 'gofmt';
+  return null;
+}
+
+function detectCI() {
+  const cis = [];
+  if (exists('.github/workflows')) {
+    const wf = fs.readdirSync('.github/workflows').filter(f => f.endsWith('.yml') || f.endsWith('.yaml'));
+    if (wf.length) cis.push(`GitHub Actions (${wf.length})`);
+  }
+  if (exists('.gitlab-ci.yml')) cis.push('GitLab CI');
+  if (exists('.circleci/config.yml')) cis.push('CircleCI');
+  if (exists('.travis.yml')) cis.push('Travis CI');
+  if (exists('Jenkinsfile')) cis.push('Jenkins');
+  return cis.length ? cis.join(', ') : null;
+}
+
+function detectContainer() {
+  const containers = [];
+  if (exists('Dockerfile')) containers.push('Dockerfile');
+  if (exists('docker-compose.yml') || exists('docker-compose.yaml')) containers.push('docker-compose');
+  if (exists('Dockerfile.dev')) containers.push('Dockerfile.dev');
+  return containers.length ? containers.join(', ') : null;
+}
+
+function parseEnvVars() {
+  const files = ['.env.example', '.env.sample', '.env.template'];
+  for (const f of files) {
+    if (!exists(f)) continue;
+    const txt = read(f);
+    const vars = [];
+    for (const line of txt.split('\n')) {
+      const m = line.match(/^([A-Z][A-Z0-9_]+)\s*=/);
+      if (m) vars.push(m[1]);
+    }
+    return vars.length ? `${vars.length} (${vars.slice(0, 8).join(', ')}${vars.length > 8 ? '…' : ''})` : null;
+  }
+  return null;
+}
+
+function detectEntryPoints() {
+  const entries = [];
+  const candidates = [
+    'src/index.ts', 'src/index.js', 'src/main.ts', 'src/main.js',
+    'index.ts', 'index.js', 'main.ts', 'main.js',
+    'app.ts', 'app.js', 'server.ts', 'server.js',
+    'cmd/main.go', 'src/lib.rs', 'src/main.rs',
+    'lib/index.ts', 'lib/index.js',
+  ];
+  for (const c of candidates) {
+    if (exists(c)) entries.push(c);
+  }
+  // check package.json main/bin
+  if (exists('package.json')) {
+    const pkg = readJSON('package.json') || {};
+    if (pkg.main && !entries.includes(pkg.main)) entries.push(`${pkg.main} (main)`);
+    if (pkg.bin) {
+      if (typeof pkg.bin === 'string') entries.push(`${pkg.bin} (bin)`);
+      else Object.values(pkg.bin).forEach(b => { if (!entries.includes(b)) entries.push(`${b} (bin)`); });
+    }
+  }
+  return entries.length ? entries : null;
+}
+
 function detectConventions() {
   const conv = [];
   if (exists('.eslintrc') || exists('.eslintrc.json') || exists('eslint.config.js')) conv.push('eslint');
   if (exists('.prettierrc') || exists('prettier.config.js')) conv.push('prettier');
-  if (exists('tsconfig.json')) conv.push('TypeScript strict');
+  if (exists('tsconfig.json')) conv.push('TypeScript');
   if (exists('jest.config.js') || exists('jest.config.ts')) conv.push('jest');
   if (exists('vitest.config.ts') || exists('vitest.config.js')) conv.push('vitest');
   if (exists('pytest.ini') || exists('pyproject.toml')) {
@@ -171,7 +353,7 @@ function detectConventions() {
 }
 
 function listKeyDirs() {
-  const dirs = ['src', 'lib', 'app', 'pkg', 'cmd', 'internal', 'modules', 'components', 'pages', 'test', 'tests'];
+  const dirs = ['src', 'lib', 'app', 'pkg', 'cmd', 'internal', 'modules', 'components', 'pages', 'test', 'tests', 'docs'];
   return dirs.filter(d => exists(d));
 }
 
@@ -194,6 +376,16 @@ function generate() {
   const name = detectName();
   const desc = detectDescription();
   const stack = detectStack(type);
+  const tsStrict = detectTypeScriptStrict();
+  const monorepo = detectMonorepo(stack);
+  const test = detectTestRunner();
+  const coverage = detectCoverage();
+  const linter = detectLinter();
+  const formatter = detectFormatter();
+  const ci = detectCI();
+  const container = detectContainer();
+  const envVars = parseEnvVars();
+  const entryPoints = detectEntryPoints();
   const conv = detectConventions();
   const dirs = listKeyDirs();
   const license = detectLicense();
@@ -203,7 +395,7 @@ function generate() {
 
 > Auto-refreshed by refresh-project.js on ${date}.
 > Source of truth: actual project files (package.json, pubspec.yaml, etc.)
-> Edit \`Conventions\` / \`Non-Negotiables\` / \`Architecture Notes\` sections manually — they are preserved across refreshes.
+> Edit \`Non-Negotiables\` / \`Architecture Notes\` / \`Open Questions\` sections manually — they are preserved across refreshes.
 
 ## Identity
 - **Name**: ${name}
@@ -215,11 +407,23 @@ function generate() {
 - **Framework**: ${stack.framework}
 - **Runtime / Build**: ${stack.runtime || '?'}
 - **Package manager**: ${stack.package_manager}
-- **Database**: (not detected)
-- **Deployment**: (not detected)
+${tsStrict !== null ? `- **TypeScript strict**: ${tsStrict ? 'yes' : 'no (strict not enabled)'}` : ''}
+${monorepo ? `- **Monorepo**: ${monorepo}` : ''}
+
+## Tooling
+- **Test runner**: ${test || '(not detected)'}
+- **Coverage**: ${coverage || '(not detected)'}
+- **Linter**: ${linter || '(not detected)'}
+- **Formatter**: ${formatter || '(not detected)'}
+- **CI**: ${ci || '(not detected)'}
+- **Container**: ${container || '(not detected)'}
+- **Env vars**: ${envVars || '(not detected)'}
 
 ## Conventions
 ${conv}
+
+## Entry Points
+${entryPoints ? entryPoints.map(e => `- \`${e}\``).join('\n') : '- (no standard entry point detected)'}
 
 ## Directory Layout
 ${dirs.length ? dirs.map(d => `- \`${d}/\``).join('\n') : '(no standard layout detected)'}
@@ -253,8 +457,6 @@ function simpleDiff(oldText, newText) {
 }
 
 function preserveManualSections(oldContent, newContent) {
-  // Preserve "Non-Negotiables", "Architecture Notes", "Open Questions"
-  // sections from old content if they exist.
   if (!oldContent) return newContent;
   const sections = ['Non-Negotiables', 'Architecture Notes', 'Open Questions'];
   let result = newContent;
@@ -268,9 +470,38 @@ function preserveManualSections(oldContent, newContent) {
   return result;
 }
 
+function daysSince(dateStr) {
+  // parse "2026-07-14" format
+  const m = dateStr && dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  const then = new Date(`${m[1]}-${m[2]}-${m[3]}`);
+  const now = new Date();
+  return Math.floor((now - then) / (1000 * 60 * 60 * 24));
+}
+
 const newContentRaw = generate();
 const oldContent = read(PROJECT_MD);
 const newContent = preserveManualSections(oldContent, newContentRaw);
+
+// --status: show freshness + summary, no write
+if (STATUS_ONLY) {
+  if (!oldContent) {
+    console.log('STATUS: missing');
+    console.log('  docs/PROJECT.md does not exist. Run refresh-project.js to create it.');
+    process.exit(1);
+  }
+  const dateMatch = oldContent.match(/refresh-project\.js on (\d{4}-\d{2}-\d{2})/);
+  const age = dateMatch ? daysSince(dateMatch[1]) : null;
+  const fresh = oldContent === newContent;
+  if (fresh) {
+    console.log(`STATUS: fresh${age !== null ? ` (${age} day${age === 1 ? '' : 's'} old)` : ''}`);
+    process.exit(0);
+  } else {
+    console.log(`STATUS: stale${age !== null ? ` (${age} day${age === 1 ? '' : 's'} old)` : ''}`);
+    console.log('  Run refresh-project.js to update.');
+    process.exit(1);
+  }
+}
 
 if (CHECK_ONLY) {
   if (oldContent === newContent) {
@@ -283,7 +514,7 @@ if (CHECK_ONLY) {
 }
 
 if (DRY_RUN) {
-  console.log('--- DRY RUN: would write to .agents/PROJECT.md ---');
+  console.log('--- DRY RUN: would write to docs/PROJECT.md ---');
   console.log('');
   if (oldContent === newContent) {
     console.log('(no changes — already up to date)');
@@ -295,23 +526,35 @@ if (DRY_RUN) {
 }
 
 if (oldContent === newContent) {
-  console.log('PROJECT.md is already up to date. Nothing to do.');
+  if (!AUTO) {
+    console.log('PROJECT.md is already up to date. Nothing to do.');
+  } else {
+    console.log('[auto] PROJECT.md already up to date, skipping');
+  }
   process.exit(0);
 }
 
 if (oldContent) {
   fs.copyFileSync(PROJECT_MD, BACKUP_MD);
-  console.log(`Backup: ${path.relative(CWD, BACKUP_MD)}`);
+  if (!AUTO) console.log(`Backup: ${path.relative(CWD, BACKUP_MD)}`);
 }
 fs.writeFileSync(PROJECT_MD, newContent);
-console.log(`Updated: ${path.relative(CWD, PROJECT_MD)}`);
-console.log('');
-console.log('--- REPORT ---');
-const diff = simpleDiff(oldContent, newContent);
-const added = (diff.match(/^\+/gm) || []).length;
-const removed = (diff.match(/^-/gm) || []).length;
-console.log(`Lines added: ${added}`);
-console.log(`Lines removed: ${removed}`);
-console.log('');
-console.log('Sections regenerated: Identity, Stack, Conventions, Directory Layout, License');
-console.log('Sections preserved: Non-Negotiables, Architecture Notes, Open Questions (manual edits kept)');
+
+if (AUTO) {
+  console.log(`[auto] Updated: docs/PROJECT.md`);
+  const added = (newContent.match(/^/gm) || []).length;
+  const removed = oldContent ? (oldContent.match(/^/gm) || []).length : 0;
+  console.log(`[auto] Lines: ${oldContent ? removed : 0} -> ${added}`);
+} else {
+  console.log(`Updated: ${path.relative(CWD, PROJECT_MD)}`);
+  console.log('');
+  console.log('--- REPORT ---');
+  const diff = simpleDiff(oldContent, newContent);
+  const added = (diff.match(/^\+/gm) || []).length;
+  const removed = (diff.match(/^-/gm) || []).length;
+  console.log(`Lines added: ${added}`);
+  console.log(`Lines removed: ${removed}`);
+  console.log('');
+  console.log('Sections regenerated: Identity, Stack, Tooling, Conventions, Entry Points, Directory Layout, License');
+  console.log('Sections preserved: Non-Negotiables, Architecture Notes, Open Questions (manual edits kept)');
+}

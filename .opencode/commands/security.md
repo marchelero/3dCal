@@ -93,7 +93,7 @@ Analyze the specified code for security vulnerabilities following OWASP guidelin
 
 Despues de cerrar este security review, si hubo un PRD origen:
 
-1. Guardar el output como `.opencode/reports/{YYYY-MM-DD_HHMM}-{name}.report.md` con status `COMPLETADO`.
+1. Guardar el output como `docs/reports/{YYYY-MM-DD_HHMM}-{name}.report.md` con status `COMPLETADO`.
 2. Ofrecer: "¿Audito contra el PRD origen con `/audit-report {name}`? (s/n)".
 
 El auditor confirma que las fallas de seguridad CRITICAL/HIGH no invalidan criterios del PRD. Si el user acepta, invocar `/audit-report`. Si rechaza, respetar.

@@ -14,17 +14,17 @@ Run the following in order. Be silent for steps 1-3; only speak at step 4 with a
 ### Step 1 — Load project context
 
 ```
-test -f .agents/PROJECT.md && cat .agents/PROJECT.md || echo "NO_PROJECT"
+test -f docs/PROJECT.md && cat docs/PROJECT.md || echo "NO_PROJECT"
 ```
 
 If `NO_PROJECT`:
 - Note: project context not yet created
-- Suggest running `@prd-agent` first to generate `.agents/PROJECT.md`, OR continue without it
+- Suggest running `@prd-agent` first to generate `docs/PROJECT.md`, OR continue without it
 
 ### Step 2 — Find most recent session snapshot
 
 ```
-ls -t .agents/sessions/*.md 2>/dev/null | head -1
+ls -t docs/sessions/*.md 2>/dev/null | head -1
 ```
 
 Or on Windows PowerShell:
@@ -68,7 +68,7 @@ Recent commits:
 
 If no previous session, replace the "Last session" block with "No previous session recorded. Starting fresh."
 
-If no PROJECT.md, replace the "Project" line with "⚠️ No .agents/PROJECT.md — run @prd-agent to generate it."
+If no PROJECT.md, replace the "Project" line with "⚠️ No docs/PROJECT.md — run @prd-agent to generate it."
 
 ### Step 5 — Wait for user input
 
@@ -87,6 +87,6 @@ Do not start working. Wait for the user to confirm direction.
 ## Integration
 
 - `/session-end` — write the snapshot this command reads next time
-- `@prd-agent` — generate `.agents/PROJECT.md` if missing
+- `@prd-agent` — generate `docs/PROJECT.md` if missing
 - `dynamic-context-pruning` plugin — auto-prunes chat history mid-session
 - Sub-agents via `task` tool — keep heavy work out of the main context

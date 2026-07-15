@@ -54,7 +54,7 @@ Si **PASS** o **PASS-WITH-NITS**: continuar.
 
 ### Paso 5 — Report
 
-Generar `.opencode/reports/{YYYY-MM-DD_HHMM}-security-{name}.report.md` con:
+Generar `docs/reports/{YYYY-MM-DD_HHMM}-security-{name}.report.md` con:
 
 ```markdown
 # Security Review: {name} — Report de ejecucion
@@ -102,7 +102,7 @@ Resumen:
 - Issues encontrados: N (X CRITICAL, Y HIGH, Z MEDIUM, W LOW)
 - Issues fixeados: M
 - Tests de seguridad: K agregados
-- Report:  .opencode/reports/{name}.report.md
+- Report:  docs/reports/{name}.report.md
 - Auditoria: [PASS / PASS-WITH-NITS / FAIL]
 
 Siguiente paso:
@@ -127,7 +127,7 @@ Siguiente paso:
 
 ## State Persistence (REQUIRED)
 
-This flow writes to `.opencode/state/` so it can be resumed after interruption. See `.opencode/state/README.md` for the schema.
+This flow writes to `docs/state/` so it can be resumed after interruption. See `docs/state/README.md` for the schema.
 
 ``bash
 # At flow start
@@ -144,4 +144,4 @@ node .opencode/bin/state.js complete ""
 node .opencode/bin/state.js fail "" "<error message>"
 ``
 
-The flow is resumable: if interrupted, `/session-start` detects active states in `.opencode/state/` and offers to resume from `currentPhase`.
+The flow is resumable: if interrupted, `/session-start` detects active states in `docs/state/` and offers to resume from `currentPhase`.

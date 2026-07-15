@@ -163,6 +163,52 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _materialCtrls.clear();
   }
 
+  /// Muestra dialog para guardar la cotizacion actual.
+  ///
+  /// - Si el form no es valido, muestra snackbar y no abre dialog.
+  /// - Si el user guarda, delega a [CalculatorNotifier.save] y muestra
+  ///   snackbar de exito/error.
+  Future<void> _showSaveDialog() async {
+    final state = ref.read(calculatorNotifierProvider);
+    if (!state.isValid || state.output == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Completa el form antes de guardar.'),
+        ),
+      );
+      return;
+    }
+    final result = await showDialog<_SaveResult>(
+      context: context,
+      builder: (_) => const _SaveDialog(),
+    );
+    if (result == null || !mounted) return;
+    try {
+      final id = await ref.read(calculatorNotifierProvider.notifier).save(
+            pieceName: result.pieceName,
+            clientName: result.clientName,
+          );
+      if (!mounted) return;
+      if (id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo guardar.')),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cotizacion #$id guardada.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calculatorNotifierProvider);
@@ -172,6 +218,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       appBar: AppBar(
         title: const Text('Cotizacion express'),
         actions: [
+          IconButton(
+            tooltip: 'Guardar cotizacion',
+            icon: const Icon(Icons.save),
+            onPressed: _showSaveDialog,
+          ),
           _PrinterSelector(
             onSelected: (printer) {
               ref.read(activePrinterIdProvider.notifier).state = printer.id;
@@ -734,6 +785,88 @@ class _ModeSelector extends StatelessWidget {
       selected: {mode},
       onSelectionChanged: (s) => onChanged(s.first),
       showSelectedIcon: false,
+    );
+  }
+}
+
+/// Resultado del dialog de guardar.
+class _SaveResult {
+  const _SaveResult({this.pieceName, this.clientName});
+  final String? pieceName;
+  final String? clientName;
+}
+
+/// Dialog modal para capturar nombre de pieza / cliente antes de guardar.
+///
+/// Ambos campos son opcionales. Si el user los deja vacios, se guardan
+/// como `null` (proforma rapida).
+class _SaveDialog extends StatefulWidget {
+  const _SaveDialog();
+
+  @override
+  State<_SaveDialog> createState() => _SaveDialogState();
+}
+
+class _SaveDialogState extends State<_SaveDialog> {
+  final _pieceCtrl = TextEditingController();
+  final _clientCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _pieceCtrl.dispose();
+    _clientCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(
+      _SaveResult(
+        pieceName: _pieceCtrl.text,
+        clientName: _clientCtrl.text,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Guardar cotizacion'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _pieceCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Nombre de la pieza',
+              helperText: 'Opcional',
+              border: OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.next,
+            autofocus: true,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _clientCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Cliente',
+              helperText: 'Opcional',
+              border: OutlineInputBorder(),
+            ),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Guardar'),
+        ),
+      ],
     );
   }
 }

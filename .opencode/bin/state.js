@@ -2,7 +2,7 @@
 /**
  * state.js - flow state persistence for resumable commands
  *
- * Writes/updates .opencode/state/{command}-{timestamp}.json so long-running
+ * Writes/updates docs/state/{command}-{timestamp}.json so long-running
  * commands (orchestrate, plan, flow-*) can be resumed after interruption.
  *
  * Usage:
@@ -19,7 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const STATE_DIR = path.join(process.cwd(), '.opencode', 'state');
+const STATE_DIR = path.join(process.cwd(), 'docs', 'state');
 const ARCHIVE_DIR = path.join(STATE_DIR, '_archive');
 
 function ensureDirs() {
@@ -37,7 +37,7 @@ function writeState(file, state) {
   fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf8');
 }
 
-function init(command, userRequest, prdPath) {
+function init(command, userRequest, prdPath, dryRun) {
   ensureDirs();
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const file = path.join(STATE_DIR, `${command}-${stamp}.json`);
@@ -54,16 +54,25 @@ function init(command, userRequest, prdPath) {
     },
     error: null,
   };
+  if (dryRun) {
+    process.stdout.write(`[dry-run] would create: ${file}\n`);
+    process.stdout.write(`[dry-run] initial state:\n`);
+    process.stdout.write(JSON.stringify(state, null, 2) + '\n');
+    return;
+  }
   writeState(file, state);
   process.stdout.write(file + '\n');
 }
 
-function update(file, phase, contextJson) {
-  if (!fs.existsSync(file)) {
+function update(file, phase, contextJson, dryRun) {
+  const resolved = resolveStatePath(file);
+  if (!resolved) {
     process.stderr.write(`state file not found: ${file}\n`);
+    process.stderr.write(`hint: pass the full path from 'state.js init' or just the basename\n`);
     process.exit(1);
   }
-  const state = readState(file);
+  const state = readState(resolved);
+  const before = JSON.parse(JSON.stringify(state));
   state.currentPhase = parseInt(phase, 10);
   if (!state.completed.includes(state.currentPhase)) {
     state.completed.push(state.currentPhase);
@@ -78,7 +87,13 @@ function update(file, phase, contextJson) {
       process.exit(1);
     }
   }
-  writeState(file, state);
+  if (dryRun) {
+    process.stdout.write(`[dry-run] would update: ${resolved}\n`);
+    process.stdout.write(`[dry-run] before: phase=${before.currentPhase} completed=[${before.completed.join(',')}]\n`);
+    process.stdout.write(`[dry-run] after:  phase=${state.currentPhase} completed=[${state.completed.join(',')}]\n`);
+    return;
+  }
+  writeState(resolved, state);
   process.stdout.write(`updated: phase=${state.currentPhase} completed=[${state.completed.join(',')}]\n`);
 }
 
@@ -99,23 +114,25 @@ function parseContext(input) {
 }
 
 function complete(file) {
-  if (!fs.existsSync(file)) {
+  const resolved = resolveStatePath(file);
+  if (!resolved) {
     process.stderr.write(`state file not found: ${file}\n`);
     process.exit(1);
   }
-  fs.unlinkSync(file);
-  process.stdout.write(`completed: ${file} removed\n`);
+  fs.unlinkSync(resolved);
+  process.stdout.write(`completed: ${resolved} removed\n`);
 }
 
 function fail(file, errorMessage) {
-  if (!fs.existsSync(file)) {
+  const resolved = resolveStatePath(file);
+  if (!resolved) {
     process.stderr.write(`state file not found: ${file}\n`);
     process.exit(1);
   }
-  const state = readState(file);
+  const state = readState(resolved);
   state.error = errorMessage;
   state.failedAt = nowIso();
-  writeState(file, state);
+  writeState(resolved, state);
   process.stderr.write(`failed: ${errorMessage}\n`);
   process.exit(1);
 }
@@ -135,68 +152,104 @@ function list() {
 }
 
 function archive(file) {
-  if (!fs.existsSync(file)) {
+  const resolved = resolveStatePath(file);
+  if (!resolved) {
     process.stderr.write(`state file not found: ${file}\n`);
     process.exit(1);
   }
   ensureDirs();
-  const base = path.basename(file);
+  const base = path.basename(resolved);
   const dest = path.join(ARCHIVE_DIR, base);
-  fs.renameSync(file, dest);
+  fs.renameSync(resolved, dest);
   process.stdout.write(`archived: ${dest}\n`);
 }
 
-const [, , sub, ...rest] = process.argv;
+// Resolve a file argument: try as-is first, then as basename in STATE_DIR.
+// Lets users pass either a full path (from `init` output) or just the basename
+// (from `list` output). Returns null if neither resolves.
+function resolveStatePath(file) {
+  if (!file) return null;
+  if (fs.existsSync(file)) return file;
+  const guess = path.join(STATE_DIR, path.basename(file));
+  if (fs.existsSync(guess)) return guess;
+  return null;
+}
+
+// Parse argv: separate flags (--dry-run, --help, -h) from positionals (sub + args).
+// Flags can appear anywhere; positionals are order-sensitive after the subcommand.
+const rawArgv = process.argv.slice(2);
+const flags = new Set();
+const positional = [];
+for (const a of rawArgv) {
+  if (a.startsWith('--') || a === '-h') flags.add(a);
+  else positional.push(a);
+}
+
+// Standalone --help / -h: show help and exit before sub dispatch.
+if (flags.has('--help') || flags.has('-h')) {
+  positional.unshift('help');
+}
+
+const dryRun = flags.has('--dry-run');
+const sub = positional[0];
+const args = positional.slice(1);
 
 function showHelp() {
   process.stdout.write(`state.js - flow state persistence
 
 Usage:
-  state.js init <command> <user-request> [<prd-path>]
-  state.js update <state-file> <phase> <context>
+  state.js init <command> <user-request> [<prd-path>] [--dry-run]
+  state.js update <state-file> <phase> <context> [--dry-run]
   state.js complete <state-file>
   state.js fail <state-file> <error-message>
   state.js list
   state.js archive <state-file>
   state.js --help
 
+Flags:
+  --dry-run    for init/update: show what would change, do not write
+
 Context can be:
   - inline JSON: '{"agentsInvoked":["x"]}'
   - @filepath:   @/tmp/context.json
   - quoted JSON: state.js will strip surrounding shell quotes
 
+State file resolution:
+  - Full path (from 'init' output)  -- preferred
+  - Basename (from 'list' output)  -- resolved against STATE_DIR
+
 Examples:
-  state.js init orchestrate "build feature" .opencode/prds/foo.prd.md
+  state.js init orchestrate "build feature" docs/prds/foo.prd.md
+  state.js init plan "design X" --dry-run
   state.js update $FILE 1 '{"agentsInvoked":["prd-agent"]}'
+  state.js update $(ls docs/state/ | head -1) 2 @/tmp/c.json --dry-run
   echo '{"agentsInvoked":["x"]}' > /tmp/c.json
   state.js update $FILE 1 @/tmp/c.json
 `);
 }
 
 switch (sub) {
-  case '--help':
-  case '-h':
   case 'help':
     showHelp();
     process.exit(0);
     break;
   case 'init':
-    init(rest[0], rest[1], rest[2]);
+    init(args[0], args[1], args[2], dryRun);
     break;
   case 'update':
-    update(rest[0], rest[1], rest.slice(2).join(' '));
+    update(args[0], args[1], args.slice(2).join(' '), dryRun);
     break;
   case 'complete':
-    complete(rest[0]);
+    complete(args[0]);
     break;
   case 'fail':
-    fail(rest[0], rest.slice(1).join(' '));
+    fail(args[0], args.slice(1).join(' '));
     break;
   case 'list':
     list();
     break;
   case 'archive':
-    archive(rest[0]);
+    archive(args[0]);
     break;
   default:
     process.stderr.write('Usage: state.js {init|update|complete|fail|list|archive|--help} ...\n');

@@ -1,5 +1,5 @@
 ---
-description: "End a session by writing a snapshot to .agents/sessions/. Captures status, decisions, files touched, open questions, next steps, and commits. Use when stopping work, switching projects, or before a context reset."
+description: "End a session by writing a snapshot to docs/sessions/. Captures status, decisions, files touched, open questions, next steps, and commits. Use when stopping work, switching projects, or before a context reset."
 agent: build
 ---
 
@@ -27,7 +27,7 @@ Wait for confirmation. If the user says "skip" or "no", exit without writing.
 ```
 DATE=$(date +%Y-%m-%d)  # or Get-Date -Format "yyyy-MM-dd" on Windows
 SLUG=$(echo "{confirmed title}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | cut -c1-50)
-FILE=".agents/sessions/${DATE}-${SLUG}.md"
+FILE="docs/sessions/${DATE}-${SLUG}.md"
 ```
 
 If that file already exists, append `-2`, `-3`, etc.
@@ -47,7 +47,7 @@ If the conversation is too short or vague to fill any section, write `TBD — no
 
 ### Step 4 — Write the snapshot
 
-Create `.agents/sessions/{DATE}-{SLUG}.md` with this template:
+Create `docs/sessions/{DATE}-{SLUG}.md` with this template:
 
 ```markdown
 # Session {DATE} — {title}
@@ -98,15 +98,15 @@ Create `.agents/sessions/{DATE}-{SLUG}.md` with this template:
 
 ### Step 5 — Update LATEST pointer
 
-Copy the new snapshot to `.agents/sessions/LATEST.md` (overwrite if exists):
+Copy the new snapshot to `docs/sessions/LATEST.md` (overwrite if exists):
 
 ```bash
-cp "{FILE}" ".agents/sessions/LATEST.md"
+cp "{FILE}" "docs/sessions/LATEST.md"
 ```
 
 This makes the next `/session-start` find it without scanning by date.
 
-### Step 6 — Refresh `.agents/PROJECT.md` (auto-detect staleness)
+### Step 6 — Refresh `docs/PROJECT.md` (auto-detect staleness)
 
 The project may have grown (new modules, new dependencies, new files). Check if `PROJECT.md` is stale and refresh it.
 
@@ -174,15 +174,15 @@ node .opencode/bin/instinct.js add \
 ### Step 8 — Report
 
 ```
-Snapshot saved: .agents/sessions/{DATE}-{SLUG}.md
-Pointer updated: .agents/sessions/LATEST.md
+Snapshot saved: docs/sessions/{DATE}-{SLUG}.md
+Pointer updated: docs/sessions/LATEST.md
 PROJECT.md:    {refreshed | up to date | skipped}
 Instincts:     {N added | none | skipped}
 ```
 
 ```
-Snapshot saved: .agents/sessions/{DATE}-{SLUG}.md
-Pointer updated: .agents/sessions/LATEST.md
+Snapshot saved: docs/sessions/{DATE}-{SLUG}.md
+Pointer updated: docs/sessions/LATEST.md
 PROJECT.md:    {refreshed | up to date | skipped}
 
 Status: {DONE | PARTIAL | BLOCKED}
@@ -193,8 +193,8 @@ Maniana / cuando vuelvas:
 ```
 
 ```
-Snapshot saved: .agents/sessions/{DATE}-{SLUG}.md
-Pointer updated: .agents/sessions/LATEST.md
+Snapshot saved: docs/sessions/{DATE}-{SLUG}.md
+Pointer updated: docs/sessions/LATEST.md
 PROJECT.md:    {refreshed | up to date | skipped}
 
 Status: {DONE | PARTIAL | BLOCKED}

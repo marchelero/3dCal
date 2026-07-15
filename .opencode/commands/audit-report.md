@@ -10,14 +10,14 @@ Auditar el report: $ARGUMENTS
 ## Tu Task
 
 1. Si `$ARGUMENTS == "index"` o `$ARGUMENTS == "--index"`:
-   - Generar `.opencode/reports/INDEX.md` con tabla de todos los reports.
+   - Generar `docs/reports/INDEX.md` con tabla de todos los reports.
    - NO invocar auditor. Solo listar.
 2. Si `$ARGUMENTS` vacio:
    - Regenerar INDEX.md (silent).
-   - Listar `.opencode/reports/*.md` con su mtime y status.
+   - Listar `docs/reports/*.md` con su mtime y status.
    - Preguntar al usuario: "Cual report audito?" (mostrar lista).
 3. Si `$ARGUMENTS` es un nombre o path:
-   - Resolver a `.opencode/reports/{name}.report.md`.
+   - Resolver a `docs/reports/{name}.report.md`.
    - Invocar `report-auditor` agent con ese path.
 4. Si `$ARGUMENTS == "quick {name}"`:
    - Modo rapido — solo veredicto + lista de FAILs.
@@ -61,10 +61,10 @@ El INDEX se regenera en cada invocacion del command (silencioso si el user no lo
 
 El agent `report-auditor` genera la seccion `## Auditoria` y pregunta si la inyecta en el report. Respetar la respuesta del usuario.
 
-Si el usuario aprueba, la seccion se persiste en `.opencode/reports/{name}.report.md` (no en archivo separado — es una capa sobre el report).
+Si el usuario aprueba, la seccion se persiste en `docs/reports/{name}.report.md` (no en archivo separado — es una capa sobre el report).
 
 Si el usuario quiere la auditoria en archivo separado, usar:
-`/audit-report {name} --separate` → escribe `.opencode/audits/{YYYY-MM-DD_HHMM}-{name}.audit.md`.
+`/audit-report {name} --separate` → escribe `docs/audits/{YYYY-MM-DD_HHMM}-{name}.audit.md`.
 
 ## Cuándo correr
 

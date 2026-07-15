@@ -44,7 +44,7 @@ Si **PASS** o **PASS-WITH-NITS**: continuar.
 
 El `/verify` ya auto-genera el report cuando pasa. Confirmar con el user:
 
-> "Report en `.opencode/reports/{name}.report.md`. Continuo a auditoria? (s/n)"
+> "Report en `docs/reports/{name}.report.md`. Continuo a auditoria? (s/n)"
 
 ### Paso 5 — Audit
 
@@ -59,8 +59,8 @@ Si es **PASS** o **PASS-WITH-NITS**: reportar exito.
 Bug fix completado.
 
 Resumen:
-- Quick-PRD: .opencode/prds/{name}.prd.md
-- Report:    .opencode/reports/{name}.report.md
+- Quick-PRD: docs/prds/{name}.prd.md
+- Report:    docs/reports/{name}.report.md
 - Auditoria: [PASS / PASS-WITH-NITS / FAIL]
 
 Criterios: X/Y pass
@@ -86,7 +86,7 @@ Siguiente paso: commit (espera instruccion explicita del user)
 
 ## State Persistence (REQUIRED)
 
-This flow writes to `.opencode/state/` so it can be resumed after interruption. See `.opencode/state/README.md` for the schema.
+This flow writes to `docs/state/` so it can be resumed after interruption. See `docs/state/README.md` for the schema.
 
 ``bash
 # At flow start
@@ -103,4 +103,4 @@ node .opencode/bin/state.js complete ""
 node .opencode/bin/state.js fail "" "<error message>"
 ``
 
-The flow is resumable: if interrupted, `/session-start` detects active states in `.opencode/state/` and offers to resume from `currentPhase`.
+The flow is resumable: if interrupted, `/session-start` detects active states in `docs/state/` and offers to resume from `currentPhase`.

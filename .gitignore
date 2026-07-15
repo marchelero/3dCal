@@ -54,3 +54,6 @@ coverage/
 
 # IDEs
 .vscode/
+.dart_tool
+.agents/
+.opencode/

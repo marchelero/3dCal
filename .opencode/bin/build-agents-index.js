@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * build-agents-index.js - regenerate .opencode/AGENTS_INDEX.md
+ * build-agents-index.js - regenerate docs/AGENTS_INDEX.md
  *
  * Reads all agent .md files in .opencode/agents/, extracts the
  * description and mode from frontmatter, categorizes by filename
@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 const AGENTS_DIR = path.join(__dirname, '..', 'agents');
-const OUT_MD = path.join(__dirname, '..', 'AGENTS_INDEX.md');
+const OUT_MD = path.join(__dirname, '..', '..', 'docs', 'AGENTS_INDEX.md');
 
 const CATEGORIES = [
   { name: 'Build / Plan',       match: /^(build|prd-agent|planner|code-architect|code-explorer|architect|migration-planner)\.md$/ },
@@ -114,15 +114,15 @@ function renderMarkdown(agents) {
   lines.push('');
 
   // Auto-count skills and commands at index time
-  const skillsDir = path.join(__dirname, '..', 'skills');
+  const skillsDir = path.join(__dirname, '..', '..', '.agents', 'skills');
   const cmdsDir = path.join(__dirname, '..', 'commands');
   const skillCount = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).filter(f => {
     try { return fs.statSync(path.join(skillsDir, f)).isDirectory(); } catch { return false; }
   }).length : 0;
   const cmdCount = fs.existsSync(cmdsDir) ? fs.readdirSync(cmdsDir).filter(f => f.endsWith('.md')).length : 0;
 
-  lines.push(`- [Skills index](../skills/) — ${skillCount} starter-pack skills (api-design, coding-standards, frontend-patterns, backend-patterns, error-handling, git-workflow, intent-driven-development, mcp-server-patterns, security-review, task-decomposition, tdd-workflow, verification-loop)`);
-  lines.push(`- [Commands index](../commands/) — ${cmdCount} starter-pack commands`);
+  lines.push(`- [Skills index](../.agents/skills/) — ${skillCount} starter-pack skills (api-design, coding-standards, frontend-patterns, backend-patterns, error-handling, git-workflow, intent-driven-development, mcp-server-patterns, security-review, task-decomposition, tdd-workflow, verification-loop)`);
+  lines.push(`- [Commands index](../.opencode/commands/) — ${cmdCount} starter-pack commands`);
   lines.push('- `/list-agents` — interactive catalog with filters');
   lines.push('');
 

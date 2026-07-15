@@ -9,7 +9,6 @@
   "dependencies": {
     "@opencode-ai/plugin": "1.17.11",
     "@tarquinen/opencode-dcp": "*",
-    "@zenobius/opencode-skillful": "*",
     "opencode-pty": "*",
     "opencode-vibeguard": "*"
   },

@@ -6,6 +6,30 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+### Sprint 5 — Cotizaciones historicas (2026-07-14)
+
+#### Added
+- `lib/features/calculation/presentation/notifiers/calculations_notifier.dart` — `AsyncNotifier<List<Calculation>>` con `build/refresh/toggleSold/delete`. Sigue el mismo patron que filaments/printers.
+- `lib/features/calculation/presentation/pages/calculations_list_page.dart` — historial con empty state, pull-to-refresh, popup menu (toggle sold / eliminar), tap → detalle. Estrella verde si `isSold`.
+- `lib/features/calculation/presentation/pages/calculation_detail_page.dart` — vista readonly con metadata, materiales (con snapshot financiero por fila), desglose (material, electrico, base, profit, total), FAB "Reusar" + boton "Marcar vendida" + action delete en AppBar.
+- `lib/features/calculation/presentation/pages/prefill_cotizacion.dart` — wrapper de `CalculatorPage` que pre-rellena el form desde un `Calculation` guardado via `CalculatorNotifier.loadFromCalculation` (post-frame callback).
+- `lib/features/calculation/domain/dashboard_stats.dart` — `DashboardStats` data class (totalQuoted, totalSold, countAll, countSold) + `dashboardStatsProvider` (FutureProvider.autoDispose que se invalida al cambiar `calculationsNotifierProvider`).
+- `lib/features/calculation/presentation/state/calculator_notifier.dart` — `save({pieceName, clientName})` que mapea `CalculatorState` → `CalculationDraft` y delega a `repo.create()`. Retorna `int?` (null si form invalido). Snapshots: kwhRate, profitBase, watts, discount del state al momento de guardar. Snapshots de filamentos (precio/gramos) se guardan en `CalculationMaterials`. `loadFromCalculation(Calculation)` reconstruye el state desde una cotizacion guardada.
+- `lib/features/calculation/presentation/pages/calculator_page.dart` — AppBar action "Guardar" (save icon) que abre dialog con 2 TextFields (pieceName, clientName, ambos opcionales). Al confirmar: `notifier.save()` + SnackBar de exito/error. Si form invalido: SnackBar hint y no abre dialog.
+- `lib/features/calculation/presentation/pages/home_page.dart` — `ConsumerWidget`. Agrega card "Resumen" con stats agregadas (# cotizadas/vendidas + totales BOB) + boton "Historial" (OutlinedButton) que navega a `CalculationsListPage`.
+- `test/unit/calculator_notifier_test.dart` — 3 tests para `save()`: form invalido retorna null, form valido inserta + retorna id, pieceName vacio → null.
+
+#### Notes
+- **Mode preservation en reusar**: 1 material guardado → modo `express` al reusar; 2+ → `advanced`. Asi el form reusado respeta la estructura original.
+- **Pruning de la lista**: al "Marcar vendida" / "Eliminar", el notifier hace `_reload()` explicito (no `invalidateSelf`) para tener control de error handling y emitir loading state transitorio.
+- **DB snapshots vs FK**: las cotizaciones guardan TODOS los valores como snapshot (`printerNameSnapshot`, `printerWattsSnapshot`, `pricePerBobbinSnapshot`, `gramsPerBobbinSnapshot`). Borrar un filamento del catalogo NO afecta cotizaciones historicas.
+- **Dashboard autoDispose**: el provider se re-corre cuando `calculationsNotifierProvider` emite nuevo state (despues de save/delete/toggle sold). AutoDispose libera memoria al salir de Home.
+
+#### Verified
+- `flutter test` — 103/103 passed (3 nuevos en calculator_notifier_test.dart para save).
+- `flutter analyze` — 0 issues.
+- Smoke manual: home muestra dashboard card, tap "Nueva cotizacion" navega al calculator, save flow abre dialog y guarda, aparece en historial como #1, tap → detalle con FAB Reusar, "Marcar vendida" cambia a check verde, eliminar con confirm dialog.
+
 ### Sprint 4 — Catalogo UI + Calculator wiring + Multi-material (2026-07-14)
 
 #### Added

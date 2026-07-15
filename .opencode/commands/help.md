@@ -41,7 +41,7 @@ Pick a starting point:
   /session-end             # snapshot this session before closing
   /help <section>          # this help; pass: agents, skills, commands, conventions, flows
 
-New here? Read `.opencode/docs/START-HERE.md` (5-minute orientation).
+New here? Read `.opencode/manual/START-HERE.md` (5-minute orientation).
 
 Stuck? Run `node .opencode/bin/validate-frontmatter.js` or `/list-agents` to verify discovery.
 ```
@@ -64,7 +64,7 @@ Tambien podes correr:
   /help <section>      # agents, skills, commands, conventions, flows
   /help <pregunta>     # ruta libre contra el catalogo
   /list-agents [kwd]   # ver 69 agentes
-  /list-skills [kwd]   # ver 14 skills
+  /list-skills [kwd]   # ver 17 skills
   /pack-doctor         # health check del pack
 ```
 
@@ -76,7 +76,7 @@ Wait for user response, then:
 
 ### Step 3 — Sections (only when `$ARGUMENTS` matches)
 
-**`agents`**: list 5 most-invoked agents with one-line each, plus the path to the full catalog (`.opencode/AGENTS_INDEX.md`).
+**`agents`**: list 5 most-invoked agents with one-line each, plus the path to the full catalog (`docs/AGENTS_INDEX.md`).
 
 ```
 Most-invoked agents:
@@ -86,7 +86,7 @@ Most-invoked agents:
   security-reviewer   — auth, input, secrets, payments
   tdd-guide           — enforce test-first on new code
 
-Full catalog: /list-agents  or  .opencode/AGENTS_INDEX.md
+Full catalog: /list-agents  or  docs/AGENTS_INDEX.md
 ```
 
 **`skills`**: list 5 most-loaded skills with one-line each, plus the path to the full catalog.
@@ -99,7 +99,7 @@ Most-loaded skills:
   security-review      — OWASP Top 10, secrets, injection
   task-decomposition   — turn a PRD into a DAG
 
-Full catalog: /list-skills  or  .opencode/skills/INDEX.md
+Full catalog: /list-skills  or  .agents/skills/INDEX.md
 ```
 
 **`commands`**: list 10 most-useful commands grouped by flow.
@@ -142,7 +142,7 @@ Enforced conventions (see .opencode/AGENTS.md for full list):
 2. Caveman mode  responses are compact by default (~75% fewer tokens)
                  override with "stop caveman" or "normal mode"
 
-3. Session memory  /session-end writes a snapshot to .agents/sessions/
+3. Session memory  /session-end writes a snapshot to docs/sessions/
                  run before closing a session with important context
 
 4. No destructive actions without consent
@@ -154,10 +154,10 @@ Enforced conventions (see .opencode/AGENTS.md for full list):
 
 ```text
 Flow 1: Idea → Shipped
-  /prd "<idea>"           →  .opencode/prds/{ts}-{slug}.prd.md
+  /prd "<idea>"           →  docs/prds/{ts}-{slug}.prd.md
   /plan <prd-path>        →  phased plan with risks
   /tdd "<task>"           →  code + tests (80%+ coverage)
-  /verify                 →  .opencode/reports/{ts}-{slug}.report.md
+  /verify                 →  docs/reports/{ts}-{slug}.report.md
   /audit-report <slug>    →  PASS / PASS-WITH-NITS / FAIL verdict
 
 Flow 2: Code → Reviewed → Merged
@@ -201,7 +201,7 @@ For routing tables (intent→command, domain→agent, topic→skill), see `/rout
 - This command is read-only. No side effects.
 - If `START-HERE.md` exists, link to it in section 2.
 - Keep this command terse. If the user is reading `/help`, they want a quick orientation, not a wall of text.
-- For deep dives, point to `.opencode/docs/START-HERE.md` and `.opencode/AGENTS_INDEX.md`.
+- For deep dives, point to `.opencode/manual/START-HERE.md` and `docs/AGENTS_INDEX.md`.
 
 ## When to Use
 

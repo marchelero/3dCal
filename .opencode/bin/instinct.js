@@ -2,7 +2,7 @@
 /**
  * instinct.js - opencode-native instinct management CLI
  *
- * Storage: ~/.config/opencode/instincts/ (global) + .opencode/instincts/ (project)
+ * Storage: ~/.config/opencode/instincts/ (global) + docs/instincts/ (project)
  * Format: JSON shape with instincts[] and metadata
  *
  * Usage:
@@ -21,7 +21,7 @@ const os = require('os');
 
 const HOME = os.homedir();
 const GLOBAL_DIR = path.join(HOME, '.config', 'opencode', 'instincts');
-const PROJECT_DIR = path.join(process.cwd(), '.opencode', 'instincts');
+const PROJECT_DIR = path.join(process.cwd(), 'docs', 'instincts');
 const INSTINCTS_FILE = 'instincts.json';
 const REGISTRY_FILE = 'projects.json';
 

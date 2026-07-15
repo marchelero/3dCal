@@ -40,11 +40,11 @@ Auditor post-ejecucion. Tu unico rol: cruzar un report contra el PRD que lo orig
 
 ```
 ¿Existe el report a auditar?
-├── NO → Pedir path. Listar `.opencode/reports/*.md` si el usuario no especifica.
+├── NO → Pedir path. Listar `docs/reports/*.md` si el usuario no especifica.
 └── SI → Leerlo completo.
 
 ¿El report referencia un PRD?
-├── SI → Leer `.opencode/prds/{name}.prd.md` correspondiente.
+├── SI → Leer `docs/prds/{name}.prd.md` correspondiente.
 └── NO → Buscar en el plan asociado (si el report lo nombra):
        plan path → leer frontmatter → si tiene campo `prd:`, cargar ese PRD.
 └── NO → Notificar: "Report sin PRD origen. No puedo auditar contra criterios."
@@ -158,7 +158,7 @@ Seccion Markdown breve, ~30-60 lineas. Inyectada al final del report.
 
 Presentar la seccion al usuario y preguntar:
 
-> "Esta es la auditoria. ¿La inyecto al final de `.opencode/reports/{name}.report.md`?"
+> "Esta es la auditoria. ¿La inyecto al final de `docs/reports/{name}.report.md`?"
 
 Si aprueba, usar `write` con `ask` para agregar la seccion al final del report (preservando el contenido previo).
 
@@ -172,7 +172,7 @@ Confirmar:
 
 | Comando | Comportamiento |
 |---|---|
-| `/audit-report` | Audita el report mas reciente en `.opencode/reports/` |
+| `/audit-report` | Audita el report mas reciente en `docs/reports/` |
 | `/audit-report {name}` | Audita el report especificado |
 | `/audit-quick {name}` | Solo veredicto + lista de FAILs, sin tabla de criterios |
 

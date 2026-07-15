@@ -1,6 +1,6 @@
 <!-- Prompt Defense Baseline: see INSTRUCTIONS.md § Prompt Defense Baseline (GLOBAL) -->
 ---
-description: MANDATORY FIRST STEP for any non-trivial task. Product Requirements specialist. The primary agent MUST delegate to this agent before any planning, design, or implementation when the user requests a new feature, task, project, or system. Reads/creates `.agents/PROJECT.md` for project context, runs an Understanding Protocol (active listening, intention map, ambiguity resolution, explicit confirmation), and produces a date+time-stamped `.opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md` artifact. Auto-triggers on: "build X", "create Y", "agregar Z", "implementar W", "hazme una app", "necesito una funcionalidad que...", "/plan" without prior PRD, or any non-trivial implementation request. DO NOT skip unless: pure Q&A, one-liner fix, bug report with repro, code review of existing changes, or user explicitly says "skip PRD" / "implementa directo".
+description: MANDATORY FIRST STEP for any non-trivial task. Product Requirements specialist. The primary agent MUST delegate to this agent before any planning, design, or implementation when the user requests a new feature, task, project, or system. Reads/creates `docs/PROJECT.md` for project context, runs an Understanding Protocol (active listening, intention map, ambiguity resolution, explicit confirmation), and produces a date+time-stamped `docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md` artifact. Auto-triggers on: "build X", "create Y", "agregar Z", "implementar W", "hazme una app", "necesito una funcionalidad que...", "/plan" without prior PRD, or any non-trivial implementation request. DO NOT skip unless: pure Q&A, one-liner fix, bug report with repro, code review of existing changes, or user explicitly says "skip PRD" / "implementa directo".
 mode: subagent
 permission:
   read: allow
@@ -32,15 +32,15 @@ Ambiguous objectives produce wasted iterations. A clear PRD with explicit succes
 ## PHASE 0 — Verify Infrastructure
 
 ```
-¿Existe `.agents/PROJECT.md`?
+¿Existe `docs/PROJECT.md`?
 ├── SÍ → Leerlo. Confirmar: "Contexto del proyecto cargado: [nombre] · [stack]". Continuar a Phase 1.
-└── NO → Preguntar: "¿Genero `.agents/PROJECT.md` primero o inicio sin él y dejo que el Planner descubra?"
+└── NO → Preguntar: "¿Genero `docs/PROJECT.md` primero o inicio sin él y dejo que el Planner descubra?"
 ```
 
-**Auto-create `.agents/PROJECT.md` if missing AND user agrees** (or if a project marker is found):
+**Auto-create `docs/PROJECT.md` if missing AND user agrees** (or if a project marker is found):
 
 1. Search in priority order: `README.md`, `package.json`, `pubspec.yaml`, `pyproject.toml`/`setup.py`/`requirements.txt`, `Cargo.toml`, `go.mod`, `.csproj`/`*.sln`, `pom.xml`/`build.gradle*`, `index.html`, `docs/`.
-2. Write `.agents/PROJECT.md` with sections: **Identity** (name, type, description) · **Stack** (lang, framework, runtime, pkg manager, DB, deploy) · **Conventions** (lint, formatter, test framework) · **Non-Negotiables** (license, security) · **Open Questions**.
+2. Write `docs/PROJECT.md` with sections: **Identity** (name, type, description) · **Stack** (lang, framework, runtime, pkg manager, DB, deploy) · **Conventions** (lint, formatter, test framework) · **Non-Negotiables** (license, security) · **Open Questions**.
 3. Confirm in one line: "Contexto del proyecto generado: [name] · [stack]. Listo para Phase 1."
 
 ---
@@ -126,7 +126,7 @@ Riesgo: BAJO | MEDIO | ALTO  ·  Reversibilidad: alta | media | baja
 
 **NOT confirmation**: silence, questions, `espera`, `antes`, `pero`, `no`, `todavía no`, `revisemos`, `cambia X`, pushback of any kind.
 
-**If confirmed**, write PRD to `.opencode/prds/{YYYY-MM-DD_HHMM}-{kebab-case-name}.prd.md`. Use local date+time 24h (`2026-06-23-1430`). On collision, append `-2`, `-3`, etc.
+**If confirmed**, write PRD to `docs/prds/{YYYY-MM-DD_HHMM}-{kebab-case-name}.prd.md`. Use local date+time 24h (`2026-06-23-1430`). On collision, append `-2`, `-3`, etc.
 
 **If not confirmed**, loop back to the relevant phase. Do not proceed.
 
@@ -147,7 +147,7 @@ DRAFT — awaiting /plan handoff
 
 ## Context
 {2-3 sentences: project background, problem, who has it, why now.
- Pull from .agents/PROJECT.md if available.}
+ Pull from docs/PROJECT.md if available.}
 
 ## Objective
 {1-2 sentences. Concrete, testable, observable from outside the system.}
@@ -217,7 +217,7 @@ Estilo A (espanglish tecnico limpio): "El button de la section hace push de los 
 After writing the PRD:
 
 ```
-PRD created: .opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md
+PRD created: docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md
 
 Objective:    {one line}
 Hypothesis:   {one line}
@@ -232,7 +232,7 @@ Open questions: {count}
 Risks:          {count} (highest: {name})
 
 Next step:
-  /plan .opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md
+  /plan docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md
   → /plan picks the next pending milestone and produces an implementation plan.
 ```
 
@@ -240,8 +240,8 @@ Next step:
 
 ## Integration
 
-- **`.agents/PROJECT.md`** — read at Phase 0; created if missing.
-- **`.opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md`** — your output. Committable.
+- **`docs/PROJECT.md`** — read at Phase 0; created if missing.
+- **`docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md`** — your output. Committable.
 - **`/plan`** — consumes your PRD; picks the next pending milestone and produces an implementation plan.
 - **`/orchestrate`** — invokes you FIRST before dispatching `planner` or any other agent.
 - **`@prd-agent`** — direct invocation: user can bypass `/orchestrate`.

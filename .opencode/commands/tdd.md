@@ -70,7 +70,7 @@ RED → GREEN → REFACTOR → REPEAT
 
 Despues de cerrar el ciclo TDD (RED → GREEN → REFACTOR → coverage >= 80%):
 
-1. Generar `.opencode/reports/{YYYY-MM-DD_HHMM}-{name}.report.md` con:
+1. Generar `docs/reports/{YYYY-MM-DD_HHMM}-{name}.report.md` con:
    - Status: `COMPLETADO`
    - Coverage: output real de `npm run test:coverage`
    - Criterios PRD: los que el TDD cubre (tests existentes, cobertura)

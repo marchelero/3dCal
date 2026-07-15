@@ -6,9 +6,9 @@ agent: build
 # Prd Command
 
 Same as `@prd-agent` but as a slash command. Triggers the prd-agent to:
-1. Verify/create `.agents/PROJECT.md` (project context)
+1. Verify/create `docs/PROJECT.md` (project context)
 2. Run the Understanding Protocol (active listening, intention map, ambiguity resolution, explicit confirmation)
-3. Produce `.opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md` (date+time stamp for chronological sorting)
+3. Produce `docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md` (date+time stamp for chronological sorting)
 
 ## Your Task
 
@@ -39,9 +39,9 @@ task { subagent_type: "prd-agent", prompt: "$ARGUMENTS" }
 ## Behavior notes
 
 - prd-agent may ask up to 3 ambiguity questions at a time
-- prd-agent writes the PRD to `.opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md` (date+time stamp)
-- After PRD confirmed, next step is `/plan .opencode/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md`
-- If `.agents/PROJECT.md` is missing, prd-agent auto-generates it from existing project files (README, package.json, etc.)
+- prd-agent writes the PRD to `docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md` (date+time stamp)
+- After PRD confirmed, next step is `/plan docs/prds/{YYYY-MM-DD_HHMM}-{name}.prd.md`
+- If `docs/PROJECT.md` is missing, prd-agent auto-generates it from existing project files (README, package.json, etc.)
 
 ## Anti-pattern
 

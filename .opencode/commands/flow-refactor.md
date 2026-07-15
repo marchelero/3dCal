@@ -45,7 +45,7 @@ Si **PASS** o **PASS-WITH-NITS**: continuar.
 
 ### Paso 4 — Report
 
-Generar `.opencode/reports/{YYYY-MM-DD_HHMM}-refactor-{name}.report.md` con:
+Generar `docs/reports/{YYYY-MM-DD_HHMM}-refactor-{name}.report.md` con:
 
 ```markdown
 # Refactor: {name} — Report de ejecucion
@@ -54,7 +54,7 @@ Generar `.opencode/reports/{YYYY-MM-DD_HHMM}-refactor-{name}.report.md` con:
 COMPLETADO
 
 ## Contexto
-Refactor de {name} segun plan `.opencode/plans/{name}.plan.md`.
+Refactor de {name} segun plan `docs/plans/{name}.plan.md`.
 
 ## Cambios
 - Archivos refactorizados: N
@@ -90,8 +90,8 @@ El auditor verifica:
 Refactor completado.
 
 Resumen:
-- Plan:     .opencode/plans/{name}.plan.md
-- Report:   .opencode/reports/{name}.report.md
+- Plan:     docs/plans/{name}.plan.md
+- Report:   docs/reports/{name}.report.md
 - Auditoria: [PASS / PASS-WITH-NITS / FAIL]
 
 LOC: pre X / post Y (delta Z)
@@ -118,7 +118,7 @@ Siguiente paso: commit (espera instruccion explicita del user)
 
 ## State Persistence (REQUIRED)
 
-This flow writes to `.opencode/state/` so it can be resumed after interruption. See `.opencode/state/README.md` for the schema.
+This flow writes to `docs/state/` so it can be resumed after interruption. See `docs/state/README.md` for the schema.
 
 ``bash
 # At flow start
@@ -135,4 +135,4 @@ node .opencode/bin/state.js complete ""
 node .opencode/bin/state.js fail "" "<error message>"
 ``
 
-The flow is resumable: if interrupted, `/session-start` detects active states in `.opencode/state/` and offers to resume from `currentPhase`.
+The flow is resumable: if interrupted, `/session-start` detects active states in `docs/state/` and offers to resume from `currentPhase`.
