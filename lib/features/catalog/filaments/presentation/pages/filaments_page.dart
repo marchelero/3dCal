@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../shared/widgets/empty_view.dart';
+import '../../../../../shared/widgets/error_view.dart';
+import '../../../../../shared/widgets/loading_view.dart';
 import '../notifiers/filaments_notifier.dart';
 
 /// Catalogo de filamentos.
@@ -33,35 +36,16 @@ class FilamentsPage extends ConsumerWidget {
         ],
       ),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Error cargando filamentos: $e'),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => ErrorView(
+          message: 'Error cargando filamentos: $e',
+          onRetry: () => ref.invalidate(filamentsNotifierProvider),
         ),
         data: (filaments) {
           if (filaments.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Sin filamentos. Toca + para crear el primero.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-              ),
+            return const EmptyView(
+              icon: Icons.inventory_2_outlined,
+              message: 'Sin filamentos. Toca + para crear el primero.',
             );
           }
           return RefreshIndicator(

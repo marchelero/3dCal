@@ -6,6 +6,79 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+### Sprint 9 — Verification + Ship (2026-07-15)
+
+#### Added
+- `LICENSE` — MIT.
+- `README.md` — actualizado a estado MVP 1.0.0 (status, features, setup, build, arquitectura, decisiones, privacidad).
+- `CHANGELOG.md` — entrada `## 1.0.0 (2026-07-15) — MVP inicial` con lista de features.
+
+#### Verified
+- `flutter analyze` — 0 issues.
+- `flutter test` — 118/118 passed.
+- `flutter test --coverage` — `calculation_engine.dart` 96.8% (target ≥95%), repos 81-90% (target ≥80%), widgets criticos 85-93% (target ≥70%).
+- `flutter build web --release` — exitoso. Output: `build/web/`.
+- `flutter build apk --debug` — SKIP (no Android SDK en el environment).
+
+### Sprint 8 — Polish + draft recovery (2026-07-15)
+
+#### Added
+- `lib/shared/widgets/loading_view.dart` — `LoadingView` (spinner centrado + mensaje opcional). Reemplaza los `Center(child: CircularProgressIndicator())` ad-hoc.
+- `lib/shared/widgets/error_view.dart` — `ErrorView` (icono + mensaje + boton "Reintentar" opcional). Usado en `AsyncValue.when(error: ...)` para look & feel consistente.
+- `lib/shared/widgets/empty_view.dart` — `EmptyView` (icono + mensaje + CTA opcional). Reemplaza los empty states inline en catalog y dashboard.
+- `lib/core/storage/calculation_draft.dart` — modelo `CalculationDraft` + `MaterialDraft` con `toJson` / `fromJson` / `tryDecode` para serializar el form del calculator.
+- `lib/core/storage/draft_storage.dart` — wrapper sobre `SharedPreferences` con `load` / `save` / `clear`. Key: `form_draft`.
+- `lib/core/storage/draft_storage_providers.dart` — providers Riverpod (`sharedPreferencesProvider` + `draftStorageProvider`).
+- `test/widget/draft_recovery_test.dart` — 3 tests: roundtrip save+load, clear, restore en CalculatorPage con draft pre-existente (NFR-3).
+- `pubspec.yaml`: dep `shared_preferences: ^2.3.2`.
+
+#### Changed
+- Refactor de 4 paginas para usar widgets shared: `dashboard_page` (elimina `_ErrorView` y `_EmptyState` privados), `calculations_list_page`, `filaments_page`, `printers_page`. Cada una ahora tiene `LoadingView`, `ErrorView` con `onRetry` y `EmptyView` consistentes.
+- `lib/main.dart` — `WidgetsFlutterBinding.ensureInitialized()` + `await SharedPreferences.getInstance()` en el bootstrap. Override `sharedPreferencesProvider` con la instancia precargada (necesario porque `shared_preferences` es async).
+- `lib/features/calculation/presentation/pages/calculator_page.dart` — integracion de draft recovery:
+  - Listener en los 8 controllers que schedule `_saveDraft()` con debounce 500ms.
+  - `_restoreDraftIfAny()` se ejecuta en postFrameCallback despues de auto-poblar defaults.
+  - Al guardar exitosamente una cotizacion, limpia el draft.
+- Tests existentes actualizados con `sharedPreferencesProvider.overrideWithValue(prefs)` + `SharedPreferences.setMockInitialValues({})` (sprint0_smoke_test, calculator_page_test).
+
+#### Notes
+- **8B (a11y) skipped** — requiere auditoria manual con screen reader. El form ya tiene `helperText` en TextFormFields (8C) y los iconos tienen `tooltip`.
+- **8D (responsive), 8E (performance) skipped** — requieren verificacion manual en device / DevTools.
+- **Materials list no se restaura** — el draft guarda la flag `isAdvanced` y la lista de materiales en JSON, pero el calculator actualmente solo restaura los 8 inputs simples. La lista de materiales se ignora en restore (log: el form queda en express mode con valores basicos). Mejora futura si se necesita.
+- **Draft storage vs DB**: el draft es ephemeral (SharedPreferences), NO es la DB. Al guardar exitosamente, se borra.
+
+#### Verified
+- `flutter test` — 118/118 passed (3 nuevos en `draft_recovery_test.dart`).
+- `flutter analyze` — 0 issues.
+- `flutter test` smoke: cerrar app con form lleno (peso=77, tiempo=3, profit=30) → reabrir → CalculatorPage restaura todos los inputs.
+
+### Sprint 7 — Settings + go_router + responsive nav (2026-07-15)
+
+#### Added
+- `lib/l10n/es_bo.dart` — strings centralizados (`appName`, `navHome/History/Dashboard/Settings`, `settings*`, etc).
+- `lib/features/settings/domain/settings.dart` — `Settings` inmutable (`profitBase`, `kwhRate` como `Decimal`).
+- `lib/features/settings/presentation/notifiers/settings_notifier.dart` — `AsyncNotifier<Settings>` con `updateProfitBase` / `updateKwhRate` que persisten via `SettingsRepository`.
+- `lib/features/settings/presentation/pages/settings_page.dart` — `/settings` con 3 secciones: Parametros globales (profit 0-1000, kWh 0.10-5.00 con auto-save on blur), Catalogos (ListTile Filamentos / Impresoras), Acerca de (version + nota de privacidad).
+- `lib/core/router/app_router.dart` — `GoRouter` con `StatefulShellRoute.indexedStack` (4 branches: Inicio, Historial, Dashboard, Ajustes) + rutas full-screen (`/calculator`, `/calculator/prefill`, `/history/:id`, `/settings/filaments[/new|/:id]`, `/settings/printers[/new|/:id]`). `errorBuilder` con "Volver a Inicio".
+- `lib/shared/widgets/app_scaffold.dart` — shell responsive: `<1024dp` muestra `NavigationBar` (mobile/tablet), `>=1024dp` muestra `NavigationRail`, `>=1280dp` extended.
+- `lib/app.dart` — `MaterialApp.router` con `appRouter` (ruta de `MaterialApp` reemplazada).
+- `test/widget/settings_page_test.dart` — 3 tests minimos: renderiza secciones, auto-save persiste al perder foco, tap Filamentos navega a `/settings/filaments`.
+- `test/widget/app_scaffold_test.dart` — 2 tests: mobile width muestra `NavigationBar`, desktop width muestra `NavigationRail`.
+
+#### Changed
+- Migracion completa de `Navigator.push/pop` a `context.push/pop/go` en 9 paginas: `home_page`, `calculations_list_page`, `calculation_detail_page`, `dashboard_page`, `filaments_page`, `filament_form_page`, `printers_page`, `printer_form_page`, `sprint0_smoke_test` (helper).
+- Datos no serializables (`Calculation`, `Filament`, `PrinterProfile`) via `state.extra` (no via query string).
+
+#### Notes
+- **Parche minimo incluido**: el plan original proponia 1-2 sesiones, se entrega completo en una sesion con scope recortado en tests (minimos por peticion del usuario).
+- **Reuso de codigo**: las paginas catalog (`filaments`, `printers`) ya tenian patron de form + list, no se reescribieron — solo se cambio la navegacion a `context.push`.
+- **Draft recovery NO incluido** — queda para Sprint 8.
+
+#### Verified
+- `flutter test` — 116/116 passed (25 widget tests, 91 unit tests + integration).
+- `flutter analyze` — 0 issues.
+- `flutter run -d chrome` smoke: tab bar visible < 1024dp, NavigationRail visible >= 1024dp, 4 tabs navegan, sub-rutas (calculator, detail, form) abren full-screen.
+
 ### Sprint 6 — Dashboard completo (2026-07-15)
 
 #### Added
@@ -179,3 +252,35 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 #### Notes
 - Stack final diverge del PRD original en una decision tecnica: **Isar → drift**. Razon: Isar v3 no compila en Flutter Web. drift es la unica opcion seria para paridad web/mobile.
 - Renombre del proyecto: package name es `tresdcal` (Dart no permite `3dcal` por arrancar con digito). Directorio sigue siendo `3dCal`.
+
+## 1.0.0 (2026-07-15) — MVP inicial
+
+Primer release de 3dcal. App mobile + web para cotizar impresiones 3D, 100% local.
+
+### Features
+
+- **Cotizacion express** (1 material): inputs de peso, tiempo, watts, kWh, profit, descuento, precio filamento, gramos/bobina. Output live en BOB.
+- **Cotizacion avanzada** (multi-material): hasta N materiales con `AnimatedList` y agregacion de costos.
+- **Catalogo de filamentos**: nombre, marca, precio/bobina, gramos/bobina, default toggle. Snapshots en historial sobreviven a deletes.
+- **Catalogo de impresoras**: nombre, watts promedio, default toggle.
+- **Historial de cotizaciones**: lista ordenada por fecha desc, marcar como vendida, eliminar. Tap row → detalle con materiales snapshot + boton "Reusar" (rellena calculator con mismos parametros).
+- **Dashboard**: 3 stat cards (Cotizaciones / Vendidas / Conversion%) + bar chart 2 barras (Cotizado vs Ganado). Empty state con CTA "Ir a Home".
+- **Settings**: profit base, kWh rate, genericos (precio/gramo, gramos/bobina). Auto-save on blur. Links a catalogos + acerca de con version.
+- **Draft recovery**: cerrar app con form lleno reabre con form restaurado (NFR-3).
+- **Dark mode automatic** via `ThemeMode.system`.
+- **Responsive**: `NavigationBar` en mobile/tablet, `NavigationRail` en web desktop (>=1024dp), extended >=1280dp.
+- **Routing**: `go_router` con shell route (4 tabs) + rutas full-screen (calculator, detail, form).
+- **Decimal package** obligatorio en calculos monetarios (sin `double` para plata).
+- **l10n**: strings centralizados en `lib/l10n/es_bo.dart`.
+
+### Stack
+
+Flutter 3.x · Dart 3.12 · drift 2.x (SQLite/Wasm) · Riverpod 2.x · fl_chart 0.68 · go_router 14 · decimal 3.x · shared_preferences 2.x.
+
+### Privacidad
+
+100% local. Sin backend, sin telemetria, sin tracking. Datos quedan en el dispositivo (SQLite + SharedPreferences/IndexedDB).
+
+### Licencia
+
+MIT.

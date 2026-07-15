@@ -4,17 +4,22 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tresdcal/app.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/decimal_input_field.dart';
 
 void main() {
   late AppDatabase db;
+  late SharedPreferences prefs;
 
-  setUp(() {
+  setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
   });
 
   tearDown(() async {
@@ -29,6 +34,7 @@ void main() {
         ProviderScope(
           overrides: [
             appDatabaseProvider.overrideWithValue(db),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: const TresdcalApp(),
         ),
@@ -69,6 +75,7 @@ void main() {
         ProviderScope(
           overrides: [
             appDatabaseProvider.overrideWithValue(db),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: const TresdcalApp(),
         ),

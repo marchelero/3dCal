@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../shared/widgets/empty_view.dart';
+import '../../../../../shared/widgets/error_view.dart';
+import '../../../../../shared/widgets/loading_view.dart';
 import '../notifiers/printers_notifier.dart';
 
 /// Catalogo de impresoras. Espejo de [FilamentsPage] sin `brand`.
@@ -25,35 +28,16 @@ class PrintersPage extends ConsumerWidget {
         ],
       ),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Error cargando impresoras: $e'),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => ErrorView(
+          message: 'Error cargando impresoras: $e',
+          onRetry: () => ref.invalidate(printersNotifierProvider),
         ),
         data: (printers) {
           if (printers.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.print_outlined,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Sin impresoras. Toca + para registrar la primera.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-              ),
+            return const EmptyView(
+              icon: Icons.print_outlined,
+              message: 'Sin impresoras. Toca + para registrar la primera.',
             );
           }
           return RefreshIndicator(

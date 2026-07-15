@@ -45,7 +45,7 @@ void main() {
       'empty state: muestra CTA "Ir a Home" cuando no hay cotizaciones',
       (tester) async {
         await _pumpPage(tester, stats: emptyStats);
-        expect(find.text('Aun no cotizaste nada'), findsOneWidget);
+        expect(find.textContaining('Aun no cotizaste nada'), findsOneWidget);
         expect(find.textContaining('Empieza en Home'), findsOneWidget);
         expect(
           find.widgetWithText(FilledButton, 'Ir a Home'),

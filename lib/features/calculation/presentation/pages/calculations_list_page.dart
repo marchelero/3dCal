@@ -7,6 +7,9 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../shared/widgets/empty_view.dart';
+import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/loading_view.dart';
 import '../notifiers/calculations_notifier.dart';
 
 /// Historial de cotizaciones guardadas.
@@ -29,36 +32,17 @@ class CalculationsListPage extends ConsumerWidget {
         title: const Text('Cotizaciones'),
       ),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Error cargando cotizaciones: $e'),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => ErrorView(
+          message: 'Error cargando cotizaciones: $e',
+          onRetry: () => ref.invalidate(calculationsNotifierProvider),
         ),
         data: (calcs) {
           if (calcs.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Sin cotizaciones guardadas. '
-                      'Crea una desde el calculator y toca "Guardar".',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-              ),
+            return const EmptyView(
+              icon: Icons.receipt_long_outlined,
+              message: 'Sin cotizaciones guardadas. '
+                  'Crea una desde el calculator y toca "Guardar".',
             );
           }
           return SingleChildScrollView(

@@ -29,17 +29,17 @@ Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
     routes: [
       GoRoute(
         path: '/settings/filaments',
-        builder: (_, __) => const FilamentsPage(),
+        builder: (_, _) => const FilamentsPage(),
         routes: [
           GoRoute(
             path: 'new',
-            builder: (_, __) => const _ScaffoldWithText(
+            builder: (_, _) => const _ScaffoldWithText(
               title: 'Nuevo filamento',
             ),
           ),
           GoRoute(
             path: ':id',
-            builder: (_, __) => const _ScaffoldWithText(
+            builder: (_, _) => const _ScaffoldWithText(
               title: 'Editar filamento',
             ),
           ),

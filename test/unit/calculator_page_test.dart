@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
 
 /// Helper: monta [CalculatorPage] dentro de un [ProviderScope] y retorna
 /// el [WidgetTester] para que el caller interactue.
 Future<void> _pumpPage(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(
-    const ProviderScope(
-      child: MaterialApp(home: CalculatorPage()),
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const MaterialApp(home: CalculatorPage()),
     ),
   );
   await tester.pumpAndSettle();

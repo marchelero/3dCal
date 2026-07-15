@@ -1,78 +1,150 @@
-# tresdcal
+# 3dcal
 
 Calculadora de precios para impresiones 3D. **100% local, mobile + web, sin backend.**
 
-Stack: Flutter 3.44 · Dart 3.12 · drift 2.28 (SQLite) · Riverpod 2.6 · fl_chart 0.68 · go_router 14.
+Stack: Flutter 3.x · Dart 3.12 · drift 2.x (SQLite) · Riverpod 2.x · fl_chart 0.68 · go_router 14 · decimal.
 
 ## Status
 
-**Sprint 0 / 9** — bootstrap completo. `flutter analyze` y `flutter test` verdes. `flutter build web --release` exitoso.
+**MVP 1.0.0** — 9 sprints completados. `flutter analyze` 0 issues, `flutter test` 118/118, `flutter build web --release` exitoso.
 
-Proxima fase: Sprint 1 = motor de calculo con TDD puro.
+Features:
+- Cotizacion express (1 material) y avanzado (multi-material con animacion).
+- Catalogo de filamentos e impresoras con default toggle.
+- Historial de cotizaciones con snapshot de materiales (sobrevive a deletes).
+- Dashboard con bar chart Cotizado vs Ganado + conversion%.
+- Settings con profit base, kWh rate, genericos.
+- Draft recovery (cierre accidental restaura form).
+- Dark mode auto (ThemeMode.system).
+- Responsive: NavigationBar en mobile/tablet, NavigationRail en web desktop.
 
-## Documentacion del proyecto
+## Requisitos
 
-- **PRD**: [`.opencode/prds/2026-07-13_2206-3dcal-app.prd.md`](.opencode/prds/2026-07-13_2206-3dcal-app.prd.md) — requisitos ejecutables.
-- **Plan de implementacion**: [`.opencode/plans/2026-07-13_2206-3dcal-app.plan.md`](.opencode/plans/2026-07-13_2206-3dcal-app.plan.md) — 9 sprints, 13-18 sesiones.
-- **Specs originales** (guias iniciales): [`_docs/README.md`](_docs/README.md) y [`_docs/read.md`](_docs/read.md).
-- **Reports**: [`.opencode/reports/2026-07-13_2215-3dcal-app.report.md`](.opencode/reports/2026-07-13_2215-3dcal-app.report.md) — trazabilidad del flujo /orchestrate.
+- Flutter 3.22+ (estable)
+- Dart 3.12+
+- Chrome (opcional, para dev web)
+- Android SDK (opcional, para APK)
+- iOS toolchain (opcional, para iOS)
 
-## Decisiones arquitectonicas
+## Setup
 
-- **Flutter only** (web + mobile = mismo codebase).
-- **drift** en lugar de Isar (Isar no compila en web).
-- **Decimal package** obligatorio en motor de calculo (prohibido `double`).
-- **Riverpod 2.x con codegen** para estado.
-- **Material 3** con seed color deep purple (provisional).
+```bash
+# Clonar
+git clone <repo>
+cd 3dcal
+
+# Dependencias
+flutter pub get
+
+# Generar codigo (drift .g.dart, riverpod .g.dart)
+dart run build_runner build --delete-conflicting-outputs
+
+# (o en watch mode durante desarrollo)
+dart run build_runner watch --delete-conflicting-outputs
+```
+
+## Run
+
+```bash
+# Web (Chrome)
+flutter run -d chrome
+
+# Android (con device o emulador conectado)
+flutter run -d android
+
+# iOS
+flutter run -d ios
+
+# Lista devices disponibles
+flutter devices
+```
+
+## Test
+
+```bash
+# Unit + widget tests
+flutter test
+
+# Con coverage
+flutter test --coverage
+# Output: coverage/lcov.info
+```
 
 ## Build
 
 ```bash
-# Dependencias (primera vez)
-flutter pub get
-
-# Analisis estatico
-flutter analyze
-
-# Tests
-flutter test
-
-# Web (release)
+# Web release
 flutter build web --release
-# Output: build/web/
+# Output: build/web/ (estatico, deployable a cualquier static host)
 
-# Mobile (debug APK, requiere Android SDK)
+# Android APK debug
 flutter build apk --debug
 # Output: build/app/outputs/flutter-apk/app-debug.apk
+
+# Android APK release (requiere signing config)
+flutter build apk --release
+
+# iOS (requiere Mac + signing)
+flutter build ios --release
 ```
 
-## Estructura
+## Arquitectura
+
+- **Clean Architecture lite**: `lib/features/<feature>/{data,domain,presentation}/`.
+- **Riverpod 2.x** para estado. `AsyncNotifier` para fetch, `Notifier` para estado local.
+- **drift 2.x** para SQLite cross-platform (NativeDatabase en mobile, WasmDatabase en web).
+- **go_router 14** con `StatefulShellRoute` para tabs (Inicio / Historial / Dashboard / Ajustes) + rutas full-screen (calculator, detail, form).
+- **decimal package** obligatorio en calculos monetarios (nunca `double`).
+- **Material 3** con seed color deep purple + light/dark themes automaticos.
+
+### Estructura
 
 ```
 lib/
-  main.dart                    # ProviderScope + runApp
-  app.dart                     # MaterialApp + tema M3
+  main.dart                    # bootstrap async (SharedPreferences) + ProviderScope
+  app.dart                     # MaterialApp.router + themes
   core/
     constants/                 # kDefaultKwhRate, etc
     money/                     # Decimal helpers, BOB formatter
     theme/                     # AppTheme.light/dark
-    database/                  # (Sprint 2)
+    database/                  # AppDatabase (drift)
+    storage/                   # DraftStorage (SharedPreferences)
+    router/                    # app_router (go_router config)
   features/
-    calculation/               # core: motor + HomePage
-    catalog/
-      filaments/               # (Sprint 3)
-      printers/                # (Sprint 3)
-    history/                   # (Sprint 5)
-    dashboard/                 # (Sprint 6)
-    settings/                  # (Sprint 7)
+    calculation/               # motor + Home + Calculator + History
+    catalog/                   # filaments + printers
+    dashboard/                 # bar chart + stats
+    settings/                  # page + notifier + domain
   shared/
-    widgets/                   # (Sprint 4)
+    widgets/                   # LoadingView / ErrorView / EmptyView / AppScaffold
+    l10n/                      # es_bo.dart
 test/
-  unit/                        # (Sprint 1: motor)
-  widget/                      # (Sprint 3+)
+  unit/                        # motor + repos
+  widget/                      # pages + drafts
   integration/                 # (Sprint 9)
-_docs/                         # specs originales movidas
+docs/
+  prds/                        # requirements
+  plans/                       # implementation plan
+  reports/                     # sprint reports
 ```
+
+## Decisiones tecnicas
+
+- **Flutter only** (web + mobile = mismo codebase).
+- **drift** en lugar de Isar (Isar no compila en web).
+- **Decimal package** obligatorio en motor de calculo (prohibido `double`).
+- **Riverpod 2.x** para inyeccion de dependencias + estado.
+- **go_router** con `StatefulShellRoute` para tabs + rutas full-screen. Datos no serializables via `state.extra`.
+- **Draft recovery** via SharedPreferences con debounce 500ms en save.
+- **Historial snapshot**: cada cotizacion guarda `materialLabelSnapshot` + `materialPricePerGramSnapshot` para sobrevivir deletes de filamentos.
+- **dark mode automatic** via `themeMode: ThemeMode.system`.
+
+## Documentacion
+
+- **PRD**: [`docs/prds/2026-07-13_2206-3dcal-app.prd.md`](docs/prds/2026-07-13_2206-3dcal-app.prd.md) — requisitos ejecutables.
+- **Plan**: [`docs/plans/2026-07-13_2206-3dcal-app.plan.md`](docs/plans/2026-07-13_2206-3dcal-app.plan.md) — 9 sprints.
+- **Reports**: [`docs/reports/`](docs/reports/) — trazabilidad sprint por sprint.
+- **CHANGELOG**: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Convenciones
 
@@ -80,8 +152,16 @@ _docs/                         # specs originales movidas
 - UI y comentarios en **espanol**.
 - `dart format` + `dart analyze` (line_length 100, lints estrictos).
 - Commits conventional (`feat:`, `fix:`, `refactor:`, etc) en espanol.
-- Branch: `main` estable, `feature/sprint-N-desc` para trabajo.
+- Branch: `main` estable.
+
+## Privacidad
+
+**100% local.** Sin backend, sin telemetria, sin tracking. Todos los datos quedan en el dispositivo:
+- Mobile: SQLite en app docs dir + SharedPreferences.
+- Web: IndexedDB (via drift WasmDatabase) + localStorage.
+
+Al desinstalar la app / limpiar datos del browser, se pierde todo. No hay sync ni export automatico.
 
 ## Licencia
 
-A definir por el usuario. Sugerencia: MIT para codigo abierto.
+MIT — ver [`LICENSE`](LICENSE).

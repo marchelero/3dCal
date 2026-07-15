@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/storage/calculation_draft.dart';
+import '../../../../core/storage/draft_storage_providers.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/decimal_input_field.dart';
@@ -54,6 +58,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _priceCtrl = TextEditingController(text: initial.filamentPrice);
     _gramsCtrl = TextEditingController(text: initial.filamentGrams);
 
+    // Listeneres de cambios → save draft (debounced 500ms).
+    for (final c in [
+      _weightCtrl, _hoursCtrl, _wattsCtrl, _kwhCtrl, _profitCtrl,
+      _discountCtrl, _priceCtrl, _gramsCtrl,
+    ]) {
+      c.addListener(_scheduleDraftSave);
+    }
+
     // Si ya esta en advanced mode con materials, sincronizar controllers.
     if (initial.mode == CalculatorMode.advanced) {
       for (final m in initial.materials) {
@@ -64,7 +76,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     // Auto-poblar filamento default + impresora activa DESPUES del build.
     // Riverpod no permite modificar providers durante initState (crashea en
     // web). addPostFrameCallback ejecuta despues del primer frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final defaultFilament = ref.read(defaultFilamentProvider);
       if (defaultFilament != null) {
@@ -85,11 +97,58 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             .setPrinterWatts(activePrinter.averageWatts.toString());
         _wattsCtrl.text = activePrinter.averageWatts.toString();
       }
+      // Restaurar draft DESPUES de auto-poblar defaults (override).
+      await _restoreDraftIfAny();
     });
+  }
+
+  bool _draftRestored = false;
+  Timer? _saveTimer;
+
+  Future<void> _restoreDraftIfAny() async {
+    if (_draftRestored) return;
+    _draftRestored = true;
+    final storage = ref.read(draftStorageProvider);
+    final draft = await storage.load();
+    if (draft == null || !mounted) return;
+    _weightCtrl.text = draft.weight;
+    _hoursCtrl.text = draft.printHours;
+    _wattsCtrl.text = draft.printerWatts;
+    _kwhCtrl.text = draft.kwhRate;
+    _profitCtrl.text = draft.profitPct;
+    _discountCtrl.text = draft.discountPct;
+    _priceCtrl.text = draft.filamentPrice;
+    _gramsCtrl.text = draft.filamentGrams;
+    // Notifier tambien necesita los valores para calcular.
+    ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
+          pricePerBobbin: draft.filamentPrice,
+          gramsPerBobbin: draft.filamentGrams,
+        );
+  }
+
+  void _scheduleDraftSave() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 500), _saveDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    if (!mounted) return;
+    final draft = CalculationDraft(
+      weight: _weightCtrl.text,
+      printHours: _hoursCtrl.text,
+      printerWatts: _wattsCtrl.text,
+      kwhRate: _kwhCtrl.text,
+      profitPct: _profitCtrl.text,
+      discountPct: _discountCtrl.text,
+      filamentPrice: _priceCtrl.text,
+      filamentGrams: _gramsCtrl.text,
+    );
+    await ref.read(draftStorageProvider).save(draft);
   }
 
   @override
   void dispose() {
+    _saveTimer?.cancel();
     _weightCtrl.dispose();
     _hoursCtrl.dispose();
     _wattsCtrl.dispose();
@@ -194,6 +253,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             clientName: result.clientName,
           );
       if (!mounted) return;
+      if (id != null) {
+        // Limpiar draft solo si el guardado fue exitoso.
+        await ref.read(draftStorageProvider).clear();
+        if (!mounted) return;
+      }
       if (id == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se pudo guardar.')),

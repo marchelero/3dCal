@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/empty_view.dart';
+import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/loading_view.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
 import '../widgets/profit_bar_chart.dart';
 
@@ -25,11 +28,21 @@ class DashboardPage extends ConsumerWidget {
       ),
       body: SafeArea(
         child: asyncStats.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => _ErrorView(message: '$e'),
+          loading: () => const LoadingView(),
+          error: (e, _) => ErrorView(
+            message: 'Error al cargar el dashboard: $e',
+            onRetry: () => ref.invalidate(dashboardStatsProvider),
+          ),
           data: (stats) {
             if (stats.countAll == 0) {
-              return const _EmptyState();
+              return EmptyView(
+                icon: Icons.bar_chart_outlined,
+                message: 'Aun no cotizaste nada.\n'
+                    'Empieza en Home creando tu primera cotizacion.',
+                ctaLabel: 'Ir a Home',
+                ctaIcon: Icons.home,
+                onCta: () => context.go('/'),
+              );
             }
             return _DashboardBody(stats: stats);
           },
@@ -149,68 +162,6 @@ class _StatCard extends StatelessWidget {
               style: theme.textTheme.bodySmall,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.bar_chart_outlined,
-              size: 96,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Aun no cotizaste nada',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Empieza en Home creando tu primera cotizacion.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              icon: const Icon(Icons.home),
-              label: const Text('Ir a Home'),
-              onPressed: () {
-                // Tab switch al root (Inicio).
-                context.go('/');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          'Error al cargar el dashboard: $message',
-          textAlign: TextAlign.center,
         ),
       ),
     );
