@@ -54,33 +54,38 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _priceCtrl = TextEditingController(text: initial.filamentPrice);
     _gramsCtrl = TextEditingController(text: initial.filamentGrams);
 
-    // Auto-poblar filamento default.
-    final defaultFilament = ref.read(defaultFilamentProvider);
-    if (defaultFilament != null) {
-      ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
-            pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(2),
-            gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(0),
-          );
-      final updated = ref.read(calculatorNotifierProvider);
-      _priceCtrl.text = updated.filamentPrice;
-      _gramsCtrl.text = updated.filamentGrams;
-    }
-
-    // Auto-poblar impresora activa.
-    final activePrinter = ref.read(activePrinterProvider);
-    if (activePrinter != null) {
-      ref
-          .read(calculatorNotifierProvider.notifier)
-          .setPrinterWatts(activePrinter.averageWatts.toString());
-      _wattsCtrl.text = activePrinter.averageWatts.toString();
-    }
-
     // Si ya esta en advanced mode con materials, sincronizar controllers.
     if (initial.mode == CalculatorMode.advanced) {
       for (final m in initial.materials) {
         _materialCtrls.add(_MaterialCtrls.fromRow(m));
       }
     }
+
+    // Auto-poblar filamento default + impresora activa DESPUES del build.
+    // Riverpod no permite modificar providers durante initState (crashea en
+    // web). addPostFrameCallback ejecuta despues del primer frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final defaultFilament = ref.read(defaultFilamentProvider);
+      if (defaultFilament != null) {
+        ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
+              pricePerBobbin:
+                  defaultFilament.pricePerBobbin.toStringAsFixed(2),
+              gramsPerBobbin:
+                  defaultFilament.gramsPerBobbin.toStringAsFixed(0),
+            );
+        final updated = ref.read(calculatorNotifierProvider);
+        _priceCtrl.text = updated.filamentPrice;
+        _gramsCtrl.text = updated.filamentGrams;
+      }
+      final activePrinter = ref.read(activePrinterProvider);
+      if (activePrinter != null) {
+        ref
+            .read(calculatorNotifierProvider.notifier)
+            .setPrinterWatts(activePrinter.averageWatts.toString());
+        _wattsCtrl.text = activePrinter.averageWatts.toString();
+      }
+    });
   }
 
   @override
