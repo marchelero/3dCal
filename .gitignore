@@ -1,59 +1,116 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
+# ─── OS / Editor junk ─────────────────────────────────────────
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.history
 .atom/
 .build/
 .buildlog/
-.history
 .svn/
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# ─── IntelliJ / Android Studio ────────────────────────────────
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# Visual Studio Code related
+# ─── VS Code ──────────────────────────────────────────────────
 .classpath
 .project
 .settings/
-.vscode/*
+.vscode/
 
-# Flutter/Dart/Pub related
+# ─── Flutter / Dart ───────────────────────────────────────────
 **/doc/api/
 **/ios/Flutter/.last_build_id
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/.last_build_id
+.metadata
+
 .dart_tool/
+.dart_tool
 .flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
-/build/
+build/
+**/build/
 
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+# Android build variants
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+/android/captures/
+/android/gradlew
+/android/gradlew.bat
+/android/local.properties
+/android/**/GeneratedPluginRegistrant.java
+/android/key.properties
 
-# Local config (project-specific, mantener fuera del repo)
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/flutter_export_environment.sh
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+**/*.xcuserstate
+**/*.xcscmblueprint
+**/*.xccheckout
+**/*.xcscheme
 
-opencode.json
+# Web
+build/web/
+build/web/**/*.wasm
+build/web/**/*.js.map
 
-# Coverage reports
+# Linux
+*.o
+*.so
+*.dylib
+*.dll
+
+# macOS
+Pods/
+.dart_tool/
+
+# ─── Generated / coverage ─────────────────────────────────────
 coverage/
+lib/**.g.dart
+lib/**.freezed.dart
+**/generated_plugin_registrant.dart
 
-# IDEs
-.vscode/
-.dart_tool
-.agents/
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
+
+# ─── Secrets / local config ───────────────────────────────────
+*.env
+*.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+secrets.yaml
 .opencode/
+.agents/
+
+# ─── Misc ─────────────────────────────────────────────────────
+*.class
+*.log
+*.pyc
+.tmp/
+tmp/
+temp/
+.cache/

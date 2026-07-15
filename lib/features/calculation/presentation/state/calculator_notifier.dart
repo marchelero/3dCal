@@ -9,6 +9,7 @@ import '../../data/calculation_repository.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_input.dart';
 import '../../domain/entities/material_input.dart';
+import '../notifiers/calculations_notifier.dart';
 import 'calculator_state.dart';
 
 /// Notifier reactivo para el formulario de cotizacion.
@@ -243,7 +244,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           : clientName.trim(),
     );
     final repo = ref.read(calculationRepositoryProvider);
-    return repo.create(draft);
+    final id = await repo.create(draft);
+    // Invalida el notifier del historial y dashboard para que refresquen
+    // la proxima vez que se lean (al volver a Historial o Home).
+    ref.invalidate(calculationsNotifierProvider);
+    return id;
   }
 
   /// Recalcula el output si el form es valido, si no limpia el output.

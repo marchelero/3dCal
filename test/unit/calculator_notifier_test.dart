@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
+import 'package:tresdcal/features/calculation/presentation/notifiers/calculations_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
 
@@ -305,6 +306,28 @@ void main() {
       final c = (await db.select(db.calculations).get()).first;
       expect(c.pieceName, isNull);
       expect(c.clientName, isNull);
+    });
+
+    test('save invalida calculationsNotifierProvider para refrescar historial',
+        () async {
+      // Inicializa el calculations notifier (estado vacio).
+      final initial = await container
+          .read(calculationsNotifierProvider.future);
+      expect(initial, isEmpty);
+
+      // Llena el form y guarda via calculator notifier.
+      final n = container.read(calculatorNotifierProvider.notifier);
+      n.setWeight('100');
+      n.setPrintHours('5');
+      n.setFilamentPrice('120');
+      n.setFilamentGrams('1000');
+      await n.save(pieceName: 'Test');
+
+      // Al releer el notifier (despues del invalidate), ve la nueva cotizacion.
+      final after = await container
+          .read(calculationsNotifierProvider.future);
+      expect(after, hasLength(1));
+      expect(after.first.pieceName, 'Test');
     });
   });
 }
