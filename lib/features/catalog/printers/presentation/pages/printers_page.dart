@@ -1,10 +1,10 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
 import '../notifiers/printers_notifier.dart';
-import 'printer_form_page.dart';
 
 /// Catalogo de impresoras. Espejo de [FilamentsPage] sin `brand`.
 class PrintersPage extends ConsumerWidget {
@@ -20,11 +20,7 @@ class PrintersPage extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Nueva impresora',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const PrinterFormPage(),
-              ),
-            ),
+            onPressed: () => context.push('/settings/printers/new'),
           ),
         ],
       ),
@@ -107,10 +103,9 @@ class _PrinterTile extends ConsumerWidget {
           ),
         ],
       ),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => PrinterFormPage(existing: printer),
-        ),
+      onTap: () => context.push(
+        '/settings/printers/${printer.id}',
+        extra: printer,
       ),
     );
   }

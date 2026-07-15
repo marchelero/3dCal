@@ -2,17 +2,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
 import '../../domain/dashboard_stats.dart';
-import 'calculations_list_page.dart';
-import 'calculator_page.dart';
 
-/// Home page: navega al calculator (Sprint 3) o al historial (Sprint 5).
+/// Home page: launcher del app (Sprint 7 — sin Navigator.push).
 ///
 /// **Sprint 0** mostraba un placeholder con smoke test del formatter.
 /// **Sprint 3** ya tenemos el calculator real.
 /// **Sprint 5** agrega acceso al historial y stats agregadas (dashboard).
+/// **Sprint 7** migra la navegacion a go_router. Los botones disparan
+/// `context.push` (calculator, full-screen) o `context.go` (tab switches).
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -48,11 +49,8 @@ class HomePage extends ConsumerWidget {
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Nueva cotizacion'),
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const CalculatorPage(),
-                      ),
-                    );
+                    // Push: preserva el shell debajo (puede volver con back).
+                    context.push('/calculator');
                   },
                 ),
                 const SizedBox(height: 12),
@@ -60,11 +58,16 @@ class HomePage extends ConsumerWidget {
                   icon: const Icon(Icons.history),
                   label: const Text('Historial'),
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const CalculationsListPage(),
-                      ),
-                    );
+                    // Go: tab switch (reemplaza la branch actual).
+                    context.go('/history');
+                  },
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.bar_chart),
+                  label: const Text('Dashboard'),
+                  onPressed: () {
+                    context.go('/dashboard');
                   },
                 ),
               ],

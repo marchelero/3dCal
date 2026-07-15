@@ -4,12 +4,17 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filaments_page.dart';
 
 /// Helper: monta [FilamentsPage] dentro de un [ProviderScope] con DB in-memory.
+///
+/// **Sprint 7**: el page usa `context.push` de go_router, asi que necesita
+/// un `MaterialApp.router` con un [GoRouter] que tenga las rutas de form.
+/// Para los tests de "tap en X navega a Y" solo necesitamos la ruta destino.
 Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final container = ProviderContainer(overrides: [
@@ -19,10 +24,34 @@ Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
     container.dispose();
     await db.close();
   });
+  final router = GoRouter(
+    initialLocation: '/settings/filaments',
+    routes: [
+      GoRoute(
+        path: '/settings/filaments',
+        builder: (_, __) => const FilamentsPage(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (_, __) => const _ScaffoldWithText(
+              title: 'Nuevo filamento',
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (_, __) => const _ScaffoldWithText(
+              title: 'Editar filamento',
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(home: FilamentsPage()),
+      child: MaterialApp.router(routerConfig: router),
     ),
   );
   // Esperar a que el AsyncNotifier resuelva.
@@ -105,4 +134,17 @@ void main() {
       expect(find.text('Editar filamento'), findsOneWidget);
     });
   });
+}
+
+/// Stub para destinos de navegacion en tests: solo necesitamos el titulo
+/// para verificar que la navegacion llego a la ruta correcta.
+class _ScaffoldWithText extends StatelessWidget {
+  const _ScaffoldWithText({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(title: Text(title)));
+  }
 }

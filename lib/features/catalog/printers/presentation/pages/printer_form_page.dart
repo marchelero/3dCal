@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
 import '../notifiers/printers_notifier.dart';
@@ -84,7 +85,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
           asDefault: _isDefault,
         );
       }
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

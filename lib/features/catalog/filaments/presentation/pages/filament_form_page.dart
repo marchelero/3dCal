@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
 import '../notifiers/filaments_notifier.dart';
@@ -117,7 +118,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
           asDefault: _isDefault,
         );
       }
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

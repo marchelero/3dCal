@@ -6,6 +6,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+### Sprint 6 — Dashboard completo (2026-07-15)
+
+#### Added
+- `lib/features/dashboard/presentation/widgets/profit_bar_chart.dart` — widget `ProfitBarChart` que renderiza un `fl_chart` `BarChart` con 2 barras (Cotizado / Ganado). Eje Y con formato corto ("Bs. 0", "Bs. 1.5K"). Tooltip on tap con valor exacto en BOB. Headroom del 20% sobre el maximo y floor 100 BOB para charts con valores chicos.
+- `lib/features/dashboard/presentation/pages/dashboard_page.dart` — pagina `/dashboard` con 3 stat cards (Cotizaciones, Vendidas, Conversion%) + `ProfitBarChart`. Empty state con icono + CTA "Ir a Home" cuando no hay cotizaciones. Loading y error states via `AsyncValue.when`.
+- `test/widget/dashboard_page_test.dart` — 7 tests: appbar titulo, empty state, stats cards con datos (60% conversion), edge 100% conversion, edge 0% conversion, bar chart renderiza con datos, bar chart renderiza con ambos en cero.
+- `lib/features/calculation/domain/dashboard_stats.dart` — getter `conversionPct` (`countSold / countAll * 100`, 0 si `countAll == 0`).
+- `lib/features/calculation/presentation/pages/home_page.dart` — boton `OutlinedButton.icon` "Dashboard" debajo de "Historial" que navega a `DashboardPage` via `Navigator.push`.
+
+#### Notes
+- **Reuso del provider**: `dashboardStatsProvider` (Sprint 5) se reusa sin cambios. Solo se agrego el getter `conversionPct` al data class.
+- **Decimal → double en chart**: `ProfitBarChart` recibe `Decimal` pero internamente hace `.toDouble()` (unico lugar de la app donde se pierde precision, justificado porque los totales ya estan redondeados a 2 decimales al guardarse en el snapshot).
+- **No se commiteo** — el CHANGELOG actualizado queda working tree, esperando instruccion explicita del usuario.
+
+#### Verified
+- `flutter test` — 111/111 passed (7 nuevos en dashboard_page_test.dart).
+- `flutter analyze` — 0 issues.
+- Smoke manual: Home muestra boton Dashboard, tap → pagina con 3 stat cards + bar chart 2 barras (Cotizado/Ganado), labels eje X visibles, tooltips al tap, empty state funcional cuando no hay cotizaciones.
+
 ### Sprint 5 — Cotizaciones historicas (2026-07-14)
 
 #### Added

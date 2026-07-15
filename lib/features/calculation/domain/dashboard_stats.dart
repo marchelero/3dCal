@@ -22,6 +22,14 @@ class DashboardStats {
   final Decimal totalSold;
   final int countAll;
   final int countSold;
+
+  /// Porcentaje de cotizaciones vendidas (0.0 - 100.0).
+  ///
+  /// Si `countAll == 0` (aun no hay cotizaciones), retorna 0.
+  double get conversionPct {
+    if (countAll == 0) return 0;
+    return (countSold / countAll) * 100;
+  }
 }
 
 /// Provider derivado: 4 queries agregadas. Se re-corre cuando

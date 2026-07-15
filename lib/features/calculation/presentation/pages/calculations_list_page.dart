@@ -2,12 +2,12 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../notifiers/calculations_notifier.dart';
-import 'calculation_detail_page.dart';
 
 /// Historial de cotizaciones guardadas.
 ///
@@ -132,11 +132,7 @@ class _CalculationTile extends ConsumerWidget {
           ),
         ],
       ),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => CalculationDetailPage(calcId: calc.id),
-        ),
-      ),
+      onTap: () => context.push('/history/${calc.id}', extra: calc),
     );
   }
 

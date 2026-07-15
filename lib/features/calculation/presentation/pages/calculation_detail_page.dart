@@ -2,13 +2,13 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../notifiers/calculations_notifier.dart';
-import 'prefill_cotizacion.dart';
 
 /// Detalle de una cotizacion guardada. Readonly.
 ///
@@ -57,7 +57,7 @@ class CalculationDetailPage extends ConsumerWidget {
                       await ref
                           .read(calculationsNotifierProvider.notifier)
                           .delete(calcId);
-                      if (context.mounted) Navigator.of(context).pop();
+                      if (context.mounted) context.pop();
                     }
                   },
           ),
@@ -72,11 +72,7 @@ class CalculationDetailPage extends ConsumerWidget {
               icon: const Icon(Icons.replay),
               label: const Text('Reusar'),
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => PrefilledCalculatorPage(calc: calc),
-                  ),
-                );
+                context.push('/calculator/prefill', extra: calc);
               },
             ),
     );

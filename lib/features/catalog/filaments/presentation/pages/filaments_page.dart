@@ -1,10 +1,10 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
 import '../notifiers/filaments_notifier.dart';
-import 'filament_form_page.dart';
 
 /// Catalogo de filamentos.
 ///
@@ -28,11 +28,7 @@ class FilamentsPage extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Nuevo filamento',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const FilamentFormPage(),
-              ),
-            ),
+            onPressed: () => context.push('/settings/filaments/new'),
           ),
         ],
       ),
@@ -123,10 +119,9 @@ class _FilamentTile extends ConsumerWidget {
           ),
         ],
       ),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => FilamentFormPage(existing: filament),
-        ),
+      onTap: () => context.push(
+        '/settings/filaments/${filament.id}',
+        extra: filament,
       ),
     );
   }
