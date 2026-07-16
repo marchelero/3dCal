@@ -49,7 +49,7 @@ lib/
     dashboard/                 # chart ganancias reales vs cotizadas
     settings/                  # params globales
   shared/
-    widgets/                   # AnimatedMaterialRow, etc
+    widgets/                   # design-system primitives (StatTile, SectionCard, MoneyRow, etc)
 test/
   unit/                        # motor de calculo
   widget/                      # componentes
