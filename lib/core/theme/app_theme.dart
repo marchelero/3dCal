@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_radii.dart';
 import 'app_spacing.dart';
@@ -239,53 +240,58 @@ class AppTheme {
         ? Typography.blackMountainView
         : Typography.whiteMountainView;
 
-    return base.copyWith(
-      displayLarge: base.displayLarge?.copyWith(
+    // M2: aplicar Inter como familia global del TextTheme. Mantenemos
+    // [base] (MountainView) como punto de partida para conservar los
+    // fontSize/letterSpacing/height de M3, y sobreescribimos solo la familia.
+    final interBase = GoogleFonts.interTextTheme(base);
+
+    return interBase.copyWith(
+      displayLarge: interBase.displayLarge?.copyWith(
         fontWeight: FontWeight.w700,
         letterSpacing: -1.5,
       ),
-      displayMedium: base.displayMedium?.copyWith(
+      displayMedium: interBase.displayMedium?.copyWith(
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
       ),
-      displaySmall: base.displaySmall?.copyWith(
+      displaySmall: interBase.displaySmall?.copyWith(
         fontWeight: FontWeight.w700,
       ),
-      headlineLarge: base.headlineLarge?.copyWith(
+      headlineLarge: interBase.headlineLarge?.copyWith(
         fontWeight: FontWeight.w600,
       ),
-      headlineMedium: base.headlineMedium?.copyWith(
+      headlineMedium: interBase.headlineMedium?.copyWith(
         fontWeight: FontWeight.w600,
       ),
-      headlineSmall: base.headlineSmall?.copyWith(
+      headlineSmall: interBase.headlineSmall?.copyWith(
         fontWeight: FontWeight.w600,
       ),
-      titleLarge: base.titleLarge?.copyWith(
+      titleLarge: interBase.titleLarge?.copyWith(
         fontWeight: FontWeight.w600,
         letterSpacing: -0.25,
       ),
-      titleMedium: base.titleMedium?.copyWith(
+      titleMedium: interBase.titleMedium?.copyWith(
         fontWeight: FontWeight.w600,
       ),
-      titleSmall: base.titleSmall?.copyWith(
+      titleSmall: interBase.titleSmall?.copyWith(
         fontWeight: FontWeight.w600,
       ),
-      bodyLarge: base.bodyLarge?.copyWith(
+      bodyLarge: interBase.bodyLarge?.copyWith(
         fontWeight: FontWeight.w400,
       ),
-      bodyMedium: base.bodyMedium?.copyWith(
+      bodyMedium: interBase.bodyMedium?.copyWith(
         fontWeight: FontWeight.w400,
       ),
-      bodySmall: base.bodySmall?.copyWith(
+      bodySmall: interBase.bodySmall?.copyWith(
         fontWeight: FontWeight.w400,
       ),
-      labelLarge: base.labelLarge?.copyWith(
+      labelLarge: interBase.labelLarge?.copyWith(
         fontWeight: FontWeight.w500,
       ),
-      labelMedium: base.labelMedium?.copyWith(
+      labelMedium: interBase.labelMedium?.copyWith(
         fontWeight: FontWeight.w500,
       ),
-      labelSmall: base.labelSmall?.copyWith(
+      labelSmall: interBase.labelSmall?.copyWith(
         fontWeight: FontWeight.w500,
       ),
     );
