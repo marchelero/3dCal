@@ -79,33 +79,40 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (!mounted) return;
       final storage = ref.read(draftStorageProvider);
       final draft = await storage.load();
-      if (draft == null && mounted) {
-        final defaultFilament = ref.read(defaultFilamentProvider);
-        if (defaultFilament != null) {
-          ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
-                pricePerBobbin:
-                    defaultFilament.pricePerBobbin.toStringAsFixed(2),
-                gramsPerBobbin:
-                    defaultFilament.gramsPerBobbin.toStringAsFixed(0),
-              );
-          final updated = ref.read(calculatorNotifierProvider);
-          _priceCtrl.text = updated.filamentPrice;
-          _gramsCtrl.text = updated.filamentGrams;
-        }
+      if (!mounted) return;
+      if (draft != null) {
+        // Restaurar el draft en notifier y sincronizar controllers.
+        ref
+            .read(calculatorNotifierProvider.notifier)
+            .restoreFromDraft(draft);
+        if (!mounted) return;
+        _weightCtrl.text = draft.weight;
+        _hoursCtrl.text = draft.printHours;
+        _minutesCtrl.text = draft.printMinutes;
+        _discountCtrl.text = draft.discountPct;
+        _priceCtrl.text = draft.filamentPrice;
+        _gramsCtrl.text = draft.filamentGrams;
+        _labelCtrl.text = draft.label;
+        return;
       }
-      await _restoreDraftIfAny();
+      // Sin draft persistido: cargar defaults del filamento por defecto.
+      final defaultFilament = ref.read(defaultFilamentProvider);
+      if (defaultFilament != null) {
+        ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
+              pricePerBobbin:
+                  defaultFilament.pricePerBobbin.toStringAsFixed(2),
+              gramsPerBobbin:
+                  defaultFilament.gramsPerBobbin.toStringAsFixed(0),
+            );
+        if (!mounted) return;
+        final updated = ref.read(calculatorNotifierProvider);
+        _priceCtrl.text = updated.filamentPrice;
+        _gramsCtrl.text = updated.filamentGrams;
+      }
     });
   }
 
-  bool _draftRestored = false;
   Timer? _saveTimer;
-
-  Future<void> _restoreDraftIfAny() async {
-    if (_draftRestored) return;
-    _draftRestored = true;
-    final storage = ref.read(draftStorageProvider);
-    await storage.clear();
-  }
 
   void _scheduleDraftSave() {
     _saveTimer?.cancel();
