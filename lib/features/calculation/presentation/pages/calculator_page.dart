@@ -1271,19 +1271,25 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xxl),
 
-          // Big price
-          Text(
-            formatBob(output.totalPrice),
-            // M2: cifra principal del resultado usa JetBrains Mono + tabular
-            // para look consistente con el resto de valores monetarios.
-            style: GoogleFonts.jetBrainsMono(
-              textStyle: theme.textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color.onPrimaryContainer,
-                fontFeatures: const [FontFeature.tabularFigures()],
+          // Big price - HERO display para que el resultado principal
+          // tenga peso visual (no se pierda como parrafo mas).
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              formatBob(output.totalPrice),
+              // M2: cifra principal del resultado usa JetBrains Mono + tabular
+              // para look consistente con el resto de valores monetarios.
+              // V1: displayMedium (45sp) con FittedBox para que numeros largos
+              // (BOB 1,234,567.89) no rompan el layout en mobile angosto.
+              style: GoogleFonts.jetBrainsMono(
+                textStyle: theme.textTheme.displayMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color.onPrimaryContainer,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
 
           // Subtitle
