@@ -12,21 +12,15 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../notifiers/calculations_notifier.dart';
 
-/// Historial de cotizaciones guardadas.
-///
-/// **Comportamiento**:
-/// - Lista todas las cotizaciones ordenadas por fecha desc (repo).
-/// - Tap en row → detalle (`CalculationDetailPage`).
-/// - Menu por fila: "Marcar como vendida" / "Eliminar".
-/// - Estrella verde si `isSold = true`.
-/// - Pull-to-refresh recarga el historial.
-/// - Empty state si no hay cotizaciones.
+/// Historial de cotizaciones guardadas — version mejorada con cards.
 class CalculationsListPage extends ConsumerWidget {
   const CalculationsListPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(calculationsNotifierProvider);
+    final notifier = ref.read(calculationsNotifierProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cotizaciones'),
@@ -34,26 +28,32 @@ class CalculationsListPage extends ConsumerWidget {
       body: async.when(
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(
-          message: 'Error cargando cotizaciones: $e',
+          message: 'Error cargando cotizaciones',
+          details: e.toString(),
           onRetry: () => ref.invalidate(calculationsNotifierProvider),
         ),
         data: (calcs) {
           if (calcs.isEmpty) {
-            return const EmptyView(
+            return EmptyView(
               icon: Icons.receipt_long_outlined,
-              message: 'Sin cotizaciones guardadas. '
-                  'Crea una desde el calculator y toca "Guardar".',
+              message: 'Sin cotizaciones guardadas',
+              subtitle: 'Crea una desde el calculator y toca Guardar.',
+              ctaLabel: 'Nueva cotizacion',
+              ctaIcon: Icons.add_rounded,
+              onCta: () => context.push('/calculator'),
             );
           }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              children: [
-                for (var i = 0; i < calcs.length; i++) ...[
-                  if (i > 0) const Divider(height: 1),
-                  _CalculationTile(calc: calcs[i]),
-                ],
-              ],
+          return RefreshIndicator(
+            onRefresh: () =>
+                ref.refresh(calculationsNotifierProvider.future),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
+              itemCount: calcs.length,
+              itemBuilder: (_, i) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _CalculationCard(calc: calcs[i], notifier: notifier),
+              ),
             ),
           );
         },
@@ -62,10 +62,11 @@ class CalculationsListPage extends ConsumerWidget {
   }
 }
 
-class _CalculationTile extends ConsumerWidget {
-  const _CalculationTile({required this.calc});
+class _CalculationCard extends ConsumerWidget {
+  const _CalculationCard({required this.calc, required this.notifier});
 
   final Calculation calc;
+  final CalculationsNotifier notifier;
 
   String _title() {
     final piece = calc.pieceName;
@@ -75,57 +76,159 @@ class _CalculationTile extends ConsumerWidget {
     return 'Cotizacion sin nombre';
   }
 
-  String _subtitle() {
-    final parts = <String>[];
-    final client = calc.clientName;
-    if (client != null && client.isNotEmpty) parts.add(client);
-    parts.add(formatBob(Decimal.parse(calc.totalPriceSnapshot.toString())));
-    parts.add(DateFormat('dd MMM HH:mm').format(calc.createdAt.toLocal()));
-    return parts.join(' · ');
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: Icon(
-        calc.isSold ? Icons.check_circle : Icons.receipt_long,
-        color: calc.isSold ? Colors.green : null,
-      ),
-      title: Text(_title()),
-      subtitle: Text(_subtitle()),
-      trailing: PopupMenuButton<_TileAction>(
-        onSelected: (a) => _handle(context, ref, a),
-        itemBuilder: (_) => [
-          PopupMenuItem<_TileAction>(
-            value: _TileAction.toggleSold,
-            child: ListTile(
-              leading: Icon(
-                calc.isSold ? Icons.undo : Icons.check_circle_outline,
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final client = calc.clientName;
+
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/history/${calc.id}', extra: calc),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Leading icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: calc.isSold
+                      ? color.tertiaryContainer
+                      : color.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  calc.isSold
+                      ? Icons.check_circle_rounded
+                      : Icons.receipt_long_rounded,
+                  color: calc.isSold
+                      ? color.tertiary
+                      : color.onSurfaceVariant,
+                  size: 22,
+                ),
               ),
-              title: Text(
+              const SizedBox(width: 14),
+              // Body
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _title(),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (client != null && client.isNotEmpty) ...[
+                          Icon(Icons.person_outline_rounded,
+                              size: 12, color: color.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              client,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: color.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: color.onSurfaceVariant,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          DateFormat('dd MMM HH:mm')
+                              .format(calc.createdAt.toLocal()),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Price + menu
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    formatBob(Decimal.parse(
+                        calc.totalPriceSnapshot.toString())),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: color.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  _PopupMenu(calc: calc, notifier: notifier),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PopupMenu extends StatelessWidget {
+  const _PopupMenu({required this.calc, required this.notifier});
+
+  final Calculation calc;
+  final CalculationsNotifier notifier;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_TileAction>(
+      onSelected: (a) => _handle(context, a),
+      padding: EdgeInsets.zero,
+      iconSize: 18,
+      itemBuilder: (_) => [
+        PopupMenuItem<_TileAction>(
+          value: _TileAction.toggleSold,
+          child: ListTile(
+            leading: Icon(
+              calc.isSold ? Icons.undo_rounded : Icons.check_circle_outline_rounded,
+              size: 20,
+            ),
+            title: Text(
                 calc.isSold ? 'Marcar pendiente' : 'Marcar vendida',
-              ),
-            ),
+                style: const TextStyle(fontSize: 14)),
+            dense: true,
           ),
-          const PopupMenuItem<_TileAction>(
-            value: _TileAction.delete,
-            child: ListTile(
-              leading: Icon(Icons.delete_outline),
-              title: Text('Eliminar'),
-            ),
+        ),
+        const PopupMenuItem<_TileAction>(
+          value: _TileAction.delete,
+          child: ListTile(
+            leading: Icon(Icons.delete_outline_rounded, size: 20),
+            title: Text('Eliminar', style: TextStyle(fontSize: 14)),
+            dense: true,
           ),
-        ],
-      ),
-      onTap: () => context.push('/history/${calc.id}', extra: calc),
+        ),
+      ],
     );
   }
 
-  Future<void> _handle(
-    BuildContext context,
-    WidgetRef ref,
-    _TileAction a,
-  ) async {
-    final notifier = ref.read(calculationsNotifierProvider.notifier);
+  Future<void> _handle(BuildContext context, _TileAction a) async {
     switch (a) {
       case _TileAction.toggleSold:
         await notifier.toggleSold(calc.id, !calc.isSold);
@@ -134,7 +237,7 @@ class _CalculationTile extends ConsumerWidget {
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Eliminar cotizacion'),
-            content: Text('¿Eliminar "${_title()}"?'),
+            content: Text('¿Eliminar permanentemente?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),

@@ -9,21 +9,7 @@ import '../../../../l10n/es_bo.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
 
-/// Pagina `/settings` (Sprint 7 — Plan §7A).
-///
-/// **Secciones**:
-/// 1. Parametros globales: profit base (%), kWh rate (BOB/kWh). Auto-save on
-///    blur via [FocusNode] listener. No boton "Guardar" explicito.
-/// 2. Catalogos: ListTile "Filamentos" → `/settings/filaments`, "Impresoras"
-///    → `/settings/printers`.
-/// 3. Acerca de: nota de privacidad local-only. (package_info_plus no se
-///    instalo para no inflar deps en MVP; el versionado sale de pubspec.)
-///
-/// **Comportamiento**:
-/// - Las validaciones se aplican al perder foco. Si el valor es invalido,
-///   se muestra el error y NO se persiste.
-/// - Los valores persistidos en DB se reflejan inmediatamente via Riverpod
-///   (el notifier emite AsyncValue.data con el nuevo state).
+/// Pagina `/settings` con secciones visuales y mejor organizacion.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -31,7 +17,9 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncSettings = ref.watch(settingsNotifierProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text(EsBO.settingsTitle)),
+      appBar: AppBar(
+        title: const Text(EsBO.settingsTitle),
+      ),
       body: SafeArea(
         child: asyncSettings.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -55,104 +43,183 @@ class _SettingsBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
         // === Parametros globales ===
-        Text(
-          EsBO.settingsGlobalParams,
-          style: Theme.of(context).textTheme.titleMedium,
+        _SectionHeader(
+          icon: Icons.tune_rounded,
+          title: EsBO.settingsGlobalParams,
+          color: color.primary,
         ),
-        const SizedBox(height: 8),
-        _AutoSaveField(
-          label: EsBO.settingsProfitBase,
-          helper: EsBO.settingsProfitBaseHelper,
-          initialValue: settings.profitBase.toString(),
-          allowDecimals: false,
-          validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Requerido';
-            final n = int.tryParse(v.trim());
-            if (n == null) return 'Numero invalido';
-            if (n < 0 || n > 1000) return 'Rango: 0-1000';
-            return null;
-          },
-          onSave: (v) {
-            ref.read(settingsNotifierProvider.notifier).updateProfitBase(v);
-            _showSavedSnack(context);
-          },
-        ),
-        const SizedBox(height: 16),
-        _AutoSaveField(
-          label: EsBO.settingsKwhRate,
-          helper: EsBO.settingsKwhRateHelper,
-          initialValue: settings.kwhRate.toString(),
-          allowDecimals: true,
-          validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Requerido';
-            final n = Decimal.tryParse(v.trim().replaceAll(',', '.'));
-            if (n == null) return 'Numero invalido';
-            if (n < Decimal.parse('0.10') || n > Decimal.parse('5.00')) {
-              return 'Rango: 0.10-5.00';
-            }
-            return null;
-          },
-          onSave: (v) {
-            ref.read(settingsNotifierProvider.notifier).updateKwhRate(v);
-            _showSavedSnack(context);
-          },
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _AutoSaveField(
+                  label: EsBO.settingsProfitBase,
+                  helper: EsBO.settingsProfitBaseHelper,
+                  initialValue: settings.profitBase.toString(),
+                  allowDecimals: false,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Requerido';
+                    final n = int.tryParse(v.trim());
+                    if (n == null) return 'Numero invalido';
+                    if (n < 0 || n > 1000) return 'Rango: 0-1000';
+                    return null;
+                  },
+                  onSave: (v) {
+                    ref
+                        .read(settingsNotifierProvider.notifier)
+                        .updateProfitBase(v);
+                    _showSavedSnack(context);
+                  },
+                ),
+                const SizedBox(height: 16),
+                _AutoSaveField(
+                  label: EsBO.settingsKwhRate,
+                  helper: EsBO.settingsKwhRateHelper,
+                  initialValue: settings.kwhRate.toString(),
+                  allowDecimals: true,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Requerido';
+                    final n =
+                        Decimal.tryParse(v.trim().replaceAll(',', '.'));
+                    if (n == null) return 'Numero invalido';
+                    if (n < Decimal.parse('0.10') ||
+                        n > Decimal.parse('5.00')) {
+                      return 'Rango: 0.10-5.00';
+                    }
+                    return null;
+                  },
+                  onSave: (v) {
+                    ref
+                        .read(settingsNotifierProvider.notifier)
+                        .updateKwhRate(v);
+                    _showSavedSnack(context);
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 24),
-        const Divider(),
-        const SizedBox(height: 8),
 
         // === Catalogos ===
-        Text(
-          EsBO.settingsCatalogos,
-          style: Theme.of(context).textTheme.titleMedium,
+        _SectionHeader(
+          icon: Icons.inventory_2_rounded,
+          title: EsBO.settingsCatalogos,
+          color: color.secondary,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Card(
           child: Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.label_outline),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.secondaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.label_rounded,
+                      color: color.onSecondaryContainer, size: 20),
+                ),
                 title: const Text(EsBO.settingsFilamentos),
-                trailing: const Icon(Icons.chevron_right),
+                subtitle: const Text('Gestiona tus filamentos'),
+                trailing: Icon(Icons.chevron_right_rounded,
+                    color: color.onSurfaceVariant),
                 onTap: () => context.push('/settings/filaments'),
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 72),
               ListTile(
-                leading: const Icon(Icons.print_outlined),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.print_rounded,
+                      color: color.onTertiaryContainer, size: 20),
+                ),
                 title: const Text(EsBO.settingsImpresoras),
-                trailing: const Icon(Icons.chevron_right),
+                subtitle: const Text('Registra tus impresoras'),
+                trailing: Icon(Icons.chevron_right_rounded,
+                    color: color.onSurfaceVariant),
                 onTap: () => context.push('/settings/printers'),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        const Divider(),
-        const SizedBox(height: 8),
 
         // === Acerca de ===
-        Text(
-          EsBO.settingsAbout,
-          style: Theme.of(context).textTheme.titleMedium,
+        _SectionHeader(
+          icon: Icons.info_outline_rounded,
+          title: EsBO.settingsAbout,
+          color: color.tertiary,
         ),
-        const SizedBox(height: 8),
-        const Card(
+        const SizedBox(height: 12),
+        Card(
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(EsBO.appName, style: TextStyle(fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Text(EsBO.settingsPrivacy),
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: color.primaryContainer,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(Icons.calculate_rounded,
+                          color: color.onPrimaryContainer, size: 28),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(EsBO.appName,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text('v0.1.0',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                color: color.onSurfaceVariant)),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(Icons.lock_outline_rounded,
+                        size: 16, color: color.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        EsBO.settingsPrivacy,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: color.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
+        const SizedBox(height: 32),
       ],
     );
   }
@@ -169,12 +236,40 @@ class _SettingsBody extends ConsumerWidget {
   }
 }
 
+/// Header de seccion con icono.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// TextFormField con auto-save on blur.
-///
-/// **Comportamiento**:
-/// - Valida en cada cambio (mensaje de error visible).
-/// - Al perder foco, si el valor es valido, llama [onSave] con el Decimal parseado.
-/// - Si el valor es invalido, NO llama [onSave] (el error queda visible).
 class _AutoSaveField extends StatefulWidget {
   const _AutoSaveField({
     required this.label,
@@ -212,8 +307,6 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
   @override
   void didUpdateWidget(covariant _AutoSaveField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Si el initialValue cambia (settings cargados despues), actualizar
-    // el controller. No sobrescribir si el user esta editando activamente.
     if (oldWidget.initialValue != widget.initialValue && !_focus.hasFocus) {
       _ctrl.text = widget.initialValue;
     }
@@ -229,7 +322,6 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
 
   void _handleFocusChange() {
     if (_focus.hasFocus) return;
-    // Blur → validar y guardar.
     final field = _formKey.currentState;
     if (field == null) return;
     if (!field.validate()) return;
@@ -253,7 +345,6 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
             labelText: widget.label,
             helperText: state.hasError ? null : widget.helper,
             errorText: state.errorText,
-            border: const OutlineInputBorder(),
           ),
           keyboardType: TextInputType.numberWithOptions(
             decimal: widget.allowDecimals,

@@ -5,168 +5,407 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../shared/widgets/skeleton_widget.dart';
+import '../../../dashboard/presentation/widgets/stats_card.dart';
 import '../../domain/dashboard_stats.dart';
 
-/// Home page: launcher del app (Sprint 7 — sin Navigator.push).
-///
-/// **Sprint 0** mostraba un placeholder con smoke test del formatter.
-/// **Sprint 3** ya tenemos el calculator real.
-/// **Sprint 5** agrega acceso al historial y stats agregadas (dashboard).
-/// **Sprint 7** migra la navegacion a go_router. Los botones disparan
-/// `context.push` (calculator, full-screen) o `context.go` (tab switches).
+/// Home page: landing del app con hero + quick actions + stats.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncStats = ref.watch(dashboardStatsProvider);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('3dcal'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.calculate_outlined, size: 96),
-                const SizedBox(height: 24),
-                Text(
-                  'Cotizador 3D',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Calculo reactivo. Local-first. BOB.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 24),
-                _DashboardCard(asyncStats: asyncStats),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Nueva cotizacion'),
-                  onPressed: () {
-                    // Push: preserva el shell debajo (puede volver con back).
-                    context.push('/calculator');
-                  },
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.history),
-                  label: const Text('Historial'),
-                  onPressed: () {
-                    // Go: tab switch (reemplaza la branch actual).
-                    context.go('/history');
-                  },
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.bar_chart),
-                  label: const Text('Dashboard'),
-                  onPressed: () {
-                    context.go('/dashboard');
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DashboardCard extends StatelessWidget {
-  const _DashboardCard({required this.asyncStats});
-
-  final AsyncValue<DashboardStats> asyncStats;
-
-  @override
-  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: asyncStats.when(
-          loading: () => const SizedBox(
-            height: 80,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          error: (e, _) => Text('Error: $e'),
-          data: (s) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final color = theme.colorScheme;
+
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Resumen', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCell(
-                      label: 'Cotizadas',
-                      value: '${s.countAll}',
-                    ),
-                  ),
-                  Expanded(
-                    child: _StatCell(
-                      label: 'Vendidas',
-                      value: '${s.countSold}',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _StatCell(
-                label: 'Total cotizado',
-                value: formatBob(s.totalQuoted),
-                emphasize: true,
-              ),
-              _StatCell(
-                label: 'Total vendido',
-                value: formatBob(s.totalSold),
-                emphasize: true,
-              ),
+              _buildHeader(theme, color),
+              const SizedBox(height: 28),
+              _buildQuickActions(context, color),
+              const SizedBox(height: 28),
+              _buildStatsSection(context, ref, asyncStats, theme, color),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildHeader(ThemeData theme, ColorScheme color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.primaryContainer,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.calculate_rounded,
+                color: color.onPrimaryContainer,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              '3dCal',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color.onSurface,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Cotizaciones 3D local-first',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: color.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          'Rapido. Preciso. Sin internet.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: color.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context, ColorScheme color) {
+    final actions = [
+      _QuickAction(
+        icon: Icons.add_circle_rounded,
+        label: 'Nueva cotizacion',
+        subtitle: 'Calcula precio de impresion',
+        color: color.primary,
+        bgColor: color.primaryContainer,
+        onTap: () => context.push('/calculator'),
+      ),
+      _QuickAction(
+        icon: Icons.history_rounded,
+        label: 'Historial',
+        subtitle: 'Cotizaciones guardadas',
+        color: color.secondary,
+        bgColor: color.secondaryContainer,
+        onTap: () => context.go('/history'),
+      ),
+      _QuickAction(
+        icon: Icons.bar_chart_rounded,
+        label: 'Dashboard',
+        subtitle: 'Estadisticas y graficos',
+        color: color.tertiary,
+        bgColor: color.tertiaryContainer,
+        onTap: () => context.go('/dashboard'),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Acceso rapido',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: color.onSurface,
+              ),
+        ),
+        const SizedBox(height: 12),
+        // Mobile: column, Tablet/Web: row
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 500;
+            if (isWide) {
+              return Row(
+                children: [
+                  for (final a in actions)
+                    Expanded(child: Padding(
+                      padding: EdgeInsets.only(
+                        left: actions.indexOf(a) > 0 ? 8 : 0,
+                        right: actions.indexOf(a) < actions.length - 1 ? 8 : 0,
+                      ),
+                      child: _QuickActionCard(action: a),
+                    )),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                for (final a in actions) ...[
+                  if (actions.indexOf(a) > 0) const SizedBox(height: 10),
+                  _QuickActionCard(action: a),
+                ],
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsSection(BuildContext context, WidgetRef ref,
+      AsyncValue<DashboardStats> asyncStats, ThemeData theme, ColorScheme color) {
+    return asyncStats.when(
+      loading: () => const HomePageSkeleton(),
+      error: (e, _) => Card(
+        color: color.errorContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.error_outline, color: color.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Error cargando stats',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: color.onErrorContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (stats) {
+        if (stats.countAll == 0) {
+          return _buildEmptyStats(color, theme);
+        }
+        return _buildStatsContent(context, stats, theme, color);
+      },
+    );
+  }
+
+  Widget _buildEmptyStats(ColorScheme color, ThemeData theme) {
+    return Card(
+      color: color.surfaceContainerLow,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: color.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(Icons.receipt_long_outlined, color: color.onSurfaceVariant, size: 28),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Todavia no hay cotizaciones',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsContent(
+      BuildContext context, DashboardStats stats, ThemeData theme, ColorScheme color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Resumen',
+              style: theme.textTheme.titleMedium?.copyWith(color: color.onSurface),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.open_in_new, size: 16),
+              label: const Text('Ver todo'),
+              onPressed: () => context.go('/dashboard'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Stats row
+        Row(
+          children: [
+            Expanded(
+              child: StatsCard(
+                label: 'Cotizaciones',
+                value: '${stats.countAll}',
+                icon: Icons.receipt_long_rounded,
+                color: color.primary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: StatsCard(
+                label: 'Vendidas',
+                value: '${stats.countSold}',
+                icon: Icons.check_circle_rounded,
+                color: color.tertiary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: StatsCard(
+                label: 'Conversion',
+                value: '${stats.conversionPct.toStringAsFixed(0)}%',
+                icon: Icons.trending_up_rounded,
+                color: color.secondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Monetary totals
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _TotalRow(
+                  label: 'Total cotizado',
+                  value: formatBob(stats.totalQuoted),
+                  color: color.onSurface,
+                ),
+                const SizedBox(height: 8),
+                _TotalRow(
+                  label: 'Total vendido',
+                  value: formatBob(stats.totalSold),
+                  color: color.tertiary,
+                  isBold: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-class _StatCell extends StatelessWidget {
-  const _StatCell({
+class _TotalRow extends StatelessWidget {
+  const _TotalRow({
     required this.label,
     required this.value,
-    this.emphasize = false,
+    required this.color,
+    this.isBold = false,
   });
 
   final String label;
   final String value;
-  final bool emphasize;
+  final Color color;
+  final bool isBold;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+                color: color,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+// === Quick Action ===
+
+class _QuickAction {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    required this.bgColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final Color bgColor;
+  final VoidCallback onTap;
+}
+
+class _QuickActionCard extends StatelessWidget {
+  const _QuickActionCard({required this.action});
+
+  final _QuickAction action;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final valueStyle = emphasize
-        ? theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          )
-        : theme.textTheme.bodyLarge?.copyWith(
-            fontFeatures: const [FontFeature.tabularFigures()],
-          );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: theme.textTheme.bodyMedium),
-          Text(value, style: valueStyle),
-        ],
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: action.onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: action.bgColor,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(action.icon, color: action.color, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.label,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      action.subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

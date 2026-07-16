@@ -1,9 +1,10 @@
-// ignore_for_file: public_member_api_docs
-import 'package:flutter/material.dart';
-
-/// Vista de estado vacio: icono + mensaje + CTA opcional.
+/// Vista de estado vacio con icono + mensaje + CTA opcional.
 ///
 /// Usar cuando una lista no tiene datos o una accion inicial no se hizo.
+library;
+
+import 'package:flutter/material.dart';
+
 class EmptyView extends StatelessWidget {
   const EmptyView({
     super.key,
@@ -12,10 +13,12 @@ class EmptyView extends StatelessWidget {
     this.ctaLabel,
     this.ctaIcon,
     this.onCta,
+    this.subtitle,
   });
 
   final IconData icon;
   final String message;
+  final String? subtitle;
   final String? ctaLabel;
   final IconData? ctaIcon;
   final VoidCallback? onCta;
@@ -25,15 +28,39 @@ class EmptyView extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: color.outline),
-            const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: color.secondaryContainer.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(icon, size: 36, color: color.secondary),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: color.onSurface,
+                  ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: color.onSurfaceVariant,
+                    ),
+              ),
+            ],
             if (ctaLabel != null && onCta != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: onCta,
                 icon: Icon(ctaIcon ?? Icons.arrow_forward),

@@ -8,15 +8,10 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
 import '../widgets/profit_bar_chart.dart';
+import '../widgets/stats_card.dart';
 
-/// Pagina `/dashboard` con stats agregadas + bar chart (PRD FR-8).
-///
-/// **Sprint 5** anadio un `_DashboardCard` resumido en Home como teaser.
-/// **Sprint 6** completa el flow con la pagina dedicada que muestra el
-/// bar chart 2 barras (Cotizado vs Ganado) + 3 stat cards y empty state.
-/// **Sprint 7** migra a go_router con `/dashboard` URL.
+/// Pagina `/dashboard` con stats agregadas + bar chart.
 class DashboardPage extends ConsumerWidget {
-  /// Crea la pagina del dashboard.
   const DashboardPage({super.key});
 
   @override
@@ -30,17 +25,18 @@ class DashboardPage extends ConsumerWidget {
         child: asyncStats.when(
           loading: () => const LoadingView(),
           error: (e, _) => ErrorView(
-            message: 'Error al cargar el dashboard: $e',
+            message: 'Error al cargar el dashboard',
+            details: e.toString(),
             onRetry: () => ref.invalidate(dashboardStatsProvider),
           ),
           data: (stats) {
             if (stats.countAll == 0) {
               return EmptyView(
-                icon: Icons.bar_chart_outlined,
-                message: 'Aun no cotizaste nada.\n'
-                    'Empieza en Home creando tu primera cotizacion.',
+                icon: Icons.bar_chart_rounded,
+                message: 'Aun no cotizaste nada',
+                subtitle: 'Crea tu primera cotizacion desde el inicio.',
                 ctaLabel: 'Ir a Home',
-                ctaIcon: Icons.home,
+                ctaIcon: Icons.home_rounded,
                 onCta: () => context.go('/'),
               );
             }
@@ -59,22 +55,90 @@ class _DashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _StatsRow(stats: stats),
-          const SizedBox(height: 24),
+          // Stats row
+          Row(
+            children: [
+              Expanded(
+                child: StatsCard(
+                  label: 'Cotizaciones',
+                  value: '${stats.countAll}',
+                  icon: Icons.receipt_long_rounded,
+                  color: color.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: StatsCard(
+                  label: 'Vendidas',
+                  value: '${stats.countSold}',
+                  icon: Icons.check_circle_rounded,
+                  color: color.tertiary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: StatsCard(
+                  label: 'Conversion',
+                  value: '${stats.conversionPct.toStringAsFixed(0)}%',
+                  icon: Icons.trending_up_rounded,
+                  color: color.secondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Monetary totals
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _TotalRow(
+                    label: 'Total cotizado',
+                    value: _formatMoney(stats.totalQuoted.toDouble()),
+                    color: color.onSurface,
+                  ),
+                  const SizedBox(height: 8),
+                  _TotalRow(
+                    label: 'Total vendido',
+                    value: _formatMoney(stats.totalSold.toDouble()),
+                    color: color.tertiary,
+                    isBold: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Chart section
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Cotizado vs Ganado',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  Row(
+                    children: [
+                      Icon(Icons.bar_chart_rounded,
+                          size: 18, color: color.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Cotizado vs Ganado',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   ProfitBarChart(
@@ -85,85 +149,56 @@ class _DashboardBody extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
-}
 
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats});
-
-  final DashboardStats stats;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(
-            label: 'Cotizaciones',
-            value: '${stats.countAll}',
-            icon: Icons.list_alt,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _StatCard(
-            label: 'Vendidas',
-            value: '${stats.countSold}',
-            icon: Icons.check_circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _StatCard(
-            label: 'Conversion',
-            value: '${stats.conversionPct.toStringAsFixed(0)}%',
-            icon: Icons.trending_up,
-          ),
-        ),
-      ],
-    );
+  String _formatMoney(double value) {
+    if (value >= 1000000) {
+      return 'Bs. ${(value / 1000000).toStringAsFixed(2)}M';
+    }
+    if (value >= 1000) {
+      return 'Bs. ${(value / 1000).toStringAsFixed(1)}K';
+    }
+    return 'Bs. ${value.toStringAsFixed(2)}';
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
+class _TotalRow extends StatelessWidget {
+  const _TotalRow({
     required this.label,
     required this.value,
-    required this.icon,
+    required this.color,
+    this.isBold = false,
   });
 
   final String label;
   final String value;
-  final IconData icon;
+  final Color color;
+  final bool isBold;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+                color: color,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
-            ),
-            Text(
-              label,
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
         ),
-      ),
+      ],
     );
   }
 }

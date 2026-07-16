@@ -10,14 +10,7 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../notifiers/calculations_notifier.dart';
 
-/// Detalle de una cotizacion guardada. Readonly.
-///
-/// **Comportamiento**:
-/// - Muestra metadata (pieceName, clientName, fecha, impresora snapshot).
-/// - Lista los materiales con sus snapshots.
-/// - Desglose financiero (costos + profit + total).
-/// - Acciones: "Reusar" (push Calculator prefill), "Marcar vendida",
-///   "Editar nombre/cliente" (Sprint 5+), "Eliminar".
+/// Detalle de una cotizacion guardada. Readonly — version mejorada.
 class CalculationDetailPage extends ConsumerWidget {
   const CalculationDetailPage({super.key, required this.calcId});
 
@@ -26,13 +19,14 @@ class CalculationDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final calc = ref.watch(_calculationByIdProvider(calcId));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle cotizacion'),
         actions: [
           IconButton(
             tooltip: 'Eliminar',
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(Icons.delete_outline_rounded),
             onPressed: calc == null
                 ? null
                 : () async {
@@ -40,14 +34,17 @@ class CalculationDetailPage extends ConsumerWidget {
                       context: context,
                       builder: (_) => AlertDialog(
                         title: const Text('Eliminar cotizacion'),
-                        content: Text('¿Eliminar definitivamente?'),
+                        content:
+                            const Text('¿Eliminar definitivamente?'),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context, false),
+                            onPressed: () =>
+                                Navigator.pop(context, false),
                             child: const Text('Cancelar'),
                           ),
                           FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
+                            onPressed: () =>
+                                Navigator.pop(context, true),
                             child: const Text('Eliminar'),
                           ),
                         ],
@@ -69,7 +66,7 @@ class CalculationDetailPage extends ConsumerWidget {
       floatingActionButton: calc == null
           ? null
           : FloatingActionButton.extended(
-              icon: const Icon(Icons.replay),
+              icon: const Icon(Icons.replay_rounded),
               label: const Text('Reusar'),
               onPressed: () {
                 context.push('/calculator/prefill', extra: calc);
@@ -88,62 +85,108 @@ class _Detail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final materials = ref.watch(_materialsOfProvider(calc.id));
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // === Header ===
-        Card(
-          color: theme.colorScheme.primaryContainer,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        calc.pieceName ?? 'Sin nombre',
-                        style: theme.textTheme.titleLarge,
+        // === Header card (hero) ===
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                color.primaryContainer,
+                color.primaryContainer.withValues(alpha: 0.6),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      calc.pieceName ?? 'Sin nombre',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: color.onPrimaryContainer,
                       ),
                     ),
-                    if (calc.isSold)
-                      Chip(
-                        label: const Text('Vendida'),
-                        backgroundColor: Colors.green.shade100,
-                        avatar: const Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
-                          size: 18,
+                  ),
+                  if (calc.isSold)
+                    Chip(
+                      label: const Text('Vendida'),
+                      backgroundColor: color.tertiaryContainer,
+                      labelStyle: TextStyle(color: color.onTertiaryContainer),
+                      avatar: Icon(
+                        Icons.check_circle_rounded,
+                        color: color.tertiary,
+                        size: 16,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                ],
+              ),
+              if (calc.clientName != null && calc.clientName!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_outline_rounded,
+                          size: 14, color: color.onPrimaryContainer),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Cliente: ${calc.clientName}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color.onPrimaryContainer,
                         ),
                       ),
-                  ],
-                ),
-                if (calc.clientName != null && calc.clientName!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text('Cliente: ${calc.clientName}'),
+                    ],
                   ),
-                const SizedBox(height: 8),
-                Text(
-                  DateFormat('dd MMM yyyy · HH:mm').format(
-                    calc.createdAt.toLocal(),
-                  ),
-                  style: theme.textTheme.bodySmall,
                 ),
-                if (calc.totalHours > 0)
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today_rounded,
+                      size: 14, color: color.onPrimaryContainer.withValues(alpha: 0.7)),
+                  const SizedBox(width: 6),
                   Text(
-                    'Tiempo: ${calc.totalHours.toStringAsFixed(1)} h',
-                    style: theme.textTheme.bodySmall,
+                    DateFormat('dd MMM yyyy · HH:mm')
+                        .format(calc.createdAt.toLocal()),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.onPrimaryContainer.withValues(alpha: 0.7),
+                    ),
                   ),
-              ],
-            ),
+                  if (calc.totalHours > 0) ...[
+                    const SizedBox(width: 16),
+                    Icon(Icons.timer_outlined,
+                        size: 14, color: color.onPrimaryContainer.withValues(alpha: 0.7)),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${calc.totalHours.toStringAsFixed(1)} h',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: color.onPrimaryContainer.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
+
         // === Materiales ===
-        Text('Materiales', style: theme.textTheme.titleMedium),
+        Text('Materiales',
+            style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         materials.when(
           loading: () => const Padding(
@@ -153,10 +196,12 @@ class _Detail extends ConsumerWidget {
           error: (e, _) => Text('Error: $e'),
           data: (ms) {
             if (ms.isEmpty) {
-              return const Card(
+              return Card(
                 child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Sin materiales.'),
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Sin materiales.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color.onSurfaceVariant)),
                 ),
               );
             }
@@ -164,23 +209,63 @@ class _Detail extends ConsumerWidget {
               child: Column(
                 children: [
                   for (var i = 0; i < ms.length; i++) ...[
-                    if (i > 0) const Divider(height: 1),
-                    ListTile(
-                      title: Text(ms[i].label),
-                      subtitle: Text(
-                        '${ms[i].weightGrams.toStringAsFixed(0)} g · '
-                        'BOB ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
-                        '${ms[i].gramsPerBobbinSnapshot.toStringAsFixed(0)} g',
-                      ),
-                      trailing: Text(
-                        formatBob(
-                          Decimal.parse(
-                            (ms[i].weightGrams *
-                                    ms[i].pricePerBobbinSnapshot /
-                                    ms[i].gramsPerBobbinSnapshot)
-                                .toStringAsFixed(2),
+                    if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: color.primaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${i + 1}',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: color.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(ms[i].label,
+                                    style: theme.textTheme.bodyMedium
+                                        ?.copyWith(fontWeight: FontWeight.w500)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${ms[i].weightGrams.toStringAsFixed(0)} g · '
+                                  'BOB ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
+                                  '${ms[i].gramsPerBobbinSnapshot.toStringAsFixed(0)} g',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                      color: color.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            formatBob(Decimal.parse(
+                              (ms[i].weightGrams *
+                                      ms[i].pricePerBobbinSnapshot /
+                                      ms[i].gramsPerBobbinSnapshot)
+                                  .toStringAsFixed(2),
+                            )),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -190,8 +275,11 @@ class _Detail extends ConsumerWidget {
           },
         ),
         const SizedBox(height: 16),
+
         // === Desglose ===
-        Text('Desglose', style: theme.textTheme.titleMedium),
+        Text('Desglose',
+            style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Card(
           child: Padding(
@@ -207,19 +295,45 @@ class _Detail extends ConsumerWidget {
                   ),
                 ),
                 if (calc.discountPercentage > 0) ...[
-                  _Row(
-                    label: 'Descuento (${calc.discountPercentage.toStringAsFixed(0)}%)',
-                    value:
-                        '-${formatBob(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)))}',
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.errorContainer.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Descuento (${calc.discountPercentage.toStringAsFixed(0)}%)',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: color.onErrorContainer,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '-${formatBob(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)))}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: color.onErrorContainer,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Total',
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       formatBob(
@@ -229,6 +343,7 @@ class _Detail extends ConsumerWidget {
                       ),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                   ],
@@ -238,6 +353,7 @@ class _Detail extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
+
         // === Acciones ===
         Row(
           children: [
@@ -245,10 +361,10 @@ class _Detail extends ConsumerWidget {
               child: FilledButton.tonalIcon(
                 icon: Icon(
                   calc.isSold
-                      ? Icons.undo
-                      : Icons.check_circle_outline,
+                      ? Icons.undo_rounded
+                      : Icons.check_circle_outline_rounded,
                 ),
-                label: Text(calc.isSold ? 'Pendiente' : 'Marcar vendida'),
+                label: Text(calc.isSold ? 'Marcar pendiente' : 'Marcar vendida'),
                 onPressed: () async {
                   await ref
                       .read(calculationsNotifierProvider.notifier)
@@ -258,7 +374,7 @@ class _Detail extends ConsumerWidget {
             ),
           ],
         ),
-        // Padding bottom para no chocar con FAB.
+        // Padding bottom para FAB.
         const SizedBox(height: 80),
       ],
     );
@@ -292,8 +408,8 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// Provider de un [Calculation] especifico por id.
-final _calculationByIdProvider = Provider.family<Calculation?, int>((ref, id) {
+final _calculationByIdProvider =
+    Provider.family<Calculation?, int>((ref, id) {
   final list = ref.watch(calculationsNotifierProvider).valueOrNull;
   if (list == null) return null;
   for (final c in list) {
@@ -302,7 +418,6 @@ final _calculationByIdProvider = Provider.family<Calculation?, int>((ref, id) {
   return null;
 });
 
-/// Provider de los [CalculationMaterial]s de una cotizacion.
 final _materialsOfProvider =
     FutureProvider.family<List<CalculationMaterial>, int>((ref, id) {
   return ref.read(calculationRepositoryProvider).materialsOf(id);

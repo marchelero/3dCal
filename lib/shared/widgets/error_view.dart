@@ -1,19 +1,22 @@
-// ignore_for_file: public_member_api_docs
-import 'package:flutter/material.dart';
-
 /// Vista de error con icono + mensaje + boton "Reintentar" opcional.
 ///
 /// Usar en `AsyncValue.when(error: ...)` para que todas las paginas
 /// tengan el mismo look & feel ante fallos.
+library;
+
+import 'package:flutter/material.dart';
+
 class ErrorView extends StatelessWidget {
   const ErrorView({
     super.key,
     required this.message,
     this.onRetry,
+    this.details,
   });
 
   final String message;
   final VoidCallback? onRetry;
+  final String? details;
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +27,42 @@ class ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: color.error),
-            const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: color.errorContainer.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 36,
+                color: color.error,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: color.onSurface,
+                  ),
+            ),
+            if (details != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                details!,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: color.onSurfaceVariant,
+                    ),
+              ),
+            ],
             if (onRetry != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               FilledButton.tonalIcon(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Reintentar'),
               ),
             ],

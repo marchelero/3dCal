@@ -9,18 +9,9 @@ import '../../l10n/es_bo.dart';
 ///
 /// **Responsive**:
 /// - `< 600dp` (mobile portrait): [NavigationBar] (bottom nav).
-/// - `600-1023dp` (tablet portrait): [NavigationBar] fallback.
-/// - `>= 1024dp` (web desktop): [NavigationRail].
-/// - `>= 1280dp`: [NavigationRail] extended (label visible siempre).
-///
-/// **Tabla de destinos** (sincronizada con [appRouter]):
-/// - 0: `/` (Inicio)
-/// - 1: `/history` (Historial)
-/// - 2: `/dashboard` (Dashboard)
-/// - 3: `/settings` (Ajustes)
-///
-/// **Comportamiento al re-tap**: si el user tap el tab actual, go_router
-/// hace pop al root de esa branch (deep-link friendly, sin acumular stacks).
+/// - `600-1023dp` (tablet): [NavigationRail] compacto con labels.
+/// - `>= 1024dp` (web/desktop): [NavigationRail] extendido.
+/// - `>= 1280dp`: [NavigationRail] extended con label visible siempre.
 class AppScaffold extends StatelessWidget {
   const AppScaffold({required this.navigationShell, super.key});
 
@@ -52,8 +43,6 @@ class AppScaffold extends StatelessWidget {
   void _onTap(int index) {
     navigationShell.goBranch(
       index,
-      // initialLocation: true → pop al root de la branch si ya estabas ahi.
-      // Evita stacks duplicados al re-tap.
       initialLocation: index == navigationShell.currentIndex,
     );
   }
@@ -61,44 +50,27 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final isWide = width >= 1024;
     final isExtended = width >= 1280;
 
-    if (isWide) {
-      return Scaffold(
-        body: SafeArea(
-          child: Row(
-            children: [
-              NavigationRail(
-                extended: isExtended,
-                minExtendedWidth: 160,
-                selectedIndex: navigationShell.currentIndex,
-                onDestinationSelected: _onTap,
-                labelType: isExtended
-                    ? NavigationRailLabelType.none
-                    : NavigationRailLabelType.all,
-                destinations: [
-                  for (final d in _destinations)
-                    NavigationRailDestination(
-                      icon: Icon(d.icon),
-                      selectedIcon: Icon(d.selectedIcon),
-                      label: Text(d.label),
-                    ),
-                ],
-              ),
-              const VerticalDivider(width: 1),
-              Expanded(child: navigationShell),
-            ],
-          ),
-        ),
-      );
+    if (width < 600) {
+      return _buildMobileNav(context);
     }
 
+    if (width < 1024) {
+      return _buildTabletNav(context, extended: false);
+    }
+
+    // 1024+
+    return _buildTabletNav(context, extended: isExtended);
+  }
+
+  Widget _buildMobileNav(BuildContext context) {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: _onTap,
+        height: 65,
         destinations: [
           for (final d in _destinations)
             NavigationDestination(
@@ -110,9 +82,49 @@ class AppScaffold extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildTabletNav(BuildContext context, {required bool extended}) {
+    return Scaffold(
+      body: SafeArea(
+        child: Row(
+          children: [
+            NavigationRail(
+              extended: extended,
+              minExtendedWidth: 180,
+              selectedIndex: navigationShell.currentIndex,
+              onDestinationSelected: _onTap,
+              labelType: extended
+                  ? NavigationRailLabelType.none
+                  : NavigationRailLabelType.all,
+              leading: extended
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Icon(
+                        Icons.calculate_rounded,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    )
+                  : null,
+              destinations: [
+                for (final d in _destinations)
+                  NavigationRailDestination(
+                    icon: Icon(d.icon),
+                    selectedIcon: Icon(d.selectedIcon),
+                    label: Text(d.label),
+                  ),
+              ],
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(child: navigationShell),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-/// Internal struct para tabular destinations (icon + selected icon + label).
+/// Internal struct para tabular destinations.
 class _NavDest {
   const _NavDest({
     required this.icon,

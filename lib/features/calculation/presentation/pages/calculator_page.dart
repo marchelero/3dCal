@@ -18,14 +18,15 @@ import '../state/calculator_state.dart';
 import '../widgets/decimal_input_field.dart';
 import '../../domain/entities/calculation_output.dart';
 
-/// Pantalla principal del calculator.
+/// Pantalla principal del calculator con UX mejorada.
 ///
-/// **Modos** (toggle en body):
-/// - `express`: 1 material con inputs top-level.
-/// - `advanced`: lista de materiales con [AnimatedList].
-///
-/// Formula: totalPrice = materialCost - discountAmount.
-/// Sin electricidad, sin profit, sin watts.
+/// **Secciones en Cards**:
+/// 1. Etiqueta + Peso de pieza
+/// 2. Filamento (precio bobina + gramos + selector catalogo)
+/// 3. Impresora activa
+/// 4. Tiempo de impresion (horas + minutos)
+/// 5. Descuento
+/// 6. Output (resumen con animacion "calculando...")
 class CalculatorPage extends ConsumerStatefulWidget {
   const CalculatorPage({super.key});
 
@@ -76,7 +77,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      // Auto-poblar filamento default (si no hay draft).
       final storage = ref.read(draftStorageProvider);
       final draft = await storage.load();
       if (draft == null && mounted) {
@@ -103,7 +103,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   Future<void> _restoreDraftIfAny() async {
     if (_draftRestored) return;
     _draftRestored = true;
-    // Limpiar draft al entrar — cada cotizacion arranca limpia.
     final storage = ref.read(draftStorageProvider);
     await storage.clear();
   }
@@ -251,7 +250,16 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Cotizacion')),
+      appBar: AppBar(
+        title: const Text('Cotizacion'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Restablecer',
+            onPressed: _resetAll,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: state.mode == CalculatorMode.express
             ? _buildExpressForm(state, notifier, theme)
@@ -260,102 +268,139 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 
+  // ============================================================
+  // EXPRESS FORM
+  // ============================================================
+
   Widget _buildExpressForm(
     CalculatorState state,
     CalculatorNotifier notifier,
     ThemeData theme,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Mode selector
           _ModeSelector(mode: state.mode, onChanged: _switchMode),
-          const SizedBox(height: 12),
-          _PrinterIndicator(),
           const SizedBox(height: 16),
-          // 1. Label (top)
-          Text('Etiqueta', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _labelCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Etiqueta',
-              helperText: 'Opcional — ej: Soporte pared',
-              border: OutlineInputBorder(),
-              isDense: true,
+
+          // Card: Pieza
+          _SectionCard(
+            icon: Icons.category_rounded,
+            title: 'Pieza',
+            child: Column(
+              children: [
+                _buildLabelField(theme),
+                const SizedBox(height: 12),
+                DecimalInputField(
+                  label: 'Peso de la pieza',
+                  controller: _weightCtrl,
+                  onChanged: notifier.setWeight,
+                  suffix: 'g',
+                  helperText: 'Gramos del modelo',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Filamento
+          _SectionCard(
+            icon: Icons.inventory_2_rounded,
+            title: 'Filamento',
+            child: _FilamentSection(
+              weightCtrl: _weightCtrl,
+              priceCtrl: _priceCtrl,
+              gramsCtrl: _gramsCtrl,
+              onWeightChanged: notifier.setWeight,
+              onPriceChanged: notifier.setFilamentPrice,
+              onGramsChanged: notifier.setFilamentGrams,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Impresora
+          _SectionCard(
+            icon: Icons.print_rounded,
+            title: 'Impresora',
+            child: _PrinterIndicator(),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Tiempo
+          _SectionCard(
+            icon: Icons.timer_rounded,
+            title: 'Tiempo de impresion',
+            child: Row(
+              children: [
+                Expanded(
+                  child: DecimalInputField(
+                    label: 'Horas',
+                    controller: _hoursCtrl,
+                    onChanged: notifier.setPrintHours,
+                    suffix: 'h',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DecimalInputField(
+                    label: 'Minutos',
+                    controller: _minutesCtrl,
+                    onChanged: notifier.setPrintMinutes,
+                    suffix: 'min',
+                    helperText: '0-59',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Descuento
+          _SectionCard(
+            icon: Icons.local_offer_rounded,
+            title: 'Descuento',
+            child: DecimalInputField(
+              label: 'Descuento',
+              controller: _discountCtrl,
+              onChanged: notifier.setDiscountPct,
+              suffix: '%',
+              helperText: 'Porcentaje sobre el total final',
             ),
           ),
           const SizedBox(height: 20),
-          // 2. Filament section (peso + precio, sin gramos)
-          _FilamentSection(
-            weightCtrl: _weightCtrl,
-            priceCtrl: _priceCtrl,
-            onWeightChanged: notifier.setWeight,
-            onPriceChanged: notifier.setFilamentPrice,
-          ),
-          const SizedBox(height: 20),
-          // 3. Time
-          Text('Tiempo impresion', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DecimalInputField(
-                  label: 'Horas',
-                  controller: _hoursCtrl,
-                  onChanged: notifier.setPrintHours,
-                  suffix: 'h',
-                  helperText: 'Tiempo impresion',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DecimalInputField(
-                  label: 'Minutos',
-                  controller: _minutesCtrl,
-                  onChanged: notifier.setPrintMinutes,
-                  suffix: 'min',
-                  helperText: '0-59',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // 4. Discount
-          DecimalInputField(
-            label: 'Descuento',
-            controller: _discountCtrl,
-            onChanged: notifier.setDiscountPct,
-            suffix: '%',
-            helperText: 'Porcentaje sobre total final',
-          ),
-          const SizedBox(height: 24),
-          // 5. Output section with summary + calculando animation
+
+          // Output section
           const _OutputSection(),
-          const SizedBox(height: 24),
-          // 6. Bottom buttons
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.save),
-                  label: const Text('Guardar cotizacion'),
-                  onPressed: _showSaveDialog,
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.refresh),
-                label: const Text('Restablecer'),
-                onPressed: _resetAll,
-              ),
-            ],
+          const SizedBox(height: 20),
+
+          // Save button
+          FilledButton.icon(
+            icon: const Icon(Icons.save_rounded),
+            label: const Text('Guardar cotizacion'),
+            onPressed: _showSaveDialog,
           ),
+          const SizedBox(height: 12),
+
+          // Reset link (text button, less prominent)
+          Center(
+            child: TextButton.icon(
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Restablecer valores'),
+              onPressed: _resetAll,
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
+
+  // ============================================================
+  // ADVANCED FORM
+  // ============================================================
 
   Widget _buildAdvancedForm(
     CalculatorState state,
@@ -363,163 +408,231 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     ThemeData theme,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _ModeSelector(mode: state.mode, onChanged: _switchMode),
-          const SizedBox(height: 12),
-          _PrinterIndicator(),
           const SizedBox(height: 16),
-          // 1. Label (top)
-          Text('Etiqueta', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _labelCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Etiqueta',
-              helperText: 'Opcional — ej: Soporte pared',
-              border: OutlineInputBorder(),
-              isDense: true,
+
+          // Card: Pieza
+          _SectionCard(
+            icon: Icons.category_rounded,
+            title: 'Pieza',
+            child: _buildLabelField(theme),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Materiales
+          _SectionCard(
+            icon: Icons.inventory_2_rounded,
+            title: 'Materiales',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AnimatedList(
+                  key: _advancedListKey,
+                  initialItemCount: _materialCtrls.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index, animation) {
+                    if (index >= _materialCtrls.length) {
+                      return const SizedBox.shrink();
+                    }
+                    return SizeTransition(
+                      sizeFactor: animation,
+                      child: _MaterialRowTile(
+                        index: index,
+                        ctrls: _materialCtrls[index],
+                        onChanged: (m) => notifier.updateMaterial(
+                          index,
+                          label: m.label,
+                          weight: m.weight,
+                          pricePerBobbin: m.pricePerBobbin,
+                          gramsPerBobbin: m.gramsPerBobbin,
+                        ),
+                        onRemove: () => _removeMaterial(index),
+                        pending: false,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _addMaterial,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Agregar material'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Impresora
+          _SectionCard(
+            icon: Icons.print_rounded,
+            title: 'Impresora',
+            child: _PrinterIndicator(),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Tiempo
+          _SectionCard(
+            icon: Icons.timer_rounded,
+            title: 'Tiempo de impresion',
+            child: Row(
+              children: [
+                Expanded(
+                  child: DecimalInputField(
+                    label: 'Horas',
+                    controller: _hoursCtrl,
+                    onChanged: notifier.setPrintHours,
+                    suffix: 'h',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DecimalInputField(
+                    label: 'Minutos',
+                    controller: _minutesCtrl,
+                    onChanged: notifier.setPrintMinutes,
+                    suffix: 'min',
+                    helperText: '0-59',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Card: Descuento
+          _SectionCard(
+            icon: Icons.local_offer_rounded,
+            title: 'Descuento',
+            child: DecimalInputField(
+              label: 'Descuento',
+              controller: _discountCtrl,
+              onChanged: notifier.setDiscountPct,
+              suffix: '%',
+              helperText: 'Porcentaje sobre el total final',
             ),
           ),
           const SizedBox(height: 20),
-          // 2. Materials list
-          Text('Materiales', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 12),
-          AnimatedList(
-            key: _advancedListKey,
-            initialItemCount: _materialCtrls.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index, animation) {
-              if (index >= _materialCtrls.length) {
-                return const SizedBox.shrink();
-              }
-              return SizeTransition(
-                sizeFactor: animation,
-                child: _MaterialRowTile(
-                  index: index,
-                  ctrls: _materialCtrls[index],
-                  onChanged: (m) => notifier.updateMaterial(
-                    index,
-                    label: m.label,
-                    weight: m.weight,
-                    pricePerBobbin: m.pricePerBobbin,
-                    gramsPerBobbin: m.gramsPerBobbin,
-                  ),
-                  onRemove: () => _removeMaterial(index),
-                  pending: false,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _addMaterial,
-            icon: const Icon(Icons.add),
-            label: const Text('Agregar material'),
-          ),
-          const SizedBox(height: 20),
-          // 3. Time
-          Text('Tiempo impresion', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DecimalInputField(
-                  label: 'Horas',
-                  controller: _hoursCtrl,
-                  onChanged: notifier.setPrintHours,
-                  suffix: 'h',
-                  helperText: 'Tiempo impresion',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DecimalInputField(
-                  label: 'Minutos',
-                  controller: _minutesCtrl,
-                  onChanged: notifier.setPrintMinutes,
-                  suffix: 'min',
-                  helperText: '0-59',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // 4. Discount
-          DecimalInputField(
-            label: 'Descuento',
-            controller: _discountCtrl,
-            onChanged: notifier.setDiscountPct,
-            suffix: '%',
-            helperText: 'Porcentaje sobre total final',
-          ),
-          const SizedBox(height: 24),
-          // 5. Output section with summary + calculando animation
+
+          // Output section
           const _OutputSection(),
-          const SizedBox(height: 24),
-          // 6. Bottom buttons
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.save),
-                  label: const Text('Guardar cotizacion'),
-                  onPressed: _showSaveDialog,
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.refresh),
-                label: const Text('Restablecer'),
-                onPressed: _resetAll,
-              ),
-            ],
+          const SizedBox(height: 20),
+
+          // Save button
+          FilledButton.icon(
+            icon: const Icon(Icons.save_rounded),
+            label: const Text('Guardar cotizacion'),
+            onPressed: _showSaveDialog,
           ),
+          const SizedBox(height: 12),
+
+          Center(
+            child: TextButton.icon(
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Restablecer valores'),
+              onPressed: _resetAll,
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLabelField(ThemeData theme) {
+    return TextField(
+      controller: _labelCtrl,
+      decoration: const InputDecoration(
+        labelText: 'Etiqueta (opcional)',
+        helperText: 'Ej: Soporte pared, Engranaje PETG',
+        prefixIcon: Icon(Icons.label_outline),
       ),
     );
   }
 }
 
-/// Seccion de filamento con selector opcional de catalogo.
+// ============================================================
+// SECTION CARD — wrapper reutilizable con icono + titulo
+// ============================================================
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// FILAMENT SECTION
+// ============================================================
+
 class _FilamentSection extends ConsumerWidget {
   const _FilamentSection({
     required this.weightCtrl,
     required this.priceCtrl,
+    required this.gramsCtrl,
     required this.onWeightChanged,
     required this.onPriceChanged,
+    required this.onGramsChanged,
   });
 
   final TextEditingController weightCtrl;
   final TextEditingController priceCtrl;
+  final TextEditingController gramsCtrl;
   final ValueChanged<String> onWeightChanged;
   final ValueChanged<String> onPriceChanged;
+  final ValueChanged<String> onGramsChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final filamentsAsync = ref.watch(filamentsNotifierProvider);
     final filaments = filamentsAsync.valueOrNull ?? <Filament>[];
     final defaultFilament = ref.watch(defaultFilamentProvider);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Pieza y filamento', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        DecimalInputField(
-          label: 'Peso',
-          controller: weightCtrl,
-          onChanged: onWeightChanged,
-          suffix: 'g',
-          helperText: 'Gramos de la pieza',
-        ),
-        const SizedBox(height: 12),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: DecimalInputField(
@@ -527,34 +640,47 @@ class _FilamentSection extends ConsumerWidget {
                 controller: priceCtrl,
                 onChanged: onPriceChanged,
                 suffix: 'BOB',
-                helperText: 'Costo del rollo (default 1000g)',
+                helperText: 'Costo del rollo',
               ),
             ),
-            if (filaments.isNotEmpty) ...[
-              IconButton(
-                icon: const Icon(Icons.star),
-                tooltip: 'Usar filamento default',
-                onPressed: defaultFilament != null
-                    ? () => _loadFilament(ref, defaultFilament, priceCtrl)
-                    : null,
-                visualDensity: VisualDensity.compact,
+            const SizedBox(width: 8),
+            Expanded(
+              child: DecimalInputField(
+                label: 'Gramos bobina',
+                controller: gramsCtrl,
+                onChanged: onGramsChanged,
+                suffix: 'g',
+                helperText: 'Tipico 1000g',
               ),
-              IconButton(
-                icon: const Icon(Icons.inventory_2_outlined),
-                tooltip: 'Seleccionar filamento del catalogo',
-                onPressed: () =>
-                    _showFilamentDialog(context, ref, filaments, priceCtrl),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
+            ),
           ],
         ),
+        if (filaments.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (defaultFilament != null)
+                _ActionChip(
+                  icon: Icons.star_rounded,
+                  label: 'Usar ${defaultFilament.name}',
+                  onTap: () => _loadFilament(ref, defaultFilament, priceCtrl, gramsCtrl),
+                ),
+              const SizedBox(width: 8),
+              _ActionChip(
+                icon: Icons.inventory_2_rounded,
+                label: 'Catalogo',
+                onTap: () =>
+                    _showFilamentDialog(context, ref, filaments, priceCtrl, gramsCtrl),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
 
   void _loadFilament(WidgetRef ref, Filament f,
-      TextEditingController priceCtrl) {
+      TextEditingController priceCtrl, TextEditingController gramsCtrl) {
     ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
           pricePerBobbin: f.pricePerBobbin.toStringAsFixed(2),
           gramsPerBobbin: f.gramsPerBobbin.toStringAsFixed(0),
@@ -562,6 +688,7 @@ class _FilamentSection extends ConsumerWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final updated = ref.read(calculatorNotifierProvider);
       priceCtrl.text = updated.filamentPrice;
+      gramsCtrl.text = updated.filamentGrams;
     });
   }
 
@@ -570,6 +697,7 @@ class _FilamentSection extends ConsumerWidget {
     WidgetRef ref,
     List<Filament> filaments,
     TextEditingController priceCtrl,
+    TextEditingController gramsCtrl,
   ) {
     showDialog<void>(
       context: context,
@@ -583,7 +711,19 @@ class _FilamentSection extends ConsumerWidget {
             itemBuilder: (_, i) {
               final f = filaments[i];
               return ListTile(
-                leading: const Icon(Icons.label_outline),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    f.isDefault ? Icons.star_rounded : Icons.label_rounded,
+                    color: f.isDefault ? Colors.amber : Theme.of(context).colorScheme.onPrimaryContainer,
+                    size: 20,
+                  ),
+                ),
                 title: Text(f.name),
                 subtitle: Text(
                   '${f.pricePerBobbin.toStringAsFixed(0)} BOB · '
@@ -592,7 +732,7 @@ class _FilamentSection extends ConsumerWidget {
                 ),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  _loadFilament(ref, f, priceCtrl);
+                  _loadFilament(ref, f, priceCtrl, gramsCtrl);
                 },
               );
             },
@@ -609,6 +749,29 @@ class _FilamentSection extends ConsumerWidget {
   }
 }
 
+/// Small action chip for filament catalog actions.
+class _ActionChip extends StatelessWidget {
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      avatar: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      onPressed: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+}
+
 // === Printer indicator ===
 
 class _PrinterIndicator extends ConsumerWidget {
@@ -621,60 +784,60 @@ class _PrinterIndicator extends ConsumerWidget {
     final printersAsync = ref.watch(printersListProvider);
     final printers = printersAsync.valueOrNull ?? <PrinterProfile>[];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Impresora', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: printers.isEmpty
-              ? null
-              : () => _showPrinterDialog(context, ref, printers),
-          child: Container(
-            width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border:
-                  Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.print_outlined, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: activePrinter != null
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(activePrinter.name,
-                                style: theme.textTheme.bodyMedium
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w500)),
-                            Text(
-                              activePrinter.brand != null &&
-                                      activePrinter.brand!.isNotEmpty
-                                  ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
-                                  : '${activePrinter.averageWatts} W',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        )
-                      : Text('Sin impresora registrada',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme
-                                  .colorScheme.onSurfaceVariant)),
-                ),
-                if (printers.isNotEmpty)
-                  const Icon(Icons.chevron_right, size: 20),
-              ],
-            ),
-          ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: printers.isEmpty
+          ? null
+          : () => _showPrinterDialog(context, ref, printers),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
-      ],
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.print_rounded,
+                  size: 20, color: theme.colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: activePrinter != null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(activePrinter.name,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          activePrinter.brand != null &&
+                                  activePrinter.brand!.isNotEmpty
+                              ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
+                              : '${activePrinter.averageWatts} W',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    )
+                  : Text('Sin impresora registrada',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ),
+            if (printers.isNotEmpty)
+              Icon(Icons.chevron_right_rounded,
+                  size: 20, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
     );
   }
 
@@ -695,15 +858,23 @@ class _PrinterIndicator extends ConsumerWidget {
             itemBuilder: (_, i) {
               final p = printers[i];
               return ListTile(
-                leading: const Icon(Icons.print_outlined),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.print_rounded,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer),
+                ),
                 title: Text(p.name),
                 subtitle: Text(
                   '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
                   '${p.isDefault ? ' (default)' : ''}',
                 ),
                 onTap: () {
-                  ref.read(activePrinterIdProvider.notifier).state =
-                      p.id;
+                  ref.read(activePrinterIdProvider.notifier).state = p.id;
                   Navigator.of(ctx).pop();
                 },
               );
@@ -721,9 +892,8 @@ class _PrinterIndicator extends ConsumerWidget {
   }
 }
 
-// === MaterialRow y controllers (sin cambios funcionales) ===
+// === MaterialRow y controllers ===
 
-/// Bundle de controllers para 1 fila de material en modo advanced.
 class _MaterialCtrls {
   _MaterialCtrls({
     required this.label,
@@ -790,71 +960,94 @@ class _MaterialRowTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (pending) return const SizedBox.shrink();
-    return Card(
+    final theme = Theme.of(context);
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Text('Material ${index + 1}',
-                    style: Theme.of(context).textTheme.titleSmall),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Quitar',
-                  onPressed: onRemove,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
-            ),
-            TextField(
-              controller: ctrls.label,
-              decoration: const InputDecoration(
-                labelText: 'Etiqueta',
-                helperText: 'Opcional (ej: PLA base)',
-                border: OutlineInputBorder(),
-                isDense: true,
+                child: Center(
+                  child: Text(
+                    '${index + 1}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
               ),
-              onChanged: (v) => _emit(),
+              const SizedBox(width: 8),
+              Text('Material ${index + 1}',
+                  style: theme.textTheme.titleSmall),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded),
+                tooltip: 'Quitar',
+                onPressed: onRemove,
+                style: IconButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: ctrls.label,
+            decoration: const InputDecoration(
+              labelText: 'Etiqueta',
+              helperText: 'Opcional (ej: PLA base)',
+              isDense: true,
+              prefixIcon: Icon(Icons.label_outline, size: 18),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Peso',
-                    controller: ctrls.weight,
-                    onChanged: (v) => _emit(),
-                    suffix: 'g',
-                    helperText: 'Gramos en la pieza',
-                  ),
+            onChanged: (v) => _emit(),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DecimalInputField(
+                  label: 'Peso',
+                  controller: ctrls.weight,
+                  onChanged: (v) => _emit(),
+                  suffix: 'g',
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Precio bobina',
-                    controller: ctrls.price,
-                    onChanged: (v) => _emit(),
-                    suffix: 'BOB',
-                    helperText: 'Costo del rollo',
-                  ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DecimalInputField(
+                  label: 'Precio bobina',
+                  controller: ctrls.price,
+                  onChanged: (v) => _emit(),
+                  suffix: 'BOB',
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DecimalInputField(
-                    label: 'Gramos / bobina',
-                    controller: ctrls.grams,
-                    onChanged: (v) => _emit(),
-                    suffix: 'g',
-                    helperText: 'Tipico 1000',
-                  ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DecimalInputField(
+                  label: 'Gramos / bobina',
+                  controller: ctrls.grams,
+                  onChanged: (v) => _emit(),
+                  suffix: 'g',
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -869,10 +1062,8 @@ class _MaterialRowTile extends StatelessWidget {
   }
 }
 
-// === Output section (resumen + animacion "calculando...") ===
+// === Output section ===
 
-/// Seccion de output con animacion "Calculando..." y tarjeta resumen.
-/// Reemplaza al antiguo _OutputCard con desglose plano.
 class _OutputSection extends ConsumerStatefulWidget {
   const _OutputSection();
 
@@ -894,7 +1085,7 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
     _calcTimer?.cancel();
     if (!mounted) return;
     setState(() => _calculating = true);
-    _calcTimer = Timer(const Duration(milliseconds: 1500), () {
+    _calcTimer = Timer(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => _calculating = false);
     });
   }
@@ -910,47 +1101,15 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
     });
 
     final state = ref.watch(calculatorNotifierProvider);
-    final notifier = ref.read(calculatorNotifierProvider.notifier);
     final theme = Theme.of(context);
     final output = state.output;
 
     return Column(
       children: [
         if (_calculating)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2.5),
-                ),
-                SizedBox(width: 12),
-                Text('Calculando...'),
-              ],
-            ),
-          )
+          _CalculatingAnimation()
         else if (output == null)
-          Card(
-            color: theme.colorScheme.surfaceContainerHighest,
-            child: const Padding(
-              padding: EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Completa peso, precio y tiempo de impresion '
-                      'para ver la cotizacion.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
+          _EmptyOutput(theme: theme)
         else
           _SummaryCard(
             output: output,
@@ -958,7 +1117,8 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
             discountPct: state.detailDiscountPct?.toStringAsFixed(0) ??
                 state.discountPct,
             showDetail: state.showDetail,
-            onToggleDetail: notifier.toggleDetail,
+            onToggleDetail: () =>
+                ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
             detailElectricCost: state.detailElectricCost,
             detailBaseCost: state.detailBaseCost,
             detailProfitAmount: state.detailProfitAmount,
@@ -969,9 +1129,68 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
   }
 }
 
-/// Tarjeta resumen de la cotizacion.
-/// Muestra: etiqueta (opcional), fecha/hora, precio grande,
-/// detalle de descuento (si aplica), y ojito para desglose completo.
+class _CalculatingAnimation extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: color.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Calculando...',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: color.onSurfaceVariant,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyOutput extends StatelessWidget {
+  const _EmptyOutput({required this.theme});
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = theme.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: color.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.info_outline_rounded, size: 32, color: color.onSurfaceVariant),
+          const SizedBox(height: 12),
+          Text(
+            'Completa peso, precio y tiempo de impresion\npara ver la cotizacion.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: color.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tarjeta resumen de la cotizacion — version mejorada.
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.output,
@@ -998,94 +1217,144 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
     final hasLabel = label.trim().isNotEmpty;
     final hasDiscount = output.discountAmount > Decimal.zero;
     final now = DateTime.now();
 
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Etiqueta (opcional)
-            if (hasLabel) ...[
-              Text(label,
-                  style: theme.textTheme.titleMedium,
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 4),
-            ],
-            // Fecha/hora
-            Text(DateFormat('dd MMM yyyy HH:mm').format(now),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            // Precio grande — precio final tras descuento (sobre totalFinal con % x2)
-            Text(formatBob(output.totalPrice),
-                style: theme.textTheme.headlineLarge
-                    ?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
-            // Descuento
-            if (hasDiscount) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Descuento ${discountPct}%: -'
-                      '${formatBob(output.discountAmount)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onErrorContainer),
-                    ),
-                    const SizedBox(height: 4),
-                    Text('Total final: ${formatBob(output.totalPrice)}',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onErrorContainer)),
-                  ],
-                ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.primaryContainer,
+            color.primaryContainer.withValues(alpha: 0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Label
+          if (hasLabel) ...[
+            Text(
+              label,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: color.onPrimaryContainer,
               ),
-            ],
-            // Ojito toggle
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+          ],
+          // Date
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.onPrimaryContainer.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              DateFormat('dd MMM yyyy HH:mm').format(now),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: color.onPrimaryContainer.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Big price
+          Text(
+            formatBob(output.totalPrice),
+            style: theme.textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color.onPrimaryContainer,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          // Subtitle
+          Text(
+            'Total ${hasDiscount ? 'con descuento' : 'final'}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: color.onPrimaryContainer.withValues(alpha: 0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          // Discount badge
+          if (hasDiscount) ...[
             const SizedBox(height: 16),
-            Align(
-              child: TextButton.icon(
-                icon: Icon(
-                  showDetail ? Icons.visibility : Icons.visibility_off,
-                  size: 18,
-                ),
-                label:
-                    Text(showDetail ? 'Ocultar detalle' : 'Ver detalle'),
-                onPressed: onToggleDetail,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: color.errorContainer.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Descuento $discountPct%',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: color.onErrorContainer,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '-${formatBob(output.discountAmount)}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: color.onErrorContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Desglose completo (ojito visible)
-            if (showDetail) ...[
-              const Divider(height: 8),
-              _DetailSection(
-                materialCost: output.materialCost,
-                electricCost: detailElectricCost ?? Decimal.zero,
-                baseCost: detailBaseCost ?? Decimal.zero,
-                profitAmount: detailProfitAmount ?? Decimal.zero,
-                totalFinal: detailTotalFinal ?? Decimal.zero,
-              ),
-            ],
           ],
-        ),
+
+          // Toggle detail
+          const SizedBox(height: 16),
+          Align(
+            child: TextButton.icon(
+              icon: Icon(
+                showDetail ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                size: 18,
+                color: color.onPrimaryContainer,
+              ),
+              label: Text(
+                showDetail ? 'Ocultar detalle' : 'Ver detalle',
+                style: TextStyle(color: color.onPrimaryContainer),
+              ),
+              onPressed: onToggleDetail,
+            ),
+          ),
+
+          // Detail breakdown
+          if (showDetail) ...[
+            const Divider(height: 8, color: Colors.white24),
+            const SizedBox(height: 8),
+            _DetailSection(
+              materialCost: output.materialCost,
+              electricCost: detailElectricCost ?? Decimal.zero,
+              baseCost: detailBaseCost ?? Decimal.zero,
+              profitAmount: detailProfitAmount ?? Decimal.zero,
+              totalFinal: detailTotalFinal ?? Decimal.zero,
+              textColor: color.onPrimaryContainer,
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
-/// Desglose detallado de costos (electricidad, ganancia, etc).
 class _DetailSection extends StatelessWidget {
   const _DetailSection({
     required this.materialCost,
@@ -1093,6 +1362,7 @@ class _DetailSection extends StatelessWidget {
     required this.baseCost,
     required this.profitAmount,
     required this.totalFinal,
+    this.textColor,
   });
 
   final Decimal materialCost;
@@ -1100,42 +1370,53 @@ class _DetailSection extends StatelessWidget {
   final Decimal baseCost;
   final Decimal profitAmount;
   final Decimal totalFinal;
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final s = theme.textTheme.bodySmall
-        ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
-    final profitColor = theme.colorScheme.primary;
+    final tc = textColor ?? theme.colorScheme.onSurface;
+    final s = theme.textTheme.bodySmall?.copyWith(
+      color: tc.withValues(alpha: 0.8),
+    );
     return Column(
       children: [
-        _dr('Costo material', formatBob(materialCost), s),
-        _dr('Costo energia', formatBob(electricCost), s),
-        _dr('Costo base', formatBob(baseCost), s),
-        _dr('Ganancia', formatBob(profitAmount), s, isProfit: true,
-            profitColor: profitColor),
-        const Divider(height: 12),
-        _dr('Costo total final', formatBob(totalFinal), s, isTotal: true),
+        _dr('Costo material', formatBob(materialCost), s, tc: tc),
+        _dr('Costo energia', formatBob(electricCost), s, tc: tc),
+        _dr('Costo base', formatBob(baseCost), s, tc: tc),
+        _dr('Ganancia', formatBob(profitAmount), s,
+            tc: theme.colorScheme.primary, isProfit: true),
+        const Divider(height: 12, color: Colors.white24),
+        _dr('Costo total final', formatBob(totalFinal), s, tc: tc, isTotal: true),
       ],
     );
   }
 
   Widget _dr(String label, String value, TextStyle? style,
-      {bool isProfit = false, bool isTotal = false,
-      Color? profitColor}) {
+      {Color? tc, bool isProfit = false, bool isTotal = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
               style: style?.copyWith(
-                  fontWeight: isTotal ? FontWeight.w600 : null)),
+                fontWeight: isTotal ? FontWeight.w600 : null,
+                color: tc?.withValues(alpha: isTotal ? 1.0 : 0.8),
+              )),
           Text(value,
               style: style?.copyWith(
                 fontFeatures: const [FontFeature.tabularFigures()],
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-                color: isProfit ? profitColor : null,
+                fontWeight: isTotal
+                    ? FontWeight.bold
+                    : isProfit
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                color: isProfit
+                    ? tc
+                    : isTotal
+                        ? tc
+                        : tc?.withValues(alpha: 0.8),
               )),
         ],
       ),
@@ -1143,7 +1424,7 @@ class _DetailSection extends StatelessWidget {
   }
 }
 
-// === Selector de modo (sin cambios) ===
+// === Mode Selector ===
 
 class _ModeSelector extends StatelessWidget {
   const _ModeSelector({required this.mode, required this.onChanged});
@@ -1158,12 +1439,12 @@ class _ModeSelector extends StatelessWidget {
         ButtonSegment(
           value: CalculatorMode.express,
           label: Text('Express'),
-          icon: Icon(Icons.flash_on),
+          icon: Icon(Icons.flash_on_rounded),
         ),
         ButtonSegment(
           value: CalculatorMode.advanced,
           label: Text('Advanced'),
-          icon: Icon(Icons.layers),
+          icon: Icon(Icons.layers_rounded),
         ),
       ],
       selected: {mode},
@@ -1173,7 +1454,7 @@ class _ModeSelector extends StatelessWidget {
   }
 }
 
-// === Save dialog (simplificado, sin pieceName — usa label) ===
+// === Save dialog ===
 
 class _SaveResult {
   const _SaveResult({this.clientName});
@@ -1212,7 +1493,7 @@ class _SaveDialogState extends State<_SaveDialog> {
             decoration: const InputDecoration(
               labelText: 'Cliente',
               helperText: 'Opcional',
-              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.person_outline_rounded),
             ),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),

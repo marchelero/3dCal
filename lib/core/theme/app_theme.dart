@@ -1,7 +1,7 @@
-/// Tema Material 3 de tresdcal.
+/// Tema Material 3 de tresdcal — "Industrial 3D".
 ///
-/// Seed color: deep purple (provisional, TBD con diseno).
-/// Soporta light + dark mode automatico.
+/// Paleta basada en azul tecnico + naranja calido (PLA).
+/// Seed: azul profundo para precision industrial.
 library;
 
 import 'package:flutter/material.dart';
@@ -10,8 +10,17 @@ import 'package:flutter/material.dart';
 class AppTheme {
   const AppTheme._();
 
-  /// Color semilla principal. Provisional.
-  static const Color seedColor = Color(0xFF6750A4);
+  /// Color semilla: azul tecnico profundo.
+  static const Color seedColor = Color(0xFF1B4D7A);
+
+  /// Naranja 3D (accent para acciones principales).
+  static const Color orangeAccent = Color(0xFFE67E22);
+
+  /// Verde exito.
+  static const Color greenSuccess = Color(0xFF2ECC71);
+
+  /// Rojo error.
+  static const Color redError = Color(0xFFE74C3C);
 
   /// Tema claro.
   static ThemeData light() {
@@ -27,46 +36,205 @@ class AppTheme {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
       brightness: brightness,
+      primary: brightness == Brightness.light
+          ? const Color(0xFF1B5E8A)
+          : const Color(0xFF7EB8E0),
+      secondary: brightness == Brightness.light
+          ? const Color(0xFFE67E22)
+          : const Color(0xFFFFB366),
+      tertiary: brightness == Brightness.light
+          ? const Color(0xFF1A8A7A)
+          : const Color(0xFF5ECDB8),
+      error: redError,
     );
+
+    final textTheme = _buildTextTheme(brightness);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: false,
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
-        scrolledUnderElevation: 2,
+        scrolledUnderElevation: 1,
+        titleTextStyle: textTheme.titleLarge,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
         ),
+        clipBehavior: Clip.antiAlias,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
+        fillColor: colorScheme.surfaceContainerLow,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.error, width: 1),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        labelStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: colorScheme.primary,
         thumbColor: colorScheme.primary,
         overlayColor: colorScheme.primary.withValues(alpha: 0.12),
+        inactiveTrackColor: colorScheme.surfaceContainerHighest,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w600),
         ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 52),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 0,
+          textStyle: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 52),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          side: BorderSide(color: colorScheme.outlineVariant),
+          textStyle: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+      ),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outlineVariant,
+        thickness: 0.5,
+        space: 1,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        indicatorColor: colorScheme.secondaryContainer,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        indicatorColor: colorScheme.secondaryContainer,
+        labelType: NavigationRailLabelType.all,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colorScheme.primary,
+        linearTrackColor: colorScheme.surfaceContainerHighest,
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return colorScheme.secondary;
+          }
+          return null;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return colorScheme.secondaryContainer;
+          }
+          return null;
+        }),
+      ),
+    );
+  }
+
+  static TextTheme _buildTextTheme(Brightness brightness) {
+    final base = brightness == Brightness.light
+        ? Typography.blackMountainView
+        : Typography.whiteMountainView;
+
+    return base.copyWith(
+      displayLarge: base.displayLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -1.5,
+      ),
+      displayMedium: base.displayMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+      ),
+      displaySmall: base.displaySmall?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      headlineLarge: base.headlineLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      headlineMedium: base.headlineMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      headlineSmall: base.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      titleLarge: base.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.25,
+      ),
+      titleMedium: base.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      titleSmall: base.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      bodyLarge: base.bodyLarge?.copyWith(
+        fontWeight: FontWeight.w400,
+      ),
+      bodyMedium: base.bodyMedium?.copyWith(
+        fontWeight: FontWeight.w400,
+      ),
+      bodySmall: base.bodySmall?.copyWith(
+        fontWeight: FontWeight.w400,
+      ),
+      labelLarge: base.labelLarge?.copyWith(
+        fontWeight: FontWeight.w500,
+      ),
+      labelMedium: base.labelMedium?.copyWith(
+        fontWeight: FontWeight.w500,
+      ),
+      labelSmall: base.labelSmall?.copyWith(
+        fontWeight: FontWeight.w500,
       ),
     );
   }
