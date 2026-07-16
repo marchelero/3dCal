@@ -1,12 +1,16 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/numeric_input_field.dart';
+import '../../../../shared/widgets/section_header.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
 
@@ -26,7 +30,7 @@ class SettingsPage extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               child: Text('Error cargando ajustes: $e'),
             ),
           ),
@@ -47,19 +51,22 @@ class _SettingsBody extends ConsumerWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      children: [
+    return MaxWidthScrollView(
+      maxWidth: 720,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shrinkWrap: true,
+        children: [
         // === Parametros globales ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.tune_rounded,
           title: EsBO.settingsGlobalParams,
-          color: color.primary,
+          accentColor: color.primary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 _AutoSaveField(
@@ -68,9 +75,9 @@ class _SettingsBody extends ConsumerWidget {
                   initialValue: settings.profitBase.toString(),
                   allowDecimals: false,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Requerido';
+                    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
                     final n = int.tryParse(v.trim());
-                    if (n == null) return 'Numero invalido';
+                    if (n == null) return EsBO.commonInvalidNumber;
                     if (n < 0 || n > 1000) return 'Rango: 0-1000';
                     return null;
                   },
@@ -81,17 +88,17 @@ class _SettingsBody extends ConsumerWidget {
                     _showSavedSnack(context);
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 _AutoSaveField(
                   label: EsBO.settingsKwhRate,
                   helper: EsBO.settingsKwhRateHelper,
                   initialValue: settings.kwhRate.toString(),
                   allowDecimals: true,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Requerido';
+                    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
                     final n =
                         Decimal.tryParse(v.trim().replaceAll(',', '.'));
-                    if (n == null) return 'Numero invalido';
+                    if (n == null) return EsBO.commonInvalidNumber;
                     if (n < Decimal.parse('0.10') ||
                         n > Decimal.parse('5.00')) {
                       return 'Rango: 0.10-5.00';
@@ -109,42 +116,42 @@ class _SettingsBody extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
 
         // === Apariencia ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.palette_rounded,
-          title: 'Apariencia',
-          color: color.secondary,
+          title: EsBO.settingsAppearance,
+          accentColor: color.secondary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tema',
+                  EsBO.settingsTheme,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 _ThemeModeSelector(),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
 
         // === Catalogos ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.inventory_2_rounded,
           title: EsBO.settingsCatalogos,
-          color: color.secondary,
+          accentColor: color.secondary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Column(
             children: [
@@ -154,13 +161,13 @@ class _SettingsBody extends ConsumerWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: color.secondaryContainer,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: Icon(Icons.label_rounded,
                       color: color.onSecondaryContainer, size: 20),
                 ),
                 title: const Text(EsBO.settingsFilamentos),
-                subtitle: const Text('Gestiona tus filamentos'),
+                subtitle: const Text(EsBO.settingsManageFilaments),
                 trailing: Icon(Icons.chevron_right_rounded,
                     color: color.onSurfaceVariant),
                 onTap: () => context.push('/settings/filaments'),
@@ -172,13 +179,13 @@ class _SettingsBody extends ConsumerWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: color.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: Icon(Icons.print_rounded,
                       color: color.onTertiaryContainer, size: 20),
                 ),
                 title: const Text(EsBO.settingsImpresoras),
-                subtitle: const Text('Registra tus impresoras'),
+                subtitle: const Text(EsBO.settingsManagePrinters),
                 trailing: Icon(Icons.chevron_right_rounded,
                     color: color.onSurfaceVariant),
                 onTap: () => context.push('/settings/printers'),
@@ -186,18 +193,18 @@ class _SettingsBody extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
 
         // === Acerca de ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.info_outline_rounded,
           title: EsBO.settingsAbout,
-          color: color.tertiary,
+          accentColor: color.tertiary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 Row(
@@ -207,7 +214,7 @@ class _SettingsBody extends ConsumerWidget {
                       height: 48,
                       decoration: BoxDecoration(
                         color: color.primaryContainer,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(AppRadii.xl),
                       ),
                       child: Icon(Icons.calculate_rounded,
                           color: color.onPrimaryContainer, size: 28),
@@ -219,7 +226,7 @@ class _SettingsBody extends ConsumerWidget {
                         Text(EsBO.appName,
                             style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSpacing.xxs),
                         Text('v0.1.0',
                             style: theme.textTheme.bodySmall?.copyWith(
                                 color: color.onSurfaceVariant)),
@@ -227,12 +234,12 @@ class _SettingsBody extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Row(
                   children: [
                     Icon(Icons.lock_outline_rounded,
                         size: 16, color: color.onSurfaceVariant),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         EsBO.settingsPrivacy,
@@ -247,8 +254,9 @@ class _SettingsBody extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: AppSpacing.xxxl),
       ],
+      ),
     );
   }
 
@@ -264,38 +272,6 @@ class _SettingsBody extends ConsumerWidget {
   }
 }
 
-/// Header de seccion con icono.
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String title;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Selector de tema Claro / Oscuro / Sistema.
 class _ThemeModeSelector extends ConsumerWidget {
@@ -331,7 +307,12 @@ class _ThemeModeSelector extends ConsumerWidget {
   }
 }
 
-/// TextFormField con auto-save on blur.
+/// TextField con auto-save on blur.
+///
+/// Reemplaza la version anterior que mantenia FocusNode + FormField + filter
+/// manualmente. Ahora delega todo eso a [NumericInputField] y solo conserva
+/// el ciclo de vida del controller + la logica de save (validate -> parse
+/// Decimal -> onSave).
 class _AutoSaveField extends StatefulWidget {
   const _AutoSaveField({
     required this.label,
@@ -355,21 +336,17 @@ class _AutoSaveField extends StatefulWidget {
 
 class _AutoSaveFieldState extends State<_AutoSaveField> {
   late final TextEditingController _ctrl;
-  late final FocusNode _focus;
-  final _formKey = GlobalKey<FormFieldState<String>>();
 
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.initialValue);
-    _focus = FocusNode();
-    _focus.addListener(_handleFocusChange);
   }
 
   @override
   void didUpdateWidget(covariant _AutoSaveField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue && !_focus.hasFocus) {
+    if (oldWidget.initialValue != widget.initialValue) {
       _ctrl.text = widget.initialValue;
     }
   }
@@ -377,48 +354,28 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
   @override
   void dispose() {
     _ctrl.dispose();
-    _focus.removeListener(_handleFocusChange);
-    _focus.dispose();
     super.dispose();
   }
 
-  void _handleFocusChange() {
-    if (_focus.hasFocus) return;
-    final field = _formKey.currentState;
-    if (field == null) return;
-    if (!field.validate()) return;
-    final raw = _ctrl.text.trim().replaceAll(',', '.');
-    final parsed = Decimal.tryParse(raw);
+  void _handleBlur(String raw) {
+    // Re-correr el validador: si falla, no guardar.
+    final err = widget.validator(raw);
+    if (err != null) return;
+    final cleaned = raw.trim().replaceAll(',', '.');
+    final parsed = Decimal.tryParse(cleaned);
     if (parsed == null) return;
     widget.onSave(parsed);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FormField<String>(
-      key: _formKey,
-      initialValue: _ctrl.text,
+    return NumericInputField(
+      label: widget.label,
+      controller: _ctrl,
+      allowDecimals: widget.allowDecimals,
+      helperText: widget.helper,
       validator: widget.validator,
-      builder: (state) {
-        return TextFormField(
-          controller: _ctrl,
-          focusNode: _focus,
-          decoration: InputDecoration(
-            labelText: widget.label,
-            helperText: state.hasError ? null : widget.helper,
-            errorText: state.errorText,
-          ),
-          keyboardType: TextInputType.numberWithOptions(
-            decimal: widget.allowDecimals,
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              widget.allowDecimals ? RegExp('[0-9.,]') : RegExp('[0-9]'),
-            ),
-          ],
-          onChanged: (v) => state.didChange(v),
-        );
-      },
+      onBlur: _handleBlur,
     );
   }
 }

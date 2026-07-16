@@ -5,8 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
-import '../../../dashboard/presentation/widgets/stats_card.dart';
+import '../../../../shared/widgets/stat_tile.dart';
 import '../../domain/dashboard_stats.dart';
 
 /// Home page: landing del app con hero + quick actions + stats.
@@ -23,15 +28,18 @@ class HomePage extends ConsumerWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(theme, color),
-              const SizedBox(height: 28),
-              _buildQuickActions(context, color),
-              const SizedBox(height: 28),
-              _buildStatsSection(context, ref, asyncStats, theme, color),
-            ],
+          child: MaxWidthScrollView(
+            maxWidth: 960,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(theme, color),
+                const SizedBox(height: 28),
+                _buildQuickActions(context, color),
+                const SizedBox(height: 28),
+                _buildStatsSection(context, ref, asyncStats, theme, color),
+              ],
+            ),
           ),
         ),
       ),
@@ -49,7 +57,7 @@ class HomePage extends ConsumerWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: color.primaryContainer,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadii.xl),
               ),
               child: Icon(
                 Icons.calculate_rounded,
@@ -67,7 +75,7 @@ class HomePage extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'Cotizaciones 3D local-first',
           style: theme.textTheme.bodyLarge?.copyWith(
@@ -88,24 +96,24 @@ class HomePage extends ConsumerWidget {
     final actions = [
       _QuickAction(
         icon: Icons.add_circle_rounded,
-        label: 'Nueva cotizacion',
-        subtitle: 'Calcula precio de impresion',
+        label: EsBO.homeActionNewCalc,
+        subtitle: EsBO.homeActionNewCalcSub,
         color: color.primary,
         bgColor: color.primaryContainer,
         onTap: () => context.push('/calculator'),
       ),
       _QuickAction(
         icon: Icons.history_rounded,
-        label: 'Historial',
-        subtitle: 'Cotizaciones guardadas',
+        label: EsBO.homeActionHistory,
+        subtitle: EsBO.homeActionHistorySub,
         color: color.secondary,
         bgColor: color.secondaryContainer,
         onTap: () => context.go('/history'),
       ),
       _QuickAction(
         icon: Icons.bar_chart_rounded,
-        label: 'Dashboard',
-        subtitle: 'Estadisticas y graficos',
+        label: EsBO.homeActionDashboard,
+        subtitle: EsBO.homeActionDashboardSub,
         color: color.tertiary,
         bgColor: color.tertiaryContainer,
         onTap: () => context.go('/dashboard'),
@@ -116,12 +124,12 @@ class HomePage extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Acceso rapido',
+          EsBO.homeQuickAccess,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: color.onSurface,
               ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         // Mobile: column, Tablet/Web: row
         LayoutBuilder(
           builder: (context, constraints) {
@@ -161,14 +169,14 @@ class HomePage extends ConsumerWidget {
       error: (e, _) => Card(
         color: color.errorContainer,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
               Icon(Icons.error_outline, color: color.error),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
-                  'Error cargando stats',
+                  EsBO.homeErrorLoadStats,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: color.onErrorContainer,
                   ),
@@ -191,7 +199,7 @@ class HomePage extends ConsumerWidget {
     return Card(
       color: color.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           children: [
             Container(
@@ -199,13 +207,13 @@ class HomePage extends ConsumerWidget {
               height: 56,
               decoration: BoxDecoration(
                 color: color.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadii.xxl),
               ),
               child: Icon(Icons.receipt_long_outlined, color: color.onSurfaceVariant, size: 28),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
-              'Todavia no hay cotizaciones',
+              EsBO.homeEmptyQuotations,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: color.onSurfaceVariant,
               ),
@@ -225,41 +233,41 @@ class HomePage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Resumen',
+              EsBO.homeSummary,
               style: theme.textTheme.titleMedium?.copyWith(color: color.onSurface),
             ),
             TextButton.icon(
               icon: const Icon(Icons.open_in_new, size: 16),
-              label: const Text('Ver todo'),
+              label: const Text(EsBO.homeSeeAll),
               onPressed: () => context.go('/dashboard'),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         // Stats row
         Row(
           children: [
             Expanded(
-              child: StatsCard(
-                label: 'Cotizaciones',
+              child: StatTile(
+                label: EsBO.dashboardStatQuotations,
                 value: '${stats.countAll}',
                 icon: Icons.receipt_long_rounded,
                 color: color.primary,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: StatsCard(
-                label: 'Vendidas',
+              child: StatTile(
+                label: EsBO.dashboardStatSold,
                 value: '${stats.countSold}',
                 icon: Icons.check_circle_rounded,
                 color: color.tertiary,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: StatsCard(
-                label: 'Conversion',
+              child: StatTile(
+                label: EsBO.dashboardStatConversion,
                 value: '${stats.conversionPct.toStringAsFixed(0)}%',
                 icon: Icons.trending_up_rounded,
                 color: color.secondary,
@@ -267,23 +275,23 @@ class HomePage extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         // Monetary totals
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
-                _TotalRow(
-                  label: 'Total cotizado',
+                MoneyRow(
+                  label: EsBO.dashboardTotalQuoted,
                   value: formatBob(stats.totalQuoted),
-                  color: color.onSurface,
+                  valueColor: color.onSurface,
                 ),
-                const SizedBox(height: 8),
-                _TotalRow(
-                  label: 'Total vendido',
+                const SizedBox(height: AppSpacing.sm),
+                MoneyRow(
+                  label: EsBO.dashboardTotalSold,
                   value: formatBob(stats.totalSold),
-                  color: color.tertiary,
+                  valueColor: color.tertiary,
                   isBold: true,
                 ),
               ],
@@ -294,45 +302,6 @@ class HomePage extends ConsumerWidget {
     );
   }
 }
-
-class _TotalRow extends StatelessWidget {
-  const _TotalRow({
-    required this.label,
-    required this.value,
-    required this.color,
-    this.isBold = false,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-  final bool isBold;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-                color: color,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-// === Quick Action ===
 
 class _QuickAction {
   const _QuickAction({
@@ -362,10 +331,10 @@ class _QuickActionCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
         onTap: action.onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
               Container(
@@ -373,7 +342,7 @@ class _QuickActionCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: action.bgColor,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppRadii.xl),
                 ),
                 child: Icon(action.icon, color: action.color, size: 24),
               ),
@@ -388,7 +357,7 @@ class _QuickActionCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xxs),
                     Text(
                       action.subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(

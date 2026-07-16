@@ -53,7 +53,7 @@ void main() {
   });
 
   testWidgets(
-    'CalculatorPage limpia draft al montar — cada cotizacion arranca limpia',
+    'CalculatorPage restaura draft al montar — valores pre-cargados aparecen',
     (tester) async {
       // Pre-cargar un draft en SharedPreferences antes de montar la pagina.
       SharedPreferences.setMockInitialValues({
@@ -80,11 +80,9 @@ void main() {
       // Esperar post-frame callback + load async.
       await tester.pumpAndSettle();
 
-      // Draft fue limpiado — inputs deben estar vacios.
-      expect(find.widgetWithText(TextField, '77'), findsNothing);
-      expect(find.widgetWithText(TextField, '3'), findsNothing);
-      // Hint inicial visible (form vacio).
-      expect(find.textContaining('Completa peso'), findsOneWidget);
+      // Draft fue restaurado — inputs muestran valores pre-cargados.
+      expect(find.widgetWithText(TextField, '77'), findsOneWidget);
+      expect(find.widgetWithText(TextField, '3'), findsOneWidget);
 
       await db.close();
     },

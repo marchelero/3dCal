@@ -1,10 +1,13 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../l10n/es_bo.dart';
+import '../../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
 
 /// Form de impresora. Espejo de [FilamentFormPage] sin `brand` ni Decimal.
@@ -49,16 +52,16 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   bool get _isEdit => widget.existing != null;
 
   String? _requiredText(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
-    if (v.trim().length > 100) return 'Maximo 100 caracteres';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
+    if (v.trim().length > 100) return EsBO.filamentMax100;
     return null;
   }
 
   String? _requiredWatts(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
     final n = int.tryParse(v.trim());
-    if (n == null) return 'Numero invalido';
-    if (n < 0) return 'Debe ser >= 0';
+    if (n == null) return EsBO.commonInvalidNumber;
+    if (n < 0) return EsBO.printerMustBeNonNegative;
     return null;
   }
 
@@ -107,50 +110,51 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Editar impresora' : 'Nueva impresora'),
+        title: Text(_isEdit
+            ? '${EsBO.commonEdit} impresora'
+            : '${EsBO.commonNew} impresora'),
       ),
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
+          child: MaxWidthScrollView(
+            maxWidth: 600,
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              shrinkWrap: true,
+              children: [
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Modelo',
-                  helperText: 'Ej: Ender 3 V2',
+                  labelText: EsBO.printerModel,
+                  helperText: EsBO.printerModelHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: _requiredText,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _brandCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Marca',
-                  helperText: 'Ej: Creality, Anycubic',
+                  labelText: EsBO.filamentBrand,
+                  helperText: EsBO.printerBrandHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: AppSpacing.lg),
+              NumericInputField(
+                label: EsBO.printerWatts,
                 controller: _wattsCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Consumo promedio (W)',
-                  helperText: 'Tipico 100-300 W',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
+                allowDecimals: false,
+                helperText: EsBO.printerWattsHelper,
                 textInputAction: TextInputAction.done,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: _requiredWatts,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
-                title: const Text('Marcar como default'),
+                title: const Text(EsBO.filamentDefaultToggle),
                 subtitle: const Text(
                   'Se usara en nuevas cotizaciones. '
                   'Solo una impresora puede ser default.',
@@ -158,7 +162,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                 value: _isDefault,
                 onChanged: _saving ? null : _setDefault,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               FilledButton.icon(
                 icon: _saving
                     ? const SizedBox(
@@ -167,10 +171,11 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save),
-                label: const Text('Guardar'),
+                label: const Text(EsBO.commonSave),
                 onPressed: _saving ? null : _save,
               ),
             ],
+            ),
           ),
         ),
       ),

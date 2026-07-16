@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../l10n/es_bo.dart';
+import '../../../../../shared/widgets/confirm_dialog.dart';
+import '../../../../../shared/widgets/default_badge.dart';
 import '../../../../../shared/widgets/empty_view.dart';
 import '../../../../../shared/widgets/error_view.dart';
 import '../../../../../shared/widgets/loading_view.dart';
@@ -26,11 +29,11 @@ class FilamentsPage extends ConsumerWidget {
     final async = ref.watch(filamentsNotifierProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Filamentos'),
+        title: const Text(EsBO.filamentTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Nuevo filamento',
+            tooltip: EsBO.filamentNewTooltip,
             onPressed: () => context.push('/settings/filaments/new'),
           ),
         ],
@@ -78,34 +81,39 @@ class _FilamentTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: filament.isDefault
-          ? const Icon(Icons.star, color: Colors.amber)
-          : const Icon(Icons.label_outline),
-      title: Text(filament.name),
-      subtitle: Text(_subtitle()),
-      trailing: PopupMenuButton<_TileAction>(
-        onSelected: (a) => _handle(context, ref, a),
-        itemBuilder: (_) => const [
-          PopupMenuItem<_TileAction>(
-            value: _TileAction.setDefault,
-            child: ListTile(
-              leading: Icon(Icons.star),
-              title: Text('Marcar como default'),
+    return Semantics(
+      container: true,
+      label: '${filament.name}, ${_subtitle()}'
+          '${filament.isDefault ? ", ${EsBO.filamentDefaultToggle}" : ""}',
+      child: ListTile(
+        leading: filament.isDefault
+            ? const DefaultBadge()
+            : const Icon(Icons.label_outline),
+        title: Text(filament.name),
+        subtitle: Text(_subtitle()),
+        trailing: PopupMenuButton<_TileAction>(
+          onSelected: (a) => _handle(context, ref, a),
+          itemBuilder: (_) => const [
+            PopupMenuItem<_TileAction>(
+              value: _TileAction.setDefault,
+              child: ListTile(
+                leading: Icon(Icons.star),
+                title: Text(EsBO.filamentDefaultToggle),
+              ),
             ),
-          ),
-          PopupMenuItem<_TileAction>(
-            value: _TileAction.delete,
-            child: ListTile(
-              leading: Icon(Icons.delete_outline),
-              title: Text('Eliminar'),
+            PopupMenuItem<_TileAction>(
+              value: _TileAction.delete,
+              child: ListTile(
+                leading: Icon(Icons.delete_outline),
+                title: Text(EsBO.commonDelete),
+              ),
             ),
-          ),
-        ],
-      ),
-      onTap: () => context.push(
-        '/settings/filaments/${filament.id}',
-        extra: filament,
+          ],
+        ),
+        onTap: () => context.push(
+          '/settings/filaments/${filament.id}',
+          extra: filament,
+        ),
       ),
     );
   }
@@ -116,24 +124,12 @@ class _FilamentTile extends ConsumerWidget {
       case _TileAction.setDefault:
         await notifier.setAsDefault(filament.id);
       case _TileAction.delete:
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Eliminar filamento'),
-            content: Text('¿Eliminar "${filament.name}"?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
+        final confirm = await showConfirmDialog(
+          context,
+          title: EsBO.filamentDeleteTitle,
+          message: '¿Eliminar "${filament.name}"?',
         );
-        if (confirm == true) {
+        if (confirm) {
           await notifier.delete(filament.id);
         }
     }

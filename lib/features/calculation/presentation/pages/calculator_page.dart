@@ -12,11 +12,17 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/avatar_icon.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/numeric_input_field.dart';
+import '../../../../shared/widgets/section_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
+import '../../domain/entities/calculation_output.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
-import '../widgets/decimal_input_field.dart';
-import '../../domain/entities/calculation_output.dart';
 
 /// Pantalla principal del calculator con UX mejorada.
 ///
@@ -60,8 +66,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _labelCtrl = TextEditingController(text: initial.label);
 
     for (final c in [
-      _weightCtrl, _hoursCtrl, _minutesCtrl, _discountCtrl,
-      _priceCtrl, _gramsCtrl,
+      _weightCtrl,
+      _hoursCtrl,
+      _minutesCtrl,
+      _discountCtrl,
+      _priceCtrl,
+      _gramsCtrl,
     ]) {
       c.addListener(_scheduleDraftSave);
     }
@@ -79,33 +89,38 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (!mounted) return;
       final storage = ref.read(draftStorageProvider);
       final draft = await storage.load();
-      if (draft == null && mounted) {
-        final defaultFilament = ref.read(defaultFilamentProvider);
-        if (defaultFilament != null) {
-          ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
-                pricePerBobbin:
-                    defaultFilament.pricePerBobbin.toStringAsFixed(2),
-                gramsPerBobbin:
-                    defaultFilament.gramsPerBobbin.toStringAsFixed(0),
-              );
-          final updated = ref.read(calculatorNotifierProvider);
-          _priceCtrl.text = updated.filamentPrice;
-          _gramsCtrl.text = updated.filamentGrams;
-        }
+      if (!mounted) return;
+      if (draft != null) {
+        // Restaurar el draft en notifier y sincronizar controllers.
+        ref.read(calculatorNotifierProvider.notifier).restoreFromDraft(draft);
+        if (!mounted) return;
+        _weightCtrl.text = draft.weight;
+        _hoursCtrl.text = draft.printHours;
+        _minutesCtrl.text = draft.printMinutes;
+        _discountCtrl.text = draft.discountPct;
+        _priceCtrl.text = draft.filamentPrice;
+        _gramsCtrl.text = draft.filamentGrams;
+        _labelCtrl.text = draft.label;
+        return;
       }
-      await _restoreDraftIfAny();
+      // Sin draft persistido: cargar defaults del filamento por defecto.
+      final defaultFilament = ref.read(defaultFilamentProvider);
+      if (defaultFilament != null) {
+        ref
+            .read(calculatorNotifierProvider.notifier)
+            .loadFilamentDefaults(
+              pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(2),
+              gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(0),
+            );
+        if (!mounted) return;
+        final updated = ref.read(calculatorNotifierProvider);
+        _priceCtrl.text = updated.filamentPrice;
+        _gramsCtrl.text = updated.filamentGrams;
+      }
     });
   }
 
-  bool _draftRestored = false;
   Timer? _saveTimer;
-
-  Future<void> _restoreDraftIfAny() async {
-    if (_draftRestored) return;
-    _draftRestored = true;
-    final storage = ref.read(draftStorageProvider);
-    await storage.clear();
-  }
 
   void _scheduleDraftSave() {
     _saveTimer?.cancel();
@@ -216,18 +231,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
     if (result == null || !mounted) return;
     try {
-      final id = await ref.read(calculatorNotifierProvider.notifier).save(
-            clientName: result.clientName,
-          );
+      final id = await ref
+          .read(calculatorNotifierProvider.notifier)
+          .save(clientName: result.clientName);
       if (!mounted) return;
       if (id != null) {
         await ref.read(draftStorageProvider).clear();
         if (!mounted) return;
       }
       if (id == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo guardar.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No se pudo guardar.')));
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
@@ -238,9 +253,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -279,37 +294,39 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Mode selector
-          _ModeSelector(mode: state.mode, onChanged: _switchMode),
-          const SizedBox(height: 16),
+      child: MaxWidthScrollView(
+        maxWidth: 720,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Mode selector
+            _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            const SizedBox(height: AppSpacing.lg),
 
-          // Card: Pieza
-          _SectionCard(
-            icon: Icons.category_rounded,
-            title: 'Pieza',
+            // Card: Pieza
+            SectionCard(
+              icon: Icons.category_rounded,
+              title: EsBO.calcSectionPiece,
             child: Column(
               children: [
                 _buildLabelField(theme),
-                const SizedBox(height: 12),
-                DecimalInputField(
-                  label: 'Peso de la pieza',
+                const SizedBox(height: AppSpacing.md),
+                NumericInputField(
+                  label: EsBO.calcLabelWeight,
                   controller: _weightCtrl,
                   onChanged: notifier.setWeight,
                   suffix: 'g',
-                  helperText: 'Gramos del modelo',
+                  helperText: EsBO.calcLabelWeightHelper,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Filamento
-          _SectionCard(
+          SectionCard(
             icon: Icons.inventory_2_rounded,
-            title: 'Filamento',
+            title: EsBO.calcSectionFilament,
             child: _FilamentSection(
               weightCtrl: _weightCtrl,
               priceCtrl: _priceCtrl,
@@ -319,81 +336,82 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               onGramsChanged: notifier.setFilamentGrams,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Impresora
-          _SectionCard(
+          SectionCard(
             icon: Icons.print_rounded,
             title: 'Impresora',
             child: _PrinterIndicator(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
-          _SectionCard(
+          SectionCard(
             icon: Icons.timer_rounded,
-            title: 'Tiempo de impresion',
+            title: EsBO.calcSectionTime,
             child: Row(
               children: [
                 Expanded(
-                  child: DecimalInputField(
-                    label: 'Horas',
+                  child: NumericInputField(
+                    label: EsBO.calcLabelHours,
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: DecimalInputField(
-                    label: 'Minutos',
+                  child: NumericInputField(
+                    label: EsBO.calcLabelMinutes,
                     controller: _minutesCtrl,
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
-                    helperText: '0-59',
+                    helperText: EsBO.calcLabelMinutesHelper,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Descuento
-          _SectionCard(
+          SectionCard(
             icon: Icons.local_offer_rounded,
-            title: 'Descuento',
-            child: DecimalInputField(
+            title: EsBO.calcSectionDiscount,
+            child: NumericInputField(
               label: 'Descuento',
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
               suffix: '%',
-              helperText: 'Porcentaje sobre el total final',
+              helperText: EsBO.calcLabelDiscountHelper,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Output section
           const _OutputSection(),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Save button
           FilledButton.icon(
             icon: const Icon(Icons.save_rounded),
-            label: const Text('Guardar cotizacion'),
+            label: const Text(EsBO.calcBtnSave),
             onPressed: _showSaveDialog,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Reset link (text button, less prominent)
           Center(
             child: TextButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Restablecer valores'),
+              label: const Text(EsBO.calcBtnReset),
               onPressed: _resetAll,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
         ],
+        ),
       ),
     );
   }
@@ -409,22 +427,24 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _ModeSelector(mode: state.mode, onChanged: _switchMode),
-          const SizedBox(height: 16),
+      child: MaxWidthScrollView(
+        maxWidth: 720,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            const SizedBox(height: AppSpacing.lg),
 
-          // Card: Pieza
-          _SectionCard(
-            icon: Icons.category_rounded,
-            title: 'Pieza',
-            child: _buildLabelField(theme),
-          ),
-          const SizedBox(height: 12),
+            // Card: Pieza
+            SectionCard(
+              icon: Icons.category_rounded,
+              title: EsBO.calcSectionPiece,
+              child: _buildLabelField(theme),
+            ),
+            const SizedBox(height: AppSpacing.md),
 
           // Card: Materiales
-          _SectionCard(
+          SectionCard(
             icon: Icons.inventory_2_rounded,
             title: 'Materiales',
             child: Column(
@@ -457,7 +477,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     );
                   },
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 OutlinedButton.icon(
                   onPressed: _addMaterial,
                   icon: const Icon(Icons.add_rounded),
@@ -466,80 +486,81 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Impresora
-          _SectionCard(
+          SectionCard(
             icon: Icons.print_rounded,
             title: 'Impresora',
             child: _PrinterIndicator(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
-          _SectionCard(
+          SectionCard(
             icon: Icons.timer_rounded,
-            title: 'Tiempo de impresion',
+            title: EsBO.calcSectionTime,
             child: Row(
               children: [
                 Expanded(
-                  child: DecimalInputField(
-                    label: 'Horas',
+                  child: NumericInputField(
+                    label: EsBO.calcLabelHours,
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: DecimalInputField(
-                    label: 'Minutos',
+                  child: NumericInputField(
+                    label: EsBO.calcLabelMinutes,
                     controller: _minutesCtrl,
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
-                    helperText: '0-59',
+                    helperText: EsBO.calcLabelMinutesHelper,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Descuento
-          _SectionCard(
+          SectionCard(
             icon: Icons.local_offer_rounded,
-            title: 'Descuento',
-            child: DecimalInputField(
+            title: EsBO.calcSectionDiscount,
+            child: NumericInputField(
               label: 'Descuento',
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
               suffix: '%',
-              helperText: 'Porcentaje sobre el total final',
+              helperText: EsBO.calcLabelDiscountHelper,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Output section
           const _OutputSection(),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Save button
           FilledButton.icon(
             icon: const Icon(Icons.save_rounded),
-            label: const Text('Guardar cotizacion'),
+            label: const Text(EsBO.calcBtnSave),
             onPressed: _showSaveDialog,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           Center(
             child: TextButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Restablecer valores'),
+              label: const Text(EsBO.calcBtnReset),
               onPressed: _resetAll,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
         ],
+        ),
       ),
     );
   }
@@ -548,55 +569,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     return TextField(
       controller: _labelCtrl,
       decoration: const InputDecoration(
-        labelText: 'Etiqueta (opcional)',
-        helperText: 'Ej: Soporte pared, Engranaje PETG',
+        labelText: EsBO.calcLabelOptional,
+        helperText: EsBO.calcLabelOptionalHelper,
         prefixIcon: Icon(Icons.label_outline),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// SECTION CARD — wrapper reutilizable con icono + titulo
-// ============================================================
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.icon,
-    required this.title,
-    required this.child,
-  });
-
-  final IconData icon;
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 18, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
       ),
     );
   }
@@ -635,7 +610,7 @@ class _FilamentSection extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: DecimalInputField(
+              child: NumericInputField(
                 label: 'Precio bobina',
                 controller: priceCtrl,
                 onChanged: onPriceChanged,
@@ -643,9 +618,9 @@ class _FilamentSection extends ConsumerWidget {
                 helperText: 'Costo del rollo',
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: DecimalInputField(
+              child: NumericInputField(
                 label: 'Gramos bobina',
                 controller: gramsCtrl,
                 onChanged: onGramsChanged,
@@ -656,21 +631,27 @@ class _FilamentSection extends ConsumerWidget {
           ],
         ),
         if (filaments.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               if (defaultFilament != null)
                 _ActionChip(
                   icon: Icons.star_rounded,
                   label: 'Usar ${defaultFilament.name}',
-                  onTap: () => _loadFilament(ref, defaultFilament, priceCtrl, gramsCtrl),
+                  onTap: () =>
+                      _loadFilament(ref, defaultFilament, priceCtrl, gramsCtrl),
                 ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               _ActionChip(
                 icon: Icons.inventory_2_rounded,
                 label: 'Catalogo',
-                onTap: () =>
-                    _showFilamentDialog(context, ref, filaments, priceCtrl, gramsCtrl),
+                onTap: () => _showFilamentDialog(
+                  context,
+                  ref,
+                  filaments,
+                  priceCtrl,
+                  gramsCtrl,
+                ),
               ),
             ],
           ),
@@ -679,9 +660,15 @@ class _FilamentSection extends ConsumerWidget {
     );
   }
 
-  void _loadFilament(WidgetRef ref, Filament f,
-      TextEditingController priceCtrl, TextEditingController gramsCtrl) {
-    ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
+  void _loadFilament(
+    WidgetRef ref,
+    Filament f,
+    TextEditingController priceCtrl,
+    TextEditingController gramsCtrl,
+  ) {
+    ref
+        .read(calculatorNotifierProvider.notifier)
+        .loadFilamentDefaults(
           pricePerBobbin: f.pricePerBobbin.toStringAsFixed(2),
           gramsPerBobbin: f.gramsPerBobbin.toStringAsFixed(0),
         );
@@ -711,18 +698,11 @@ class _FilamentSection extends ConsumerWidget {
             itemBuilder: (_, i) {
               final f = filaments[i];
               return ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    f.isDefault ? Icons.star_rounded : Icons.label_rounded,
-                    color: f.isDefault ? Colors.amber : Theme.of(context).colorScheme.onPrimaryContainer,
-                    size: 20,
-                  ),
+                leading: AvatarIcon(
+                  icon: f.isDefault ? Icons.star_rounded : Icons.label_rounded,
+                  foreground: f.isDefault
+                      ? Theme.of(context).colorScheme.tertiary
+                      : null,
                 ),
                 title: Text(f.name),
                 subtitle: Text(
@@ -785,7 +765,7 @@ class _PrinterIndicator extends ConsumerWidget {
     final printers = printersAsync.valueOrNull ?? <PrinterProfile>[];
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadii.lg),
       onTap: printers.isEmpty
           ? null
           : () => _showPrinterDialog(context, ref, printers),
@@ -793,7 +773,7 @@ class _PrinterIndicator extends ConsumerWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Row(
@@ -803,38 +783,51 @@ class _PrinterIndicator extends ConsumerWidget {
               height: 36,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadii.md),
               ),
-              child: Icon(Icons.print_rounded,
-                  size: 20, color: theme.colorScheme.onPrimaryContainer),
+              child: Icon(
+                Icons.print_rounded,
+                size: 20,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: activePrinter != null
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(activePrinter.name,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          activePrinter.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         Text(
                           activePrinter.brand != null &&
                                   activePrinter.brand!.isNotEmpty
                               ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
                               : '${activePrinter.averageWatts} W',
                           style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant),
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     )
-                  : Text('Sin impresora registrada',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  : Text(
+                      'Sin impresora registrada',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
             ),
             if (printers.isNotEmpty)
-              Icon(Icons.chevron_right_rounded,
-                  size: 20, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
           ],
         ),
       ),
@@ -858,16 +851,7 @@ class _PrinterIndicator extends ConsumerWidget {
             itemBuilder: (_, i) {
               final p = printers[i];
               return ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.print_rounded,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer),
-                ),
+                leading: AvatarIcon(icon: Icons.print_rounded),
                 title: Text(p.name),
                 subtitle: Text(
                   '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
@@ -903,18 +887,18 @@ class _MaterialCtrls {
   });
 
   factory _MaterialCtrls.empty() => _MaterialCtrls(
-        label: TextEditingController(),
-        weight: TextEditingController(),
-        price: TextEditingController(),
-        grams: TextEditingController(),
-      );
+    label: TextEditingController(),
+    weight: TextEditingController(),
+    price: TextEditingController(),
+    grams: TextEditingController(),
+  );
 
   factory _MaterialCtrls.fromRow(MaterialRow r) => _MaterialCtrls(
-        label: TextEditingController(text: r.label),
-        weight: TextEditingController(text: r.weight),
-        price: TextEditingController(text: r.pricePerBobbin),
-        grams: TextEditingController(text: r.gramsPerBobbin),
-      );
+    label: TextEditingController(text: r.label),
+    weight: TextEditingController(text: r.weight),
+    price: TextEditingController(text: r.pricePerBobbin),
+    grams: TextEditingController(text: r.gramsPerBobbin),
+  );
 
   final TextEditingController label;
   final TextEditingController weight;
@@ -963,10 +947,10 @@ class _MaterialRowTile extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
@@ -979,7 +963,7 @@ class _MaterialRowTile extends StatelessWidget {
                 height: 28,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                 ),
                 child: Center(
                   child: Text(
@@ -991,9 +975,8 @@ class _MaterialRowTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text('Material ${index + 1}',
-                  style: theme.textTheme.titleSmall),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Material ${index + 1}', style: theme.textTheme.titleSmall),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.delete_outline_rounded),
@@ -1005,7 +988,7 @@ class _MaterialRowTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: ctrls.label,
             decoration: const InputDecoration(
@@ -1016,29 +999,29 @@ class _MaterialRowTile extends StatelessWidget {
             ),
             onChanged: (v) => _emit(),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
-                child: DecimalInputField(
+                child: NumericInputField(
                   label: 'Peso',
                   controller: ctrls.weight,
                   onChanged: (v) => _emit(),
                   suffix: 'g',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: DecimalInputField(
+                child: NumericInputField(
                   label: 'Precio bobina',
                   controller: ctrls.price,
                   onChanged: (v) => _emit(),
                   suffix: 'BOB',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: DecimalInputField(
+                child: NumericInputField(
                   label: 'Gramos / bobina',
                   controller: ctrls.grams,
                   onChanged: (v) => _emit(),
@@ -1053,12 +1036,14 @@ class _MaterialRowTile extends StatelessWidget {
   }
 
   void _emit() {
-    onChanged(_MaterialUpdate(
-      label: ctrls.label.text,
-      weight: ctrls.weight.text,
-      pricePerBobbin: ctrls.price.text,
-      gramsPerBobbin: ctrls.grams.text,
-    ));
+    onChanged(
+      _MaterialUpdate(
+        label: ctrls.label.text,
+        weight: ctrls.weight.text,
+        pricePerBobbin: ctrls.price.text,
+        gramsPerBobbin: ctrls.grams.text,
+      ),
+    );
   }
 }
 
@@ -1114,7 +1099,8 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
           _SummaryCard(
             output: output,
             label: state.label,
-            discountPct: state.detailDiscountPct?.toStringAsFixed(0) ??
+            discountPct:
+                state.detailDiscountPct?.toStringAsFixed(0) ??
                 state.discountPct,
             showDetail: state.showDetail,
             onToggleDetail: () =>
@@ -1145,12 +1131,12 @@ class _CalculatingAnimation extends StatelessWidget {
               color: color.primary,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Calculando...',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: color.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: color.onSurfaceVariant),
           ),
         ],
       ),
@@ -1167,16 +1153,20 @@ class _EmptyOutput extends StatelessWidget {
     final color = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       decoration: BoxDecoration(
         color: color.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
         border: Border.all(color: color.outlineVariant),
       ),
       child: Column(
         children: [
-          Icon(Icons.info_outline_rounded, size: 32, color: color.onSurfaceVariant),
-          const SizedBox(height: 12),
+          Icon(
+            Icons.info_outline_rounded,
+            size: 32,
+            color: color.onSurfaceVariant,
+          ),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'Completa peso, precio y tiempo de impresion\npara ver la cotizacion.',
             textAlign: TextAlign.center,
@@ -1224,7 +1214,7 @@ class _SummaryCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1234,7 +1224,7 @@ class _SummaryCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.xxxl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1256,7 +1246,7 @@ class _SummaryCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: color.onPrimaryContainer.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.xxxl),
             ),
             child: Text(
               DateFormat('dd MMM yyyy HH:mm').format(now),
@@ -1266,7 +1256,7 @@ class _SummaryCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
           // Big price
           Text(
@@ -1290,12 +1280,12 @@ class _SummaryCard extends StatelessWidget {
 
           // Discount badge
           if (hasDiscount) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: color.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1320,16 +1310,18 @@ class _SummaryCard extends StatelessWidget {
           ],
 
           // Toggle detail
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Align(
             child: TextButton.icon(
               icon: Icon(
-                showDetail ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                showDetail
+                    ? Icons.visibility_rounded
+                    : Icons.visibility_off_rounded,
                 size: 18,
                 color: color.onPrimaryContainer,
               ),
               label: Text(
-                showDetail ? 'Ocultar detalle' : 'Ver detalle',
+                showDetail ? EsBO.calcToggleHideDetail : EsBO.calcToggleShowDetail,
                 style: TextStyle(color: color.onPrimaryContainer),
               ),
               onPressed: onToggleDetail,
@@ -1338,8 +1330,12 @@ class _SummaryCard extends StatelessWidget {
 
           // Detail breakdown
           if (showDetail) ...[
-            const Divider(height: 8, color: Colors.white24),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
+            Divider(
+              height: 1,
+              color: color.onPrimaryContainer.withValues(alpha: 0.2),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             _DetailSection(
               materialCost: output.materialCost,
               electricCost: detailElectricCost ?? Decimal.zero,
@@ -1381,43 +1377,70 @@ class _DetailSection extends StatelessWidget {
     );
     return Column(
       children: [
-        _dr('Costo material', formatBob(materialCost), s, tc: tc),
-        _dr('Costo energia', formatBob(electricCost), s, tc: tc),
-        _dr('Costo base', formatBob(baseCost), s, tc: tc),
-        _dr('Ganancia', formatBob(profitAmount), s,
-            tc: theme.colorScheme.primary, isProfit: true),
-        const Divider(height: 12, color: Colors.white24),
-        _dr('Costo total final', formatBob(totalFinal), s, tc: tc, isTotal: true),
+        _dr(EsBO.calcDetailMaterial, formatBob(materialCost), s, tc: tc),
+        _dr(EsBO.calcDetailEnergy, formatBob(electricCost), s, tc: tc),
+        _dr(EsBO.calcDetailBase, formatBob(baseCost), s, tc: tc),
+        _dr(
+          EsBO.calcDetailProfit,
+          formatBob(profitAmount),
+          s,
+          tc: theme.colorScheme.primary,
+          isProfit: true,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Divider(
+          height: 1,
+          color: (textColor ?? theme.colorScheme.onSurface)
+              .withValues(alpha: 0.2),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _dr(
+          EsBO.calcDetailTotal,
+          formatBob(totalFinal),
+          s,
+          tc: tc,
+          isTotal: true,
+        ),
       ],
     );
   }
 
-  Widget _dr(String label, String value, TextStyle? style,
-      {Color? tc, bool isProfit = false, bool isTotal = false}) {
+  Widget _dr(
+    String label,
+    String value,
+    TextStyle? style, {
+    Color? tc,
+    bool isProfit = false,
+    bool isTotal = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: style?.copyWith(
-                fontWeight: isTotal ? FontWeight.w600 : null,
-                color: tc?.withValues(alpha: isTotal ? 1.0 : 0.8),
-              )),
-          Text(value,
-              style: style?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-                fontWeight: isTotal
-                    ? FontWeight.bold
-                    : isProfit
-                        ? FontWeight.w600
-                        : FontWeight.w500,
-                color: isProfit
-                    ? tc
-                    : isTotal
-                        ? tc
-                        : tc?.withValues(alpha: 0.8),
-              )),
+          Text(
+            label,
+            style: style?.copyWith(
+              fontWeight: isTotal ? FontWeight.w600 : null,
+              color: tc?.withValues(alpha: isTotal ? 1.0 : 0.8),
+            ),
+          ),
+          Text(
+            value,
+            style: style?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontWeight: isTotal
+                  ? FontWeight.bold
+                  : isProfit
+                  ? FontWeight.w600
+                  : FontWeight.w500,
+              color: isProfit
+                  ? tc
+                  : isTotal
+                  ? tc
+                  : tc?.withValues(alpha: 0.8),
+            ),
+          ),
         ],
       ),
     );
@@ -1505,10 +1528,7 @@ class _SaveDialogState extends State<_SaveDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Guardar'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Guardar')),
       ],
     );
   }

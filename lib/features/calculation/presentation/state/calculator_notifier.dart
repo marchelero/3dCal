@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/storage/calculation_draft.dart' as storage;
 import '../../../../features/settings/domain/settings.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../data/calculation_repository.dart';
@@ -121,6 +122,36 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// Resetea el form a los defaults.
   void reset() {
     state = CalculatorState.initial();
+  }
+
+  /// Restaura el form desde un draft persistido.
+  ///
+  /// Llamado por [CalculatorPage.initState] al reabrir la app si habia un
+  /// draft guardado. Aplica el modo (express/advanced), los campos comunes
+  /// (horas, descuento, etiqueta) y los express (peso, precio, gramos).
+  /// En advanced, reconstruye las filas de materiales desde [MaterialDraft]s.
+  void restoreFromDraft(storage.CalculationDraft draft) {
+    final mode =
+        draft.isAdvanced ? CalculatorMode.advanced : CalculatorMode.express;
+    state = _recompute(CalculatorState(
+      mode: mode,
+      printHours: draft.printHours,
+      printMinutes: draft.printMinutes,
+      discountPct: draft.discountPct,
+      label: draft.label,
+      weight: draft.weight,
+      filamentPrice: draft.filamentPrice,
+      filamentGrams: draft.filamentGrams,
+      materials: draft.materials
+          .map((m) => MaterialRow(
+                label: m.label,
+                weight: m.weight,
+                pricePerBobbin: m.pricePerBobbin,
+                gramsPerBobbin: m.gramsPerBobbin,
+              ))
+          .toList(),
+      output: null,
+    ));
   }
 
   /// Alterna el detalle secreto (ojito) con desglose electrico/profit.

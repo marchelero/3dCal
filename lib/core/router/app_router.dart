@@ -15,6 +15,7 @@ import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../database/app_database.dart';
+import '../theme/app_spacing.dart';
 
 /// Router principal de la app (PRD §8.3, Sprint 7 — go_router migration).
 ///
@@ -146,17 +147,17 @@ class _RouterErrorPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Error')),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.error_outline, size: 96),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Text(
                 'Pagina no encontrada',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               FilledButton.icon(
                 icon: const Icon(Icons.home),
                 label: const Text('Volver a Inicio'),

@@ -7,6 +7,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_spacing.dart';
+
 class LoadingView extends StatelessWidget {
   const LoadingView({super.key, this.message, this.useSkeleton = false});
 
@@ -32,7 +34,7 @@ class LoadingView extends StatelessWidget {
             ),
           ),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               message!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(

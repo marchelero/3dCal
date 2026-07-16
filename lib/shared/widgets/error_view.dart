@@ -6,6 +6,10 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../l10n/es_bo.dart';
+
 class ErrorView extends StatelessWidget {
   const ErrorView({
     super.key,
@@ -23,7 +27,7 @@ class ErrorView extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -32,7 +36,7 @@ class ErrorView extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 color: color.errorContainer.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppRadii.xxxl),
               ),
               child: Icon(
                 Icons.error_outline_rounded,
@@ -40,7 +44,7 @@ class ErrorView extends StatelessWidget {
                 color: color.error,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -49,7 +53,7 @@ class ErrorView extends StatelessWidget {
                   ),
             ),
             if (details != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 details!,
                 textAlign: TextAlign.center,
@@ -59,11 +63,11 @@ class ErrorView extends StatelessWidget {
               ),
             ],
             if (onRetry != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               FilledButton.tonalIcon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Reintentar'),
+                label: const Text(EsBO.commonRetry),
               ),
             ],
           ],

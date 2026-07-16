@@ -1,11 +1,14 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../l10n/es_bo.dart';
+import '../../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/filaments_notifier.dart';
 
 /// Form de filamento. Modo create (sin `existing`) o edit (con `existing`).
@@ -67,26 +70,26 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
   }
 
   String? _requiredNumber(String? v, {bool integer = false}) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
     final cleaned = v.trim().replaceAll(',', '.');
     final parsed = Decimal.tryParse(cleaned);
-    if (parsed == null) return 'Numero invalido';
-    if (parsed <= Decimal.zero) return 'Debe ser > 0';
+    if (parsed == null) return EsBO.commonInvalidNumber;
+    if (parsed <= Decimal.zero) return EsBO.filamentMustBePositive;
     if (integer && parsed != parsed.toBigInt().toDecimal()) {
-      return 'Debe ser entero';
+      return EsBO.filamentMustBeInteger;
     }
     return null;
   }
 
   String? _requiredText(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
-    if (v.trim().length > 100) return 'Maximo 100 caracteres';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
+    if (v.trim().length > 100) return EsBO.filamentMax100;
     return null;
   }
 
   String? _optionalText(String? v) {
     if (v == null || v.trim().isEmpty) return null;
-    if (v.trim().length > 100) return 'Maximo 100 caracteres';
+    if (v.trim().length > 100) return EsBO.filamentMax100;
     return null;
   }
 
@@ -134,69 +137,63 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Editar filamento' : 'Nuevo filamento'),
+        title: Text(_isEdit
+            ? '${EsBO.commonEdit} filamento'
+            : '${EsBO.commonNew} filamento'),
       ),
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
+          child: MaxWidthScrollView(
+            maxWidth: 600,
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              shrinkWrap: true,
+              children: [
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  helperText: 'Ej: PLA Negro',
+                  labelText: EsBO.filamentName,
+                  helperText: EsBO.filamentNameHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: _requiredText,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _brandCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Marca',
-                  helperText: 'Opcional',
+                  labelText: EsBO.filamentBrand,
+                  helperText: EsBO.filamentBrandHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: _optionalText,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _priceCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Precio bobina (BOB)',
-                  helperText: 'Costo del rollo completo',
-                  border: OutlineInputBorder(),
+                  labelText: EsBO.filamentPrice,
+                  helperText: EsBO.filamentPriceHelper,
                 ),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-                ],
                 validator: _requiredNumber,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: AppSpacing.lg),
+              NumericInputField(
+                label: EsBO.filamentGrams,
                 controller: _gramsCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Gramos por bobina',
-                  helperText: 'Tipico 1000',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
+                allowDecimals: false,
+                helperText: EsBO.filamentGramsHelper,
                 textInputAction: TextInputAction.done,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                validator: (v) => _requiredNumber(v, integer: true),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
-                title: const Text('Marcar como default'),
+                title: const Text(EsBO.filamentDefaultToggle),
                 subtitle: const Text(
                   'Se usara en nuevas cotizaciones. '
                   'Solo un filamento puede ser default.',
@@ -204,7 +201,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 value: _isDefault,
                 onChanged: _saving ? null : _setDefault,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               FilledButton.icon(
                 icon: _saving
                     ? const SizedBox(
@@ -213,10 +210,11 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save),
-                label: const Text('Guardar'),
+                label: const Text(EsBO.commonSave),
                 onPressed: _saving ? null : _save,
               ),
             ],
+            ),
           ),
         ),
       ),

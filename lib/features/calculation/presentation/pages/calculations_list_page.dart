@@ -7,6 +7,10 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -23,12 +27,12 @@ class CalculationsListPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cotizaciones'),
+        title: const Text(EsBO.historyTitle),
       ),
       body: async.when(
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(
-          message: 'Error cargando cotizaciones',
+          message: EsBO.historyErrorLoad,
           details: e.toString(),
           onRetry: () => ref.invalidate(calculationsNotifierProvider),
         ),
@@ -36,9 +40,9 @@ class CalculationsListPage extends ConsumerWidget {
           if (calcs.isEmpty) {
             return EmptyView(
               icon: Icons.receipt_long_outlined,
-              message: 'Sin cotizaciones guardadas',
+              message: EsBO.historyEmpty,
               subtitle: 'Crea una desde el calculator y toca Guardar.',
-              ctaLabel: 'Nueva cotizacion',
+              ctaLabel: EsBO.homeActionNewCalc,
               ctaIcon: Icons.add_rounded,
               onCta: () => context.push('/calculator'),
             );
@@ -73,7 +77,7 @@ class _CalculationCard extends ConsumerWidget {
     if (piece != null && piece.isNotEmpty) return piece;
     final client = calc.clientName;
     if (client != null && client.isNotEmpty) return 'Cotizacion · $client';
-    return 'Cotizacion sin nombre';
+    return EsBO.calcDetailNoName;
   }
 
   @override
@@ -82,34 +86,40 @@ class _CalculationCard extends ConsumerWidget {
     final color = theme.colorScheme;
     final client = calc.clientName;
 
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push('/history/${calc.id}', extra: calc),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Leading icon
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: calc.isSold
-                      ? color.tertiaryContainer
-                      : color.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+    return Semantics(
+      container: true,
+      label: '${_title()}, ${formatBob(Decimal.parse(calc.totalPriceSnapshot.toString()))}'
+          '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.xxl),
+          onTap: () => context.push('/history/${calc.id}', extra: calc),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              children: [
+                // Leading icon (decorative — sale status already in label)
+                ExcludeSemantics(
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: calc.isSold
+                          ? color.tertiaryContainer
+                          : color.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                    ),
+                    child: Icon(
+                      calc.isSold
+                          ? Icons.check_circle_rounded
+                          : Icons.receipt_long_rounded,
+                      color: calc.isSold
+                          ? color.tertiary
+                          : color.onSurfaceVariant,
+                      size: 22,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  calc.isSold
-                      ? Icons.check_circle_rounded
-                      : Icons.receipt_long_rounded,
-                  color: calc.isSold
-                      ? color.tertiary
-                      : color.onSurfaceVariant,
-                  size: 22,
-                ),
-              ),
               const SizedBox(width: 14),
               // Body
               Expanded(
@@ -124,13 +134,13 @@ class _CalculationCard extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: [
                         if (client != null && client.isNotEmpty) ...[
                           Icon(Icons.person_outline_rounded,
                               size: 12, color: color.onSurfaceVariant),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSpacing.xs),
                           Flexible(
                             child: Text(
                               client,
@@ -141,7 +151,7 @@ class _CalculationCard extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                           Container(
                             width: 3,
                             height: 3,
@@ -150,7 +160,7 @@ class _CalculationCard extends ConsumerWidget {
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                         ],
                         Text(
                           DateFormat('dd MMM HH:mm')
@@ -164,7 +174,7 @@ class _CalculationCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               // Price + menu
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -178,7 +188,7 @@ class _CalculationCard extends ConsumerWidget {
                       color: color.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   _PopupMenu(calc: calc, notifier: notifier),
                 ],
               ),
@@ -186,6 +196,7 @@ class _CalculationCard extends ConsumerWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -211,7 +222,7 @@ class _PopupMenu extends StatelessWidget {
               size: 20,
             ),
             title: Text(
-                calc.isSold ? 'Marcar pendiente' : 'Marcar vendida',
+                calc.isSold ? EsBO.calcDetailMarkPending : EsBO.calcDetailMarkSold,
                 style: const TextStyle(fontSize: 14)),
             dense: true,
           ),
@@ -220,7 +231,7 @@ class _PopupMenu extends StatelessWidget {
           value: _TileAction.delete,
           child: ListTile(
             leading: Icon(Icons.delete_outline_rounded, size: 20),
-            title: Text('Eliminar', style: TextStyle(fontSize: 14)),
+            title: Text(EsBO.commonDelete, style: TextStyle(fontSize: 14)),
             dense: true,
           ),
         ),
@@ -233,24 +244,12 @@ class _PopupMenu extends StatelessWidget {
       case _TileAction.toggleSold:
         await notifier.toggleSold(calc.id, !calc.isSold);
       case _TileAction.delete:
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Eliminar cotizacion'),
-            content: Text('¿Eliminar permanentemente?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
+        final confirm = await showConfirmDialog(
+          context,
+          title: EsBO.calcDetailDeleteTitle,
+          message: '¿Eliminar permanentemente?',
         );
-        if (confirm == true) {
+        if (confirm) {
           await notifier.delete(calc.id);
         }
     }

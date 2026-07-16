@@ -3,6 +3,9 @@ import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/money/currency_formatter.dart';
+import '../../../../l10n/es_bo.dart';
+
 /// Bar chart 2 barras: Cotizado vs Ganado (PRD AC-8.1/AC-8.2).
 ///
 /// **Uso**: dashboard. Las barras se renderizan desde 0 hasta
@@ -40,9 +43,12 @@ class ProfitBarChart extends StatelessWidget {
     final maxValue = quotedValue > soldValue ? quotedValue : soldValue;
     final maxY = (maxValue * 1.2).clamp(100.0, double.infinity);
 
-    return AspectRatio(
-      aspectRatio: 1.5,
-      child: BarChart(
+    return Semantics(
+      label: '${EsBO.dashboardChartQuoted} ${formatBob(totalQuoted)}, '
+          '${EsBO.dashboardChartSold} ${formatBob(totalSold)}',
+      child: AspectRatio(
+        aspectRatio: 1.5,
+        child: BarChart(
         BarChartData(
           maxY: maxY,
           minY: 0,
@@ -112,7 +118,8 @@ class ProfitBarChart extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 28,
                 getTitlesWidget: (value, meta) {
-                  final label = value == 0 ? 'Cotizado' : 'Ganado';
+                  final label =
+                      value == 0 ? EsBO.dashboardChartQuoted : EsBO.dashboardChartSold;
                   return SideTitleWidget(
                     axisSide: meta.axisSide,
                     space: 4,
@@ -127,7 +134,8 @@ class ProfitBarChart extends StatelessWidget {
             touchTooltipData: BarTouchTooltipData(
               getTooltipColor: (_) => theme.colorScheme.inverseSurface,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                final label = group.x == 0 ? 'Cotizado' : 'Ganado';
+                final label =
+                    group.x == 0 ? EsBO.dashboardChartQuoted : EsBO.dashboardChartSold;
                 return BarTooltipItem(
                   '$label\nBs. ${rod.toY.toStringAsFixed(2)}',
                   theme.textTheme.bodyMedium!.copyWith(
@@ -138,6 +146,7 @@ class ProfitBarChart extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

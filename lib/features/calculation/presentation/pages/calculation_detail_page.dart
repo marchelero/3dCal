@@ -8,6 +8,11 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../notifiers/calculations_notifier.dart';
 
 /// Detalle de una cotizacion guardada. Readonly — version mejorada.
@@ -22,35 +27,20 @@ class CalculationDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalle cotizacion'),
+        title: const Text(EsBO.calcDetailTitle),
         actions: [
           IconButton(
-            tooltip: 'Eliminar',
+            tooltip: EsBO.calcDetailDelete,
             icon: const Icon(Icons.delete_outline_rounded),
             onPressed: calc == null
                 ? null
                 : () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('Eliminar cotizacion'),
-                        content:
-                            const Text('¿Eliminar definitivamente?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(context, false),
-                            child: const Text('Cancelar'),
-                          ),
-                          FilledButton(
-                            onPressed: () =>
-                                Navigator.pop(context, true),
-                            child: const Text('Eliminar'),
-                          ),
-                        ],
-                      ),
+                    final confirm = await showConfirmDialog(
+                      context,
+                      title: EsBO.calcDetailDeleteTitle,
+                      message: '¿Eliminar definitivamente?',
                     );
-                    if (confirm == true && context.mounted) {
+                    if (confirm && context.mounted) {
                       await ref
                           .read(calculationsNotifierProvider.notifier)
                           .delete(calcId);
@@ -67,7 +57,7 @@ class CalculationDetailPage extends ConsumerWidget {
           ? null
           : FloatingActionButton.extended(
               icon: const Icon(Icons.replay_rounded),
-              label: const Text('Reusar'),
+              label: const Text(EsBO.calcDetailReuse),
               onPressed: () {
                 context.push('/calculator/prefill', extra: calc);
               },
@@ -87,13 +77,16 @@ class _Detail extends ConsumerWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
+    return MaxWidthScrollView(
+      maxWidth: 720,
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        shrinkWrap: true,
+        children: [
         // === Header card (hero) ===
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -103,7 +96,7 @@ class _Detail extends ConsumerWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadii.xxxl),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +106,7 @@ class _Detail extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      calc.pieceName ?? 'Sin nombre',
+                      calc.pieceName ?? EsBO.calcDetailNoName,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: color.onPrimaryContainer,
@@ -122,7 +115,7 @@ class _Detail extends ConsumerWidget {
                   ),
                   if (calc.isSold)
                     Chip(
-                      label: const Text('Vendida'),
+                      label: const Text(EsBO.calcDetailSold),
                       backgroundColor: color.tertiaryContainer,
                       labelStyle: TextStyle(color: color.onTertiaryContainer),
                       avatar: Icon(
@@ -151,7 +144,7 @@ class _Detail extends ConsumerWidget {
                     ],
                   ),
                 ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Icon(Icons.calendar_today_rounded,
@@ -165,7 +158,7 @@ class _Detail extends ConsumerWidget {
                     ),
                   ),
                   if (calc.totalHours > 0) ...[
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.lg),
                     Icon(Icons.timer_outlined,
                         size: 14, color: color.onPrimaryContainer.withValues(alpha: 0.7)),
                     const SizedBox(width: 6),
@@ -181,16 +174,16 @@ class _Detail extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // === Materiales ===
         Text('Materiales',
             style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         materials.when(
           loading: () => const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppSpacing.lg),
             child: Center(child: CircularProgressIndicator()),
           ),
           error: (e, _) => Text('Error: $e'),
@@ -198,7 +191,7 @@ class _Detail extends ConsumerWidget {
             if (ms.isEmpty) {
               return Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Text('Sin materiales.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                           color: color.onSurfaceVariant)),
@@ -220,7 +213,7 @@ class _Detail extends ConsumerWidget {
                             height: 32,
                             decoration: BoxDecoration(
                               color: color.primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: Center(
                               child: Text(
@@ -232,7 +225,7 @@ class _Detail extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,7 +233,7 @@ class _Detail extends ConsumerWidget {
                                 Text(ms[i].label,
                                     style: theme.textTheme.bodyMedium
                                         ?.copyWith(fontWeight: FontWeight.w500)),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: AppSpacing.xxs),
                                 Text(
                                   '${ms[i].weightGrams.toStringAsFixed(0)} g · '
                                   'BOB ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
@@ -274,16 +267,16 @@ class _Detail extends ConsumerWidget {
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // === Desglose ===
         Text('Desglose',
             style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 _Row(
@@ -295,12 +288,12 @@ class _Detail extends ConsumerWidget {
                   ),
                 ),
                 if (calc.discountPercentage > 0) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: color.errorContainer.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -323,9 +316,9 @@ class _Detail extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 const Divider(height: 1),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -352,7 +345,7 @@ class _Detail extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // === Acciones ===
         Row(
@@ -364,7 +357,7 @@ class _Detail extends ConsumerWidget {
                       ? Icons.undo_rounded
                       : Icons.check_circle_outline_rounded,
                 ),
-                label: Text(calc.isSold ? 'Marcar pendiente' : 'Marcar vendida'),
+                label: Text(calc.isSold ? EsBO.calcDetailMarkPending : EsBO.calcDetailMarkSold),
                 onPressed: () async {
                   await ref
                       .read(calculationsNotifierProvider.notifier)
@@ -377,6 +370,7 @@ class _Detail extends ConsumerWidget {
         // Padding bottom para FAB.
         const SizedBox(height: 80),
       ],
+      ),
     );
   }
 }
@@ -420,5 +414,8 @@ final _calculationByIdProvider =
 
 final _materialsOfProvider =
     FutureProvider.family<List<CalculationMaterial>, int>((ref, id) {
-  return ref.read(calculationRepositoryProvider).materialsOf(id);
+  // watch (no read) para que los overrides de repository en tests sean
+  // respetados y para que el provider reaccione a cambios en el repo.
+  final repo = ref.watch(calculationRepositoryProvider);
+  return repo.materialsOf(id);
 });
