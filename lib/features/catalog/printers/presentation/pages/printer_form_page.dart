@@ -1,10 +1,10 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
 
 /// Form de impresora. Espejo de [FilamentFormPage] sin `brand` ni Decimal.
@@ -136,16 +136,12 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              NumericInputField(
+                label: 'Consumo promedio (W)',
                 controller: _wattsCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Consumo promedio (W)',
-                  helperText: 'Tipico 100-300 W',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
+                allowDecimals: false,
+                helperText: 'Tipico 100-300 W',
                 textInputAction: TextInputAction.done,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: _requiredWatts,
               ),
               const SizedBox(height: 16),
