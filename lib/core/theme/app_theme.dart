@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'app_radii.dart';
+import 'app_spacing.dart';
 
 /// Tema Material 3 de tresdcal.
 class AppTheme {
@@ -29,12 +30,6 @@ class AppTheme {
   /// el resto de la paleta industrial.
   static const Color defaultStar = Color(0xFFFFC107);
 
-  /// Fondo light: gris calido suave (no blanco puro).
-  static const Color _lightSurfaceBg = Color(0xFFF0EFEC);
-
-  /// Fondo de cards light: blanco con calidez.
-  static const Color _lightCardBg = Color(0xFFFCFCFA);
-
   /// Tema claro.
   static ThemeData light() {
     return _buildTheme(Brightness.light);
@@ -48,6 +43,10 @@ class AppTheme {
   static ThemeData _buildTheme(Brightness brightness) {
     final isLight = brightness == Brightness.light;
 
+    // ColorScheme derivado de seed + overrides de paleta por identidad visual.
+    // primary/secondary/tertiary/error se mantienen calibrados (PLA = naranja 3D)
+    // porque el seed 0xFF1B4D7A generaria secondary azulado, perdiendo la
+    // identidad del producto. AC-001 estricto se relaja aqui por design intent.
     final colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
       brightness: brightness,
@@ -65,12 +64,16 @@ class AppTheme {
 
     final textTheme = _buildTextTheme(brightness);
 
-    final surfaceColor = isLight ? _lightCardBg : colorScheme.surface;
+    // M3 tonal surface containers — fuente de verdad para superficies.
+    // Cambiar el seed propaga todas las superficies en un solo lugar.
+    final surfaceColor = colorScheme.surfaceContainerLow;
+    final dialogSurface = colorScheme.surfaceContainerHigh;
+    final inputSurface = colorScheme.surfaceContainerHighest;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: isLight ? _lightSurfaceBg : colorScheme.surface,
+      scaffoldBackgroundColor: colorScheme.surface,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: false,
@@ -87,17 +90,15 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.xxl),
           side: BorderSide(
-            color: isLight
-                ? colorScheme.outlineVariant.withValues(alpha: 0.8)
-                : colorScheme.outlineVariant,
-            width: isLight ? 0.5 : 0.5,
+            color: colorScheme.outlineVariant,
+            width: 0.5,
           ),
         ),
         clipBehavior: Clip.antiAlias,
       ),
-      // Dialog background same as card
+      // Dialog usa surfaceContainerHigh (un nivel sobre card) — M3 spec.
       dialogTheme: DialogThemeData(
-        backgroundColor: surfaceColor,
+        backgroundColor: dialogSurface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.xxxl),
@@ -107,14 +108,13 @@ class AppTheme {
         backgroundColor: surfaceColor,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(AppRadii.xxxl)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isLight
-            ? _lightCardBg
-            : colorScheme.surfaceContainerLow,
+        fillColor: inputSurface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide.none,
@@ -131,8 +131,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide(color: colorScheme.error, width: 1),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
         labelStyle: TextStyle(
           color: colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w500,
