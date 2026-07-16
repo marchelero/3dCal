@@ -23,6 +23,10 @@ class AppTheme {
   /// Rojo error.
   static const Color redError = Color(0xFFE74C3C);
 
+  /// Color del badge "default" (estrella). Dorado calido consistente con
+  /// el resto de la paleta industrial.
+  static const Color defaultStar = Color(0xFFFFC107);
+
   /// Fondo light: gris calido suave (no blanco puro).
   static const Color _lightSurfaceBg = Color(0xFFF0EFEC);
 

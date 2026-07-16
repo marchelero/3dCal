@@ -12,6 +12,7 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
+import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../state/calculator_notifier.dart';
@@ -673,18 +674,11 @@ class _FilamentSection extends ConsumerWidget {
             itemBuilder: (_, i) {
               final f = filaments[i];
               return ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    f.isDefault ? Icons.star_rounded : Icons.label_rounded,
-                    color: f.isDefault ? Colors.amber : Theme.of(context).colorScheme.onPrimaryContainer,
-                    size: 20,
-                  ),
+                leading: AvatarIcon(
+                  icon: f.isDefault ? Icons.star_rounded : Icons.label_rounded,
+                  foreground: f.isDefault
+                      ? Theme.of(context).colorScheme.tertiary
+                      : null,
                 ),
                 title: Text(f.name),
                 subtitle: Text(
@@ -820,15 +814,8 @@ class _PrinterIndicator extends ConsumerWidget {
             itemBuilder: (_, i) {
               final p = printers[i];
               return ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.print_rounded,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer),
+                leading: AvatarIcon(
+                  icon: Icons.print_rounded,
                 ),
                 title: Text(p.name),
                 subtitle: Text(

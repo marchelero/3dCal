@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
 import '../../../../../shared/widgets/confirm_dialog.dart';
+import '../../../../../shared/widgets/default_badge.dart';
 import '../../../../../shared/widgets/empty_view.dart';
 import '../../../../../shared/widgets/error_view.dart';
 import '../../../../../shared/widgets/loading_view.dart';
@@ -81,7 +82,7 @@ class _FilamentTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       leading: filament.isDefault
-          ? const Icon(Icons.star, color: Colors.amber)
+          ? const DefaultBadge()
           : const Icon(Icons.label_outline),
       title: Text(filament.name),
       subtitle: Text(_subtitle()),
