@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -55,10 +56,14 @@ class StatTile extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               value,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                color: theme.colorScheme.onSurface,
+              // M2: KPI numerico usa JetBrains Mono + tabular para
+              // alineacion perfecta en columnas de dashboard/home.
+              style: GoogleFonts.jetBrainsMono(
+                textStyle: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.xxs),

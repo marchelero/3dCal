@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MoneyRow extends StatelessWidget {
   const MoneyRow({
@@ -39,10 +40,15 @@ class MoneyRow extends StatelessWidget {
         ),
         Text(
           value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-            color: color,
-            fontFeatures: const [FontFeature.tabularFigures()],
+          // M2: cifras monetarias usan JetBrains Mono + tabular para
+          // alineacion perfecta en columnas. La familia base sigue siendo
+          // Inter (heredada del textTheme), solo override en el TextStyle.
+          style: GoogleFonts.jetBrainsMono(
+            textStyle: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+              color: color,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ),
       ],
