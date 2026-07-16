@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
+import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../notifiers/calculations_notifier.dart';
@@ -24,17 +25,17 @@ class CalculationDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalle cotizacion'),
+        title: const Text(EsBO.calcDetailTitle),
         actions: [
           IconButton(
-            tooltip: 'Eliminar',
+            tooltip: EsBO.calcDetailDelete,
             icon: const Icon(Icons.delete_outline_rounded),
             onPressed: calc == null
                 ? null
                 : () async {
                     final confirm = await showConfirmDialog(
                       context,
-                      title: 'Eliminar cotizacion',
+                      title: EsBO.calcDetailDeleteTitle,
                       message: '¿Eliminar definitivamente?',
                     );
                     if (confirm && context.mounted) {
@@ -54,7 +55,7 @@ class CalculationDetailPage extends ConsumerWidget {
           ? null
           : FloatingActionButton.extended(
               icon: const Icon(Icons.replay_rounded),
-              label: const Text('Reusar'),
+              label: const Text(EsBO.calcDetailReuse),
               onPressed: () {
                 context.push('/calculator/prefill', extra: calc);
               },
@@ -103,7 +104,7 @@ class _Detail extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      calc.pieceName ?? 'Sin nombre',
+                      calc.pieceName ?? EsBO.calcDetailNoName,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: color.onPrimaryContainer,
@@ -112,7 +113,7 @@ class _Detail extends ConsumerWidget {
                   ),
                   if (calc.isSold)
                     Chip(
-                      label: const Text('Vendida'),
+                      label: const Text(EsBO.calcDetailSold),
                       backgroundColor: color.tertiaryContainer,
                       labelStyle: TextStyle(color: color.onTertiaryContainer),
                       avatar: Icon(
@@ -354,7 +355,7 @@ class _Detail extends ConsumerWidget {
                       ? Icons.undo_rounded
                       : Icons.check_circle_outline_rounded,
                 ),
-                label: Text(calc.isSold ? 'Marcar pendiente' : 'Marcar vendida'),
+                label: Text(calc.isSold ? EsBO.calcDetailMarkPending : EsBO.calcDetailMarkSold),
                 onPressed: () async {
                   await ref
                       .read(calculationsNotifierProvider.notifier)
