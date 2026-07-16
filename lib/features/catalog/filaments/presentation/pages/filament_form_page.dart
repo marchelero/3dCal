@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/filaments_notifier.dart';
@@ -68,10 +69,10 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
   }
 
   String? _requiredNumber(String? v, {bool integer = false}) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
     final cleaned = v.trim().replaceAll(',', '.');
     final parsed = Decimal.tryParse(cleaned);
-    if (parsed == null) return 'Numero invalido';
+    if (parsed == null) return EsBO.commonInvalidNumber;
     if (parsed <= Decimal.zero) return 'Debe ser > 0';
     if (integer && parsed != parsed.toBigInt().toDecimal()) {
       return 'Debe ser entero';
@@ -80,7 +81,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
   }
 
   String? _requiredText(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
     if (v.trim().length > 100) return 'Maximo 100 caracteres';
     return null;
   }
@@ -135,7 +136,9 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Editar filamento' : 'Nuevo filamento'),
+        title: Text(_isEdit
+            ? '${EsBO.commonEdit} filamento'
+            : '${EsBO.commonNew} filamento'),
       ),
       body: SafeArea(
         child: Form(
@@ -206,7 +209,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save),
-                label: const Text('Guardar'),
+                label: const Text(EsBO.commonSave),
                 onPressed: _saving ? null : _save,
               ),
             ],

@@ -13,6 +13,18 @@ class EsBO {
   // === App ===
   static const String appName = '3dcal';
 
+  // === Common verbs (shared across pages) ===
+  static const String commonSave = 'Guardar';
+  static const String commonCancel = 'Cancelar';
+  static const String commonDelete = 'Eliminar';
+  static const String commonRetry = 'Reintentar';
+  static const String commonEdit = 'Editar';
+  static const String commonNew = 'Nuevo';
+  static const String commonRequired = 'Requerido';
+  static const String commonInvalidNumber = 'Numero invalido';
+  static const String commonLoading = 'Cargando...';
+  static const String commonErrorGeneric = 'Algo salio mal. Intenta de nuevo.';
+
   // === Navegacion (4 destinations) ===
   static const String navHome = 'Inicio';
   static const String navHistory = 'Historial';

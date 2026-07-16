@@ -73,9 +73,9 @@ class _SettingsBody extends ConsumerWidget {
                   initialValue: settings.profitBase.toString(),
                   allowDecimals: false,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Requerido';
+                    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
                     final n = int.tryParse(v.trim());
-                    if (n == null) return 'Numero invalido';
+                    if (n == null) return EsBO.commonInvalidNumber;
                     if (n < 0 || n > 1000) return 'Rango: 0-1000';
                     return null;
                   },
@@ -93,10 +93,10 @@ class _SettingsBody extends ConsumerWidget {
                   initialValue: settings.kwhRate.toString(),
                   allowDecimals: true,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Requerido';
+                    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
                     final n =
                         Decimal.tryParse(v.trim().replaceAll(',', '.'));
-                    if (n == null) return 'Numero invalido';
+                    if (n == null) return EsBO.commonInvalidNumber;
                     if (n < Decimal.parse('0.10') ||
                         n > Decimal.parse('5.00')) {
                       return 'Rango: 0.10-5.00';

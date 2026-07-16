@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../../shared/widgets/default_badge.dart';
 import '../../../../../shared/widgets/empty_view.dart';
@@ -100,7 +101,7 @@ class _FilamentTile extends ConsumerWidget {
             value: _TileAction.delete,
             child: ListTile(
               leading: Icon(Icons.delete_outline),
-              title: Text('Eliminar'),
+              title: Text(EsBO.commonDelete),
             ),
           ),
         ],

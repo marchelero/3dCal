@@ -6,6 +6,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/es_bo.dart';
+
 class ErrorView extends StatelessWidget {
   const ErrorView({
     super.key,
@@ -63,7 +65,7 @@ class ErrorView extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Reintentar'),
+                label: const Text(EsBO.commonRetry),
               ),
             ],
           ],

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
@@ -50,15 +51,15 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   bool get _isEdit => widget.existing != null;
 
   String? _requiredText(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
     if (v.trim().length > 100) return 'Maximo 100 caracteres';
     return null;
   }
 
   String? _requiredWatts(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Requerido';
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
     final n = int.tryParse(v.trim());
-    if (n == null) return 'Numero invalido';
+    if (n == null) return EsBO.commonInvalidNumber;
     if (n < 0) return 'Debe ser >= 0';
     return null;
   }
@@ -108,7 +109,9 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Editar impresora' : 'Nueva impresora'),
+        title: Text(_isEdit
+            ? '${EsBO.commonEdit} impresora'
+            : '${EsBO.commonNew} impresora'),
       ),
       body: SafeArea(
         child: Form(
@@ -167,7 +170,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save),
-                label: const Text('Guardar'),
+                label: const Text(EsBO.commonSave),
                 onPressed: _saving ? null : _save,
               ),
             ],
