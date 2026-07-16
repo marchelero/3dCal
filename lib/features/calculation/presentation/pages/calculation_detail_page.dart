@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
@@ -78,13 +80,13 @@ class _Detail extends ConsumerWidget {
     return MaxWidthScrollView(
       maxWidth: 720,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         shrinkWrap: true,
         children: [
         // === Header card (hero) ===
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -94,7 +96,7 @@ class _Detail extends ConsumerWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadii.xxxl),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +144,7 @@ class _Detail extends ConsumerWidget {
                     ],
                   ),
                 ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Icon(Icons.calendar_today_rounded,
@@ -156,7 +158,7 @@ class _Detail extends ConsumerWidget {
                     ),
                   ),
                   if (calc.totalHours > 0) ...[
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.lg),
                     Icon(Icons.timer_outlined,
                         size: 14, color: color.onPrimaryContainer.withValues(alpha: 0.7)),
                     const SizedBox(width: 6),
@@ -172,16 +174,16 @@ class _Detail extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // === Materiales ===
         Text('Materiales',
             style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         materials.when(
           loading: () => const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppSpacing.lg),
             child: Center(child: CircularProgressIndicator()),
           ),
           error: (e, _) => Text('Error: $e'),
@@ -189,7 +191,7 @@ class _Detail extends ConsumerWidget {
             if (ms.isEmpty) {
               return Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Text('Sin materiales.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                           color: color.onSurfaceVariant)),
@@ -211,7 +213,7 @@ class _Detail extends ConsumerWidget {
                             height: 32,
                             decoration: BoxDecoration(
                               color: color.primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppRadii.sm),
                             ),
                             child: Center(
                               child: Text(
@@ -223,7 +225,7 @@ class _Detail extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +233,7 @@ class _Detail extends ConsumerWidget {
                                 Text(ms[i].label,
                                     style: theme.textTheme.bodyMedium
                                         ?.copyWith(fontWeight: FontWeight.w500)),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: AppSpacing.xxs),
                                 Text(
                                   '${ms[i].weightGrams.toStringAsFixed(0)} g · '
                                   'BOB ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
@@ -265,16 +267,16 @@ class _Detail extends ConsumerWidget {
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // === Desglose ===
         Text('Desglose',
             style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 _Row(
@@ -286,12 +288,12 @@ class _Detail extends ConsumerWidget {
                   ),
                 ),
                 if (calc.discountPercentage > 0) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: color.errorContainer.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -314,9 +316,9 @@ class _Detail extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 const Divider(height: 1),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -343,7 +345,7 @@ class _Detail extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
 
         // === Acciones ===
         Row(

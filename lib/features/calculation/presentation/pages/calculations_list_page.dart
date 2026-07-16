@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
@@ -90,10 +92,10 @@ class _CalculationCard extends ConsumerWidget {
           '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
       child: Card(
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.xxl),
           onTap: () => context.push('/history/${calc.id}', extra: calc),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 // Leading icon (decorative — sale status already in label)
@@ -105,7 +107,7 @@ class _CalculationCard extends ConsumerWidget {
                       color: calc.isSold
                           ? color.tertiaryContainer
                           : color.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
                     ),
                     child: Icon(
                       calc.isSold
@@ -132,13 +134,13 @@ class _CalculationCard extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: [
                         if (client != null && client.isNotEmpty) ...[
                           Icon(Icons.person_outline_rounded,
                               size: 12, color: color.onSurfaceVariant),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSpacing.xs),
                           Flexible(
                             child: Text(
                               client,
@@ -149,7 +151,7 @@ class _CalculationCard extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                           Container(
                             width: 3,
                             height: 3,
@@ -158,7 +160,7 @@ class _CalculationCard extends ConsumerWidget {
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                         ],
                         Text(
                           DateFormat('dd MMM HH:mm')
@@ -172,7 +174,7 @@ class _CalculationCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               // Price + menu
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -186,7 +188,7 @@ class _CalculationCard extends ConsumerWidget {
                       color: color.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   _PopupMenu(calc: calc, notifier: notifier),
                 ],
               ),

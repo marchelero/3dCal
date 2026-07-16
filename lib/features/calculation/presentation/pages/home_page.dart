@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
@@ -55,7 +57,7 @@ class HomePage extends ConsumerWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: color.primaryContainer,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadii.xl),
               ),
               child: Icon(
                 Icons.calculate_rounded,
@@ -73,7 +75,7 @@ class HomePage extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'Cotizaciones 3D local-first',
           style: theme.textTheme.bodyLarge?.copyWith(
@@ -127,7 +129,7 @@ class HomePage extends ConsumerWidget {
                 color: color.onSurface,
               ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         // Mobile: column, Tablet/Web: row
         LayoutBuilder(
           builder: (context, constraints) {
@@ -167,11 +169,11 @@ class HomePage extends ConsumerWidget {
       error: (e, _) => Card(
         color: color.errorContainer,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
               Icon(Icons.error_outline, color: color.error),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
                   EsBO.homeErrorLoadStats,
@@ -197,7 +199,7 @@ class HomePage extends ConsumerWidget {
     return Card(
       color: color.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           children: [
             Container(
@@ -205,11 +207,11 @@ class HomePage extends ConsumerWidget {
               height: 56,
               decoration: BoxDecoration(
                 color: color.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadii.xxl),
               ),
               child: Icon(Icons.receipt_long_outlined, color: color.onSurfaceVariant, size: 28),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
               EsBO.homeEmptyQuotations,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -241,7 +243,7 @@ class HomePage extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         // Stats row
         Row(
           children: [
@@ -253,7 +255,7 @@ class HomePage extends ConsumerWidget {
                 color: color.primary,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: StatTile(
                 label: EsBO.dashboardStatSold,
@@ -262,7 +264,7 @@ class HomePage extends ConsumerWidget {
                 color: color.tertiary,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: StatTile(
                 label: EsBO.dashboardStatConversion,
@@ -273,11 +275,11 @@ class HomePage extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         // Monetary totals
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 MoneyRow(
@@ -285,7 +287,7 @@ class HomePage extends ConsumerWidget {
                   value: formatBob(stats.totalQuoted),
                   valueColor: color.onSurface,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 MoneyRow(
                   label: EsBO.dashboardTotalSold,
                   value: formatBob(stats.totalSold),
@@ -329,10 +331,10 @@ class _QuickActionCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
         onTap: action.onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
               Container(
@@ -340,7 +342,7 @@ class _QuickActionCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: action.bgColor,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppRadii.xl),
                 ),
                 child: Icon(action.icon, color: action.color, size: 24),
               ),
@@ -355,7 +357,7 @@ class _QuickActionCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xxs),
                     Text(
                       action.subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
