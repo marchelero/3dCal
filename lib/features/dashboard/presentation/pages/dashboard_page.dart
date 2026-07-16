@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
@@ -103,16 +104,16 @@ class _DashboardBody extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _TotalRow(
+                  MoneyRow(
                     label: 'Total cotizado',
                     value: _formatMoney(stats.totalQuoted.toDouble()),
-                    color: color.onSurface,
+                    valueColor: color.onSurface,
                   ),
                   const SizedBox(height: 8),
-                  _TotalRow(
+                  MoneyRow(
                     label: 'Total vendido',
                     value: _formatMoney(stats.totalSold.toDouble()),
-                    color: color.tertiary,
+                    valueColor: color.tertiary,
                     isBold: true,
                   ),
                 ],
@@ -158,39 +159,3 @@ class _DashboardBody extends StatelessWidget {
   }
 }
 
-class _TotalRow extends StatelessWidget {
-  const _TotalRow({
-    required this.label,
-    required this.value,
-    required this.color,
-    this.isBold = false,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-  final bool isBold;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-                color: color,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-        ),
-      ],
-    );
-  }
-}

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../domain/dashboard_stats.dart';
@@ -274,16 +275,16 @@ class HomePage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _TotalRow(
+                MoneyRow(
                   label: 'Total cotizado',
                   value: formatBob(stats.totalQuoted),
-                  color: color.onSurface,
+                  valueColor: color.onSurface,
                 ),
                 const SizedBox(height: 8),
-                _TotalRow(
+                MoneyRow(
                   label: 'Total vendido',
                   value: formatBob(stats.totalSold),
-                  color: color.tertiary,
+                  valueColor: color.tertiary,
                   isBold: true,
                 ),
               ],
@@ -294,45 +295,6 @@ class HomePage extends ConsumerWidget {
     );
   }
 }
-
-class _TotalRow extends StatelessWidget {
-  const _TotalRow({
-    required this.label,
-    required this.value,
-    required this.color,
-    this.isBold = false,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-  final bool isBold;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-                color: color,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-// === Quick Action ===
 
 class _QuickAction {
   const _QuickAction({
