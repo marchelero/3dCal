@@ -156,4 +156,9 @@ class EsBO {
   static const String calcDetailReuse = 'Reusar';
   static const String calcDetailMarkSold = 'Marcar vendida';
   static const String calcDetailMarkPending = 'Marcar pendiente';
+
+  // === History / Calculations list ===
+  static const String historyTitle = 'Cotizaciones';
+  static const String historyErrorLoad = 'Error cargando cotizaciones';
+  static const String historyEmpty = 'Sin cotizaciones guardadas';
 }

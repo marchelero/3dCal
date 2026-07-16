@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
@@ -24,12 +25,12 @@ class CalculationsListPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cotizaciones'),
+        title: const Text(EsBO.historyTitle),
       ),
       body: async.when(
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(
-          message: 'Error cargando cotizaciones',
+          message: EsBO.historyErrorLoad,
           details: e.toString(),
           onRetry: () => ref.invalidate(calculationsNotifierProvider),
         ),
@@ -37,9 +38,9 @@ class CalculationsListPage extends ConsumerWidget {
           if (calcs.isEmpty) {
             return EmptyView(
               icon: Icons.receipt_long_outlined,
-              message: 'Sin cotizaciones guardadas',
+              message: EsBO.historyEmpty,
               subtitle: 'Crea una desde el calculator y toca Guardar.',
-              ctaLabel: 'Nueva cotizacion',
+              ctaLabel: EsBO.homeActionNewCalc,
               ctaIcon: Icons.add_rounded,
               onCta: () => context.push('/calculator'),
             );
@@ -74,7 +75,7 @@ class _CalculationCard extends ConsumerWidget {
     if (piece != null && piece.isNotEmpty) return piece;
     final client = calc.clientName;
     if (client != null && client.isNotEmpty) return 'Cotizacion · $client';
-    return 'Cotizacion sin nombre';
+    return EsBO.calcDetailNoName;
   }
 
   @override
@@ -212,7 +213,7 @@ class _PopupMenu extends StatelessWidget {
               size: 20,
             ),
             title: Text(
-                calc.isSold ? 'Marcar pendiente' : 'Marcar vendida',
+                calc.isSold ? EsBO.calcDetailMarkPending : EsBO.calcDetailMarkSold,
                 style: const TextStyle(fontSize: 14)),
             dense: true,
           ),
@@ -221,7 +222,7 @@ class _PopupMenu extends StatelessWidget {
           value: _TileAction.delete,
           child: ListTile(
             leading: Icon(Icons.delete_outline_rounded, size: 20),
-            title: Text('Eliminar', style: TextStyle(fontSize: 14)),
+            title: Text(EsBO.commonDelete, style: TextStyle(fontSize: 14)),
             dense: true,
           ),
         ),
@@ -236,7 +237,7 @@ class _PopupMenu extends StatelessWidget {
       case _TileAction.delete:
         final confirm = await showConfirmDialog(
           context,
-          title: 'Eliminar cotizacion',
+          title: EsBO.calcDetailDeleteTitle,
           message: '¿Eliminar permanentemente?',
         );
         if (confirm) {
