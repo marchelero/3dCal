@@ -7,6 +7,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'app_radii.dart';
+
 /// Tema Material 3 de tresdcal.
 class AppTheme {
   const AppTheme._();
@@ -83,7 +85,7 @@ class AppTheme {
         color: surfaceColor,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.xxl),
           side: BorderSide(
             color: isLight
                 ? colorScheme.outlineVariant.withValues(alpha: 0.8)
@@ -98,7 +100,7 @@ class AppTheme {
         backgroundColor: surfaceColor,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadii.xxxl),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -114,19 +116,19 @@ class AppTheme {
             ? _lightCardBg
             : colorScheme.surfaceContainerLow,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide(color: colorScheme.error, width: 1),
         ),
         contentPadding:
@@ -146,7 +148,7 @@ class AppTheme {
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
           textStyle: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w600),
         ),
@@ -155,7 +157,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
           elevation: 0,
           textStyle: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w600),
@@ -166,7 +168,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
           side: BorderSide(color: colorScheme.outlineVariant),
           textStyle: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w500),
@@ -174,7 +176,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
+            borderRadius: BorderRadius.circular(AppRadii.xxxl)),
         side: BorderSide.none,
       ),
       dividerTheme: DividerThemeData(
@@ -185,7 +187,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
       ),
       navigationBarTheme: NavigationBarThemeData(
         indicatorColor: colorScheme.secondaryContainer,
@@ -204,7 +206,7 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
         ),
       ),
       switchTheme: SwitchThemeData(
@@ -224,7 +226,7 @@ class AppTheme {
       popupMenuTheme: PopupMenuThemeData(
         color: surfaceColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
         ),
       ),
     );
