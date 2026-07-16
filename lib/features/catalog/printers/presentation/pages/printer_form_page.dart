@@ -52,7 +52,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
 
   String? _requiredText(String? v) {
     if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
-    if (v.trim().length > 100) return 'Maximo 100 caracteres';
+    if (v.trim().length > 100) return EsBO.filamentMax100;
     return null;
   }
 
@@ -60,7 +60,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
     final n = int.tryParse(v.trim());
     if (n == null) return EsBO.commonInvalidNumber;
-    if (n < 0) return 'Debe ser >= 0';
+    if (n < 0) return EsBO.printerMustBeNonNegative;
     return null;
   }
 
@@ -125,8 +125,8 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Modelo',
-                  helperText: 'Ej: Ender 3 V2',
+                  labelText: EsBO.printerModel,
+                  helperText: EsBO.printerModelHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
@@ -136,24 +136,24 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               TextFormField(
                 controller: _brandCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Marca',
-                  helperText: 'Ej: Creality, Anycubic',
+                  labelText: EsBO.filamentBrand,
+                  helperText: EsBO.printerBrandHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 16),
               NumericInputField(
-                label: 'Consumo promedio (W)',
+                label: EsBO.printerWatts,
                 controller: _wattsCtrl,
                 allowDecimals: false,
-                helperText: 'Tipico 100-300 W',
+                helperText: EsBO.printerWattsHelper,
                 textInputAction: TextInputAction.done,
                 validator: _requiredWatts,
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Marcar como default'),
+                title: const Text(EsBO.filamentDefaultToggle),
                 subtitle: const Text(
                   'Se usara en nuevas cotizaciones. '
                   'Solo una impresora puede ser default.',

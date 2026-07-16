@@ -73,22 +73,22 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
     final cleaned = v.trim().replaceAll(',', '.');
     final parsed = Decimal.tryParse(cleaned);
     if (parsed == null) return EsBO.commonInvalidNumber;
-    if (parsed <= Decimal.zero) return 'Debe ser > 0';
+    if (parsed <= Decimal.zero) return EsBO.filamentMustBePositive;
     if (integer && parsed != parsed.toBigInt().toDecimal()) {
-      return 'Debe ser entero';
+      return EsBO.filamentMustBeInteger;
     }
     return null;
   }
 
   String? _requiredText(String? v) {
     if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
-    if (v.trim().length > 100) return 'Maximo 100 caracteres';
+    if (v.trim().length > 100) return EsBO.filamentMax100;
     return null;
   }
 
   String? _optionalText(String? v) {
     if (v == null || v.trim().isEmpty) return null;
-    if (v.trim().length > 100) return 'Maximo 100 caracteres';
+    if (v.trim().length > 100) return EsBO.filamentMax100;
     return null;
   }
 
@@ -152,8 +152,8 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  helperText: 'Ej: PLA Negro',
+                  labelText: EsBO.filamentName,
+                  helperText: EsBO.filamentNameHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
@@ -163,8 +163,8 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               TextFormField(
                 controller: _brandCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Marca',
-                  helperText: 'Opcional',
+                  labelText: EsBO.filamentBrand,
+                  helperText: EsBO.filamentBrandHelper,
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
@@ -174,8 +174,8 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               TextFormField(
                 controller: _priceCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Precio bobina (BOB)',
-                  helperText: 'Costo del rollo completo',
+                  labelText: EsBO.filamentPrice,
+                  helperText: EsBO.filamentPriceHelper,
                 ),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
@@ -184,15 +184,15 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               ),
               const SizedBox(height: 16),
               NumericInputField(
-                label: 'Gramos por bobina',
+                label: EsBO.filamentGrams,
                 controller: _gramsCtrl,
                 allowDecimals: false,
-                helperText: 'Tipico 1000',
+                helperText: EsBO.filamentGramsHelper,
                 textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Marcar como default'),
+                title: const Text(EsBO.filamentDefaultToggle),
                 subtitle: const Text(
                   'Se usara en nuevas cotizaciones. '
                   'Solo un filamento puede ser default.',

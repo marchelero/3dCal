@@ -29,11 +29,11 @@ class FilamentsPage extends ConsumerWidget {
     final async = ref.watch(filamentsNotifierProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Filamentos'),
+        title: const Text(EsBO.filamentTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Nuevo filamento',
+            tooltip: EsBO.filamentNewTooltip,
             onPressed: () => context.push('/settings/filaments/new'),
           ),
         ],
@@ -94,7 +94,7 @@ class _FilamentTile extends ConsumerWidget {
             value: _TileAction.setDefault,
             child: ListTile(
               leading: Icon(Icons.star),
-              title: Text('Marcar como default'),
+              title: Text(EsBO.filamentDefaultToggle),
             ),
           ),
           PopupMenuItem<_TileAction>(
@@ -121,7 +121,7 @@ class _FilamentTile extends ConsumerWidget {
       case _TileAction.delete:
         final confirm = await showConfirmDialog(
           context,
-          title: 'Eliminar filamento',
+          title: EsBO.filamentDeleteTitle,
           message: '¿Eliminar "${filament.name}"?',
         );
         if (confirm) {

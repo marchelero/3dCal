@@ -21,11 +21,11 @@ class PrintersPage extends ConsumerWidget {
     final async = ref.watch(printersNotifierProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Impresoras'),
+        title: const Text(EsBO.printerTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Nueva impresora',
+            tooltip: EsBO.printerNewTooltip,
             onPressed: () => context.push('/settings/printers/new'),
           ),
         ],
@@ -86,7 +86,7 @@ class _PrinterTile extends ConsumerWidget {
             value: _TileAction.setDefault,
             child: ListTile(
               leading: Icon(Icons.star),
-              title: Text('Marcar como default'),
+              title: Text(EsBO.filamentDefaultToggle),
             ),
           ),
           PopupMenuItem<_TileAction>(
@@ -117,7 +117,7 @@ class _PrinterTile extends ConsumerWidget {
       case _TileAction.delete:
         final confirm = await showConfirmDialog(
           context,
-          title: 'Eliminar impresora',
+          title: EsBO.printerDeleteTitle,
           message: '¿Eliminar "${printer.name}"?',
         );
         if (confirm) {
