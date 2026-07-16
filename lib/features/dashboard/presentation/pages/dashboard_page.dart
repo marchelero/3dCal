@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -23,13 +24,13 @@ class DashboardPage extends ConsumerWidget {
     final asyncStats = ref.watch(dashboardStatsProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text(EsBO.dashboardTitle),
       ),
       body: SafeArea(
         child: asyncStats.when(
           loading: () => const LoadingView(),
           error: (e, _) => ErrorView(
-            message: 'Error al cargar el dashboard',
+            message: EsBO.dashboardErrorLoad,
             details: e.toString(),
             onRetry: () => ref.invalidate(dashboardStatsProvider),
           ),
@@ -37,9 +38,9 @@ class DashboardPage extends ConsumerWidget {
             if (stats.countAll == 0) {
               return EmptyView(
                 icon: Icons.bar_chart_rounded,
-                message: 'Aun no cotizaste nada',
+                message: EsBO.dashboardEmpty,
                 subtitle: 'Crea tu primera cotizacion desde el inicio.',
-                ctaLabel: 'Ir a Home',
+                ctaLabel: EsBO.dashboardEmptyCta,
                 ctaIcon: Icons.home_rounded,
                 onCta: () => context.go('/'),
               );
@@ -74,7 +75,7 @@ class _DashboardBody extends StatelessWidget {
             children: [
               Expanded(
                 child: StatTile(
-                  label: 'Cotizaciones',
+                  label: EsBO.dashboardStatQuotations,
                   value: '${stats.countAll}',
                   icon: Icons.receipt_long_rounded,
                   color: color.primary,
@@ -83,7 +84,7 @@ class _DashboardBody extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: StatTile(
-                  label: 'Vendidas',
+                  label: EsBO.dashboardStatSold,
                   value: '${stats.countSold}',
                   icon: Icons.check_circle_rounded,
                   color: color.tertiary,
@@ -92,7 +93,7 @@ class _DashboardBody extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: StatTile(
-                  label: 'Conversion',
+                  label: EsBO.dashboardStatConversion,
                   value: '${stats.conversionPct.toStringAsFixed(0)}%',
                   icon: Icons.trending_up_rounded,
                   color: color.secondary,
@@ -109,13 +110,13 @@ class _DashboardBody extends StatelessWidget {
               child: Column(
                 children: [
                   MoneyRow(
-                    label: 'Total cotizado',
+                    label: EsBO.dashboardTotalQuoted,
                     value: formatBob(stats.totalQuoted),
                     valueColor: color.onSurface,
                   ),
                   const SizedBox(height: 8),
                   MoneyRow(
-                    label: 'Total vendido',
+                    label: EsBO.dashboardTotalSold,
                     value: formatBob(stats.totalSold),
                     valueColor: color.tertiary,
                     isBold: true,
@@ -135,7 +136,7 @@ class _DashboardBody extends StatelessWidget {
                 children: [
                   const SectionHeader(
                     icon: Icons.bar_chart_rounded,
-                    title: 'Cotizado vs Ganado',
+                    title: EsBO.dashboardChartTitle,
                   ),
                   const SizedBox(height: 16),
                   ProfitBarChart(

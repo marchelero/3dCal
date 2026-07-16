@@ -44,4 +44,22 @@ class EsBO {
   static const String settingsAbout = 'Acerca de';
   static const String settingsPrivacy = 'Privacidad: 100% local, sin telemetria';
   static const String settingsSaved = 'Guardado';
+  static const String settingsAppearance = 'Apariencia';
+  static const String settingsTheme = 'Tema';
+  static const String settingsManageFilaments = 'Gestiona tus filamentos';
+  static const String settingsManagePrinters = 'Registra tus impresoras';
+
+  // === Dashboard ===
+  static const String dashboardTitle = 'Dashboard';
+  static const String dashboardErrorLoad = 'Error al cargar el dashboard';
+  static const String dashboardEmpty = 'Aun no cotizaste nada';
+  static const String dashboardEmptyCta = 'Ir a Home';
+  static const String dashboardStatQuotations = 'Cotizaciones';
+  static const String dashboardStatSold = 'Vendidas';
+  static const String dashboardStatConversion = 'Conversion';
+  static const String dashboardTotalQuoted = 'Total cotizado';
+  static const String dashboardTotalSold = 'Total vendido';
+  static const String dashboardChartTitle = 'Cotizado vs Ganado';
+  static const String dashboardChartQuoted = 'Cotizado';
+  static const String dashboardChartSold = 'Ganado';
 }

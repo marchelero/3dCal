@@ -119,7 +119,7 @@ class _SettingsBody extends ConsumerWidget {
         // === Apariencia ===
         SectionHeader(
           icon: Icons.palette_rounded,
-          title: 'Apariencia',
+          title: EsBO.settingsAppearance,
           accentColor: color.secondary,
         ),
         const SizedBox(height: 12),
@@ -130,7 +130,7 @@ class _SettingsBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tema',
+                  EsBO.settingsTheme,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -165,7 +165,7 @@ class _SettingsBody extends ConsumerWidget {
                       color: color.onSecondaryContainer, size: 20),
                 ),
                 title: const Text(EsBO.settingsFilamentos),
-                subtitle: const Text('Gestiona tus filamentos'),
+                subtitle: const Text(EsBO.settingsManageFilaments),
                 trailing: Icon(Icons.chevron_right_rounded,
                     color: color.onSurfaceVariant),
                 onTap: () => context.push('/settings/filaments'),
@@ -183,7 +183,7 @@ class _SettingsBody extends ConsumerWidget {
                       color: color.onTertiaryContainer, size: 20),
                 ),
                 title: const Text(EsBO.settingsImpresoras),
-                subtitle: const Text('Registra tus impresoras'),
+                subtitle: const Text(EsBO.settingsManagePrinters),
                 trailing: Icon(Icons.chevron_right_rounded,
                     color: color.onSurfaceVariant),
                 onTap: () => context.push('/settings/printers'),
