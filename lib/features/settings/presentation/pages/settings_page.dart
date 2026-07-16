@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
@@ -28,7 +30,7 @@ class SettingsPage extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               child: Text('Error cargando ajustes: $e'),
             ),
           ),
@@ -61,10 +63,10 @@ class _SettingsBody extends ConsumerWidget {
           title: EsBO.settingsGlobalParams,
           accentColor: color.primary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 _AutoSaveField(
@@ -86,7 +88,7 @@ class _SettingsBody extends ConsumerWidget {
                     _showSavedSnack(context);
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 _AutoSaveField(
                   label: EsBO.settingsKwhRate,
                   helper: EsBO.settingsKwhRateHelper,
@@ -114,7 +116,7 @@ class _SettingsBody extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
 
         // === Apariencia ===
         SectionHeader(
@@ -122,10 +124,10 @@ class _SettingsBody extends ConsumerWidget {
           title: EsBO.settingsAppearance,
           accentColor: color.secondary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -135,13 +137,13 @@ class _SettingsBody extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 _ThemeModeSelector(),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
 
         // === Catalogos ===
         SectionHeader(
@@ -149,7 +151,7 @@ class _SettingsBody extends ConsumerWidget {
           title: EsBO.settingsCatalogos,
           accentColor: color.secondary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Column(
             children: [
@@ -159,7 +161,7 @@ class _SettingsBody extends ConsumerWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: color.secondaryContainer,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: Icon(Icons.label_rounded,
                       color: color.onSecondaryContainer, size: 20),
@@ -177,7 +179,7 @@ class _SettingsBody extends ConsumerWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: color.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: Icon(Icons.print_rounded,
                       color: color.onTertiaryContainer, size: 20),
@@ -191,7 +193,7 @@ class _SettingsBody extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
 
         // === Acerca de ===
         SectionHeader(
@@ -199,10 +201,10 @@ class _SettingsBody extends ConsumerWidget {
           title: EsBO.settingsAbout,
           accentColor: color.tertiary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 Row(
@@ -212,7 +214,7 @@ class _SettingsBody extends ConsumerWidget {
                       height: 48,
                       decoration: BoxDecoration(
                         color: color.primaryContainer,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(AppRadii.xl),
                       ),
                       child: Icon(Icons.calculate_rounded,
                           color: color.onPrimaryContainer, size: 28),
@@ -224,7 +226,7 @@ class _SettingsBody extends ConsumerWidget {
                         Text(EsBO.appName,
                             style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSpacing.xxs),
                         Text('v0.1.0',
                             style: theme.textTheme.bodySmall?.copyWith(
                                 color: color.onSurfaceVariant)),
@@ -232,12 +234,12 @@ class _SettingsBody extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Row(
                   children: [
                     Icon(Icons.lock_outline_rounded,
                         size: 16, color: color.onSurfaceVariant),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         EsBO.settingsPrivacy,
@@ -252,7 +254,7 @@ class _SettingsBody extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: AppSpacing.xxxl),
       ],
       ),
     );

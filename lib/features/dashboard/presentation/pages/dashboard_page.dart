@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
@@ -64,7 +65,7 @@ class _DashboardBody extends StatelessWidget {
     final color = theme.colorScheme;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: MaxWidthScrollView(
         maxWidth: 960,
         child: Column(
@@ -81,7 +82,7 @@ class _DashboardBody extends StatelessWidget {
                   color: color.primary,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: StatTile(
                   label: EsBO.dashboardStatSold,
@@ -90,7 +91,7 @@ class _DashboardBody extends StatelessWidget {
                   color: color.tertiary,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: StatTile(
                   label: EsBO.dashboardStatConversion,
@@ -101,12 +102,12 @@ class _DashboardBody extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Monetary totals
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: [
                   MoneyRow(
@@ -114,7 +115,7 @@ class _DashboardBody extends StatelessWidget {
                     value: formatBob(stats.totalQuoted),
                     valueColor: color.onSurface,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   MoneyRow(
                     label: EsBO.dashboardTotalSold,
                     value: formatBob(stats.totalSold),
@@ -125,12 +126,12 @@ class _DashboardBody extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Chart section
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -138,7 +139,7 @@ class _DashboardBody extends StatelessWidget {
                     icon: Icons.bar_chart_rounded,
                     title: EsBO.dashboardChartTitle,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   ProfitBarChart(
                     totalQuoted: stats.totalQuoted,
                     totalSold: stats.totalSold,
@@ -147,13 +148,16 @@ class _DashboardBody extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
         ],
         ),
       ),
     );
   }
 }
+
+
+
 
 
 
