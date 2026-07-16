@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 
 class SectionHeader extends StatelessWidget {
@@ -34,25 +35,41 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = accentColor ?? theme.colorScheme.primary;
-    final row = Row(
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: AppSpacing.sm),
-        Text(
-          title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
+    final container = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+          width: 1,
         ),
-      ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
 
-    if (semanticLabel == null) return row;
+    if (semanticLabel == null) return container;
     return Semantics(
       header: true,
       label: semanticLabel,
-      child: row,
+      child: container,
     );
   }
 }
