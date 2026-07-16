@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/money/currency_formatter.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -109,13 +110,13 @@ class _DashboardBody extends StatelessWidget {
                 children: [
                   MoneyRow(
                     label: 'Total cotizado',
-                    value: _formatMoney(stats.totalQuoted.toDouble()),
+                    value: formatBob(stats.totalQuoted),
                     valueColor: color.onSurface,
                   ),
                   const SizedBox(height: 8),
                   MoneyRow(
                     label: 'Total vendido',
-                    value: _formatMoney(stats.totalSold.toDouble()),
+                    value: formatBob(stats.totalSold),
                     valueColor: color.tertiary,
                     isBold: true,
                   ),
@@ -150,16 +151,6 @@ class _DashboardBody extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatMoney(double value) {
-    if (value >= 1000000) {
-      return 'Bs. ${(value / 1000000).toStringAsFixed(2)}M';
-    }
-    if (value >= 1000) {
-      return 'Bs. ${(value / 1000).toStringAsFixed(1)}K';
-    }
-    return 'Bs. ${value.toStringAsFixed(2)}';
   }
 }
 
