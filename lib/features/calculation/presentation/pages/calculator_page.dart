@@ -293,7 +293,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     ThemeData theme,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: MaxWidthScrollView(
         maxWidth: 720,
         child: Column(
@@ -426,7 +429,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     ThemeData theme,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: MaxWidthScrollView(
         maxWidth: 720,
         child: Column(
@@ -771,7 +777,10 @@ class _PrinterIndicator extends ConsumerWidget {
           : () => _showPrinterDialog(context, ref, printers),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(color: theme.colorScheme.outlineVariant),
@@ -1120,7 +1129,7 @@ class _CalculatingAnimation extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 32),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
       child: Column(
         children: [
           SizedBox(
@@ -1239,11 +1248,14 @@ class _SummaryCard extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
           ],
           // Date
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
               color: color.onPrimaryContainer.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppRadii.xxxl),
@@ -1282,7 +1294,10 @@ class _SummaryCard extends StatelessWidget {
           if (hasDiscount) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: 10,
+              ),
               decoration: BoxDecoration(
                 color: color.errorContainer.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(AppRadii.lg),
