@@ -328,22 +328,29 @@ class _Detail extends ConsumerWidget {
                   children: [
                     Text(
                       'Total',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      // V1: label del gran total sube a titleLarge para
+                      // acompanar el peso del valor (headlineMedium).
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Text(
-                      formatBob(
-                        Decimal.parse(
-                          calc.totalPriceSnapshot.toStringAsFixed(2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        formatBob(
+                          Decimal.parse(
+                            calc.totalPriceSnapshot.toStringAsFixed(2),
+                          ),
                         ),
-                      ),
-                      // M2: total del detalle usa JetBrains Mono + tabular
-                      // para coincidir con la cifra principal del calculator.
-                      style: GoogleFonts.jetBrainsMono(
-                        textStyle: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                        // M2: total del detalle usa JetBrains Mono + tabular
+                        // para coincidir con la cifra principal del calculator.
+                        // V1: headlineMedium (28sp) con FittedBox, mas prominente
+                        // que el headlineSmall anterior.
+                        style: GoogleFonts.jetBrainsMono(
+                          textStyle: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                     ),

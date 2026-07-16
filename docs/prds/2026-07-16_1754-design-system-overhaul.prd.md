@@ -303,4 +303,69 @@ Lista candidata. ¿Cuales entran?
 
 ---
 
-*Status: DRAFT — blocking questions Q1/Q3 unresolved, remaining 8 are optimization. Implementation planning pending via `/plan`.*
+## Visual Polish v1 — Round 1 addendum (2026-07-16, post-merge)
+
+> Addendum tras merge de M1 (theme M3) + M2 (Google Fonts typography) a main. El user reporto que M1+M2 entrego la base correcta pero el cambio visual es sutil (mas notable en dark mode por el surface system). Faltaba el "flash" que el ojo nota: jerarquia tipografica HERO, empty states prominentes, headers con peso.
+>
+> Branch de trabajo: `feature/visual-polish-v1` (3 commits, merge a main al final del round).
+
+### V1 — Hero monetary totals (calculator + calculation detail)
+
+**Motivacion**: la cifra principal del calculator (resultado) y el "Total" del detail son el outcome primario de cada pantalla. Estaban en `displaySmall` (36sp) y `headlineSmall` (24sp), leian como parrafos en vez de como hero.
+
+**Cambios aplicados**:
+- `lib/features/calculation/presentation/pages/calculator_page.dart` (linea 1274-1287): el "Big price" del result card sube de `displaySmall` (36sp) a `displayMedium` (45sp). Wrap en `FittedBox(fit: BoxFit.scaleDown)` para que numeros largos (`BOB 1,234,567.89`) no rompan el layout en mobile angosto (320dp). Bold + JetBrains Mono + tabular preservados.
+- `lib/features/calculation/presentation/pages/calculation_detail_page.dart` (linea 326-351): el "Total" del detalle sube de `headlineSmall` (24sp) a `headlineMedium` (28sp). Wrap en `FittedBox` por la misma razon. El label companion `Total` sube de `titleMedium` a `titleLarge` para acompanar el peso del valor.
+
+**Commit**: `2697434 feat(calc): promote primary monetary totals to hero display style`
+
+### V2 — Hero EmptyView (lib/shared/widgets/empty_view.dart)
+
+**Motivacion**: empty states eran 80dp circles con `titleMedium` y `bodyMedium`. Leián como alertas chiquitas, no como estado primario de la pantalla.
+
+**Cambios aplicados**:
+- Container 80x80 → 96x96. Icono 36 → 48. La ilustracion entera es ahora el punto focal.
+- Mensaje `titleMedium` → `titleLarge` + `FontWeight.w600`. Subtitle se mantiene `bodyMedium` para preservar jerarquia.
+- Gap entre icono y mensaje: `xl` → `xxl`. La ilustracion respira.
+
+**Commit**: `e97edfb feat(widgets): make EmptyView hero-shaped with bigger icon and titleLarge`
+
+### V3 — SectionHeader con background tonal (lib/shared/widgets/section_header.dart)
+
+**Motivacion**: section headers eran una fila plana sobre el background de la pagina. Se perdian entre cards.
+
+**Cambios aplicados**:
+- Wrap en `Container` con `colorScheme.surfaceContainerHighest`, `BorderRadius.circular(AppRadii.md)`, y `border` `outlineVariant` 1px.
+- Padding `EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md)`.
+- Texto: `titleSmall`+`primary` → `titleMedium`+`onSurface` para leer contra el nuevo background.
+- Icono 18 → 20.
+- Wrap del Text en `Expanded` para que titulos largos no rompan cuando se usan con iconos grandes.
+- Mantiene `Semantics(header: true, ...)` wrapping para screen readers.
+
+**Commit**: `d96abc4 feat(widgets): give SectionHeader a tonal background and generous padding`
+
+### Nuevos ACs (V1-series)
+
+- **V1-001** — Calculator "Big price" resultado final: `displayMedium` (45sp) + bold + JetBrains Mono + tabular + FittedBox. El resultado principal lee como HERO, no como parrafo.
+- **V1-002** — Calculation detail "Total": `headlineMedium` (28sp) + bold + JetBrains Mono + tabular + FittedBox. Companion label `titleLarge` + w600. Visualmente equivalente al calculator.
+- **V1-003** — EmptyView: container 96x96 con icono 48dp + titulo `titleLarge` w600. La ilustracion es el focal point de la pantalla.
+- **V1-004** — SectionHeader: container con `surfaceContainerHighest` + `outlineVariant` border + `AppRadii.md` + padding `lg/md`. Texto `titleMedium` + `onSurface`. Lectura clara como banda de seccion.
+
+### Validation
+
+- `flutter analyze` en 4 archivos editados: 13 issues, todos `public_member_api_docs` pre-existentes, 0 errors/warnings nuevos.
+- Grep `0xFFF0EFEC|0xFFFCFCFA|_lightSurfaceBg|_lightCardBg`: 0 matches (M1 cleanup intacto).
+- Bundle: +600KB de Google Fonts (preservado del round M1+M2).
+
+### Out of scope (este round)
+
+- **V4** — SnackBar semantico con icono + color (success/error/info). 30 min. Pendiente de review con user.
+- **V5+** — Elevation visible en cards, skeletons en loading, densidad de cards. Quedan en otra iteracion si el user las pide.
+
+### Proximo paso propuesto
+
+Merge FF de `feature/visual-polish-v1` a main. Push a origin. Branch borrada. Quedan 4 milestones del round original (M3-M6) sin tocar.
+
+---
+
+*Status: DRAFT addendum, M1+M2 + V1-V3 done, M3-M6 + V4 pendientes.*
