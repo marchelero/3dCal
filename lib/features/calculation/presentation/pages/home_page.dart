@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
@@ -93,24 +94,24 @@ class HomePage extends ConsumerWidget {
     final actions = [
       _QuickAction(
         icon: Icons.add_circle_rounded,
-        label: 'Nueva cotizacion',
-        subtitle: 'Calcula precio de impresion',
+        label: EsBO.homeActionNewCalc,
+        subtitle: EsBO.homeActionNewCalcSub,
         color: color.primary,
         bgColor: color.primaryContainer,
         onTap: () => context.push('/calculator'),
       ),
       _QuickAction(
         icon: Icons.history_rounded,
-        label: 'Historial',
-        subtitle: 'Cotizaciones guardadas',
+        label: EsBO.homeActionHistory,
+        subtitle: EsBO.homeActionHistorySub,
         color: color.secondary,
         bgColor: color.secondaryContainer,
         onTap: () => context.go('/history'),
       ),
       _QuickAction(
         icon: Icons.bar_chart_rounded,
-        label: 'Dashboard',
-        subtitle: 'Estadisticas y graficos',
+        label: EsBO.homeActionDashboard,
+        subtitle: EsBO.homeActionDashboardSub,
         color: color.tertiary,
         bgColor: color.tertiaryContainer,
         onTap: () => context.go('/dashboard'),
@@ -121,7 +122,7 @@ class HomePage extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Acceso rapido',
+          EsBO.homeQuickAccess,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: color.onSurface,
               ),
@@ -173,7 +174,7 @@ class HomePage extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Error cargando stats',
+                  EsBO.homeErrorLoadStats,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: color.onErrorContainer,
                   ),
@@ -210,7 +211,7 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Todavia no hay cotizaciones',
+              EsBO.homeEmptyQuotations,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: color.onSurfaceVariant,
               ),
@@ -230,12 +231,12 @@ class HomePage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Resumen',
+              EsBO.homeSummary,
               style: theme.textTheme.titleMedium?.copyWith(color: color.onSurface),
             ),
             TextButton.icon(
               icon: const Icon(Icons.open_in_new, size: 16),
-              label: const Text('Ver todo'),
+              label: const Text(EsBO.homeSeeAll),
               onPressed: () => context.go('/dashboard'),
             ),
           ],
@@ -246,7 +247,7 @@ class HomePage extends ConsumerWidget {
           children: [
             Expanded(
               child: StatTile(
-                label: 'Cotizaciones',
+                label: EsBO.dashboardStatQuotations,
                 value: '${stats.countAll}',
                 icon: Icons.receipt_long_rounded,
                 color: color.primary,
@@ -255,7 +256,7 @@ class HomePage extends ConsumerWidget {
             const SizedBox(width: 8),
             Expanded(
               child: StatTile(
-                label: 'Vendidas',
+                label: EsBO.dashboardStatSold,
                 value: '${stats.countSold}',
                 icon: Icons.check_circle_rounded,
                 color: color.tertiary,
@@ -264,7 +265,7 @@ class HomePage extends ConsumerWidget {
             const SizedBox(width: 8),
             Expanded(
               child: StatTile(
-                label: 'Conversion',
+                label: EsBO.dashboardStatConversion,
                 value: '${stats.conversionPct.toStringAsFixed(0)}%',
                 icon: Icons.trending_up_rounded,
                 color: color.secondary,
@@ -280,13 +281,13 @@ class HomePage extends ConsumerWidget {
             child: Column(
               children: [
                 MoneyRow(
-                  label: 'Total cotizado',
+                  label: EsBO.dashboardTotalQuoted,
                   value: formatBob(stats.totalQuoted),
                   valueColor: color.onSurface,
                 ),
                 const SizedBox(height: 8),
                 MoneyRow(
-                  label: 'Total vendido',
+                  label: EsBO.dashboardTotalSold,
                   value: formatBob(stats.totalSold),
                   valueColor: color.tertiary,
                   isBold: true,

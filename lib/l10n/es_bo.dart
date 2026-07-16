@@ -62,4 +62,17 @@ class EsBO {
   static const String dashboardChartTitle = 'Cotizado vs Ganado';
   static const String dashboardChartQuoted = 'Cotizado';
   static const String dashboardChartSold = 'Ganado';
+
+  // === Home / Quick actions ===
+  static const String homeActionNewCalc = 'Nueva cotizacion';
+  static const String homeActionNewCalcSub = 'Calcula precio de impresion';
+  static const String homeActionHistory = 'Historial';
+  static const String homeActionHistorySub = 'Cotizaciones guardadas';
+  static const String homeActionDashboard = 'Dashboard';
+  static const String homeActionDashboardSub = 'Estadisticas y graficos';
+  static const String homeQuickAccess = 'Acceso rapido';
+  static const String homeErrorLoadStats = 'Error cargando stats';
+  static const String homeEmptyQuotations = 'Todavia no hay cotizaciones';
+  static const String homeSummary = 'Resumen';
+  static const String homeSeeAll = 'Ver todo';
 }
