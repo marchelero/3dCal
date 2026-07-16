@@ -1,12 +1,10 @@
-// ignore_for_file: public_member_api_docs
+﻿// ignore_for_file: public_member_api_docs
 
 import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
@@ -22,9 +20,9 @@ import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
-import '../../domain/entities/calculation_output.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
+import '../widgets/result_sheet.dart';
 
 /// Pantalla principal del calculator con UX mejorada.
 ///
@@ -279,7 +277,66 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             ? _buildExpressForm(state, notifier, theme)
             : _buildAdvancedForm(state, notifier, theme),
       ),
+      // Sticky bottom bar: SIEMPRE visible (Fix #3). Cumplio doble proposito:
+      // - invalid → empty hint dinamico (lista campos faltantes).
+      // - valid → total formateado + tap abre modal con resumen + acciones.
+      //
+      // Antes el output estaba al final del form y los botones Save/Reset
+      // estaban inline; ahora la action surface vive en el sheet, accesible
+      // siempre sin scroll.
+      bottomNavigationBar: ResultBottomBar(
+        totalText: state.output != null
+            ? formatBob(state.output!.totalPrice)
+            : '—',
+        hasDiscount:
+            state.output != null && state.output!.discountAmount > Decimal.zero,
+        emptyHint: state.isValid
+            ? null
+            : _buildEmptyHint(state.missingRequiredFields),
+        onTap: state.isValid && state.output != null
+            ? () => showResultSheet(
+                context: context,
+                state: state,
+                onSave: _showSaveDialog,
+                onReset: _resetAll,
+                onToggleDetail: () =>
+                    ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
+              )
+            : null,
+      ),
     );
+  }
+
+  /// Construye el hint dinamico para el empty state del bar.
+  /// "Completa X para ver la cotizacion." (1)
+  /// "Completa X y Y para ver la cotizacion." (2)
+  /// "Completa X, Y y Z para ver la cotizacion." (3+)
+  String _buildEmptyHint(List<String> missingKeys) {
+    if (missingKeys.isEmpty) return EsBO.calcEmptyHint;
+    String resolveFieldKey(String key) {
+      switch (key) {
+        case 'weight':
+          return EsBO.calcFieldWeightShort;
+        case 'price':
+          return EsBO.calcFieldPriceShort;
+        case 'time':
+          return EsBO.calcFieldTimeShort;
+        case 'material':
+          return EsBO.calcFieldMaterialShort;
+        default:
+          return key;
+      }
+    }
+
+    final parts = missingKeys.map(resolveFieldKey).toList();
+    final joined = parts.length == 1
+        ? parts.first
+        : parts.length == 2
+            ? '${parts[0]} y ${parts[1]}'
+            : '${parts.sublist(0, parts.length - 1).join(', ')} '
+                'y ${parts.last}';
+    return '${EsBO.calcEmptyHintPrefix} $joined '
+        '${EsBO.calcEmptyHintSuffix}.';
   }
 
   // ============================================================
@@ -360,6 +417,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
+                    helperText: EsBO.calcLabelHoursHelper,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -391,27 +449,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // Output section
-          const _OutputSection(),
-          const SizedBox(height: AppSpacing.xl),
-
-          // Save button
-          FilledButton.icon(
-            icon: const Icon(Icons.save_rounded),
-            label: const Text(EsBO.calcBtnSave),
-            onPressed: _showSaveDialog,
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Reset link (text button, less prominent)
-          Center(
-            child: TextButton.icon(
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text(EsBO.calcBtnReset),
-              onPressed: _resetAll,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxl),
+          // El output + botones Save/Reset ahora viven en el ResultBottomBar
+          // sticky + modal sheet (Fix #3). El form queda limpio: solo inputs.
         ],
         ),
       ),
@@ -513,6 +552,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
+                    helperText: EsBO.calcLabelHoursHelper,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -544,26 +584,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // Output section
-          const _OutputSection(),
-          const SizedBox(height: AppSpacing.xl),
-
-          // Save button
-          FilledButton.icon(
-            icon: const Icon(Icons.save_rounded),
-            label: const Text(EsBO.calcBtnSave),
-            onPressed: _showSaveDialog,
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          Center(
-            child: TextButton.icon(
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text(EsBO.calcBtnReset),
-              onPressed: _resetAll,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxl),
+          // Output + Save/Reset viven en el ResultBottomBar + modal sheet
+          // (Fix #3). Ver seccion EXPRESS para la nota completa.
         ],
         ),
       ),
@@ -711,7 +733,7 @@ class _FilamentSection extends ConsumerWidget {
                 ),
                 title: Text(f.name),
                 subtitle: Text(
-                  '${f.pricePerBobbin.toStringAsFixed(0)} BOB · '
+                  '${f.pricePerBobbin.toStringAsFixed(0)} BOB Â· '
                   '${f.gramsPerBobbin.toStringAsFixed(0)} g'
                   '${f.isDefault ? ' (default)' : ''}',
                 ),
@@ -815,7 +837,7 @@ class _PrinterIndicator extends ConsumerWidget {
                         Text(
                           activePrinter.brand != null &&
                                   activePrinter.brand!.isNotEmpty
-                              ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
+                              ? '${activePrinter.brand} Â· ${activePrinter.averageWatts} W'
                               : '${activePrinter.averageWatts} W',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
@@ -862,7 +884,7 @@ class _PrinterIndicator extends ConsumerWidget {
                 leading: AvatarIcon(icon: Icons.print_rounded),
                 title: Text(p.name),
                 subtitle: Text(
-                  '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
+                  '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} Â· ' : ''}${p.averageWatts} W'
                   '${p.isDefault ? ' (default)' : ''}',
                 ),
                 onTap: () {
@@ -1055,465 +1077,11 @@ class _MaterialRowTile extends StatelessWidget {
   }
 }
 
-// === Output section ===
+// _SummaryCard y _DetailSection fueron movidos a
+// lib/features/calculation/presentation/widgets/summary_card.dart para que
+// result_sheet.dart pueda reusarlos sin importar este page (Fix #3).
 
-class _OutputSection extends ConsumerStatefulWidget {
-  const _OutputSection();
-
-  @override
-  ConsumerState<_OutputSection> createState() => _OutputSectionState();
-}
-
-class _OutputSectionState extends ConsumerState<_OutputSection> {
-  bool _calculating = false;
-  Timer? _calcTimer;
-
-  @override
-  void dispose() {
-    _calcTimer?.cancel();
-    super.dispose();
-  }
-
-  void _triggerCalculating() {
-    _calcTimer?.cancel();
-    if (!mounted) return;
-    setState(() => _calculating = true);
-    _calcTimer = Timer(const Duration(milliseconds: 1200), () {
-      if (mounted) setState(() => _calculating = false);
-    });
-  }
-
-  /// Mapea las keys de [CalculatorState.missingRequiredFields] a strings
-  /// localizables. El join con "y" lo hace [buildDynamicEmptyHint].
-  static String _resolveFieldKey(String key) {
-    switch (key) {
-      case 'weight':
-        return EsBO.calcFieldWeightShort;
-      case 'price':
-        return EsBO.calcFieldPriceShort;
-      case 'time':
-        return EsBO.calcFieldTimeShort;
-      case 'material':
-        return EsBO.calcFieldMaterialShort;
-      default:
-        return key;
-    }
-  }
-
-  /// Construye el hint dinamico listando los campos faltantes.
-  /// "Completa X para ver la cotizacion." (1)
-  /// "Completa X y Y para ver la cotizacion." (2)
-  /// "Completa X, Y y Z para ver la cotizacion." (3+)
-  static String buildDynamicEmptyHint(List<String> missingKeys) {
-    if (missingKeys.isEmpty) {
-      // Safety: no deberia llamarse cuando isValid=true.
-      return EsBO.calcEmptyHint;
-    }
-    final parts = missingKeys.map(_resolveFieldKey).toList();
-    final joined = parts.length == 1
-        ? parts.first
-        : parts.length == 2
-            ? '${parts[0]} y ${parts[1]}'
-            : '${parts.sublist(0, parts.length - 1).join(', ')} '
-                'y ${parts.last}';
-    return '${EsBO.calcEmptyHintPrefix} $joined '
-        '${EsBO.calcEmptyHintSuffix}.';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    ref.listen<CalculatorState>(calculatorNotifierProvider, (prev, next) {
-      final outputChanged = prev?.output != next.output;
-      final versionChanged = prev?.computeVersion != next.computeVersion;
-      if ((outputChanged || versionChanged) && next.output != null) {
-        _triggerCalculating();
-      }
-    });
-
-    final state = ref.watch(calculatorNotifierProvider);
-    final theme = Theme.of(context);
-    final output = state.output;
-
-    return Column(
-      children: [
-        if (_calculating)
-          _CalculatingAnimation()
-        else if (output == null)
-          _EmptyOutput(
-            theme: theme,
-            message: buildDynamicEmptyHint(state.missingRequiredFields),
-          )
-        else
-          _SummaryCard(
-            output: output,
-            label: state.label,
-            discountPct:
-                state.detailDiscountPct?.toStringAsFixed(0) ??
-                state.discountPct,
-            showDetail: state.showDetail,
-            onToggleDetail: () =>
-                ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
-            detailElectricCost: state.detailElectricCost,
-            detailBaseCost: state.detailBaseCost,
-            detailProfitAmount: state.detailProfitAmount,
-            detailTotalFinal: state.detailTotalFinal,
-          ),
-      ],
-    );
-  }
-}
-
-class _CalculatingAnimation extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
-      child: Column(
-        children: [
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              color: color.primary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Calculando...',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: color.onSurfaceVariant),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyOutput extends StatelessWidget {
-  const _EmptyOutput({required this.theme, required this.message});
-  final ThemeData theme;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = theme.colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xxl),
-      decoration: BoxDecoration(
-        color: color.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.xxl),
-        border: Border.all(color: color.outlineVariant),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 32,
-            color: color.onSurfaceVariant,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: color.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tarjeta resumen de la cotizacion — version mejorada.
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.output,
-    required this.label,
-    required this.discountPct,
-    required this.showDetail,
-    required this.onToggleDetail,
-    required this.detailElectricCost,
-    required this.detailBaseCost,
-    required this.detailProfitAmount,
-    required this.detailTotalFinal,
-  });
-
-  final CalculationOutput output;
-  final String label;
-  final String discountPct;
-  final bool showDetail;
-  final VoidCallback onToggleDetail;
-  final Decimal? detailElectricCost;
-  final Decimal? detailBaseCost;
-  final Decimal? detailProfitAmount;
-  final Decimal? detailTotalFinal;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-    final hasLabel = label.trim().isNotEmpty;
-    final hasDiscount = output.discountAmount > Decimal.zero;
-    final now = DateTime.now();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xxl),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.primaryContainer,
-            color.primaryContainer.withValues(alpha: 0.6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.xxxl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Label
-          if (hasLabel) ...[
-            Text(
-              label,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: color.onPrimaryContainer,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-          ],
-          // Date
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: color.onPrimaryContainer.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(AppRadii.xxxl),
-            ),
-            child: Text(
-              DateFormat('dd MMM yyyy HH:mm').format(now),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: color.onPrimaryContainer.withValues(alpha: 0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-
-          // Big price - HERO display para que el resultado principal
-          // tenga peso visual (no se pierda como parrafo mas).
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              formatBob(output.totalPrice),
-              // M2: cifra principal del resultado usa JetBrains Mono + tabular
-              // para look consistente con el resto de valores monetarios.
-              // V1: displayMedium (45sp) con FittedBox para que numeros largos
-              // (BOB 1,234,567.89) no rompan el layout en mobile angosto.
-              style: GoogleFonts.jetBrainsMono(
-                textStyle: theme.textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color.onPrimaryContainer,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-
-          // Subtitle
-          Text(
-            'Total ${hasDiscount ? 'con descuento' : 'final'}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: color.onPrimaryContainer.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          // Discount badge
-          if (hasDiscount) ...[
-            const SizedBox(height: AppSpacing.lg),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: color.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(AppRadii.lg),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Descuento $discountPct%',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: color.onErrorContainer,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '-${formatBob(output.discountAmount)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: color.onErrorContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // Toggle detail
-          const SizedBox(height: AppSpacing.lg),
-          Align(
-            child: TextButton.icon(
-              icon: Icon(
-                showDetail
-                    ? Icons.visibility_rounded
-                    : Icons.visibility_off_rounded,
-                size: 18,
-                color: color.onPrimaryContainer,
-              ),
-              label: Text(
-                showDetail ? EsBO.calcToggleHideDetail : EsBO.calcToggleShowDetail,
-                style: TextStyle(color: color.onPrimaryContainer),
-              ),
-              onPressed: onToggleDetail,
-            ),
-          ),
-
-          // Detail breakdown
-          if (showDetail) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Divider(
-              height: 1,
-              color: color.onPrimaryContainer.withValues(alpha: 0.2),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _DetailSection(
-              materialCost: output.materialCost,
-              electricCost: detailElectricCost ?? Decimal.zero,
-              baseCost: detailBaseCost ?? Decimal.zero,
-              profitAmount: detailProfitAmount ?? Decimal.zero,
-              totalFinal: detailTotalFinal ?? Decimal.zero,
-              textColor: color.onPrimaryContainer,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailSection extends StatelessWidget {
-  const _DetailSection({
-    required this.materialCost,
-    required this.electricCost,
-    required this.baseCost,
-    required this.profitAmount,
-    required this.totalFinal,
-    this.textColor,
-  });
-
-  final Decimal materialCost;
-  final Decimal electricCost;
-  final Decimal baseCost;
-  final Decimal profitAmount;
-  final Decimal totalFinal;
-  final Color? textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tc = textColor ?? theme.colorScheme.onSurface;
-    final s = theme.textTheme.bodySmall?.copyWith(
-      color: tc.withValues(alpha: 0.8),
-    );
-    return Column(
-      children: [
-        _dr(EsBO.calcDetailMaterial, formatBob(materialCost), s, tc: tc),
-        _dr(EsBO.calcDetailEnergy, formatBob(electricCost), s, tc: tc),
-        _dr(EsBO.calcDetailBase, formatBob(baseCost), s, tc: tc),
-        _dr(
-          EsBO.calcDetailProfit,
-          formatBob(profitAmount),
-          s,
-          tc: theme.colorScheme.primary,
-          isProfit: true,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Divider(
-          height: 1,
-          color: (textColor ?? theme.colorScheme.onSurface)
-              .withValues(alpha: 0.2),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _dr(
-          EsBO.calcDetailTotal,
-          formatBob(totalFinal),
-          s,
-          tc: tc,
-          isTotal: true,
-        ),
-      ],
-    );
-  }
-
-  Widget _dr(
-    String label,
-    String value,
-    TextStyle? style, {
-    Color? tc,
-    bool isProfit = false,
-    bool isTotal = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: style?.copyWith(
-              fontWeight: isTotal ? FontWeight.w600 : null,
-              color: tc?.withValues(alpha: isTotal ? 1.0 : 0.8),
-            ),
-          ),
-          Text(
-            value,
-            // M2: cifra en summary usa JetBrains Mono + tabular.
-            style: GoogleFonts.jetBrainsMono(
-              textStyle: style?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-                fontWeight: isTotal
-                    ? FontWeight.bold
-                    : isProfit
-                    ? FontWeight.w600
-                    : FontWeight.w500,
-                color: isProfit
-                    ? tc
-                    : isTotal
-                    ? tc
-                    : tc?.withValues(alpha: 0.8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// === Mode Selector ===
 
 // === Mode Selector ===
 

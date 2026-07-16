@@ -112,22 +112,23 @@ void main() {
       await _fillValid(tester);
       expect(find.textContaining('Bs.'), findsWidgets);
 
-      // El label del boton es 'Restablecer valores' (EsBO.calcBtnReset).
-      await tester.ensureVisible(find.text('Restablecer valores'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Restablecer valores'));
+      // Reset ahora vive en el AppBar (siempre accesible) Y en el modal
+      // sheet. Usamos el AppBar para este test (mas simple, no requiere
+      // abrir el sheet). Tooltip del IconButton: 'Restablecer'.
+      await tester.tap(find.byTooltip('Restablecer'));
       await tester.pumpAndSettle();
 
-      // Output card se fue, vuelve el mensaje inicial
+      // Output card se fue, vuelve el empty hint del bar
       expect(find.textContaining('Completa peso'), findsOneWidget);
-      expect(find.textContaining('Bs.'), findsNothing);
+      expect(find.textContaining('Bs. 36,00'), findsNothing);
     });
 
     testWidgets('descuento reduce precio final', (tester) async {
       await _pumpPage(tester);
       await _fillValid(tester);
 
-      // Sin descuento: totalFinal = 36 (materialCost 12 + profit 200%)
+      // Sin descuento: totalFinal = 36 (materialCost 12 + profit 200%).
+      // El total vive en el ResultBottomBar.
       expect(find.text('Bs. 36,00'), findsAtLeastNWidgets(1));
 
       // Aplicar descuento 25%
@@ -135,9 +136,14 @@ void main() {
           find.widgetWithText(TextField, 'Descuento'), '25');
       await tester.pumpAndSettle();
 
-      // Big number = finalPrice (totalFinal 36 - 25% = 27)
+      // Big number = finalPrice (totalFinal 36 - 25% = 27). Tambien en el bar.
       expect(find.text('Bs. 27,00'), findsAtLeastNWidgets(1));
-      // Aparece el contenedor de descuento
+
+      // El badge de descuento y el monto viven en el SummaryCard dentro
+      // del modal sheet. Hay que abrir el sheet para verlos.
+      await tester.tap(find.text('Bs. 27,00'));
+      await tester.pumpAndSettle();
+
       expect(find.textContaining('Descuento 25%'), findsOneWidget);
       expect(find.textContaining('Bs. 9,00'), findsOneWidget);
     });

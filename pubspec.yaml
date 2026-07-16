@@ -22,6 +22,7 @@ dependencies:
   path_provider: ^2.1.4
   riverpod_annotation: ^2.3.5
   shared_preferences: ^2.3.2
+  share_plus: ^10.1.4
   sqlite3_flutter_libs: ^0.5.24
 
 dev_dependencies:

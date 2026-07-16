@@ -90,6 +90,7 @@ class EsBO {
   static const String calcLabelWeight = 'Peso de la pieza';
   static const String calcLabelWeightHelper = 'Gramos del modelo';
   static const String calcLabelHours = 'Horas';
+  static const String calcLabelHoursHelper = '0-24';
   static const String calcLabelMinutes = 'Minutos';
   static const String calcLabelMinutesHelper = '0-59';
   static const String calcLabelDiscount = 'Descuento';
@@ -118,6 +119,24 @@ class EsBO {
   static const String calcFieldPriceShort = 'precio del filamento';
   static const String calcFieldTimeShort = 'tiempo de impresion';
   static const String calcFieldMaterialShort = 'al menos un material';
+
+  // === Summary card meta info (Fix #2) ===
+  // Shows grams used + print time inside the summary card, debajo del precio.
+  // Format: "100 g · 5h 30m".
+  static const String calcMetaSeparator = ' · ';
+
+  // === Result sheet / sticky bar (Fix #3) ===
+  // Sticky bottom bar aparece cuando isValid, con el total + flecha.
+  // Tap expande a modal sheet con summary + acciones.
+  static const String calcResultBarTapHint = 'Ver cotizacion';
+  static const String calcResultBarEmptyHint = 'Falta completar';
+  static const String calcSheetTitle = 'Cotizacion';
+  static const String calcBtnShare = 'Compartir imagen';
+  static const String calcBtnShareTooltip = 'Genera una imagen lista para enviar';
+  static const String calcShareError = 'No se pudo generar la imagen';
+  static const String calcShareSubject = 'Cotizacion 3D';
+  static const String calcShareText = 'Cotizacion generada en 3dCal';
+  static const String calcSheetActionsLabel = 'Acciones';
 
   // === Filaments / Printers forms ===
   static const String filamentTitle = 'Filamentos';
