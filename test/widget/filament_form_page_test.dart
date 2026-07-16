@@ -41,12 +41,15 @@ void main() {
     testWidgets('muestra los 4 inputs numericos + switch default',
         (tester) async {
       await _pumpForm(tester);
+      // Labels actuales segun EsBO.filament* en l10n/es_bo.dart.
       expect(find.widgetWithText(TextField, 'Nombre'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'Marca'), findsOneWidget);
       expect(
-          find.widgetWithText(TextField, 'Precio bobina (BOB)'), findsOneWidget);
+          find.widgetWithText(TextField, 'Precio filamento (BOB)'),
+          findsOneWidget);
       expect(
-          find.widgetWithText(TextField, 'Gramos por bobina'), findsOneWidget);
+          find.widgetWithText(TextField, 'Gramos por rollo'),
+          findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);
     });
 
@@ -67,9 +70,9 @@ void main() {
       await tester.enterText(
           find.widgetWithText(TextField, 'Nombre'), 'PLA Test');
       await tester.enterText(
-          find.widgetWithText(TextField, 'Precio bobina (BOB)'), '120');
+          find.widgetWithText(TextField, 'Precio filamento (BOB)'), '120');
       await tester.enterText(
-          find.widgetWithText(TextField, 'Gramos por bobina'), '1000');
+          find.widgetWithText(TextField, 'Gramos por rollo'), '1000');
       await tester.pump();
 
       await tester.tap(find.text('Guardar'));

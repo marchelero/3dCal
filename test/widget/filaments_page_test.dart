@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/theme/app_theme.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filaments_page.dart';
 
@@ -102,12 +103,14 @@ void main() {
       await container.read(filamentsNotifierProvider.notifier).refresh();
       await tester.pumpAndSettle();
 
-      // El IconButton "+" del AppBar es un Icon(Icons.add).
-      // El star del default tiene color amarillo.
-      final stars = find.byIcon(Icons.star);
+      // El DefaultBadge del tile usa Icons.star_rounded con AppTheme.defaultStar
+      // (= 0xFFFFC107, mismo color que Colors.amber). Buscamos star_rounded
+      // para no chocar con el Icons.star del popup menu (que esta offstage
+      // hasta que se abre).
+      final stars = find.byIcon(Icons.star_rounded);
       expect(stars, findsOneWidget);
       final star = tester.widget<Icon>(stars);
-      expect(star.color, Colors.amber);
+      expect(star.color, AppTheme.defaultStar);
     });
 
     testWidgets('tap en "+" navega a FilamentFormPage', (tester) async {

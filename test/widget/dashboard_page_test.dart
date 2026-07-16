@@ -46,7 +46,7 @@ void main() {
       (tester) async {
         await _pumpPage(tester, stats: emptyStats);
         expect(find.textContaining('Aun no cotizaste nada'), findsOneWidget);
-        expect(find.textContaining('Empieza en Home'), findsOneWidget);
+        expect(find.textContaining('Crea tu primera cotizacion desde el inicio'), findsOneWidget);
         expect(
           find.widgetWithText(FilledButton, 'Ir a Home'),
           findsOneWidget,

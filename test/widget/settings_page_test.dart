@@ -4,17 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filaments_page.dart';
 import 'package:tresdcal/features/settings/presentation/notifiers/settings_notifier.dart';
 import 'package:tresdcal/features/settings/presentation/pages/settings_page.dart';
 
-/// Helper: monta [SettingsPage] dentro de un [ProviderScope] con DB in-memory.
+/// Helper: monta [SettingsPage] dentro de un [ProviderScope] con DB in-memory
+/// + SharedPreferences mock (necesario para themeModeProvider que la pagina
+/// usa via _ThemeModeSelector).
 Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final container = ProviderContainer(overrides: [
     appDatabaseProvider.overrideWithValue(db),
+    sharedPreferencesProvider.overrideWithValue(prefs),
   ]);
   addTearDown(() async {
     container.dispose();
@@ -33,6 +40,12 @@ Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
 void main() {
   group('SettingsPage', () {
     testWidgets('renderiza secciones y defaults', (tester) async {
+      // Viewport mas grande para que la seccion "Acerca de" (con el texto
+      // "100% local") entre en pantalla sin scrollear. Default es 800x600.
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await _pumpPage(tester);
       expect(find.text('Ajustes'), findsOneWidget);
       expect(find.text('Parametros globales'), findsOneWidget);
@@ -46,7 +59,9 @@ void main() {
       (tester) async {
         final container = await _pumpPage(tester);
 
-        final profitField = find.widgetWithText(TextFormField, '200');
+        // _AutoSaveField usa NumericInputField -> TextField (no TextFormField
+        // porque validator=null). El valor inicial 200 sale de settings.profitBase.
+        final profitField = find.widgetWithText(TextField, '200');
         await tester.enterText(profitField, '350');
         await tester.pumpAndSettle();
         // Blur para disparar el listener.
@@ -61,9 +76,19 @@ void main() {
     testWidgets(
       'tap en "Filamentos" navega a /settings/filaments (AC-9.1)',
       (tester) async {
+        // Viewport alto para que el ListTile de "Filamentos" (que vive
+        // en la seccion Catalogos, en el medio de la page) no quede
+        // fuera de pantalla. Default 800x600 no alcanza.
+        tester.view.physicalSize = const Size(800, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         final container = ProviderContainer(overrides: [
           appDatabaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
         ]);
         addTearDown(() async {
           container.dispose();
