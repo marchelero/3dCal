@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
@@ -182,10 +183,14 @@ class _CalculationCard extends ConsumerWidget {
                   Text(
                     formatBob(Decimal.parse(
                         calc.totalPriceSnapshot.toString())),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                      color: color.onSurface,
+                    // M2: precio en list item usa JetBrains Mono + tabular
+                    // para alineacion vertical de cifras en el listado.
+                    style: GoogleFonts.jetBrainsMono(
+                      textStyle: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: color.onSurface,
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),

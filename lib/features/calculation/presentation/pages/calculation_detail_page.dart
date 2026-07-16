@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
@@ -251,11 +252,14 @@ class _Detail extends ConsumerWidget {
                                       ms[i].gramsPerBobbinSnapshot)
                                   .toStringAsFixed(2),
                             )),
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
+                            // M2: precio por material usa JetBrains Mono + tabular.
+                            style: GoogleFonts.jetBrainsMono(
+                              textStyle: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -334,9 +338,13 @@ class _Detail extends ConsumerWidget {
                           calc.totalPriceSnapshot.toStringAsFixed(2),
                         ),
                       ),
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+                      // M2: total del detalle usa JetBrains Mono + tabular
+                      // para coincidir con la cifra principal del calculator.
+                      style: GoogleFonts.jetBrainsMono(
+                        textStyle: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
                       ),
                     ),
                   ],
@@ -391,9 +399,13 @@ class _Row extends StatelessWidget {
           Text(label),
           Text(
             value,
-            style: const TextStyle(
-              fontFeatures: [FontFeature.tabularFigures()],
-              fontWeight: FontWeight.w500,
+            // M2: cost breakdown usa JetBrains Mono + tabular para que
+            // cada linea del breakdown muestre cifras alineadas.
+            style: GoogleFonts.jetBrainsMono(
+              textStyle: const TextStyle(
+                fontFeatures: [FontFeature.tabularFigures()],
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

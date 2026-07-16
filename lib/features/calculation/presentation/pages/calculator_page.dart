@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
@@ -1273,10 +1274,14 @@ class _SummaryCard extends StatelessWidget {
           // Big price
           Text(
             formatBob(output.totalPrice),
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color.onPrimaryContainer,
-              fontFeatures: const [FontFeature.tabularFigures()],
+            // M2: cifra principal del resultado usa JetBrains Mono + tabular
+            // para look consistente con el resto de valores monetarios.
+            style: GoogleFonts.jetBrainsMono(
+              textStyle: theme.textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color.onPrimaryContainer,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
             textAlign: TextAlign.center,
           ),
@@ -1442,18 +1447,21 @@ class _DetailSection extends StatelessWidget {
           ),
           Text(
             value,
-            style: style?.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-              fontWeight: isTotal
-                  ? FontWeight.bold
-                  : isProfit
-                  ? FontWeight.w600
-                  : FontWeight.w500,
-              color: isProfit
-                  ? tc
-                  : isTotal
-                  ? tc
-                  : tc?.withValues(alpha: 0.8),
+            // M2: cifra en summary usa JetBrains Mono + tabular.
+            style: GoogleFonts.jetBrainsMono(
+              textStyle: style?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+                fontWeight: isTotal
+                    ? FontWeight.bold
+                    : isProfit
+                    ? FontWeight.w600
+                    : FontWeight.w500,
+                color: isProfit
+                    ? tc
+                    : isTotal
+                    ? tc
+                    : tc?.withValues(alpha: 0.8),
+              ),
             ),
           ),
         ],
