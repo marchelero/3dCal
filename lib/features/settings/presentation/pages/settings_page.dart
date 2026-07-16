@@ -1,12 +1,12 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
@@ -300,7 +300,12 @@ class _ThemeModeSelector extends ConsumerWidget {
   }
 }
 
-/// TextFormField con auto-save on blur.
+/// TextField con auto-save on blur.
+///
+/// Reemplaza la version anterior que mantenia FocusNode + FormField + filter
+/// manualmente. Ahora delega todo eso a [NumericInputField] y solo conserva
+/// el ciclo de vida del controller + la logica de save (validate -> parse
+/// Decimal -> onSave).
 class _AutoSaveField extends StatefulWidget {
   const _AutoSaveField({
     required this.label,
@@ -324,21 +329,17 @@ class _AutoSaveField extends StatefulWidget {
 
 class _AutoSaveFieldState extends State<_AutoSaveField> {
   late final TextEditingController _ctrl;
-  late final FocusNode _focus;
-  final _formKey = GlobalKey<FormFieldState<String>>();
 
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: widget.initialValue);
-    _focus = FocusNode();
-    _focus.addListener(_handleFocusChange);
   }
 
   @override
   void didUpdateWidget(covariant _AutoSaveField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue && !_focus.hasFocus) {
+    if (oldWidget.initialValue != widget.initialValue) {
       _ctrl.text = widget.initialValue;
     }
   }
@@ -346,48 +347,28 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
   @override
   void dispose() {
     _ctrl.dispose();
-    _focus.removeListener(_handleFocusChange);
-    _focus.dispose();
     super.dispose();
   }
 
-  void _handleFocusChange() {
-    if (_focus.hasFocus) return;
-    final field = _formKey.currentState;
-    if (field == null) return;
-    if (!field.validate()) return;
-    final raw = _ctrl.text.trim().replaceAll(',', '.');
-    final parsed = Decimal.tryParse(raw);
+  void _handleBlur(String raw) {
+    // Re-correr el validador: si falla, no guardar.
+    final err = widget.validator(raw);
+    if (err != null) return;
+    final cleaned = raw.trim().replaceAll(',', '.');
+    final parsed = Decimal.tryParse(cleaned);
     if (parsed == null) return;
     widget.onSave(parsed);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FormField<String>(
-      key: _formKey,
-      initialValue: _ctrl.text,
+    return NumericInputField(
+      label: widget.label,
+      controller: _ctrl,
+      allowDecimals: widget.allowDecimals,
+      helperText: widget.helper,
       validator: widget.validator,
-      builder: (state) {
-        return TextFormField(
-          controller: _ctrl,
-          focusNode: _focus,
-          decoration: InputDecoration(
-            labelText: widget.label,
-            helperText: state.hasError ? null : widget.helper,
-            errorText: state.errorText,
-          ),
-          keyboardType: TextInputType.numberWithOptions(
-            decimal: widget.allowDecimals,
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              widget.allowDecimals ? RegExp('[0-9.,]') : RegExp('[0-9]'),
-            ),
-          ],
-          onChanged: (v) => state.didChange(v),
-        );
-      },
+      onBlur: _handleBlur,
     );
   }
 }
