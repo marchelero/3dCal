@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../domain/settings.dart';
@@ -48,9 +49,12 @@ class _SettingsBody extends ConsumerWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      children: [
+    return MaxWidthScrollView(
+      maxWidth: 720,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shrinkWrap: true,
+        children: [
         // === Parametros globales ===
         SectionHeader(
           icon: Icons.tune_rounded,
@@ -250,6 +254,7 @@ class _SettingsBody extends ConsumerWidget {
         ),
         const SizedBox(height: 32),
       ],
+      ),
     );
   }
 

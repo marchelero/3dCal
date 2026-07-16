@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/stat_tile.dart';
@@ -62,10 +63,12 @@ class _DashboardBody extends StatelessWidget {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Stats row
+      child: MaxWidthScrollView(
+        maxWidth: 960,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Stats row
           Row(
             children: [
               Expanded(
@@ -144,6 +147,7 @@ class _DashboardBody extends StatelessWidget {
           ),
           const SizedBox(height: 24),
         ],
+        ),
       ),
     );
   }
@@ -158,4 +162,6 @@ class _DashboardBody extends StatelessWidget {
     return 'Bs. ${value.toStringAsFixed(2)}';
   }
 }
+
+
 

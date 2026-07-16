@@ -9,6 +9,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../notifiers/calculations_notifier.dart';
 
 /// Detalle de una cotizacion guardada. Readonly — version mejorada.
@@ -73,9 +74,12 @@ class _Detail extends ConsumerWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
+    return MaxWidthScrollView(
+      maxWidth: 720,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        shrinkWrap: true,
+        children: [
         // === Header card (hero) ===
         Container(
           width: double.infinity,
@@ -363,6 +367,7 @@ class _Detail extends ConsumerWidget {
         // Padding bottom para FAB.
         const SizedBox(height: 80),
       ],
+      ),
     );
   }
 }

@@ -13,6 +13,7 @@ import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
@@ -290,17 +291,19 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Mode selector
-          _ModeSelector(mode: state.mode, onChanged: _switchMode),
-          const SizedBox(height: 16),
+      child: MaxWidthScrollView(
+        maxWidth: 720,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Mode selector
+            _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            const SizedBox(height: 16),
 
-          // Card: Pieza
-          SectionCard(
-            icon: Icons.category_rounded,
-            title: 'Pieza',
+            // Card: Pieza
+            SectionCard(
+              icon: Icons.category_rounded,
+              title: 'Pieza',
             child: Column(
               children: [
                 _buildLabelField(theme),
@@ -405,6 +408,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
           const SizedBox(height: 24),
         ],
+        ),
       ),
     );
   }
@@ -420,19 +424,21 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _ModeSelector(mode: state.mode, onChanged: _switchMode),
-          const SizedBox(height: 16),
+      child: MaxWidthScrollView(
+        maxWidth: 720,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            const SizedBox(height: 16),
 
-          // Card: Pieza
-          SectionCard(
-            icon: Icons.category_rounded,
-            title: 'Pieza',
-            child: _buildLabelField(theme),
-          ),
-          const SizedBox(height: 12),
+            // Card: Pieza
+            SectionCard(
+              icon: Icons.category_rounded,
+              title: 'Pieza',
+              child: _buildLabelField(theme),
+            ),
+            const SizedBox(height: 12),
 
           // Card: Materiales
           SectionCard(
@@ -551,6 +557,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
           const SizedBox(height: 24),
         ],
+        ),
       ),
     );
   }

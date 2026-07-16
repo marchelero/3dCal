@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
 
@@ -112,9 +113,12 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
+          child: MaxWidthScrollView(
+            maxWidth: 600,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              shrinkWrap: true,
+              children: [
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
@@ -167,6 +171,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                 onPressed: _saving ? null : _save,
               ),
             ],
+            ),
           ),
         ),
       ),

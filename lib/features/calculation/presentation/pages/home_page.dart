@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../../shared/widgets/stat_tile.dart';
@@ -24,15 +25,18 @@ class HomePage extends ConsumerWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(theme, color),
-              const SizedBox(height: 28),
-              _buildQuickActions(context, color),
-              const SizedBox(height: 28),
-              _buildStatsSection(context, ref, asyncStats, theme, color),
-            ],
+          child: MaxWidthScrollView(
+            maxWidth: 960,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(theme, color),
+                const SizedBox(height: 28),
+                _buildQuickActions(context, color),
+                const SizedBox(height: 28),
+                _buildStatsSection(context, ref, asyncStats, theme, color),
+              ],
+            ),
           ),
         ),
       ),
