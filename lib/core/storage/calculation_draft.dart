@@ -3,19 +3,16 @@ import 'dart:convert';
 
 /// Estado serializable del formulario de cotizacion.
 ///
-/// Guarda todos los campos del calculator para restaurar al reabrir la app
-/// (PRD NFR-3: crash recovery).
+/// Guarda todos los campos del calculator para restaurar al reabrir la app.
 class CalculationDraft {
   const CalculationDraft({
     this.weight = '',
     this.printHours = '',
-    this.printerWatts = '',
-    this.kwhRate = '',
-    this.profitPct = '',
+    this.printMinutes = '',
     this.discountPct = '',
     this.filamentPrice = '',
     this.filamentGrams = '',
-    this.pieceName = '',
+    this.label = '',
     this.clientName = '',
     this.isAdvanced = false,
     this.materials = const [],
@@ -25,13 +22,11 @@ class CalculationDraft {
     return CalculationDraft(
       weight: json['weight'] as String? ?? '',
       printHours: json['printHours'] as String? ?? '',
-      printerWatts: json['printerWatts'] as String? ?? '',
-      kwhRate: json['kwhRate'] as String? ?? '',
-      profitPct: json['profitPct'] as String? ?? '',
+      printMinutes: json['printMinutes'] as String? ?? '',
       discountPct: json['discountPct'] as String? ?? '',
       filamentPrice: json['filamentPrice'] as String? ?? '',
       filamentGrams: json['filamentGrams'] as String? ?? '',
-      pieceName: json['pieceName'] as String? ?? '',
+      label: json['label'] as String? ?? '',
       clientName: json['clientName'] as String? ?? '',
       isAdvanced: json['isAdvanced'] as bool? ?? false,
       materials: (json['materials'] as List?)
@@ -44,13 +39,11 @@ class CalculationDraft {
 
   final String weight;
   final String printHours;
-  final String printerWatts;
-  final String kwhRate;
-  final String profitPct;
+  final String printMinutes;
   final String discountPct;
   final String filamentPrice;
   final String filamentGrams;
-  final String pieceName;
+  final String label;
   final String clientName;
   final bool isAdvanced;
   final List<MaterialDraft> materials;
@@ -58,13 +51,11 @@ class CalculationDraft {
   Map<String, dynamic> toJson() => {
         'weight': weight,
         'printHours': printHours,
-        'printerWatts': printerWatts,
-        'kwhRate': kwhRate,
-        'profitPct': profitPct,
+        'printMinutes': printMinutes,
         'discountPct': discountPct,
         'filamentPrice': filamentPrice,
         'filamentGrams': filamentGrams,
-        'pieceName': pieceName,
+        'label': label,
         'clientName': clientName,
         'isAdvanced': isAdvanced,
         'materials': materials.map((m) => m.toJson()).toList(),

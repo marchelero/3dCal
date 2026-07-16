@@ -3,13 +3,16 @@ import 'package:drift/drift.dart';
 
 /// Tabla de impresoras del taller.
 ///
-/// Cada impresora tiene un nombre y un consumo promedio en Watts.
+/// Cada impresora tiene una marca, un modelo (nombre) y consumo en Watts.
 /// Una sola puede marcarse como `isDefault = true`.
 @DataClassName('PrinterProfile')
 class Printers extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  /// Nombre del modelo (ej: "Anycubic Kobra 3"). Requerido, 1-100 chars.
+  /// Marca (ej: "Anycubic", "Creality"). Opcional.
+  TextColumn get brand => text().nullable()();
+
+  /// Nombre del modelo (ej: "Kobra 3"). Requerido, 1-100 chars.
   TextColumn get name => text().withLength(min: 1, max: 100)();
 
   /// Consumo promedio en Watts (>= 0). 0 = sin impresora.

@@ -60,6 +60,14 @@ class _PrinterTile extends ConsumerWidget {
 
   final PrinterProfile printer;
 
+  String _subtitle(PrinterProfile p) {
+    final parts = <String>['${p.averageWatts} W'];
+    if (p.brand != null && p.brand!.isNotEmpty) {
+      parts.insert(0, p.brand!);
+    }
+    return parts.join(' · ');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
@@ -67,7 +75,7 @@ class _PrinterTile extends ConsumerWidget {
           ? const Icon(Icons.star, color: Colors.amber)
           : const Icon(Icons.print),
       title: Text(printer.name),
-      subtitle: Text('${printer.averageWatts} W promedio'),
+      subtitle: Text(_subtitle(printer)),
       trailing: PopupMenuButton<_TileAction>(
         onSelected: (a) => _handle(context, ref, a),
         itemBuilder: (_) => const [

@@ -22,12 +22,14 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
 
   Future<void> create({
     required String name,
+    String? brand,
     required int averageWatts,
     bool asDefault = false,
   }) async {
     final repo = ref.read(printerRepositoryProvider);
     await repo.create(
       name: name,
+      brand: brand,
       averageWatts: averageWatts,
       asDefault: asDefault,
     );
@@ -39,6 +41,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
   Future<void> updatePrinter({
     required int id,
     required String name,
+    String? brand,
     required int averageWatts,
     bool? asDefault,
   }) async {
@@ -46,6 +49,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
     await repo.update(
       id: id,
       name: name,
+      brand: brand,
       averageWatts: averageWatts,
       asDefault: asDefault,
     );
@@ -72,6 +76,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
     await repo.update(
       id: id,
       name: current.name,
+      brand: current.brand,
       averageWatts: current.averageWatts,
       asDefault: true,
     );

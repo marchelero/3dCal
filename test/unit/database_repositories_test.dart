@@ -221,21 +221,13 @@ CalculationDraft _simpleDraft(String pieceName, [String? clientName]) {
   final input = CalculationInput(
     materials: materials,
     totalHours: _d('2.5'),
-    printerWatts: _d('200'),
     discountPercentage: Decimal.zero,
-    profitBasePercentage: _d('200'),
-    kwhRate: _d('0.7'),
   );
   final output = CalculationEngine.compute(input);
   return CalculationDraft(
     materials: materials,
     totalHours: input.totalHours,
-    printerId: null,
-    printerNameSnapshot: null,
-    printerWattsSnapshot: input.printerWatts,
     discountPercentage: input.discountPercentage,
-    kwhRateSnapshot: input.kwhRate,
-    profitBaseSnapshot: input.profitBasePercentage,
     output: output,
     pieceName: pieceName,
     clientName: clientName,

@@ -76,33 +76,41 @@ class MaterialRow {
 /// **Modos**:
 /// - [CalculatorMode.express]: single material, usa `weight/filamentPrice/filamentGrams`.
 /// - [CalculatorMode.advanced]: multi-material, usa `materials` (lista).
+///
+/// Formula: totalPrice = materialCost - discountAmount
+///   Sin electricidad, sin profit. Solo costo de materiales - descuento.
 @immutable
 class CalculatorState {
   const CalculatorState({
     required this.mode,
     required this.printHours,
-    required this.printerWatts,
-    required this.kwhRate,
-    required this.profitPct,
+    required this.printMinutes,
     required this.discountPct,
     required this.weight,
     required this.filamentPrice,
     required this.filamentGrams,
+    required this.label,
     required this.materials,
     required this.output,
+    this.showDetail = false,
+    this.detailElectricCost,
+    this.detailBaseCost,
+    this.detailProfitAmount,
+    this.detailTotalFinal,
+    this.detailDiscountPct,
+    this.computeVersion = 0,
   });
 
-  /// Estado inicial con defaults MVP (modo express, sin materiales).
+  /// Estado inicial (modo express, sin materiales).
   factory CalculatorState.initial() => const CalculatorState(
         mode: CalculatorMode.express,
         printHours: '',
-        printerWatts: '200',
-        kwhRate: '0.70',
-        profitPct: '200',
+        printMinutes: '',
         discountPct: '0',
         weight: '',
         filamentPrice: '',
         filamentGrams: '',
+        label: '',
         materials: <MaterialRow>[],
         output: null,
       );
@@ -110,11 +118,17 @@ class CalculatorState {
   final CalculatorMode mode;
 
   // === Comunes (ambos modos) ===
+  /// Horas de impresion (informacional).
   final String printHours;
-  final String printerWatts;
-  final String kwhRate;
-  final String profitPct;
+
+  /// Minutos de impresion (informacional, 0-59).
+  final String printMinutes;
+
+  /// Descuento comercial (%).
   final String discountPct;
+
+  /// Etiqueta opcional de la cotizacion (ej: "Soporte pared").
+  final String label;
 
   // === Modo express (single material) ===
   final String weight;
@@ -127,60 +141,94 @@ class CalculatorState {
   // === Computed ===
   final CalculationOutput? output;
 
+  // === Detail (ojito toggle) ===
+  final bool showDetail;
+  final Decimal? detailElectricCost;
+  final Decimal? detailBaseCost;
+  final Decimal? detailProfitAmount;
+  final Decimal? detailTotalFinal;
+
+  /// Porcentaje de descuento real aplicado (el ingresado ×2).
+  final Decimal? detailDiscountPct;
+
+  /// Numero de version que incrementa en cada recomputo.
+  /// Usado por la UI para animar "calculando..." cuando cambia el output.
+  final int computeVersion;
+
   CalculatorState copyWith({
     CalculatorMode? mode,
     String? printHours,
-    String? printerWatts,
-    String? kwhRate,
-    String? profitPct,
+    String? printMinutes,
     String? discountPct,
     String? weight,
     String? filamentPrice,
     String? filamentGrams,
+    String? label,
     List<MaterialRow>? materials,
     CalculationOutput? output,
     bool clearOutput = false,
+    bool? showDetail,
+    Decimal? detailElectricCost,
+    Decimal? detailBaseCost,
+    Decimal? detailProfitAmount,
+    Decimal? detailTotalFinal,
+    Decimal? detailDiscountPct,
+    bool clearDetail = false,
+    int? computeVersion,
   }) =>
       CalculatorState(
         mode: mode ?? this.mode,
         printHours: printHours ?? this.printHours,
-        printerWatts: printerWatts ?? this.printerWatts,
-        kwhRate: kwhRate ?? this.kwhRate,
-        profitPct: profitPct ?? this.profitPct,
+        printMinutes: printMinutes ?? this.printMinutes,
         discountPct: discountPct ?? this.discountPct,
         weight: weight ?? this.weight,
         filamentPrice: filamentPrice ?? this.filamentPrice,
         filamentGrams: filamentGrams ?? this.filamentGrams,
+        label: label ?? this.label,
         materials: materials ?? this.materials,
         output: clearOutput ? null : (output ?? this.output),
+        showDetail: showDetail ?? this.showDetail,
+        detailElectricCost: clearDetail
+            ? null
+            : (detailElectricCost ?? this.detailElectricCost),
+        detailBaseCost:
+            clearDetail ? null : (detailBaseCost ?? this.detailBaseCost),
+        detailProfitAmount:
+            clearDetail ? null : (detailProfitAmount ?? this.detailProfitAmount),
+        detailTotalFinal:
+            clearDetail ? null : (detailTotalFinal ?? this.detailTotalFinal),
+        detailDiscountPct:
+            clearDetail ? null : (detailDiscountPct ?? this.detailDiscountPct),
+        computeVersion: computeVersion ?? this.computeVersion,
       );
 
   /// True si el form completo es valido y se puede calcular output.
   bool get isValid {
-    final commonValid = _parseNonNeg(printHours) != null &&
-        _parseNonNeg(printerWatts) != null &&
-        _parsePos(kwhRate) != null &&
-        _parseNonNeg(profitPct) != null &&
-        _parseNonNeg(discountPct) != null;
-    if (!commonValid) return false;
+    final hasTime = _parsePos(printHours) != null ||
+        _parsePos(printMinutes) != null;
     if (mode == CalculatorMode.express) {
       return _parsePos(weight) != null &&
           _parsePos(filamentPrice) != null &&
-          _parsePos(filamentGrams) != null;
+          hasTime;
+      // filamentGrams optional — defaults to 1000 en notifier.
     }
-    // Advanced: al menos 1 material valido.
-    return materials.any((m) => m.isValid);
+    // Advanced: al menos 1 material valido + time requerido.
+    return materials.any((m) => m.isValid) && hasTime;
+  }
+
+  /// Horas totales como Decimal (printHours + printMinutes/60).
+  /// Retorna null si printHours no es parseable.
+  Decimal? get totalHoursDecimal {
+    final h = parseDecimal(printHours);
+    final m = parseDecimal(printMinutes);
+    if (h == null) return null;
+    if (m == null || m <= Decimal.zero) return h;
+    return h + (m / Decimal.fromInt(60)).toDecimal();
   }
 
   Decimal? _parsePos(String raw) {
     final d = parseDecimal(raw);
     if (d == null || d <= Decimal.zero) return null;
-    return d;
-  }
-
-  Decimal? _parseNonNeg(String raw) {
-    final d = parseDecimal(raw);
-    if (d == null || d < Decimal.zero) return null;
     return d;
   }
 
@@ -202,15 +250,21 @@ class CalculatorState {
     if (other is! CalculatorState) return false;
     return mode == other.mode &&
         printHours == other.printHours &&
-        printerWatts == other.printerWatts &&
-        kwhRate == other.kwhRate &&
-        profitPct == other.profitPct &&
+        printMinutes == other.printMinutes &&
         discountPct == other.discountPct &&
+        label == other.label &&
         weight == other.weight &&
         filamentPrice == other.filamentPrice &&
         filamentGrams == other.filamentGrams &&
         _listEq(materials, other.materials) &&
-        output == other.output;
+        output == other.output &&
+        showDetail == other.showDetail &&
+        detailElectricCost == other.detailElectricCost &&
+        detailBaseCost == other.detailBaseCost &&
+        detailProfitAmount == other.detailProfitAmount &&
+        detailTotalFinal == other.detailTotalFinal &&
+        detailDiscountPct == other.detailDiscountPct &&
+        computeVersion == other.computeVersion;
   }
 
   static bool _listEq(List<MaterialRow> a, List<MaterialRow> b) {
@@ -225,14 +279,20 @@ class CalculatorState {
   int get hashCode => Object.hash(
         mode,
         printHours,
-        printerWatts,
-        kwhRate,
-        profitPct,
+        printMinutes,
         discountPct,
+        label,
         weight,
         filamentPrice,
         filamentGrams,
         Object.hashAll(materials),
         output,
+        showDetail,
+        detailElectricCost,
+        detailBaseCost,
+        detailProfitAmount,
+        detailTotalFinal,
+        detailDiscountPct,
+        computeVersion,
       );
 }

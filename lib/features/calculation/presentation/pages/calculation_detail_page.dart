@@ -132,10 +132,9 @@ class _Detail extends ConsumerWidget {
                   ),
                   style: theme.textTheme.bodySmall,
                 ),
-                if (calc.printerNameSnapshot != null)
+                if (calc.totalHours > 0)
                   Text(
-                    'Impresora: ${calc.printerNameSnapshot} '
-                    '(${calc.printerWattsSnapshot.toStringAsFixed(0)} W)',
+                    'Tiempo: ${calc.totalHours.toStringAsFixed(1)} h',
                     style: theme.textTheme.bodySmall,
                   ),
               ],
@@ -207,31 +206,13 @@ class _Detail extends ConsumerWidget {
                     ),
                   ),
                 ),
-                _Row(
-                  label: 'Costo electrico',
-                  value: formatBob(
-                    Decimal.parse(
-                      calc.electricCostSnapshot.toStringAsFixed(2),
-                    ),
+                if (calc.discountPercentage > 0) ...[
+                  _Row(
+                    label: 'Descuento (${calc.discountPercentage.toStringAsFixed(0)}%)',
+                    value:
+                        '-${formatBob(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)))}',
                   ),
-                ),
-                const Divider(),
-                _Row(
-                  label: 'Costo base',
-                  value: formatBob(
-                    Decimal.parse(
-                      calc.baseCostSnapshot.toStringAsFixed(2),
-                    ),
-                  ),
-                ),
-                _Row(
-                  label: 'Profit',
-                  value: formatBob(
-                    Decimal.parse(
-                      calc.profitAmountSnapshot.toStringAsFixed(2),
-                    ),
-                  ),
-                ),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -12,18 +12,12 @@ import 'package:tresdcal/features/calculation/domain/entities/material_input.dar
 CalculationInput _input({
   List<MaterialInput> materials = const [],
   String totalHours = '0',
-  String printerWatts = '0',
   String discount = '0',
-  String profitBase = '200',
-  String kwhRate = '0.7',
 }) {
   return CalculationInput(
     materials: materials,
     totalHours: DecimalParse.fromString(totalHours),
-    printerWatts: DecimalParse.fromString(printerWatts),
     discountPercentage: DecimalParse.fromString(discount),
-    profitBasePercentage: DecimalParse.fromString(profitBase),
-    kwhRate: DecimalParse.fromString(kwhRate),
   );
 }
 
@@ -43,23 +37,17 @@ MaterialInput _material({
 
 void main() {
   group('CalculationEngine.compute', () {
-    test('Express basico: 100g PLA @ 150/1000g, 0h, 0W, 0% descuento', () {
+    test('Express basico: 100g PLA @ 150/1000g, 0% descuento', () {
       final out = CalculationEngine.compute(
         _input(materials: [_material()]),
       );
 
       // materialCost = 100 * 150/1000 = 15.00
       expect(out.materialCost, DecimalParse.fromString('15'));
-      // electricCost = 0 (sin tiempo)
-      expect(out.electricCost, Decimal.zero);
-      // baseCost = 15
-      expect(out.baseCost, DecimalParse.fromString('15'));
-      // effProfit = 200 - 0*2 = 200
-      expect(out.effectiveProfitPercentage, DecimalParse.fromString('200'));
-      // profitAmount = 15 * 200/100 = 30
-      expect(out.profitAmount, DecimalParse.fromString('30'));
-      // totalPrice = 15 + 30 = 45
-      expect(out.totalPrice, DecimalParse.fromString('45'));
+      // discountAmount = 0 (sin descuento)
+      expect(out.discountAmount, Decimal.zero);
+      // totalPrice = 15
+      expect(out.totalPrice, DecimalParse.fromString('15'));
     });
 
     test('Multi-material: 2 filamentos suman costos', () {
@@ -74,122 +62,54 @@ void main() {
 
       // materialCost = 100*150/1000 + 50*200/1000 = 15 + 10 = 25
       expect(out.materialCost, DecimalParse.fromString('25'));
-      expect(out.baseCost, DecimalParse.fromString('25'));
-      // profitAmount = 25 * 200/100 = 50
-      expect(out.profitAmount, DecimalParse.fromString('50'));
-      // totalPrice = 75
-      expect(out.totalPrice, DecimalParse.fromString('75'));
+      // discountAmount = 0
+      expect(out.discountAmount, Decimal.zero);
+      // totalPrice = 25
+      expect(out.totalPrice, DecimalParse.fromString('25'));
     });
 
-    test('Con tiempo + electrico: 2.5h, 200W, 0.7 BOB/kWh', () {
+    test('Con descuento 10%: totalPrice = materialCost - discountAmount', () {
       final out = CalculationEngine.compute(
         _input(
           materials: [_material()],
-          totalHours: '2.5',
-          printerWatts: '200',
+          discount: '10',
         ),
       );
 
       // materialCost = 15
       expect(out.materialCost, DecimalParse.fromString('15'));
-      // electricCost = 2.5 * (200/1000) * 0.7 = 2.5 * 0.2 * 0.7 = 0.35
-      expect(out.electricCost, DecimalParse.fromString('0.35'));
-      // baseCost = 15.35
-      expect(out.baseCost, DecimalParse.fromString('15.35'));
-      // effProfit = 200
-      // profitAmount = 15.35 * 200/100 = 30.70
-      expect(out.profitAmount, DecimalParse.fromString('30.7'));
-      // totalPrice = 46.05
-      expect(out.totalPrice, DecimalParse.fromString('46.05'));
+      // discountAmount = 15 * 10/100 = 1.5
+      expect(out.discountAmount, DecimalParse.fromString('1.5'));
+      // totalPrice = 15 - 1.5 = 13.5
+      expect(out.totalPrice, DecimalParse.fromString('13.5'));
     });
 
-    test('AC-3: descuento 10% baja total', () {
-      // Mismos inputs que test anterior + descuento 10%
-      final out = CalculationEngine.compute(
-        _input(
-          materials: [_material()],
-          totalHours: '2.5',
-          printerWatts: '200',
-          discount: '10',
-        ),
-      );
-
-      // effProfit = 200 - 10*2 = 180
-      expect(out.effectiveProfitPercentage, DecimalParse.fromString('180'));
-      // baseCost = 15.35
-      expect(out.baseCost, DecimalParse.fromString('15.35'));
-      // profitAmount = 15.35 * 180/100 = 27.63
-      expect(out.profitAmount, DecimalParse.fromString('27.63'));
-      // totalPrice = 42.98
-      // NOTA: PRD AC-3 dice "Bs. 43.04" pero la formula exacta da 42.98.
-      // Los tests validan la formula matematica, no el numero narrativo.
-      expect(out.totalPrice, DecimalParse.fromString('42.98'));
-    });
-
-    test('Edge: printerWatts=0 → electricCost=0', () {
-      final out = CalculationEngine.compute(
-        _input(
-          materials: [_material()],
-          totalHours: '2.5',
-          printerWatts: '0',
-        ),
-      );
-
-      expect(out.electricCost, Decimal.zero);
-      expect(out.baseCost, DecimalParse.fromString('15'));
-    });
-
-    test('Edge: totalHours=0 → electricCost=0', () {
-      final out = CalculationEngine.compute(
-        _input(
-          materials: [_material()],
-          totalHours: '0',
-          printerWatts: '200',
-        ),
-      );
-
-      expect(out.electricCost, Decimal.zero);
-    });
-
-    test('Edge: empty materials → materialCost=0, profit puede ser 0', () {
+    test('Edge: empty materials → materialCost=0, totalPrice=0', () {
       final out = CalculationEngine.compute(_input());
 
       expect(out.materialCost, Decimal.zero);
-      expect(out.electricCost, Decimal.zero);
-      expect(out.baseCost, Decimal.zero);
-      expect(out.profitAmount, Decimal.zero);
+      expect(out.discountAmount, Decimal.zero);
       expect(out.totalPrice, Decimal.zero);
     });
 
-    test('Edge: effProfit < 0 clampea profitAmount a 0', () {
-      // discount=60 con profitBase=100 → effProfit = 100 - 60*2 = -20
+    test('Edge: descuento 100% → totalPrice=0', () {
       final out = CalculationEngine.compute(
-        _input(
-          materials: [_material()],
-          discount: '60',
-          profitBase: '100',
-        ),
+        _input(materials: [_material()], discount: '100'),
       );
 
-      expect(out.effectiveProfitPercentage, DecimalParse.fromString('-20'));
-      // profitAmount clampeado a 0 (no se vende a perdida)
-      expect(out.profitAmount, Decimal.zero);
-      // totalPrice = baseCost (sin profit)
-      expect(out.totalPrice, out.baseCost);
+      expect(out.materialCost, DecimalParse.fromString('15'));
+      expect(out.discountAmount, DecimalParse.fromString('15'));
+      expect(out.totalPrice, Decimal.zero);
     });
 
-    test('Edge: effProfit = 0 exacto', () {
-      // discount=100 con profitBase=200 → effProfit = 200 - 100*2 = 0
+    test('Edge: descuento > 100% → totalPrice negativo (preservado)', () {
       final out = CalculationEngine.compute(
-        _input(
-          materials: [_material()],
-          discount: '100',
-        ),
+        _input(materials: [_material()], discount: '200'),
       );
 
-      expect(out.effectiveProfitPercentage, Decimal.zero);
-      expect(out.profitAmount, Decimal.zero);
-      expect(out.totalPrice, out.baseCost);
+      expect(out.materialCost, DecimalParse.fromString('15'));
+      expect(out.discountAmount, DecimalParse.fromString('30'));
+      expect(out.totalPrice, DecimalParse.fromString('-15'));
     });
 
     test('Precision: 0.1 + 0.2 != 0.30000000000000004', () {
@@ -214,19 +134,13 @@ void main() {
     test('Inmutabilidad: CalculationOutput es value object', () {
       final out1 = CalculationOutput(
         materialCost: DecimalParse.fromString('1'),
-        electricCost: DecimalParse.fromString('2'),
-        baseCost: DecimalParse.fromString('3'),
-        effectiveProfitPercentage: DecimalParse.fromString('4'),
-        profitAmount: DecimalParse.fromString('5'),
-        totalPrice: DecimalParse.fromString('6'),
+        discountAmount: DecimalParse.fromString('2'),
+        totalPrice: DecimalParse.fromString('3'),
       );
       final out2 = CalculationOutput(
         materialCost: DecimalParse.fromString('1'),
-        electricCost: DecimalParse.fromString('2'),
-        baseCost: DecimalParse.fromString('3'),
-        effectiveProfitPercentage: DecimalParse.fromString('4'),
-        profitAmount: DecimalParse.fromString('5'),
-        totalPrice: DecimalParse.fromString('6'),
+        discountAmount: DecimalParse.fromString('2'),
+        totalPrice: DecimalParse.fromString('3'),
       );
       expect(out1, out2);
       expect(out1.hashCode, out2.hashCode);

@@ -15,16 +15,15 @@ void main() {
       final s = CalculatorState.initial();
       expect(s.weight, '');
       expect(s.printHours, '');
-      expect(s.printerWatts, '200');
-      expect(s.kwhRate, '0.70');
-      expect(s.profitPct, '200');
+      expect(s.printMinutes, '');
       expect(s.discountPct, '0');
       expect(s.filamentPrice, '');
       expect(s.filamentGrams, '');
+      expect(s.label, '');
       expect(s.output, isNull);
     });
 
-    test('isValid es false en estado inicial (faltan weight/horas/precio/gramos)', () {
+    test('isValid es false en estado inicial (faltan weight/precio/gramos)', () {
       expect(CalculatorState.initial().isValid, isFalse);
     });
   });
@@ -97,12 +96,17 @@ void main() {
 
   group('CalculatorNotifier', () {
     late ProviderContainer container;
+    late AppDatabase db;
 
     setUp(() {
-      container = ProviderContainer();
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      container = ProviderContainer(overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+      ]);
     });
 
-    tearDown(() {
+    tearDown(() async {
+      await db.close();
       container.dispose();
     });
 
@@ -140,16 +144,10 @@ void main() {
       expect(output, isNotNull);
       // 100g * (120/1000) = 12 BOB material
       expect(output!.materialCost, Decimal.parse('12'));
-      // 5h * (200/1000) kW * 0.70 BOB/kWh = 0.7 BOB
-      expect(output.electricCost, Decimal.parse('0.7'));
-      // baseCost = 12 + 0.7 = 12.7
-      expect(output.baseCost, Decimal.parse('12.7'));
-      // effProfit = 200 - 0*2 = 200
-      expect(output.effectiveProfitPercentage, Decimal.fromInt(200));
-      // profitAmount = 12.7 * 2 = 25.4
-      expect(output.profitAmount, Decimal.parse('25.4'));
-      // totalPrice = 12.7 + 25.4 = 38.1
-      expect(output.totalPrice, Decimal.parse('38.1'));
+      // discount = 0 (sin descuento)
+      expect(output.discountAmount, Decimal.zero);
+      // totalPrice = totalFinal (material 12 + profit 200% = 36)
+      expect(output.totalPrice, Decimal.parse('36'));
     });
 
     test('setWeight=0 invalida el form (output null)', () {
@@ -163,26 +161,6 @@ void main() {
       notifier.setWeight('0');
       expect(container.read(calculatorNotifierProvider).output, isNull);
       expect(container.read(calculatorNotifierProvider).weight, '0');
-    });
-
-    test('descuento agresivo (50%) clampea profit a 0', () {
-      // profitBase=100, discount=50 => effProfit = 100 - 100 = 0 (borde)
-      // profitBase=100, discount=60 => effProfit = 100 - 120 = -20 (negativo)
-      // baseCost > 0 => profitAmount = 0 (clamp), effProfit = -20 preservado
-      final notifier = container.read(calculatorNotifierProvider.notifier);
-      notifier.setWeight('100');
-      notifier.setPrintHours('0'); // anula electricCost
-      notifier.setFilamentPrice('100');
-      notifier.setFilamentGrams('1000');
-      notifier.setProfitPct('100');
-      notifier.setDiscountPct('60');
-
-      final output = container.read(calculatorNotifierProvider).output;
-      expect(output, isNotNull);
-      expect(output!.effectiveProfitPercentage, Decimal.fromInt(-20));
-      expect(output.profitAmount, Decimal.zero);
-      // totalPrice = baseCost (no profit)
-      expect(output.totalPrice, output.baseCost);
     });
 
     test('reset vuelve a defaults y limpia output', () {
@@ -210,21 +188,23 @@ void main() {
       expect(s.filamentGrams, '1000');
     });
 
-    test('cambiar kwhRate recomputa output', () {
+    test('descuento directo reduce totalPrice', () {
       final notifier = container.read(calculatorNotifierProvider.notifier);
       notifier.setWeight('100');
-      notifier.setPrintHours('5');
-      notifier.setFilamentPrice('120');
+      notifier.setFilamentPrice('100');
       notifier.setFilamentGrams('1000');
-      notifier.setKwhRate('0.60');
-      final output1 = container.read(calculatorNotifierProvider).output!;
-      // 5h * 0.2kW * 0.60 = 0.6
-      expect(output1.electricCost, Decimal.parse('0.6'));
+      notifier.setPrintHours('1');
+      notifier.setDiscountPct('20');
 
-      notifier.setKwhRate('0.80');
-      final output2 = container.read(calculatorNotifierProvider).output!;
-      // 5h * 0.2kW * 0.80 = 0.8
-      expect(output2.electricCost, Decimal.parse('0.8'));
+      final output = container.read(calculatorNotifierProvider).output;
+      expect(output, isNotNull);
+      // materialCost = 100 * 100/1000 = 10
+      expect(output!.materialCost, Decimal.fromInt(10));
+      // totalFinal = 10 + profit 200% = 30
+      // discountPct 20 → discountOnTotalFinal = 30 * 20% = 6
+      expect(output.discountAmount, Decimal.fromInt(6));
+      // totalPrice = 30 - 6 = 24
+      expect(output.totalPrice, Decimal.fromInt(24));
     });
   });
 
@@ -232,19 +212,13 @@ void main() {
     test('dos states con mismos campos son iguales', () {
       final a = CalculationOutput(
         materialCost: Decimal.fromInt(10),
-        electricCost: Decimal.fromInt(1),
-        baseCost: Decimal.fromInt(11),
-        effectiveProfitPercentage: Decimal.fromInt(100),
-        profitAmount: Decimal.fromInt(11),
-        totalPrice: Decimal.fromInt(22),
+        discountAmount: Decimal.fromInt(1),
+        totalPrice: Decimal.fromInt(9),
       );
       final b = CalculationOutput(
         materialCost: Decimal.fromInt(10),
-        electricCost: Decimal.fromInt(1),
-        baseCost: Decimal.fromInt(11),
-        effectiveProfitPercentage: Decimal.fromInt(100),
-        profitAmount: Decimal.fromInt(11),
-        totalPrice: Decimal.fromInt(22),
+        discountAmount: Decimal.fromInt(1),
+        totalPrice: Decimal.fromInt(9),
       );
       expect(a, b);
     });
@@ -269,7 +243,7 @@ void main() {
     test('form invalido: save() retorna null y no inserta nada', () async {
       final id = await container
           .read(calculatorNotifierProvider.notifier)
-          .save(pieceName: 'X');
+          .save();
       expect(id, isNull);
       final all = await db.select(db.calculations).get();
       expect(all, isEmpty);
@@ -290,9 +264,10 @@ void main() {
       final c = all.first;
       expect(c.pieceName, 'Pieza Test');
       expect(c.clientName, 'Juan');
-      expect(c.printerId, isNull); // sin impresora activa
+      expect(c.printerId, isNull);
       expect(c.totalHours, 5.0);
-      expect(c.totalPriceSnapshot, 38.1);
+      // 100g * 120/1000 = 12 material + profit 200% = 36 (sin descuento)
+      expect(c.totalPriceSnapshot, 36.0);
     });
 
     test('pieceName vacio se persiste como null', () async {

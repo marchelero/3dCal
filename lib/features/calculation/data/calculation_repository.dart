@@ -8,17 +8,12 @@ import '../domain/entities/material_input.dart';
 
 /// Datos de entrada para crear una cotizacion.
 ///
-/// Snapshot de los valores al guardar (PRD §6.4).
+/// Snapshot de los valores al guardar.
 class CalculationDraft {
   const CalculationDraft({
     required this.materials,
     required this.totalHours,
-    required this.printerId,
-    required this.printerNameSnapshot,
-    required this.printerWattsSnapshot,
     required this.discountPercentage,
-    required this.kwhRateSnapshot,
-    required this.profitBaseSnapshot,
     required this.output,
     this.pieceName,
     this.clientName,
@@ -26,12 +21,7 @@ class CalculationDraft {
 
   final List<MaterialInput> materials;
   final Decimal totalHours;
-  final int? printerId;
-  final String? printerNameSnapshot;
-  final Decimal printerWattsSnapshot;
   final Decimal discountPercentage;
-  final Decimal kwhRateSnapshot;
-  final Decimal profitBaseSnapshot;
   final CalculationOutput output;
   final String? pieceName;
   final String? clientName;
@@ -49,6 +39,8 @@ class CalculationRepository {
   /// Crea una cotizacion con sus materiales.
   ///
   /// Devuelve el id de la cotizacion creada.
+  /// Los campos legacy (electricCost, profit, watts, kwh) se guardan como 0
+  /// para nuevos registros; los historicos conservan sus valores.
   Future<int> create(CalculationDraft draft) {
     return _db.transaction(() async {
       final calcId = await _db.into(_db.calculations).insert(
@@ -56,17 +48,17 @@ class CalculationRepository {
               createdAt: DateTime.now().toUtc(),
               pieceName: Value(draft.pieceName),
               clientName: Value(draft.clientName),
-              printerId: Value(draft.printerId),
-              printerNameSnapshot: Value(draft.printerNameSnapshot),
-              printerWattsSnapshot: Value(draft.printerWattsSnapshot.toDouble()),
+              printerId: const Value(null),
+              printerNameSnapshot: const Value(null),
+              printerWattsSnapshot: Value(0.0),
               totalHours: draft.totalHours.toDouble(),
               discountPercentage: draft.discountPercentage.toDouble(),
-              kwhRateSnapshot: draft.kwhRateSnapshot.toDouble(),
-              profitBaseSnapshot: draft.profitBaseSnapshot.toDouble(),
+              kwhRateSnapshot: 0.0,
+              profitBaseSnapshot: 0.0,
               materialCostSnapshot: draft.output.materialCost.toDouble(),
-              electricCostSnapshot: draft.output.electricCost.toDouble(),
-              baseCostSnapshot: draft.output.baseCost.toDouble(),
-              profitAmountSnapshot: draft.output.profitAmount.toDouble(),
+              electricCostSnapshot: 0.0,
+              baseCostSnapshot: draft.output.materialCost.toDouble(),
+              profitAmountSnapshot: 0.0,
               totalPriceSnapshot: draft.output.totalPrice.toDouble(),
             ),
           );

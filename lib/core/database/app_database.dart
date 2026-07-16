@@ -30,30 +30,24 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   /// Constructor default. Usa `driftDatabase` cross-platform.
   ///
-  /// `seedOnCreate = true`: la primera vez que se cree el schema en una
-  /// DB vacia, se inserta filamento + impresora default.
-  AppDatabase()
-      : seedOnCreate = true,
-        super(_openConnection());
+  /// Sin seed on create — no se crean impresoras/filamentos por defecto.
+  AppDatabase() : super(_openConnection());
 
   /// Constructor para tests. Acepta un [QueryExecutor] custom (ej: in-memory).
-  ///
-  /// [seedOnCreate] = false por default. En tests normalmente no queremos
-  /// que se inserten datos semilla; los tests insertan lo que necesitan.
-  AppDatabase.forTesting(super.executor, {this.seedOnCreate = false});
-
-  /// Si true, ejecuta [_seedDefaults] al crear el schema.
-  final bool seedOnCreate;
+  AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
-          if (seedOnCreate) {
-            await _seedDefaults(this);
+        },
+        onUpgrade: (m, from, to) async {
+          if (from == 1) {
+            // v1→v2: agregar columna brand a printers
+            await m.addColumn(printers, printers.brand);
           }
         },
       );
@@ -76,31 +70,5 @@ QueryExecutor _openConnection() {
   );
 }
 
-/// Inserta filamento + impresora default si las tablas estan vacias.
-Future<void> _seedDefaults(AppDatabase db) async {
-  final printerCount = (await db.printers.count().getSingleOrNull()) ?? 0;
-  if (printerCount == 0) {
-    await db.into(db.printers).insert(
-          PrintersCompanion.insert(
-            name: 'Anycubic Kobra 3',
-            averageWatts: 200,
-            isDefault: const Value(true),
-            createdAt: DateTime.now().toUtc(),
-          ),
-        );
-  }
-  final filamentCount = (await db.filaments.count().getSingleOrNull()) ?? 0;
-  if (filamentCount == 0) {
-    await db.into(db.filaments).insert(
-          FilamentsCompanion.insert(
-            name: 'PLA Generico',
-            // ignore: prefer_int_literals
-            pricePerBobbin: 150.0,
-            // ignore: prefer_int_literals
-            gramsPerBobbin: 1000.0,
-            isDefault: const Value(true),
-            createdAt: DateTime.now().toUtc(),
-          ),
-        );
-  }
-}
+
+

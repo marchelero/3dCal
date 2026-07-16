@@ -37,6 +37,7 @@ class PrinterRepository {
   /// Si [asDefault] es true, desmarca cualquier otra default primero.
   Future<int> create({
     required String name,
+    String? brand,
     required int averageWatts,
     bool asDefault = false,
   }) async {
@@ -46,6 +47,7 @@ class PrinterRepository {
     return _db.into(_db.printers).insert(
           PrintersCompanion.insert(
             name: name,
+            brand: Value(brand),
             averageWatts: averageWatts,
             isDefault: Value(asDefault),
             createdAt: DateTime.now().toUtc(),
@@ -57,6 +59,7 @@ class PrinterRepository {
   Future<bool> update({
     required int id,
     required String name,
+    String? brand,
     required int averageWatts,
     bool? asDefault,
   }) async {
@@ -67,6 +70,7 @@ class PrinterRepository {
         .write(
       PrintersCompanion(
         name: Value(name),
+        brand: Value(brand),
         averageWatts: Value(averageWatts),
         isDefault: asDefault == null
             ? const Value.absent()

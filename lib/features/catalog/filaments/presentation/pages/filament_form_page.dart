@@ -46,7 +46,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
       text: f == null ? '' : f.pricePerBobbin.toStringAsFixed(2),
     );
     _gramsCtrl = TextEditingController(
-      text: f == null ? '' : f.gramsPerBobbin.toStringAsFixed(0),
+      text: f == null ? '1000' : f.gramsPerBobbin.toStringAsFixed(0),
     );
     _isDefault = f?.isDefault ?? false;
   }

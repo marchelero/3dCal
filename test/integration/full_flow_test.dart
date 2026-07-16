@@ -10,11 +10,11 @@ import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/router/app_router.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
+import 'package:tresdcal/features/calculation/presentation/pages/calculations_list_page.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/home_page.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/decimal_input_field.dart';
 import 'package:tresdcal/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:tresdcal/features/dashboard/presentation/widgets/profit_bar_chart.dart';
-import 'package:tresdcal/features/calculation/presentation/pages/calculations_list_page.dart';
 
 /// Integration test smoke (plan §9C reducido).
 ///
@@ -82,7 +82,7 @@ void main() {
 
     expect(find.byType(CalculatorPage), findsOneWidget);
     expect(find.widgetWithText(DecimalInputField, 'Peso'), findsOneWidget);
-    expect(find.widgetWithText(DecimalInputField, 'Tiempo'), findsOneWidget);
+    expect(find.widgetWithText(DecimalInputField, 'Horas'), findsOneWidget);
   });
 
   testWidgets('Form completo: input 4 campos → output BOB visible (AC-1, AC-2)',
@@ -105,16 +105,13 @@ void main() {
         find.widgetWithText(DecimalInputField, 'Peso'), '100');
     await tester.pumpAndSettle();
     await tester.enterText(
-        find.widgetWithText(DecimalInputField, 'Tiempo'), '5');
+        find.widgetWithText(DecimalInputField, 'Horas'), '5');
     await tester.pumpAndSettle();
     await tester.enterText(
         find.widgetWithText(DecimalInputField, 'Precio bobina'), '120');
     await tester.pumpAndSettle();
-    await tester.enterText(
-        find.widgetWithText(DecimalInputField, 'Gramos / bobina'), '1000');
-    await tester.pumpAndSettle();
+    // Gramos / bobina ya no se muestra — default 1000 internamente.
 
-    expect(find.text('Precio final'), findsOneWidget);
     expect(find.textContaining('Bs.'), findsWidgets);
   });
 

@@ -21,6 +21,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _brandCtrl;
   late final TextEditingController _wattsCtrl;
   late bool _isDefault;
   bool _saving = false;
@@ -30,6 +31,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     super.initState();
     final p = widget.existing;
     _nameCtrl = TextEditingController(text: p?.name ?? '');
+    _brandCtrl = TextEditingController(text: p?.brand ?? '');
     _wattsCtrl = TextEditingController(
       text: p == null ? '' : p.averageWatts.toString(),
     );
@@ -39,6 +41,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _brandCtrl.dispose();
     _wattsCtrl.dispose();
     super.dispose();
   }
@@ -69,18 +72,21 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     setState(() => _saving = true);
     final notifier = ref.read(printersNotifierProvider.notifier);
     final name = _nameCtrl.text.trim();
+    final brand = _brandCtrl.text.trim();
     final watts = int.parse(_wattsCtrl.text.trim());
     try {
       if (_isEdit) {
         await notifier.updatePrinter(
           id: widget.existing!.id,
           name: name,
+          brand: brand.isEmpty ? null : brand,
           averageWatts: watts,
           asDefault: _isDefault,
         );
       } else {
         await notifier.create(
           name: name,
+          brand: brand.isEmpty ? null : brand,
           averageWatts: watts,
           asDefault: _isDefault,
         );
@@ -112,12 +118,22 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Nombre',
+                  labelText: 'Modelo',
                   helperText: 'Ej: Ender 3 V2',
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: _requiredText,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _brandCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Marca',
+                  helperText: 'Ej: Creality, Anycubic',
+                  border: OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 16),
               TextFormField(

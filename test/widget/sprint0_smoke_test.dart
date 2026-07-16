@@ -48,12 +48,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(CalculatorPage), findsOneWidget);
-      expect(find.text('Cotizacion express'), findsOneWidget);
+      expect(find.text('Cotizacion'), findsOneWidget);
       expect(find.text('Peso'), findsOneWidget);
-      expect(find.text('Tiempo'), findsOneWidget);
+      expect(find.text('Horas'), findsOneWidget);
       expect(find.text('Precio bobina'), findsOneWidget);
-      expect(find.text('Gramos / bobina'), findsOneWidget);
-      expect(find.text('Tarifa kWh'), findsOneWidget);
+      expect(find.text('Gramos / bobina'), findsNothing);
+      expect(find.text('Impresora'), findsOneWidget);
+      expect(find.text('Sin impresora registrada'), findsOneWidget);
+      expect(find.text('Tarifa kWh'), findsNothing);
 
       // Cleanup: volver a home para no contaminar el siguiente test.
       // Con go_router StatefulShellRoute, dejar el calculator en la
@@ -86,9 +88,9 @@ void main() {
       await tester.tap(find.text('Nueva cotizacion'));
       await tester.pumpAndSettle();
 
-      // Default: form vacio (peso/tiempo/precio vacios) → hint visible
+      // Default: form vacio (peso/precio vacios) → hint visible
       expect(
-        find.textContaining('Completa peso, tiempo, precio y gramos'),
+        find.textContaining('Completa peso'),
         findsOneWidget,
         reason: 'Sin inputs validos debe aparecer el hint',
       );
@@ -99,18 +101,17 @@ void main() {
           find.widgetWithText(DecimalInputField, 'Peso'), '100');
       await tester.pumpAndSettle();
       await tester.enterText(
-          find.widgetWithText(DecimalInputField, 'Tiempo'), '5');
+          find.widgetWithText(DecimalInputField, 'Horas'), '5');
       await tester.pumpAndSettle();
       await tester.enterText(
           find.widgetWithText(DecimalInputField, 'Precio bobina'), '120');
       await tester.pumpAndSettle();
-      await tester.enterText(
-          find.widgetWithText(DecimalInputField, 'Gramos / bobina'), '1000');
-      await tester.pumpAndSettle();
+      // Gramos / bobina ya no se muestra — default 1000 internamente.
 
       // Output card visible con formato BOB
-      expect(find.text('Precio final'), findsOneWidget);
-      expect(find.text('Costo material'), findsOneWidget);
+      expect(find.textContaining('Bs.'), findsWidgets);
+      // Costo material solo en ojito detail (oculto por default)
+      expect(find.text('Costo material'), findsNothing);
       expect(
         find.textContaining('Bs.'),
         findsWidgets,

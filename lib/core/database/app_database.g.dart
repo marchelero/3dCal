@@ -22,6 +22,15 @@ class $PrintersTable extends Printers
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -75,6 +84,7 @@ class $PrintersTable extends Printers
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    brand,
     name,
     averageWatts,
     isDefault,
@@ -94,6 +104,12 @@ class $PrintersTable extends Printers
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -141,6 +157,10 @@ class $PrintersTable extends Printers
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -169,7 +189,10 @@ class $PrintersTable extends Printers
 class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   final int id;
 
-  /// Nombre del modelo (ej: "Anycubic Kobra 3"). Requerido, 1-100 chars.
+  /// Marca (ej: "Anycubic", "Creality"). Opcional.
+  final String? brand;
+
+  /// Nombre del modelo (ej: "Kobra 3"). Requerido, 1-100 chars.
   final String name;
 
   /// Consumo promedio en Watts (>= 0). 0 = sin impresora.
@@ -182,6 +205,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   final DateTime createdAt;
   const PrinterProfile({
     required this.id,
+    this.brand,
     required this.name,
     required this.averageWatts,
     required this.isDefault,
@@ -191,6 +215,9 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
+    }
     map['name'] = Variable<String>(name);
     map['average_watts'] = Variable<int>(averageWatts);
     map['is_default'] = Variable<bool>(isDefault);
@@ -201,6 +228,9 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   PrintersCompanion toCompanion(bool nullToAbsent) {
     return PrintersCompanion(
       id: Value(id),
+      brand: brand == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brand),
       name: Value(name),
       averageWatts: Value(averageWatts),
       isDefault: Value(isDefault),
@@ -215,6 +245,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PrinterProfile(
       id: serializer.fromJson<int>(json['id']),
+      brand: serializer.fromJson<String?>(json['brand']),
       name: serializer.fromJson<String>(json['name']),
       averageWatts: serializer.fromJson<int>(json['averageWatts']),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
@@ -226,6 +257,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'brand': serializer.toJson<String?>(brand),
       'name': serializer.toJson<String>(name),
       'averageWatts': serializer.toJson<int>(averageWatts),
       'isDefault': serializer.toJson<bool>(isDefault),
@@ -235,12 +267,14 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
 
   PrinterProfile copyWith({
     int? id,
+    Value<String?> brand = const Value.absent(),
     String? name,
     int? averageWatts,
     bool? isDefault,
     DateTime? createdAt,
   }) => PrinterProfile(
     id: id ?? this.id,
+    brand: brand.present ? brand.value : this.brand,
     name: name ?? this.name,
     averageWatts: averageWatts ?? this.averageWatts,
     isDefault: isDefault ?? this.isDefault,
@@ -249,6 +283,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   PrinterProfile copyWithCompanion(PrintersCompanion data) {
     return PrinterProfile(
       id: data.id.present ? data.id.value : this.id,
+      brand: data.brand.present ? data.brand.value : this.brand,
       name: data.name.present ? data.name.value : this.name,
       averageWatts: data.averageWatts.present
           ? data.averageWatts.value
@@ -262,6 +297,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   String toString() {
     return (StringBuffer('PrinterProfile(')
           ..write('id: $id, ')
+          ..write('brand: $brand, ')
           ..write('name: $name, ')
           ..write('averageWatts: $averageWatts, ')
           ..write('isDefault: $isDefault, ')
@@ -271,12 +307,14 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   }
 
   @override
-  int get hashCode => Object.hash(id, name, averageWatts, isDefault, createdAt);
+  int get hashCode =>
+      Object.hash(id, brand, name, averageWatts, isDefault, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is PrinterProfile &&
           other.id == this.id &&
+          other.brand == this.brand &&
           other.name == this.name &&
           other.averageWatts == this.averageWatts &&
           other.isDefault == this.isDefault &&
@@ -285,12 +323,14 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
 
 class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
   final Value<int> id;
+  final Value<String?> brand;
   final Value<String> name;
   final Value<int> averageWatts;
   final Value<bool> isDefault;
   final Value<DateTime> createdAt;
   const PrintersCompanion({
     this.id = const Value.absent(),
+    this.brand = const Value.absent(),
     this.name = const Value.absent(),
     this.averageWatts = const Value.absent(),
     this.isDefault = const Value.absent(),
@@ -298,6 +338,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
   });
   PrintersCompanion.insert({
     this.id = const Value.absent(),
+    this.brand = const Value.absent(),
     required String name,
     required int averageWatts,
     this.isDefault = const Value.absent(),
@@ -307,6 +348,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
        createdAt = Value(createdAt);
   static Insertable<PrinterProfile> custom({
     Expression<int>? id,
+    Expression<String>? brand,
     Expression<String>? name,
     Expression<int>? averageWatts,
     Expression<bool>? isDefault,
@@ -314,6 +356,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (brand != null) 'brand': brand,
       if (name != null) 'name': name,
       if (averageWatts != null) 'average_watts': averageWatts,
       if (isDefault != null) 'is_default': isDefault,
@@ -323,6 +366,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
 
   PrintersCompanion copyWith({
     Value<int>? id,
+    Value<String?>? brand,
     Value<String>? name,
     Value<int>? averageWatts,
     Value<bool>? isDefault,
@@ -330,6 +374,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
   }) {
     return PrintersCompanion(
       id: id ?? this.id,
+      brand: brand ?? this.brand,
       name: name ?? this.name,
       averageWatts: averageWatts ?? this.averageWatts,
       isDefault: isDefault ?? this.isDefault,
@@ -342,6 +387,9 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -362,6 +410,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
   String toString() {
     return (StringBuffer('PrintersCompanion(')
           ..write('id: $id, ')
+          ..write('brand: $brand, ')
           ..write('name: $name, ')
           ..write('averageWatts: $averageWatts, ')
           ..write('isDefault: $isDefault, ')
@@ -2711,6 +2760,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$PrintersTableCreateCompanionBuilder =
     PrintersCompanion Function({
       Value<int> id,
+      Value<String?> brand,
       required String name,
       required int averageWatts,
       Value<bool> isDefault,
@@ -2719,6 +2769,7 @@ typedef $$PrintersTableCreateCompanionBuilder =
 typedef $$PrintersTableUpdateCompanionBuilder =
     PrintersCompanion Function({
       Value<int> id,
+      Value<String?> brand,
       Value<String> name,
       Value<int> averageWatts,
       Value<bool> isDefault,
@@ -2736,6 +2787,11 @@ class $$PrintersTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2774,6 +2830,11 @@ class $$PrintersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get name => $composableBuilder(
     column: $table.name,
     builder: (column) => ColumnOrderings(column),
@@ -2806,6 +2867,9 @@ class $$PrintersTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
@@ -2854,12 +2918,14 @@ class $$PrintersTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<int> averageWatts = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => PrintersCompanion(
                 id: id,
+                brand: brand,
                 name: name,
                 averageWatts: averageWatts,
                 isDefault: isDefault,
@@ -2868,12 +2934,14 @@ class $$PrintersTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
                 required String name,
                 required int averageWatts,
                 Value<bool> isDefault = const Value.absent(),
                 required DateTime createdAt,
               }) => PrintersCompanion.insert(
                 id: id,
+                brand: brand,
                 name: name,
                 averageWatts: averageWatts,
                 isDefault: isDefault,

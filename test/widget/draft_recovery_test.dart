@@ -28,7 +28,6 @@ void main() {
       const draft = CalculationDraft(
         weight: '120',
         printHours: '5',
-        profitPct: '25',
         filamentPrice: '150.00',
       );
       await storage.save(draft);
@@ -37,7 +36,6 @@ void main() {
       expect(loaded, isNotNull);
       expect(loaded!.weight, '120');
       expect(loaded.printHours, '5');
-      expect(loaded.profitPct, '25');
       expect(loaded.filamentPrice, '150.00');
     });
 
@@ -55,14 +53,13 @@ void main() {
   });
 
   testWidgets(
-    'CalculatorPage restaura draft pre-existente al montar (NFR-3)',
+    'CalculatorPage limpia draft al montar — cada cotizacion arranca limpia',
     (tester) async {
       // Pre-cargar un draft en SharedPreferences antes de montar la pagina.
       SharedPreferences.setMockInitialValues({
         'form_draft': const CalculationDraft(
           weight: '77',
           printHours: '3',
-          profitPct: '30',
           discountPct: '10',
           filamentPrice: '200',
           filamentGrams: '1000',
@@ -80,12 +77,14 @@ void main() {
           child: const MaterialApp(home: CalculatorPage()),
         ),
       );
-      // Esperar restore (post-frame callback + load async).
+      // Esperar post-frame callback + load async.
       await tester.pumpAndSettle();
 
-      // Verificar que los inputs reflejan el draft.
-      expect(find.widgetWithText(TextField, '77'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '3'), findsOneWidget);
+      // Draft fue limpiado — inputs deben estar vacios.
+      expect(find.widgetWithText(TextField, '77'), findsNothing);
+      expect(find.widgetWithText(TextField, '3'), findsNothing);
+      // Hint inicial visible (form vacio).
+      expect(find.textContaining('Completa peso'), findsOneWidget);
 
       await db.close();
     },
