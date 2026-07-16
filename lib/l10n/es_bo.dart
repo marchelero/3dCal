@@ -35,14 +35,17 @@ class EsBO {
   static const String settingsTitle = 'Ajustes';
   static const String settingsGlobalParams = 'Parametros globales';
   static const String settingsProfitBase = 'Ganancia base (%)';
-  static const String settingsProfitBaseHelper = 'Margen sobre costo base. 0-1000';
+  static const String settingsProfitBaseHelper =
+      'Margen sobre costo base. 0-1000';
   static const String settingsKwhRate = 'Tarifa electrica (BOB/kWh)';
-  static const String settingsKwhRateHelper = 'Rango residencial Bolivia: 0.10-5.00';
+  static const String settingsKwhRateHelper =
+      'Rango residencial Bolivia: 0.10-5.00';
   static const String settingsCatalogos = 'Catalogos';
   static const String settingsFilamentos = 'Filamentos';
   static const String settingsImpresoras = 'Impresoras';
   static const String settingsAbout = 'Acerca de';
-  static const String settingsPrivacy = 'Privacidad: 100% local, sin telemetria';
+  static const String settingsPrivacy =
+      'Privacidad: 100% local, sin telemetria';
   static const String settingsSaved = 'Guardado';
   static const String settingsAppearance = 'Apariencia';
   static const String settingsTheme = 'Tema';
@@ -106,6 +109,16 @@ class EsBO {
   static const String calcEmptyHint =
       'Completa peso, filamento y horas para ver el precio';
 
+  // === Dynamic empty hint: lista los campos requeridos que faltan ===
+  // Used por CalculatorState.missingRequiredFields + _EmptyOutput.
+  // El join final lo hace la UI (con "y" antes del ultimo elemento).
+  static const String calcEmptyHintPrefix = 'Completa';
+  static const String calcEmptyHintSuffix = 'para ver la cotizacion';
+  static const String calcFieldWeightShort = 'peso de la pieza';
+  static const String calcFieldPriceShort = 'precio del filamento';
+  static const String calcFieldTimeShort = 'tiempo de impresion';
+  static const String calcFieldMaterialShort = 'al menos un material';
+
   // === Filaments / Printers forms ===
   static const String filamentTitle = 'Filamentos';
   static const String filamentNew = 'Nuevo filamento';
@@ -114,9 +127,9 @@ class EsBO {
   static const String filamentNameHelper = 'Ej: PLA Negro';
   static const String filamentBrand = 'Marca';
   static const String filamentBrandHelper = 'Opcional';
-  static const String filamentPrice = 'Precio bobina (BOB)';
+  static const String filamentPrice = 'Precio filamento (BOB)';
   static const String filamentPriceHelper = 'Costo del rollo completo';
-  static const String filamentGrams = 'Gramos por bobina';
+  static const String filamentGrams = 'Gramos por rollo';
   static const String filamentGramsHelper = 'Tipico 1000';
   static const String filamentDefaultToggle = 'Marcar como default';
   static const String filamentDefaultSubtitle =

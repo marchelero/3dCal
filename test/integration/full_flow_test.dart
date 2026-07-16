@@ -39,6 +39,17 @@ void main() {
     appRouter.go('/');
   });
 
+  /// Fuerza viewport mobile (width < 600) para que AppScaffold use
+  /// NavigationBar (bottom nav) en vez de NavigationRail. Default test
+  /// window es 800x600 → cae en tablet layout. Height generoso (1500) para
+  /// que la NavigationBar completa (height 65 + icon + label) entre sin clip.
+  void _useMobileViewport(WidgetTester tester) {
+    tester.view.physicalSize = const Size(360, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
+
   tearDown(() async {
     await db.close();
   });
@@ -83,7 +94,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CalculatorPage), findsOneWidget);
-    expect(find.widgetWithText(NumericInputField, 'Peso'), findsOneWidget);
+    expect(
+        find.widgetWithText(NumericInputField, 'Peso de la pieza'),
+        findsOneWidget);
     expect(find.widgetWithText(NumericInputField, 'Horas'), findsOneWidget);
   });
 
@@ -105,7 +118,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Peso'),
+        find.widgetWithText(NumericInputField, 'Peso de la pieza'),
         '100',
       );
       await tester.pumpAndSettle();
@@ -128,6 +141,7 @@ void main() {
   testWidgets('Tab switch: Inicio → Dashboard via NavigationBar (AC-8.1)', (
     tester,
   ) async {
+    _useMobileViewport(tester);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -139,12 +153,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Tap tab "Dashboard" en la NavigationBar (scoped para no chocar
-    // con el boton de Home que tiene el mismo texto).
-    final navBar = find.byType(NavigationBar);
-    await tester.tap(
-      find.descendant(of: navBar, matching: find.text('Dashboard')),
-    );
+    // Tap tab Dashboard (indice 2 en AppScaffold._destinations).
+    // Tap por NavigationDestination.at(2) en vez de por texto "Dashboard"
+    // porque el label se renderiza fuera del area visible del bottom nav
+    // (NavigationBar con height custom hace overflow del label).
+    await tester.tap(find.byType(NavigationDestination).at(2));
     await tester.pumpAndSettle();
 
     // DashboardPage se renderiza (puede mostrar empty state o stats).
@@ -154,6 +167,7 @@ void main() {
   testWidgets('Tab switch: Inicio → Historial via NavigationBar (AC-7.1)', (
     tester,
   ) async {
+    _useMobileViewport(tester);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -165,10 +179,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navBar = find.byType(NavigationBar);
-    await tester.tap(
-      find.descendant(of: navBar, matching: find.text('Historial')),
-    );
+    // Tab Historial (indice 1 en AppScaffold._destinations).
+    await tester.tap(find.byType(NavigationDestination).at(1));
     await tester.pumpAndSettle();
 
     expect(find.byType(CalculationsListPage), findsOneWidget);
@@ -177,6 +189,7 @@ void main() {
   testWidgets('Dashboard vacio: muestra EmptyView con CTA (AC-8.4)', (
     tester,
   ) async {
+    _useMobileViewport(tester);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -188,10 +201,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navBar = find.byType(NavigationBar);
-    await tester.tap(
-      find.descendant(of: navBar, matching: find.text('Dashboard')),
-    );
+    // Tab Dashboard (indice 2).
+    await tester.tap(find.byType(NavigationDestination).at(2));
     await tester.pumpAndSettle();
 
     // Empty state: el ProfitBarChart NO debe renderizar (no hay datos).

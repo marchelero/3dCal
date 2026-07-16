@@ -216,6 +216,30 @@ class CalculatorState {
     return materials.any((m) => m.isValid) && hasTime;
   }
 
+  /// Lista de campos requeridos que faltan (en orden del formulario, top-down).
+  /// Usado por la UI para hint dinamico: "Completa X, Y y Z para ver la cotizacion".
+  /// Lista vacia cuando [isValid] es true.
+  ///
+  /// Retorna keys (weight/price/time/material), no strings resueltos.
+  /// Orden:
+  ///   - express: weight, price, time (mismo orden visual en el form).
+  ///   - advanced: material, time.
+  List<String> get missingRequiredFields {
+    if (isValid) return const <String>[];
+    final missing = <String>[];
+    final hasTime = _parsePos(printHours) != null ||
+        _parsePos(printMinutes) != null;
+    if (mode == CalculatorMode.express) {
+      if (_parsePos(weight) == null) missing.add('weight');
+      if (_parsePos(filamentPrice) == null) missing.add('price');
+      if (!hasTime) missing.add('time');
+    } else {
+      if (!materials.any((m) => m.isValid)) missing.add('material');
+      if (!hasTime) missing.add('time');
+    }
+    return missing;
+  }
+
   /// Horas totales como Decimal (printHours + printMinutes/60).
   /// Retorna null si printHours no es parseable.
   Decimal? get totalHoursDecimal {

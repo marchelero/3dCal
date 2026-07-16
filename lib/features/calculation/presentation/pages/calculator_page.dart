@@ -1083,6 +1083,43 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
     });
   }
 
+  /// Mapea las keys de [CalculatorState.missingRequiredFields] a strings
+  /// localizables. El join con "y" lo hace [buildDynamicEmptyHint].
+  static String _resolveFieldKey(String key) {
+    switch (key) {
+      case 'weight':
+        return EsBO.calcFieldWeightShort;
+      case 'price':
+        return EsBO.calcFieldPriceShort;
+      case 'time':
+        return EsBO.calcFieldTimeShort;
+      case 'material':
+        return EsBO.calcFieldMaterialShort;
+      default:
+        return key;
+    }
+  }
+
+  /// Construye el hint dinamico listando los campos faltantes.
+  /// "Completa X para ver la cotizacion." (1)
+  /// "Completa X y Y para ver la cotizacion." (2)
+  /// "Completa X, Y y Z para ver la cotizacion." (3+)
+  static String buildDynamicEmptyHint(List<String> missingKeys) {
+    if (missingKeys.isEmpty) {
+      // Safety: no deberia llamarse cuando isValid=true.
+      return EsBO.calcEmptyHint;
+    }
+    final parts = missingKeys.map(_resolveFieldKey).toList();
+    final joined = parts.length == 1
+        ? parts.first
+        : parts.length == 2
+            ? '${parts[0]} y ${parts[1]}'
+            : '${parts.sublist(0, parts.length - 1).join(', ')} '
+                'y ${parts.last}';
+    return '${EsBO.calcEmptyHintPrefix} $joined '
+        '${EsBO.calcEmptyHintSuffix}.';
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<CalculatorState>(calculatorNotifierProvider, (prev, next) {
@@ -1102,7 +1139,10 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
         if (_calculating)
           _CalculatingAnimation()
         else if (output == null)
-          _EmptyOutput(theme: theme)
+          _EmptyOutput(
+            theme: theme,
+            message: buildDynamicEmptyHint(state.missingRequiredFields),
+          )
         else
           _SummaryCard(
             output: output,
@@ -1153,8 +1193,9 @@ class _CalculatingAnimation extends StatelessWidget {
 }
 
 class _EmptyOutput extends StatelessWidget {
-  const _EmptyOutput({required this.theme});
+  const _EmptyOutput({required this.theme, required this.message});
   final ThemeData theme;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -1176,7 +1217,7 @@ class _EmptyOutput extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Completa peso, precio y tiempo de impresion\npara ver la cotizacion.',
+            message,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: color.onSurfaceVariant,

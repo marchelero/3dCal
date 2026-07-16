@@ -28,7 +28,8 @@ Future<void> _pumpPage(WidgetTester tester) async {
 }
 
 Future<void> _fillValid(WidgetTester tester) async {
-  await tester.enterText(find.widgetWithText(TextField, 'Peso'), '100');
+  await tester.enterText(
+      find.widgetWithText(TextField, 'Peso de la pieza'), '100');
   await tester.enterText(
       find.widgetWithText(TextField, 'Precio bobina'), '120');
   await tester.enterText(find.widgetWithText(TextField, 'Horas'), '2');
@@ -43,10 +44,11 @@ void main() {
       await _pumpPage(tester);
 
       expect(find.text('Cotizacion'), findsOneWidget);
-      expect(find.text('Peso'), findsOneWidget);
+      expect(find.text('Peso de la pieza'), findsOneWidget);
       expect(find.text('Horas'), findsOneWidget);
       expect(find.text('Minutos'), findsOneWidget);
-      expect(find.text('Descuento'), findsOneWidget);
+      // 'Descuento' aparece 2 veces legitimas: titulo de seccion + label del field.
+      expect(find.text('Descuento'), findsAtLeastNWidgets(1));
       expect(find.text('Precio bobina'), findsOneWidget);
       expect(find.text('Gramos / bobina'), findsNothing);
       // Printer indicator
@@ -97,7 +99,8 @@ void main() {
       await _fillValid(tester);
       expect(find.textContaining('Bs.'), findsWidgets);
 
-      await tester.enterText(find.widgetWithText(TextField, 'Peso'), '');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Peso de la pieza'), '');
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Bs. 12,00'), findsNothing);
@@ -109,9 +112,10 @@ void main() {
       await _fillValid(tester);
       expect(find.textContaining('Bs.'), findsWidgets);
 
-      await tester.ensureVisible(find.text('Restablecer'));
+      // El label del boton es 'Restablecer valores' (EsBO.calcBtnReset).
+      await tester.ensureVisible(find.text('Restablecer valores'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Restablecer'));
+      await tester.tap(find.text('Restablecer valores'));
       await tester.pumpAndSettle();
 
       // Output card se fue, vuelve el mensaje inicial
