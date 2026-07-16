@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
@@ -104,6 +105,33 @@ class _SettingsBody extends ConsumerWidget {
                     _showSavedSnack(context);
                   },
                 ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // === Apariencia ===
+        _SectionHeader(
+          icon: Icons.palette_rounded,
+          title: 'Apariencia',
+          color: color.secondary,
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tema',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _ThemeModeSelector(),
               ],
             ),
           ),
@@ -265,6 +293,40 @@ class _SectionHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Selector de tema Claro / Oscuro / Sistema.
+class _ThemeModeSelector extends ConsumerWidget {
+  const _ThemeModeSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeModeProvider);
+
+    return SegmentedButton<AppThemeMode>(
+      segments: AppThemeMode.values.map((m) {
+        IconData icon;
+        switch (m) {
+          case AppThemeMode.system:
+            icon = Icons.settings_brightness_rounded;
+          case AppThemeMode.light:
+            icon = Icons.light_mode_rounded;
+          case AppThemeMode.dark:
+            icon = Icons.dark_mode_rounded;
+        }
+        return ButtonSegment(
+          value: m,
+          label: Text(m.label),
+          icon: Icon(icon),
+        );
+      }).toList(),
+      selected: {current},
+      onSelectionChanged: (selected) {
+        ref.read(themeModeProvider.notifier).setMode(selected.first);
+      },
+      showSelectedIcon: false,
     );
   }
 }

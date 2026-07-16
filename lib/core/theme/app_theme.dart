@@ -1,7 +1,8 @@
 /// Tema Material 3 de tresdcal — "Industrial 3D".
 ///
 /// Paleta basada en azul tecnico + naranja calido (PLA).
-/// Seed: azul profundo para precision industrial.
+/// Light mode: superficie gris suave (no blanco puro).
+/// Dark mode: carbon industrial.
 library;
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,12 @@ class AppTheme {
   /// Rojo error.
   static const Color redError = Color(0xFFE74C3C);
 
+  /// Fondo light: gris calido suave (no blanco puro).
+  static const Color _lightSurfaceBg = Color(0xFFF0EFEC);
+
+  /// Fondo de cards light: blanco con calidez.
+  static const Color _lightCardBg = Color(0xFFFCFCFA);
+
   /// Tema claro.
   static ThemeData light() {
     return _buildTheme(Brightness.light);
@@ -33,16 +40,18 @@ class AppTheme {
   }
 
   static ThemeData _buildTheme(Brightness brightness) {
+    final isLight = brightness == Brightness.light;
+
     final colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
       brightness: brightness,
-      primary: brightness == Brightness.light
+      primary: isLight
           ? const Color(0xFF1B5E8A)
           : const Color(0xFF7EB8E0),
-      secondary: brightness == Brightness.light
+      secondary: isLight
           ? const Color(0xFFE67E22)
           : const Color(0xFFFFB366),
-      tertiary: brightness == Brightness.light
+      tertiary: isLight
           ? const Color(0xFF1A8A7A)
           : const Color(0xFF5ECDB8),
       error: redError,
@@ -50,14 +59,16 @@ class AppTheme {
 
     final textTheme = _buildTextTheme(brightness);
 
+    final surfaceColor = isLight ? _lightCardBg : colorScheme.surface;
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.surface,
+      scaffoldBackgroundColor: isLight ? _lightSurfaceBg : colorScheme.surface,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: false,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: surfaceColor,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -65,15 +76,39 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
+        color: surfaceColor,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+          side: BorderSide(
+            color: isLight
+                ? colorScheme.outlineVariant.withValues(alpha: 0.8)
+                : colorScheme.outlineVariant,
+            width: isLight ? 0.5 : 0.5,
+          ),
         ),
         clipBehavior: Clip.antiAlias,
       ),
+      // Dialog background same as card
+      dialogTheme: DialogThemeData(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerLow,
+        fillColor: isLight
+            ? _lightCardBg
+            : colorScheme.surfaceContainerLow,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -120,6 +155,7 @@ class AppTheme {
           elevation: 0,
           textStyle: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w600),
+          backgroundColor: surfaceColor,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -150,10 +186,12 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         indicatorColor: colorScheme.secondaryContainer,
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        backgroundColor: surfaceColor,
       ),
       navigationRailTheme: NavigationRailThemeData(
         indicatorColor: colorScheme.secondaryContainer,
         labelType: NavigationRailLabelType.all,
+        backgroundColor: surfaceColor,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colorScheme.primary,
@@ -178,6 +216,12 @@ class AppTheme {
           }
           return null;
         }),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
