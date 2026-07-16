@@ -1,12 +1,16 @@
-/// Tarjeta de estadistica compacta para dashboard y home.
+/// Tile de estadistica compacta: icono + valor grande + label.
 ///
-/// Muestra icono + valor grande + label. Usa [color] como acento.
+/// Usado en dashboard y home para KPIs (cotizado, vendido, conversion).
+/// `[color]` actua como acento para el icono y su fondo translucido.
+///
+/// Sigue el diseno de [Card] del theme (M3 industrial). El valor usa
+/// `FontFeature.tabularFigures()` para alinear cifras en columnas.
 library;
 
 import 'package:flutter/material.dart';
 
-class StatsCard extends StatelessWidget {
-  const StatsCard({
+class StatTile extends StatelessWidget {
+  const StatTile({
     super.key,
     required this.label,
     required this.value,
@@ -22,7 +26,6 @@ class StatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final onColor = color;
 
     return Card(
       child: Padding(
@@ -37,7 +40,7 @@ class StatsCard extends StatelessWidget {
                 color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 20, color: onColor),
+              child: Icon(icon, size: 20, color: color),
             ),
             const SizedBox(height: 10),
             Text(

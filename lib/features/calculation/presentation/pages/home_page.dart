@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
-import '../../../dashboard/presentation/widgets/stats_card.dart';
+import '../../../../shared/widgets/stat_tile.dart';
 import '../../domain/dashboard_stats.dart';
 
 /// Home page: landing del app con hero + quick actions + stats.
@@ -240,7 +240,7 @@ class HomePage extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: StatsCard(
+              child: StatTile(
                 label: 'Cotizaciones',
                 value: '${stats.countAll}',
                 icon: Icons.receipt_long_rounded,
@@ -249,7 +249,7 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: StatsCard(
+              child: StatTile(
                 label: 'Vendidas',
                 value: '${stats.countSold}',
                 icon: Icons.check_circle_rounded,
@@ -258,7 +258,7 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: StatsCard(
+              child: StatTile(
                 label: 'Conversion',
                 value: '${stats.conversionPct.toStringAsFixed(0)}%',
                 icon: Icons.trending_up_rounded,

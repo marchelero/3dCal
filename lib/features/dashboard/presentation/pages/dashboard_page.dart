@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/stat_tile.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
 import '../widgets/profit_bar_chart.dart';
-import '../widgets/stats_card.dart';
 
 /// Pagina `/dashboard` con stats agregadas + bar chart.
 class DashboardPage extends ConsumerWidget {
@@ -67,7 +67,7 @@ class _DashboardBody extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: StatsCard(
+                child: StatTile(
                   label: 'Cotizaciones',
                   value: '${stats.countAll}',
                   icon: Icons.receipt_long_rounded,
@@ -76,7 +76,7 @@ class _DashboardBody extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: StatsCard(
+                child: StatTile(
                   label: 'Vendidas',
                   value: '${stats.countSold}',
                   icon: Icons.check_circle_rounded,
@@ -85,7 +85,7 @@ class _DashboardBody extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: StatsCard(
+                child: StatTile(
                   label: 'Conversion',
                   value: '${stats.conversionPct.toStringAsFixed(0)}%',
                   icon: Icons.trending_up_rounded,
