@@ -19,6 +19,7 @@ class StatTile extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.color,
+    this.semanticLabel,
   });
 
   final String label;
@@ -26,11 +27,17 @@ class StatTile extends StatelessWidget {
   final IconData icon;
   final Color color;
 
+  /// Etiqueta semantica opcional. Si se da, el screen reader lee este
+  /// string en vez de anunciar `label` y `value` por separado. Util para
+  /// agregar contexto (ej: "Ventas hoy: 1500 BOB") o para evitar
+  /// duplicacion cuando el padre ya provee contexto.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    final tile = Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -64,6 +71,13 @@ class StatTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (semanticLabel == null) return tile;
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: tile,
     );
   }
 }

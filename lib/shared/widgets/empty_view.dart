@@ -17,6 +17,7 @@ class EmptyView extends StatelessWidget {
     this.ctaIcon,
     this.onCta,
     this.subtitle,
+    this.semanticLabel,
   });
 
   final IconData icon;
@@ -26,10 +27,15 @@ class EmptyView extends StatelessWidget {
   final IconData? ctaIcon;
   final VoidCallback? onCta;
 
+  /// Etiqueta semantica opcional. Si se da, el screen reader anuncia este
+  /// string como descripcion unificada del estado vacio (mensaje +
+  /// subtitulo + CTA) en vez de leer cada parte por separado.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
-    return Center(
+    final view = Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
@@ -73,6 +79,13 @@ class EmptyView extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (semanticLabel == null) return view;
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: view,
     );
   }
 }

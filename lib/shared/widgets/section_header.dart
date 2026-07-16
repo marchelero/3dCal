@@ -18,17 +18,23 @@ class SectionHeader extends StatelessWidget {
     required this.icon,
     required this.title,
     this.accentColor,
+    this.semanticLabel,
   });
 
   final IconData icon;
   final String title;
   final Color? accentColor;
 
+  /// Etiqueta semantica opcional. Si se da, se anuncia como `header`
+  /// semantico (signaling inicio de seccion). Si es `null`, el screen
+  /// reader anuncia el `title` normal.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = accentColor ?? theme.colorScheme.primary;
-    return Row(
+    final row = Row(
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: AppSpacing.sm),
@@ -40,6 +46,13 @@ class SectionHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (semanticLabel == null) return row;
+    return Semantics(
+      header: true,
+      label: semanticLabel,
+      child: row,
     );
   }
 }

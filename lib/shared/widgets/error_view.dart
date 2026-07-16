@@ -16,16 +16,22 @@ class ErrorView extends StatelessWidget {
     required this.message,
     this.onRetry,
     this.details,
+    this.semanticLabel,
   });
 
   final String message;
   final VoidCallback? onRetry;
   final String? details;
 
+  /// Etiqueta semantica opcional. Si se da, el screen reader anuncia este
+  /// string como descripcion unificada del error (mensaje + detalles)
+  /// en vez de leer cada parte por separado.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
-    return Center(
+    final view = Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
@@ -73,6 +79,13 @@ class ErrorView extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (semanticLabel == null) return view;
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: view,
     );
   }
 }

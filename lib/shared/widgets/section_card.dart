@@ -18,6 +18,7 @@ class SectionCard extends StatelessWidget {
     required this.child,
     this.accentColor,
     this.padding = const EdgeInsets.all(AppSpacing.lg),
+    this.semanticLabel,
   });
 
   final IconData icon;
@@ -26,9 +27,14 @@ class SectionCard extends StatelessWidget {
   final Color? accentColor;
   final EdgeInsetsGeometry padding;
 
+  /// Etiqueta semantica opcional del bloque. Si se da, el screen reader
+  /// anuncia este string como un solo item y omite el detalle del
+  /// contenido hijo. Si es `null`, el `title` se anuncia normalmente.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final card = Card(
       child: Padding(
         padding: padding,
         child: Column(
@@ -44,6 +50,13 @@ class SectionCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (semanticLabel == null) return card;
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: card,
     );
   }
 }
