@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
@@ -146,7 +147,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
           child: MaxWidthScrollView(
             maxWidth: 600,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               shrinkWrap: true,
               children: [
               TextFormField(
@@ -159,7 +160,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 textInputAction: TextInputAction.next,
                 validator: _requiredText,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _brandCtrl,
                 decoration: const InputDecoration(
@@ -170,7 +171,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 textInputAction: TextInputAction.next,
                 validator: _optionalText,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _priceCtrl,
                 decoration: const InputDecoration(
@@ -182,7 +183,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 textInputAction: TextInputAction.next,
                 validator: _requiredNumber,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               NumericInputField(
                 label: EsBO.filamentGrams,
                 controller: _gramsCtrl,
@@ -190,7 +191,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 helperText: EsBO.filamentGramsHelper,
                 textInputAction: TextInputAction.done,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
                 title: const Text(EsBO.filamentDefaultToggle),
                 subtitle: const Text(
@@ -200,7 +201,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 value: _isDefault,
                 onChanged: _saving ? null : _setDefault,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               FilledButton.icon(
                 icon: _saving
                     ? const SizedBox(

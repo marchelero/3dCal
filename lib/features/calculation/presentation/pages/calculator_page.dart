@@ -12,6 +12,8 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
@@ -299,7 +301,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           children: [
             // Mode selector
             _ModeSelector(mode: state.mode, onChanged: _switchMode),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
 
             // Card: Pieza
             SectionCard(
@@ -308,7 +310,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             child: Column(
               children: [
                 _buildLabelField(theme),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 NumericInputField(
                   label: EsBO.calcLabelWeight,
                   controller: _weightCtrl,
@@ -319,7 +321,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Filamento
           SectionCard(
@@ -334,7 +336,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               onGramsChanged: notifier.setFilamentGrams,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Impresora
           SectionCard(
@@ -342,7 +344,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             title: 'Impresora',
             child: _PrinterIndicator(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
           SectionCard(
@@ -358,7 +360,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     suffix: 'h',
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: NumericInputField(
                     label: EsBO.calcLabelMinutes,
@@ -371,7 +373,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Descuento
           SectionCard(
@@ -385,11 +387,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               helperText: EsBO.calcLabelDiscountHelper,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Output section
           const _OutputSection(),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Save button
           FilledButton.icon(
@@ -397,7 +399,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             label: const Text(EsBO.calcBtnSave),
             onPressed: _showSaveDialog,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Reset link (text button, less prominent)
           Center(
@@ -407,7 +409,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               onPressed: _resetAll,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
         ],
         ),
       ),
@@ -431,7 +433,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _ModeSelector(mode: state.mode, onChanged: _switchMode),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
 
             // Card: Pieza
             SectionCard(
@@ -439,7 +441,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               title: EsBO.calcSectionPiece,
               child: _buildLabelField(theme),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
 
           // Card: Materiales
           SectionCard(
@@ -475,7 +477,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     );
                   },
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 OutlinedButton.icon(
                   onPressed: _addMaterial,
                   icon: const Icon(Icons.add_rounded),
@@ -484,7 +486,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Impresora
           SectionCard(
@@ -492,7 +494,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             title: 'Impresora',
             child: _PrinterIndicator(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
           SectionCard(
@@ -508,7 +510,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     suffix: 'h',
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: NumericInputField(
                     label: EsBO.calcLabelMinutes,
@@ -521,7 +523,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Card: Descuento
           SectionCard(
@@ -535,11 +537,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               helperText: EsBO.calcLabelDiscountHelper,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Output section
           const _OutputSection(),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
           // Save button
           FilledButton.icon(
@@ -547,7 +549,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             label: const Text(EsBO.calcBtnSave),
             onPressed: _showSaveDialog,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           Center(
             child: TextButton.icon(
@@ -556,7 +558,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               onPressed: _resetAll,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
         ],
         ),
       ),
@@ -616,7 +618,7 @@ class _FilamentSection extends ConsumerWidget {
                 helperText: 'Costo del rollo',
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: NumericInputField(
                 label: 'Gramos bobina',
@@ -629,7 +631,7 @@ class _FilamentSection extends ConsumerWidget {
           ],
         ),
         if (filaments.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               if (defaultFilament != null)
@@ -639,7 +641,7 @@ class _FilamentSection extends ConsumerWidget {
                   onTap: () =>
                       _loadFilament(ref, defaultFilament, priceCtrl, gramsCtrl),
                 ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               _ActionChip(
                 icon: Icons.inventory_2_rounded,
                 label: 'Catalogo',
@@ -763,7 +765,7 @@ class _PrinterIndicator extends ConsumerWidget {
     final printers = printersAsync.valueOrNull ?? <PrinterProfile>[];
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadii.lg),
       onTap: printers.isEmpty
           ? null
           : () => _showPrinterDialog(context, ref, printers),
@@ -771,7 +773,7 @@ class _PrinterIndicator extends ConsumerWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Row(
@@ -781,7 +783,7 @@ class _PrinterIndicator extends ConsumerWidget {
               height: 36,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: Icon(
                 Icons.print_rounded,
@@ -789,7 +791,7 @@ class _PrinterIndicator extends ConsumerWidget {
                 color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: activePrinter != null
                   ? Column(
@@ -945,10 +947,10 @@ class _MaterialRowTile extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
@@ -961,7 +963,7 @@ class _MaterialRowTile extends StatelessWidget {
                 height: 28,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                 ),
                 child: Center(
                   child: Text(
@@ -973,7 +975,7 @@ class _MaterialRowTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Text('Material ${index + 1}', style: theme.textTheme.titleSmall),
               const Spacer(),
               IconButton(
@@ -986,7 +988,7 @@ class _MaterialRowTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: ctrls.label,
             decoration: const InputDecoration(
@@ -997,7 +999,7 @@ class _MaterialRowTile extends StatelessWidget {
             ),
             onChanged: (v) => _emit(),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
@@ -1008,7 +1010,7 @@ class _MaterialRowTile extends StatelessWidget {
                   suffix: 'g',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: NumericInputField(
                   label: 'Precio bobina',
@@ -1017,7 +1019,7 @@ class _MaterialRowTile extends StatelessWidget {
                   suffix: 'BOB',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: NumericInputField(
                   label: 'Gramos / bobina',
@@ -1129,7 +1131,7 @@ class _CalculatingAnimation extends StatelessWidget {
               color: color.primary,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Calculando...',
             style: Theme.of(
@@ -1151,10 +1153,10 @@ class _EmptyOutput extends StatelessWidget {
     final color = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       decoration: BoxDecoration(
         color: color.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
         border: Border.all(color: color.outlineVariant),
       ),
       child: Column(
@@ -1164,7 +1166,7 @@ class _EmptyOutput extends StatelessWidget {
             size: 32,
             color: color.onSurfaceVariant,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'Completa peso, precio y tiempo de impresion\npara ver la cotizacion.',
             textAlign: TextAlign.center,
@@ -1212,7 +1214,7 @@ class _SummaryCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1222,7 +1224,7 @@ class _SummaryCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.xxxl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1244,7 +1246,7 @@ class _SummaryCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: color.onPrimaryContainer.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.xxxl),
             ),
             child: Text(
               DateFormat('dd MMM yyyy HH:mm').format(now),
@@ -1254,7 +1256,7 @@ class _SummaryCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
           // Big price
           Text(
@@ -1278,12 +1280,12 @@ class _SummaryCard extends StatelessWidget {
 
           // Discount badge
           if (hasDiscount) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: color.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1308,7 +1310,7 @@ class _SummaryCard extends StatelessWidget {
           ],
 
           // Toggle detail
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Align(
             child: TextButton.icon(
               icon: Icon(
@@ -1328,12 +1330,12 @@ class _SummaryCard extends StatelessWidget {
 
           // Detail breakdown
           if (showDetail) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Divider(
               height: 1,
               color: color.onPrimaryContainer.withValues(alpha: 0.2),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             _DetailSection(
               materialCost: output.materialCost,
               electricCost: detailElectricCost ?? Decimal.zero,
@@ -1385,13 +1387,13 @@ class _DetailSection extends StatelessWidget {
           tc: theme.colorScheme.primary,
           isProfit: true,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Divider(
           height: 1,
           color: (textColor ?? theme.colorScheme.onSurface)
               .withValues(alpha: 0.2),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         _dr(
           EsBO.calcDetailTotal,
           formatBob(totalFinal),
