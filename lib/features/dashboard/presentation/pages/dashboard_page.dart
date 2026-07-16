@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
 import '../widgets/profit_bar_chart.dart';
@@ -127,18 +128,9 @@ class _DashboardBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.bar_chart_rounded,
-                          size: 18, color: color.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Cotizado vs Ganado',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  const SectionHeader(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Cotizado vs Ganado',
                   ),
                   const SizedBox(height: 16),
                   ProfitBarChart(

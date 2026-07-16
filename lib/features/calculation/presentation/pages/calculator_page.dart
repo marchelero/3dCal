@@ -12,6 +12,7 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
+import '../../../../shared/widgets/section_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
@@ -294,7 +295,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 16),
 
           // Card: Pieza
-          _SectionCard(
+          SectionCard(
             icon: Icons.category_rounded,
             title: 'Pieza',
             child: Column(
@@ -314,7 +315,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Filamento
-          _SectionCard(
+          SectionCard(
             icon: Icons.inventory_2_rounded,
             title: 'Filamento',
             child: _FilamentSection(
@@ -329,7 +330,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Impresora
-          _SectionCard(
+          SectionCard(
             icon: Icons.print_rounded,
             title: 'Impresora',
             child: _PrinterIndicator(),
@@ -337,7 +338,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Tiempo
-          _SectionCard(
+          SectionCard(
             icon: Icons.timer_rounded,
             title: 'Tiempo de impresion',
             child: Row(
@@ -366,7 +367,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Descuento
-          _SectionCard(
+          SectionCard(
             icon: Icons.local_offer_rounded,
             title: 'Descuento',
             child: DecimalInputField(
@@ -423,7 +424,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 16),
 
           // Card: Pieza
-          _SectionCard(
+          SectionCard(
             icon: Icons.category_rounded,
             title: 'Pieza',
             child: _buildLabelField(theme),
@@ -431,7 +432,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Materiales
-          _SectionCard(
+          SectionCard(
             icon: Icons.inventory_2_rounded,
             title: 'Materiales',
             child: Column(
@@ -476,7 +477,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Impresora
-          _SectionCard(
+          SectionCard(
             icon: Icons.print_rounded,
             title: 'Impresora',
             child: _PrinterIndicator(),
@@ -484,7 +485,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Tiempo
-          _SectionCard(
+          SectionCard(
             icon: Icons.timer_rounded,
             title: 'Tiempo de impresion',
             child: Row(
@@ -513,7 +514,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           const SizedBox(height: 12),
 
           // Card: Descuento
-          _SectionCard(
+          SectionCard(
             icon: Icons.local_offer_rounded,
             title: 'Descuento',
             child: DecimalInputField(
@@ -558,52 +559,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         labelText: 'Etiqueta (opcional)',
         helperText: 'Ej: Soporte pared, Engranaje PETG',
         prefixIcon: Icon(Icons.label_outline),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// SECTION CARD — wrapper reutilizable con icono + titulo
-// ============================================================
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.icon,
-    required this.title,
-    required this.child,
-  });
-
-  final IconData icon;
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 18, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
       ),
     );
   }

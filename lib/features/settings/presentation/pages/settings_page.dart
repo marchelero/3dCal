@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/section_header.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
 
@@ -51,10 +52,10 @@ class _SettingsBody extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
         // === Parametros globales ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.tune_rounded,
           title: EsBO.settingsGlobalParams,
-          color: color.primary,
+          accentColor: color.primary,
         ),
         const SizedBox(height: 12),
         Card(
@@ -112,10 +113,10 @@ class _SettingsBody extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // === Apariencia ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.palette_rounded,
           title: 'Apariencia',
-          color: color.secondary,
+          accentColor: color.secondary,
         ),
         const SizedBox(height: 12),
         Card(
@@ -139,10 +140,10 @@ class _SettingsBody extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // === Catalogos ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.inventory_2_rounded,
           title: EsBO.settingsCatalogos,
-          color: color.secondary,
+          accentColor: color.secondary,
         ),
         const SizedBox(height: 12),
         Card(
@@ -189,10 +190,10 @@ class _SettingsBody extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // === Acerca de ===
-        _SectionHeader(
+        SectionHeader(
           icon: Icons.info_outline_rounded,
           title: EsBO.settingsAbout,
-          color: color.tertiary,
+          accentColor: color.tertiary,
         ),
         const SizedBox(height: 12),
         Card(
@@ -264,38 +265,6 @@ class _SettingsBody extends ConsumerWidget {
   }
 }
 
-/// Header de seccion con icono.
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String title;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Selector de tema Claro / Oscuro / Sistema.
 class _ThemeModeSelector extends ConsumerWidget {
