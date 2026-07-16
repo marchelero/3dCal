@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../notifiers/calculations_notifier.dart';
 
 /// Detalle de una cotizacion guardada. Readonly — version mejorada.
@@ -30,27 +31,12 @@ class CalculationDetailPage extends ConsumerWidget {
             onPressed: calc == null
                 ? null
                 : () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('Eliminar cotizacion'),
-                        content:
-                            const Text('¿Eliminar definitivamente?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(context, false),
-                            child: const Text('Cancelar'),
-                          ),
-                          FilledButton(
-                            onPressed: () =>
-                                Navigator.pop(context, true),
-                            child: const Text('Eliminar'),
-                          ),
-                        ],
-                      ),
+                    final confirm = await showConfirmDialog(
+                      context,
+                      title: 'Eliminar cotizacion',
+                      message: '¿Eliminar definitivamente?',
                     );
-                    if (confirm == true && context.mounted) {
+                    if (confirm && context.mounted) {
                       await ref
                           .read(calculationsNotifierProvider.notifier)
                           .delete(calcId);

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../../shared/widgets/empty_view.dart';
 import '../../../../../shared/widgets/error_view.dart';
 import '../../../../../shared/widgets/loading_view.dart';
@@ -116,24 +117,12 @@ class _FilamentTile extends ConsumerWidget {
       case _TileAction.setDefault:
         await notifier.setAsDefault(filament.id);
       case _TileAction.delete:
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Eliminar filamento'),
-            content: Text('¿Eliminar "${filament.name}"?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
+        final confirm = await showConfirmDialog(
+          context,
+          title: 'Eliminar filamento',
+          message: '¿Eliminar "${filament.name}"?',
         );
-        if (confirm == true) {
+        if (confirm) {
           await notifier.delete(filament.id);
         }
     }

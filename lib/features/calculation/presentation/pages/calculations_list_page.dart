@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -233,24 +234,12 @@ class _PopupMenu extends StatelessWidget {
       case _TileAction.toggleSold:
         await notifier.toggleSold(calc.id, !calc.isSold);
       case _TileAction.delete:
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Eliminar cotizacion'),
-            content: Text('¿Eliminar permanentemente?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
+        final confirm = await showConfirmDialog(
+          context,
+          title: 'Eliminar cotizacion',
+          message: '¿Eliminar permanentemente?',
         );
-        if (confirm == true) {
+        if (confirm) {
           await notifier.delete(calc.id);
         }
     }
