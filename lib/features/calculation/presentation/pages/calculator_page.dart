@@ -13,12 +13,12 @@ import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
+import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
+import '../../domain/entities/calculation_output.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
-import '../widgets/decimal_input_field.dart';
-import '../../domain/entities/calculation_output.dart';
 
 /// Pantalla principal del calculator con UX mejorada.
 ///
@@ -62,8 +62,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _labelCtrl = TextEditingController(text: initial.label);
 
     for (final c in [
-      _weightCtrl, _hoursCtrl, _minutesCtrl, _discountCtrl,
-      _priceCtrl, _gramsCtrl,
+      _weightCtrl,
+      _hoursCtrl,
+      _minutesCtrl,
+      _discountCtrl,
+      _priceCtrl,
+      _gramsCtrl,
     ]) {
       c.addListener(_scheduleDraftSave);
     }
@@ -84,9 +88,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (!mounted) return;
       if (draft != null) {
         // Restaurar el draft en notifier y sincronizar controllers.
-        ref
-            .read(calculatorNotifierProvider.notifier)
-            .restoreFromDraft(draft);
+        ref.read(calculatorNotifierProvider.notifier).restoreFromDraft(draft);
         if (!mounted) return;
         _weightCtrl.text = draft.weight;
         _hoursCtrl.text = draft.printHours;
@@ -100,11 +102,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       // Sin draft persistido: cargar defaults del filamento por defecto.
       final defaultFilament = ref.read(defaultFilamentProvider);
       if (defaultFilament != null) {
-        ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
-              pricePerBobbin:
-                  defaultFilament.pricePerBobbin.toStringAsFixed(2),
-              gramsPerBobbin:
-                  defaultFilament.gramsPerBobbin.toStringAsFixed(0),
+        ref
+            .read(calculatorNotifierProvider.notifier)
+            .loadFilamentDefaults(
+              pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(2),
+              gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(0),
             );
         if (!mounted) return;
         final updated = ref.read(calculatorNotifierProvider);
@@ -225,18 +227,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
     if (result == null || !mounted) return;
     try {
-      final id = await ref.read(calculatorNotifierProvider.notifier).save(
-            clientName: result.clientName,
-          );
+      final id = await ref
+          .read(calculatorNotifierProvider.notifier)
+          .save(clientName: result.clientName);
       if (!mounted) return;
       if (id != null) {
         await ref.read(draftStorageProvider).clear();
         if (!mounted) return;
       }
       if (id == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo guardar.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No se pudo guardar.')));
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
@@ -247,9 +249,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -303,7 +305,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               children: [
                 _buildLabelField(theme),
                 const SizedBox(height: 12),
-                DecimalInputField(
+                NumericInputField(
                   label: 'Peso de la pieza',
                   controller: _weightCtrl,
                   onChanged: notifier.setWeight,
@@ -345,7 +347,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             child: Row(
               children: [
                 Expanded(
-                  child: DecimalInputField(
+                  child: NumericInputField(
                     label: 'Horas',
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
@@ -354,7 +356,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DecimalInputField(
+                  child: NumericInputField(
                     label: 'Minutos',
                     controller: _minutesCtrl,
                     onChanged: notifier.setPrintMinutes,
@@ -371,7 +373,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           SectionCard(
             icon: Icons.local_offer_rounded,
             title: 'Descuento',
-            child: DecimalInputField(
+            child: NumericInputField(
               label: 'Descuento',
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
@@ -492,7 +494,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             child: Row(
               children: [
                 Expanded(
-                  child: DecimalInputField(
+                  child: NumericInputField(
                     label: 'Horas',
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
@@ -501,7 +503,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DecimalInputField(
+                  child: NumericInputField(
                     label: 'Minutos',
                     controller: _minutesCtrl,
                     onChanged: notifier.setPrintMinutes,
@@ -518,7 +520,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           SectionCard(
             icon: Icons.local_offer_rounded,
             title: 'Descuento',
-            child: DecimalInputField(
+            child: NumericInputField(
               label: 'Descuento',
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
@@ -598,7 +600,7 @@ class _FilamentSection extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: DecimalInputField(
+              child: NumericInputField(
                 label: 'Precio bobina',
                 controller: priceCtrl,
                 onChanged: onPriceChanged,
@@ -608,7 +610,7 @@ class _FilamentSection extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: DecimalInputField(
+              child: NumericInputField(
                 label: 'Gramos bobina',
                 controller: gramsCtrl,
                 onChanged: onGramsChanged,
@@ -626,14 +628,20 @@ class _FilamentSection extends ConsumerWidget {
                 _ActionChip(
                   icon: Icons.star_rounded,
                   label: 'Usar ${defaultFilament.name}',
-                  onTap: () => _loadFilament(ref, defaultFilament, priceCtrl, gramsCtrl),
+                  onTap: () =>
+                      _loadFilament(ref, defaultFilament, priceCtrl, gramsCtrl),
                 ),
               const SizedBox(width: 8),
               _ActionChip(
                 icon: Icons.inventory_2_rounded,
                 label: 'Catalogo',
-                onTap: () =>
-                    _showFilamentDialog(context, ref, filaments, priceCtrl, gramsCtrl),
+                onTap: () => _showFilamentDialog(
+                  context,
+                  ref,
+                  filaments,
+                  priceCtrl,
+                  gramsCtrl,
+                ),
               ),
             ],
           ),
@@ -642,9 +650,15 @@ class _FilamentSection extends ConsumerWidget {
     );
   }
 
-  void _loadFilament(WidgetRef ref, Filament f,
-      TextEditingController priceCtrl, TextEditingController gramsCtrl) {
-    ref.read(calculatorNotifierProvider.notifier).loadFilamentDefaults(
+  void _loadFilament(
+    WidgetRef ref,
+    Filament f,
+    TextEditingController priceCtrl,
+    TextEditingController gramsCtrl,
+  ) {
+    ref
+        .read(calculatorNotifierProvider.notifier)
+        .loadFilamentDefaults(
           pricePerBobbin: f.pricePerBobbin.toStringAsFixed(2),
           gramsPerBobbin: f.gramsPerBobbin.toStringAsFixed(0),
         );
@@ -761,8 +775,11 @@ class _PrinterIndicator extends ConsumerWidget {
                 color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.print_rounded,
-                  size: 20, color: theme.colorScheme.onPrimaryContainer),
+              child: Icon(
+                Icons.print_rounded,
+                size: 20,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -771,26 +788,36 @@ class _PrinterIndicator extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(activePrinter.name,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          activePrinter.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         Text(
                           activePrinter.brand != null &&
                                   activePrinter.brand!.isNotEmpty
                               ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
                               : '${activePrinter.averageWatts} W',
                           style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant),
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     )
-                  : Text('Sin impresora registrada',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  : Text(
+                      'Sin impresora registrada',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
             ),
             if (printers.isNotEmpty)
-              Icon(Icons.chevron_right_rounded,
-                  size: 20, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
           ],
         ),
       ),
@@ -814,9 +841,7 @@ class _PrinterIndicator extends ConsumerWidget {
             itemBuilder: (_, i) {
               final p = printers[i];
               return ListTile(
-                leading: AvatarIcon(
-                  icon: Icons.print_rounded,
-                ),
+                leading: AvatarIcon(icon: Icons.print_rounded),
                 title: Text(p.name),
                 subtitle: Text(
                   '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
@@ -852,18 +877,18 @@ class _MaterialCtrls {
   });
 
   factory _MaterialCtrls.empty() => _MaterialCtrls(
-        label: TextEditingController(),
-        weight: TextEditingController(),
-        price: TextEditingController(),
-        grams: TextEditingController(),
-      );
+    label: TextEditingController(),
+    weight: TextEditingController(),
+    price: TextEditingController(),
+    grams: TextEditingController(),
+  );
 
   factory _MaterialCtrls.fromRow(MaterialRow r) => _MaterialCtrls(
-        label: TextEditingController(text: r.label),
-        weight: TextEditingController(text: r.weight),
-        price: TextEditingController(text: r.pricePerBobbin),
-        grams: TextEditingController(text: r.gramsPerBobbin),
-      );
+    label: TextEditingController(text: r.label),
+    weight: TextEditingController(text: r.weight),
+    price: TextEditingController(text: r.pricePerBobbin),
+    grams: TextEditingController(text: r.gramsPerBobbin),
+  );
 
   final TextEditingController label;
   final TextEditingController weight;
@@ -941,8 +966,7 @@ class _MaterialRowTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text('Material ${index + 1}',
-                  style: theme.textTheme.titleSmall),
+              Text('Material ${index + 1}', style: theme.textTheme.titleSmall),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.delete_outline_rounded),
@@ -969,7 +993,7 @@ class _MaterialRowTile extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: DecimalInputField(
+                child: NumericInputField(
                   label: 'Peso',
                   controller: ctrls.weight,
                   onChanged: (v) => _emit(),
@@ -978,7 +1002,7 @@ class _MaterialRowTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: DecimalInputField(
+                child: NumericInputField(
                   label: 'Precio bobina',
                   controller: ctrls.price,
                   onChanged: (v) => _emit(),
@@ -987,7 +1011,7 @@ class _MaterialRowTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: DecimalInputField(
+                child: NumericInputField(
                   label: 'Gramos / bobina',
                   controller: ctrls.grams,
                   onChanged: (v) => _emit(),
@@ -1002,12 +1026,14 @@ class _MaterialRowTile extends StatelessWidget {
   }
 
   void _emit() {
-    onChanged(_MaterialUpdate(
-      label: ctrls.label.text,
-      weight: ctrls.weight.text,
-      pricePerBobbin: ctrls.price.text,
-      gramsPerBobbin: ctrls.grams.text,
-    ));
+    onChanged(
+      _MaterialUpdate(
+        label: ctrls.label.text,
+        weight: ctrls.weight.text,
+        pricePerBobbin: ctrls.price.text,
+        gramsPerBobbin: ctrls.grams.text,
+      ),
+    );
   }
 }
 
@@ -1063,7 +1089,8 @@ class _OutputSectionState extends ConsumerState<_OutputSection> {
           _SummaryCard(
             output: output,
             label: state.label,
-            discountPct: state.detailDiscountPct?.toStringAsFixed(0) ??
+            discountPct:
+                state.detailDiscountPct?.toStringAsFixed(0) ??
                 state.discountPct,
             showDetail: state.showDetail,
             onToggleDetail: () =>
@@ -1097,9 +1124,9 @@ class _CalculatingAnimation extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Calculando...',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: color.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: color.onSurfaceVariant),
           ),
         ],
       ),
@@ -1124,7 +1151,11 @@ class _EmptyOutput extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.info_outline_rounded, size: 32, color: color.onSurfaceVariant),
+          Icon(
+            Icons.info_outline_rounded,
+            size: 32,
+            color: color.onSurfaceVariant,
+          ),
           const SizedBox(height: 12),
           Text(
             'Completa peso, precio y tiempo de impresion\npara ver la cotizacion.',
@@ -1273,7 +1304,9 @@ class _SummaryCard extends StatelessWidget {
           Align(
             child: TextButton.icon(
               icon: Icon(
-                showDetail ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                showDetail
+                    ? Icons.visibility_rounded
+                    : Icons.visibility_off_rounded,
                 size: 18,
                 color: color.onPrimaryContainer,
               ),
@@ -1333,40 +1366,61 @@ class _DetailSection extends StatelessWidget {
         _dr('Costo material', formatBob(materialCost), s, tc: tc),
         _dr('Costo energia', formatBob(electricCost), s, tc: tc),
         _dr('Costo base', formatBob(baseCost), s, tc: tc),
-        _dr('Ganancia', formatBob(profitAmount), s,
-            tc: theme.colorScheme.primary, isProfit: true),
+        _dr(
+          'Ganancia',
+          formatBob(profitAmount),
+          s,
+          tc: theme.colorScheme.primary,
+          isProfit: true,
+        ),
         const Divider(height: 12, color: Colors.white24),
-        _dr('Costo total final', formatBob(totalFinal), s, tc: tc, isTotal: true),
+        _dr(
+          'Costo total final',
+          formatBob(totalFinal),
+          s,
+          tc: tc,
+          isTotal: true,
+        ),
       ],
     );
   }
 
-  Widget _dr(String label, String value, TextStyle? style,
-      {Color? tc, bool isProfit = false, bool isTotal = false}) {
+  Widget _dr(
+    String label,
+    String value,
+    TextStyle? style, {
+    Color? tc,
+    bool isProfit = false,
+    bool isTotal = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: style?.copyWith(
-                fontWeight: isTotal ? FontWeight.w600 : null,
-                color: tc?.withValues(alpha: isTotal ? 1.0 : 0.8),
-              )),
-          Text(value,
-              style: style?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-                fontWeight: isTotal
-                    ? FontWeight.bold
-                    : isProfit
-                        ? FontWeight.w600
-                        : FontWeight.w500,
-                color: isProfit
-                    ? tc
-                    : isTotal
-                        ? tc
-                        : tc?.withValues(alpha: 0.8),
-              )),
+          Text(
+            label,
+            style: style?.copyWith(
+              fontWeight: isTotal ? FontWeight.w600 : null,
+              color: tc?.withValues(alpha: isTotal ? 1.0 : 0.8),
+            ),
+          ),
+          Text(
+            value,
+            style: style?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontWeight: isTotal
+                  ? FontWeight.bold
+                  : isProfit
+                  ? FontWeight.w600
+                  : FontWeight.w500,
+              color: isProfit
+                  ? tc
+                  : isTotal
+                  ? tc
+                  : tc?.withValues(alpha: 0.8),
+            ),
+          ),
         ],
       ),
     );
@@ -1454,10 +1508,7 @@ class _SaveDialogState extends State<_SaveDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Guardar'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Guardar')),
       ],
     );
   }

@@ -9,12 +9,12 @@ import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/router/app_router.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
-import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculations_list_page.dart';
+import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/home_page.dart';
-import 'package:tresdcal/features/calculation/presentation/widgets/decimal_input_field.dart';
 import 'package:tresdcal/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:tresdcal/features/dashboard/presentation/widgets/profit_bar_chart.dart';
+import 'package:tresdcal/shared/widgets/numeric_input_field.dart';
 
 /// Integration test smoke (plan §9C reducido).
 ///
@@ -43,8 +43,9 @@ void main() {
     await db.close();
   });
 
-  testWidgets('Home renderiza 3 botones principales (AC-1 baseline)',
-      (tester) async {
+  testWidgets('Home renderiza 3 botones principales (AC-1 baseline)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -64,8 +65,9 @@ void main() {
     expect(find.text('Dashboard'), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('Tap Nueva → CalculatorPage con form completo (AC-1)',
-      (tester) async {
+  testWidgets('Tap Nueva → CalculatorPage con form completo (AC-1)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -81,42 +83,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CalculatorPage), findsOneWidget);
-    expect(find.widgetWithText(DecimalInputField, 'Peso'), findsOneWidget);
-    expect(find.widgetWithText(DecimalInputField, 'Horas'), findsOneWidget);
+    expect(find.widgetWithText(NumericInputField, 'Peso'), findsOneWidget);
+    expect(find.widgetWithText(NumericInputField, 'Horas'), findsOneWidget);
   });
 
-  testWidgets('Form completo: input 4 campos → output BOB visible (AC-1, AC-2)',
-      (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(db),
-          sharedPreferencesProvider.overrideWithValue(prefs),
-        ],
-        child: const TresdcalApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'Form completo: input 4 campos → output BOB visible (AC-1, AC-2)',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+          child: const TresdcalApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Nueva cotizacion'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Nueva cotizacion'));
+      await tester.pumpAndSettle();
 
-    await tester.enterText(
-        find.widgetWithText(DecimalInputField, 'Peso'), '100');
-    await tester.pumpAndSettle();
-    await tester.enterText(
-        find.widgetWithText(DecimalInputField, 'Horas'), '5');
-    await tester.pumpAndSettle();
-    await tester.enterText(
-        find.widgetWithText(DecimalInputField, 'Precio bobina'), '120');
-    await tester.pumpAndSettle();
-    // Gramos / bobina ya no se muestra — default 1000 internamente.
+      await tester.enterText(
+        find.widgetWithText(NumericInputField, 'Peso'),
+        '100',
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(NumericInputField, 'Horas'),
+        '5',
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(NumericInputField, 'Precio bobina'),
+        '120',
+      );
+      await tester.pumpAndSettle();
+      // Gramos / bobina ya no se muestra — default 1000 internamente.
 
-    expect(find.textContaining('Bs.'), findsWidgets);
-  });
+      expect(find.textContaining('Bs.'), findsWidgets);
+    },
+  );
 
-  testWidgets('Tab switch: Inicio → Dashboard via NavigationBar (AC-8.1)',
-      (tester) async {
+  testWidgets('Tab switch: Inicio → Dashboard via NavigationBar (AC-8.1)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -140,8 +151,9 @@ void main() {
     expect(find.byType(DashboardPage), findsOneWidget);
   });
 
-  testWidgets('Tab switch: Inicio → Historial via NavigationBar (AC-7.1)',
-      (tester) async {
+  testWidgets('Tab switch: Inicio → Historial via NavigationBar (AC-7.1)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -162,8 +174,9 @@ void main() {
     expect(find.byType(CalculationsListPage), findsOneWidget);
   });
 
-  testWidgets('Dashboard vacio: muestra EmptyView con CTA (AC-8.4)',
-      (tester) async {
+  testWidgets('Dashboard vacio: muestra EmptyView con CTA (AC-8.4)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
