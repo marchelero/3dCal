@@ -412,5 +412,8 @@ final _calculationByIdProvider =
 
 final _materialsOfProvider =
     FutureProvider.family<List<CalculationMaterial>, int>((ref, id) {
-  return ref.read(calculationRepositoryProvider).materialsOf(id);
+  // watch (no read) para que los overrides de repository en tests sean
+  // respetados y para que el provider reaccione a cambios en el repo.
+  final repo = ref.watch(calculationRepositoryProvider);
+  return repo.materialsOf(id);
 });
