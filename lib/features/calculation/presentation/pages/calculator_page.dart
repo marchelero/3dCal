@@ -1320,7 +1320,11 @@ class _SummaryCard extends StatelessWidget {
 
           // Detail breakdown
           if (showDetail) ...[
-            const Divider(height: 8, color: Colors.white24),
+            const SizedBox(height: 8),
+            Divider(
+              height: 1,
+              color: color.onPrimaryContainer.withValues(alpha: 0.2),
+            ),
             const SizedBox(height: 8),
             _DetailSection(
               materialCost: output.materialCost,
@@ -1373,7 +1377,13 @@ class _DetailSection extends StatelessWidget {
           tc: theme.colorScheme.primary,
           isProfit: true,
         ),
-        const Divider(height: 12, color: Colors.white24),
+        const SizedBox(height: 12),
+        Divider(
+          height: 1,
+          color: (textColor ?? theme.colorScheme.onSurface)
+              .withValues(alpha: 0.2),
+        ),
+        const SizedBox(height: 12),
         _dr(
           'Costo total final',
           formatBob(totalFinal),
