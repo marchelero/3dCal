@@ -81,34 +81,39 @@ class _FilamentTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: filament.isDefault
-          ? const DefaultBadge()
-          : const Icon(Icons.label_outline),
-      title: Text(filament.name),
-      subtitle: Text(_subtitle()),
-      trailing: PopupMenuButton<_TileAction>(
-        onSelected: (a) => _handle(context, ref, a),
-        itemBuilder: (_) => const [
-          PopupMenuItem<_TileAction>(
-            value: _TileAction.setDefault,
-            child: ListTile(
-              leading: Icon(Icons.star),
-              title: Text(EsBO.filamentDefaultToggle),
+    return Semantics(
+      container: true,
+      label: '${filament.name}, ${_subtitle()}'
+          '${filament.isDefault ? ", ${EsBO.filamentDefaultToggle}" : ""}',
+      child: ListTile(
+        leading: filament.isDefault
+            ? const DefaultBadge()
+            : const Icon(Icons.label_outline),
+        title: Text(filament.name),
+        subtitle: Text(_subtitle()),
+        trailing: PopupMenuButton<_TileAction>(
+          onSelected: (a) => _handle(context, ref, a),
+          itemBuilder: (_) => const [
+            PopupMenuItem<_TileAction>(
+              value: _TileAction.setDefault,
+              child: ListTile(
+                leading: Icon(Icons.star),
+                title: Text(EsBO.filamentDefaultToggle),
+              ),
             ),
-          ),
-          PopupMenuItem<_TileAction>(
-            value: _TileAction.delete,
-            child: ListTile(
-              leading: Icon(Icons.delete_outline),
-              title: Text(EsBO.commonDelete),
+            PopupMenuItem<_TileAction>(
+              value: _TileAction.delete,
+              child: ListTile(
+                leading: Icon(Icons.delete_outline),
+                title: Text(EsBO.commonDelete),
+              ),
             ),
-          ),
-        ],
-      ),
-      onTap: () => context.push(
-        '/settings/filaments/${filament.id}',
-        extra: filament,
+          ],
+        ),
+        onTap: () => context.push(
+          '/settings/filaments/${filament.id}',
+          extra: filament,
+        ),
       ),
     );
   }

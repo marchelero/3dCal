@@ -84,34 +84,40 @@ class _CalculationCard extends ConsumerWidget {
     final color = theme.colorScheme;
     final client = calc.clientName;
 
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push('/history/${calc.id}', extra: calc),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Leading icon
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: calc.isSold
-                      ? color.tertiaryContainer
-                      : color.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+    return Semantics(
+      container: true,
+      label: '${_title()}, ${formatBob(Decimal.parse(calc.totalPriceSnapshot.toString()))}'
+          '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => context.push('/history/${calc.id}', extra: calc),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Leading icon (decorative — sale status already in label)
+                ExcludeSemantics(
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: calc.isSold
+                          ? color.tertiaryContainer
+                          : color.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      calc.isSold
+                          ? Icons.check_circle_rounded
+                          : Icons.receipt_long_rounded,
+                      color: calc.isSold
+                          ? color.tertiary
+                          : color.onSurfaceVariant,
+                      size: 22,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  calc.isSold
-                      ? Icons.check_circle_rounded
-                      : Icons.receipt_long_rounded,
-                  color: calc.isSold
-                      ? color.tertiary
-                      : color.onSurfaceVariant,
-                  size: 22,
-                ),
-              ),
               const SizedBox(width: 14),
               // Body
               Expanded(
@@ -188,6 +194,7 @@ class _CalculationCard extends ConsumerWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

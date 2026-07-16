@@ -73,34 +73,39 @@ class _PrinterTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: printer.isDefault
-          ? const DefaultBadge()
-          : const Icon(Icons.print),
-      title: Text(printer.name),
-      subtitle: Text(_subtitle(printer)),
-      trailing: PopupMenuButton<_TileAction>(
-        onSelected: (a) => _handle(context, ref, a),
-        itemBuilder: (_) => const [
-          PopupMenuItem<_TileAction>(
-            value: _TileAction.setDefault,
-            child: ListTile(
-              leading: Icon(Icons.star),
-              title: Text(EsBO.filamentDefaultToggle),
+    return Semantics(
+      container: true,
+      label: '${printer.name}, ${_subtitle(printer)}'
+          '${printer.isDefault ? ", ${EsBO.filamentDefaultToggle}" : ""}',
+      child: ListTile(
+        leading: printer.isDefault
+            ? const DefaultBadge()
+            : const Icon(Icons.print),
+        title: Text(printer.name),
+        subtitle: Text(_subtitle(printer)),
+        trailing: PopupMenuButton<_TileAction>(
+          onSelected: (a) => _handle(context, ref, a),
+          itemBuilder: (_) => const [
+            PopupMenuItem<_TileAction>(
+              value: _TileAction.setDefault,
+              child: ListTile(
+                leading: Icon(Icons.star),
+                title: Text(EsBO.filamentDefaultToggle),
+              ),
             ),
-          ),
-          PopupMenuItem<_TileAction>(
-            value: _TileAction.delete,
-            child: ListTile(
-              leading: Icon(Icons.delete_outline),
-              title: Text(EsBO.commonDelete),
+            PopupMenuItem<_TileAction>(
+              value: _TileAction.delete,
+              child: ListTile(
+                leading: Icon(Icons.delete_outline),
+                title: Text(EsBO.commonDelete),
+              ),
             ),
-          ),
-        ],
-      ),
-      onTap: () => context.push(
-        '/settings/printers/${printer.id}',
-        extra: printer,
+          ],
+        ),
+        onTap: () => context.push(
+          '/settings/printers/${printer.id}',
+          extra: printer,
+        ),
       ),
     );
   }
