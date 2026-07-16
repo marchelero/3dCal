@@ -1,11 +1,11 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/filaments_notifier.dart';
 
 /// Form de filamento. Modo create (sin `existing`) o edit (con `existing`).
@@ -169,30 +169,19 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 decoration: const InputDecoration(
                   labelText: 'Precio bobina (BOB)',
                   helperText: 'Costo del rollo completo',
-                  border: OutlineInputBorder(),
                 ),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-                ],
                 validator: _requiredNumber,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              NumericInputField(
+                label: 'Gramos por bobina',
                 controller: _gramsCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Gramos por bobina',
-                  helperText: 'Tipico 1000',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
+                allowDecimals: false,
+                helperText: 'Tipico 1000',
                 textInputAction: TextInputAction.done,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                validator: (v) => _requiredNumber(v, integer: true),
               ),
               const SizedBox(height: 16),
               SwitchListTile(

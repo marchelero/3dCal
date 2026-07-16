@@ -3,18 +3,23 @@ import 'package:flutter/services.dart';
 
 // ignore_for_file: public_member_api_docs
 
-/// TextField especializado para inputs numericos.
+/// Input especializado para valores numericos.
 ///
-/// Acepta `.` o `,` como separador decimal (cuando [allowDecimals] es `true`).
-/// El teclado es numerico con o sin punto decimal segun [allowDecimals].
-/// Validacion en vivo: borde rojo si el valor es invalido (no parseable) — solo
-/// para inputs no vacios. No muestra error hasta que el user haya editado el campo.
+/// - Teclado numerico con o sin punto decimal segun [allowDecimals].
+/// - Filtro automatico: descarta caracteres no numericos (o no decimales).
+/// - Validacion en vivo: error si el texto no parsea como numero (o entero,
+///   si [allowDecimals] es `false`). Solo se muestra despues de la primera
+///   interaccion.
+/// - Si [validator] se provee, se integra como [FormField] (validacion en
+///   submit del `Form` padre). Si no, el field se renderiza como [TextField]
+///   independiente (util para auto-save on blur, draft, etc).
+/// - [onBlur] se invoca al perder foco con el string raw (util para
+///   auto-save en settings).
 ///
-/// **No** maneja el submit ni el estado global. El parent debe:
-/// 1. pasar `controller`, `onChanged` y/u `onBlur`.
-/// 2. mantener un `TextEditingController` con el texto raw.
+/// **Importante**: el parent debe manejar el ciclo de vida del [controller]
+/// (crearlo en `initState`, llamar `dispose()` en `dispose`).
 ///
-/// Ejemplo basico (con decimales):
+/// Ejemplo standalone (no Form):
 /// ```dart
 /// NumericInputField(
 ///   label: 'Peso de la pieza',
@@ -25,14 +30,16 @@ import 'package:flutter/services.dart';
 /// )
 /// ```
 ///
-/// Ejemplo entero (solo digitos):
+/// Ejemplo en un Form (entero, validado):
 /// ```dart
-/// NumericInputField(
-///   label: 'Consumo promedio (W)',
-///   controller: _wattsCtrl,
-///   allowDecimals: false,
-///   onBlur: (v) => notifier.updateWatts(int.parse(v)),
-///   textInputAction: TextInputAction.done,
+/// Form(
+///   key: _formKey,
+///   child: NumericInputField(
+///     label: 'Gramos por bobina',
+///     controller: _gramsCtrl,
+///     allowDecimals: false,
+///     validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
+///   ),
 /// )
 /// ```
 class NumericInputField extends StatefulWidget {
@@ -46,6 +53,7 @@ class NumericInputField extends StatefulWidget {
     this.onBlur,
     this.autofocus = false,
     this.textInputAction = TextInputAction.next,
+    this.validator,
     super.key,
   });
 
@@ -79,6 +87,10 @@ class NumericInputField extends StatefulWidget {
   /// Accion de teclado (default: `next`).
   final TextInputAction textInputAction;
 
+  /// Validador opcional. Si se provee, el widget se monta como [FormField]
+  /// para integrarse con un `Form` padre (validacion en submit).
+  final FormFieldValidator<String>? validator;
+
   @override
   State<NumericInputField> createState() => _NumericInputFieldState();
 }
@@ -104,7 +116,7 @@ class _NumericInputFieldState extends State<NumericInputField> {
 
   void _onTextChanged() {
     // Re-evaluar la validez cuando el texto cambia desde fuera (ej: reset).
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   void _handleFocusChange() {
@@ -119,12 +131,36 @@ class _NumericInputFieldState extends State<NumericInputField> {
     widget.onChanged?.call(value);
   }
 
+  /// Validador interno: rechaza strings que no parsean como numero.
+  /// Retorna `null` si la validacion interna pasa.
+  String? _internalValidator(String? value) {
+    if (!_hasInteracted) return null;
+    final raw = (value ?? widget.controller.text).trim();
+    if (raw.isEmpty) return null;
+    final cleaned = raw.replaceAll(',', '.');
+    final n = num.tryParse(cleaned);
+    if (n == null) return 'Numero invalido';
+    if (!widget.allowDecimals) {
+      if (cleaned.contains('.') || cleaned.contains(',')) {
+        return 'Numero invalido';
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hasError = _hasError();
-    return TextField(
+    // Combinar validador interno + externo si validator fue provisto.
+    final combined = widget.validator == null
+        ? null
+        : (String? value) {
+            final internal = _internalValidator(value);
+            if (internal != null) return internal;
+            return widget.validator!(value);
+          };
+
+    final textField = TextFormField(
       controller: widget.controller,
-      onChanged: _handleChange,
       autofocus: widget.autofocus,
       focusNode: _focusNode,
       keyboardType: TextInputType.numberWithOptions(
@@ -138,26 +174,48 @@ class _NumericInputFieldState extends State<NumericInputField> {
       ],
       decoration: InputDecoration(
         labelText: widget.label,
-        helperText: hasError ? null : widget.helperText,
-        errorText: hasError ? 'Numero invalido' : null,
         suffixText: widget.suffix,
       ),
+      // Si no hay validator, manejamos errorText en vivo via _onTextChanged.
+      onChanged: _handleChange,
+      validator: combined,
     );
-  }
 
-  /// Muestra error solo si: user interactuo y texto no vacio no parsea como
-  /// numero (entero si !allowDecimals).
-  bool _hasError() {
-    if (!_hasInteracted) return false;
-    final raw = widget.controller.text.trim();
-    if (raw.isEmpty) return false;
-    final cleaned = raw.replaceAll(',', '.');
-    final n = num.tryParse(cleaned);
-    if (n == null) return true;
-    if (!widget.allowDecimals) {
-      // No aceptar "1.0" o "1,0" si !allowDecimals
-      if (cleaned.contains('.') || cleaned.contains(',')) return true;
+    if (widget.validator != null) {
+      // TextFormField ya es FormField; no necesitamos wrapper extra.
+      return textField;
     }
-    return false;
+
+    // Sin validator: usar ValueListenableBuilder para mostrar el errorText
+    // interno en vivo sin requerir un FormField wrapper.
+    return ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        final error = _internalValidator(widget.controller.text);
+        // No podemos reutilizar textField porque ya cambio el decoration
+        // arriba. Construimos un TextField equivalente aqui.
+        return TextField(
+          controller: widget.controller,
+          onChanged: _handleChange,
+          autofocus: widget.autofocus,
+          focusNode: _focusNode,
+          keyboardType: TextInputType.numberWithOptions(
+            decimal: widget.allowDecimals,
+          ),
+          textInputAction: widget.textInputAction,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(
+              widget.allowDecimals ? RegExp('[0-9.,]') : RegExp('[0-9]'),
+            ),
+          ],
+          decoration: InputDecoration(
+            labelText: widget.label,
+            helperText: error == null ? widget.helperText : null,
+            errorText: error,
+            suffixText: widget.suffix,
+          ),
+        );
+      },
+    );
   }
 }
