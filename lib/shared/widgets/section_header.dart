@@ -10,6 +10,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_spacing.dart';
+
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -29,7 +31,7 @@ class SectionHeader extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 18, color: color),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           title,
           style: theme.textTheme.titleSmall?.copyWith(

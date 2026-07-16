@@ -6,13 +6,16 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
+
 /// Widget base que pinta un rectangulo skeleton con animacion shimmer.
 class SkeletonBox extends StatefulWidget {
   const SkeletonBox({
     super.key,
     this.width,
-    this.height = 16,
-    this.borderRadius = 8,
+    this.height = AppSpacing.lg,
+    this.borderRadius = AppRadii.sm,
     this.margin,
   });
 
@@ -85,14 +88,14 @@ class SkeletonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SkeletonBox(width: 120, height: 14),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             const SkeletonBox(width: 80, height: 28),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             const SkeletonBox(width: 160, height: 12),
           ],
         ),
@@ -108,22 +111,24 @@ class HomePageSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         children: [
           const SkeletonBox(width: 64, height: 64, borderRadius: 32),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           const SkeletonBox(width: 180, height: 28),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           const SkeletonBox(width: 140, height: 16),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxxl),
           const SkeletonCard(),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           const SkeletonCard(),
-          const SizedBox(height: 16),
-          const SkeletonBox(width: double.infinity, height: 52, borderRadius: 14),
-          const SizedBox(height: 12),
-          const SkeletonBox(width: double.infinity, height: 52, borderRadius: 14),
+          const SizedBox(height: AppSpacing.lg),
+          const SkeletonBox(
+              width: double.infinity, height: 52, borderRadius: AppRadii.xl),
+          const SizedBox(height: AppSpacing.md),
+          const SkeletonBox(
+              width: double.infinity, height: 52, borderRadius: AppRadii.xl),
         ],
       ),
     );
@@ -139,33 +144,38 @@ class ListPageSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       itemCount: itemCount,
-      separatorBuilder: (_, _) => const SizedBox(height: 4),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
       itemBuilder: (_, i) => _listItemSkeleton(context),
     );
   }
 
   Widget _listItemSkeleton(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           children: [
-            const SkeletonBox(width: 40, height: 40, borderRadius: 20),
-            const SizedBox(width: 16),
+            const SkeletonBox(
+                width: 40, height: 40, borderRadius: AppRadii.xxxl),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SkeletonBox(width: 150, height: 14),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   const SkeletonBox(width: 200, height: 12),
                 ],
               ),
             ),
-            const SkeletonBox(width: 24, height: 24, borderRadius: 4),
+            const SkeletonBox(
+                width: 24, height: 24, borderRadius: AppRadii.xs),
           ],
         ),
       ),

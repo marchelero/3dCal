@@ -9,6 +9,9 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
+
 class StatTile extends StatelessWidget {
   const StatTile({
     super.key,
@@ -29,7 +32,7 @@ class StatTile extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -38,7 +41,7 @@ class StatTile extends StatelessWidget {
               height: 36,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: Icon(icon, size: 20, color: color),
             ),
@@ -51,7 +54,7 @@ class StatTile extends StatelessWidget {
                 color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(

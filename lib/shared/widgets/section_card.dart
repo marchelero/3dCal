@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_spacing.dart';
 import 'section_header.dart';
 
 class SectionCard extends StatelessWidget {
@@ -16,7 +17,7 @@ class SectionCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.accentColor,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(AppSpacing.lg),
   });
 
   final IconData icon;
@@ -38,7 +39,7 @@ class SectionCard extends StatelessWidget {
               title: title,
               accentColor: accentColor,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             child,
           ],
         ),

@@ -5,6 +5,9 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
+
 class EmptyView extends StatelessWidget {
   const EmptyView({
     super.key,
@@ -28,7 +31,7 @@ class EmptyView extends StatelessWidget {
     final color = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -37,11 +40,11 @@ class EmptyView extends StatelessWidget {
               height: 80,
               decoration: BoxDecoration(
                 color: color.secondaryContainer.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppRadii.xxxl),
               ),
               child: Icon(icon, size: 36, color: color.secondary),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -50,7 +53,7 @@ class EmptyView extends StatelessWidget {
                   ),
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
@@ -60,7 +63,7 @@ class EmptyView extends StatelessWidget {
               ),
             ],
             if (ctaLabel != null && onCta != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               FilledButton.icon(
                 onPressed: onCta,
                 icon: Icon(ctaIcon ?? Icons.arrow_forward),
