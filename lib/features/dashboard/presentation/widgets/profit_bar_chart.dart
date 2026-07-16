@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/money/currency_formatter.dart';
 import '../../../../l10n/es_bo.dart';
 
 /// Bar chart 2 barras: Cotizado vs Ganado (PRD AC-8.1/AC-8.2).
@@ -42,9 +43,12 @@ class ProfitBarChart extends StatelessWidget {
     final maxValue = quotedValue > soldValue ? quotedValue : soldValue;
     final maxY = (maxValue * 1.2).clamp(100.0, double.infinity);
 
-    return AspectRatio(
-      aspectRatio: 1.5,
-      child: BarChart(
+    return Semantics(
+      label: '${EsBO.dashboardChartQuoted} ${formatBob(totalQuoted)}, '
+          '${EsBO.dashboardChartSold} ${formatBob(totalSold)}',
+      child: AspectRatio(
+        aspectRatio: 1.5,
+        child: BarChart(
         BarChartData(
           maxY: maxY,
           minY: 0,
@@ -142,6 +146,7 @@ class ProfitBarChart extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }
