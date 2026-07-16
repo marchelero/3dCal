@@ -7,6 +7,7 @@ import '../../../../../core/database/app_database.dart';
 import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
 
@@ -98,7 +99,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error guardando: $e')),
+          AppSnackBar.error('Error guardando: $e'),
         );
       }
     } finally {

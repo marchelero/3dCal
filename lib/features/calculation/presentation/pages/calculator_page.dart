@@ -19,6 +19,7 @@ import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
+import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../domain/entities/calculation_output.dart';
@@ -222,7 +223,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final state = ref.read(calculatorNotifierProvider);
     if (!state.isValid || state.output == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Completa el form antes de guardar.')),
+        AppSnackBar.warning('Completa el form antes de guardar.'),
       );
       return;
     }
@@ -243,20 +244,17 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (id == null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('No se pudo guardar.')));
+        ).showSnackBar(AppSnackBar.error('No se pudo guardar.'));
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cotizacion #$id guardada.'),
-          duration: const Duration(seconds: 2),
-        ),
+        AppSnackBar.success('Cotizacion #$id guardada.'),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(AppSnackBar.error('Error: $e'));
     }
   }
 
