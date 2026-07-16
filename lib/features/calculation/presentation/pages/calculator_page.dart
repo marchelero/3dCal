@@ -12,6 +12,7 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
+import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
@@ -303,17 +304,17 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             // Card: Pieza
             SectionCard(
               icon: Icons.category_rounded,
-              title: 'Pieza',
+              title: EsBO.calcSectionPiece,
             child: Column(
               children: [
                 _buildLabelField(theme),
                 const SizedBox(height: 12),
                 NumericInputField(
-                  label: 'Peso de la pieza',
+                  label: EsBO.calcLabelWeight,
                   controller: _weightCtrl,
                   onChanged: notifier.setWeight,
                   suffix: 'g',
-                  helperText: 'Gramos del modelo',
+                  helperText: EsBO.calcLabelWeightHelper,
                 ),
               ],
             ),
@@ -323,7 +324,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Card: Filamento
           SectionCard(
             icon: Icons.inventory_2_rounded,
-            title: 'Filamento',
+            title: EsBO.calcSectionFilament,
             child: _FilamentSection(
               weightCtrl: _weightCtrl,
               priceCtrl: _priceCtrl,
@@ -346,12 +347,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Card: Tiempo
           SectionCard(
             icon: Icons.timer_rounded,
-            title: 'Tiempo de impresion',
+            title: EsBO.calcSectionTime,
             child: Row(
               children: [
                 Expanded(
                   child: NumericInputField(
-                    label: 'Horas',
+                    label: EsBO.calcLabelHours,
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
@@ -360,11 +361,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: NumericInputField(
-                    label: 'Minutos',
+                    label: EsBO.calcLabelMinutes,
                     controller: _minutesCtrl,
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
-                    helperText: '0-59',
+                    helperText: EsBO.calcLabelMinutesHelper,
                   ),
                 ),
               ],
@@ -375,13 +376,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Card: Descuento
           SectionCard(
             icon: Icons.local_offer_rounded,
-            title: 'Descuento',
+            title: EsBO.calcSectionDiscount,
             child: NumericInputField(
               label: 'Descuento',
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
               suffix: '%',
-              helperText: 'Porcentaje sobre el total final',
+              helperText: EsBO.calcLabelDiscountHelper,
             ),
           ),
           const SizedBox(height: 20),
@@ -393,7 +394,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Save button
           FilledButton.icon(
             icon: const Icon(Icons.save_rounded),
-            label: const Text('Guardar cotizacion'),
+            label: const Text(EsBO.calcBtnSave),
             onPressed: _showSaveDialog,
           ),
           const SizedBox(height: 12),
@@ -402,7 +403,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           Center(
             child: TextButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Restablecer valores'),
+              label: const Text(EsBO.calcBtnReset),
               onPressed: _resetAll,
             ),
           ),
@@ -435,7 +436,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             // Card: Pieza
             SectionCard(
               icon: Icons.category_rounded,
-              title: 'Pieza',
+              title: EsBO.calcSectionPiece,
               child: _buildLabelField(theme),
             ),
             const SizedBox(height: 12),
@@ -496,12 +497,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Card: Tiempo
           SectionCard(
             icon: Icons.timer_rounded,
-            title: 'Tiempo de impresion',
+            title: EsBO.calcSectionTime,
             child: Row(
               children: [
                 Expanded(
                   child: NumericInputField(
-                    label: 'Horas',
+                    label: EsBO.calcLabelHours,
                     controller: _hoursCtrl,
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
@@ -510,11 +511,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: NumericInputField(
-                    label: 'Minutos',
+                    label: EsBO.calcLabelMinutes,
                     controller: _minutesCtrl,
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
-                    helperText: '0-59',
+                    helperText: EsBO.calcLabelMinutesHelper,
                   ),
                 ),
               ],
@@ -525,13 +526,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Card: Descuento
           SectionCard(
             icon: Icons.local_offer_rounded,
-            title: 'Descuento',
+            title: EsBO.calcSectionDiscount,
             child: NumericInputField(
               label: 'Descuento',
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
               suffix: '%',
-              helperText: 'Porcentaje sobre el total final',
+              helperText: EsBO.calcLabelDiscountHelper,
             ),
           ),
           const SizedBox(height: 20),
@@ -543,7 +544,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Save button
           FilledButton.icon(
             icon: const Icon(Icons.save_rounded),
-            label: const Text('Guardar cotizacion'),
+            label: const Text(EsBO.calcBtnSave),
             onPressed: _showSaveDialog,
           ),
           const SizedBox(height: 12),
@@ -551,7 +552,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           Center(
             child: TextButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Restablecer valores'),
+              label: const Text(EsBO.calcBtnReset),
               onPressed: _resetAll,
             ),
           ),
@@ -566,8 +567,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     return TextField(
       controller: _labelCtrl,
       decoration: const InputDecoration(
-        labelText: 'Etiqueta (opcional)',
-        helperText: 'Ej: Soporte pared, Engranaje PETG',
+        labelText: EsBO.calcLabelOptional,
+        helperText: EsBO.calcLabelOptionalHelper,
         prefixIcon: Icon(Icons.label_outline),
       ),
     );
@@ -1318,7 +1319,7 @@ class _SummaryCard extends StatelessWidget {
                 color: color.onPrimaryContainer,
               ),
               label: Text(
-                showDetail ? 'Ocultar detalle' : 'Ver detalle',
+                showDetail ? EsBO.calcToggleHideDetail : EsBO.calcToggleShowDetail,
                 style: TextStyle(color: color.onPrimaryContainer),
               ),
               onPressed: onToggleDetail,
@@ -1374,11 +1375,11 @@ class _DetailSection extends StatelessWidget {
     );
     return Column(
       children: [
-        _dr('Costo material', formatBob(materialCost), s, tc: tc),
-        _dr('Costo energia', formatBob(electricCost), s, tc: tc),
-        _dr('Costo base', formatBob(baseCost), s, tc: tc),
+        _dr(EsBO.calcDetailMaterial, formatBob(materialCost), s, tc: tc),
+        _dr(EsBO.calcDetailEnergy, formatBob(electricCost), s, tc: tc),
+        _dr(EsBO.calcDetailBase, formatBob(baseCost), s, tc: tc),
         _dr(
-          'Ganancia',
+          EsBO.calcDetailProfit,
           formatBob(profitAmount),
           s,
           tc: theme.colorScheme.primary,
@@ -1392,7 +1393,7 @@ class _DetailSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _dr(
-          'Costo total final',
+          EsBO.calcDetailTotal,
           formatBob(totalFinal),
           s,
           tc: tc,
