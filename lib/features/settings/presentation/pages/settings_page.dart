@@ -10,6 +10,7 @@ import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
+import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
@@ -264,10 +265,7 @@ class _SettingsBody extends ConsumerWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        const SnackBar(
-          content: Text(EsBO.settingsSaved),
-          duration: Duration(seconds: 1),
-        ),
+        AppSnackBar.success(EsBO.settingsSaved),
       );
   }
 }
