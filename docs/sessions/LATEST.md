@@ -1,17 +1,18 @@
 # Latest Session
 
-**Date**: 2026-07-16 (segundo snapshot)
-**Slug**: visual-polish-v1
-**Path**: [2026-07-16-visual-polish-v1.md](./2026-07-16-visual-polish-v1.md)
+**Date**: 2026-07-16
+**Slug**: visual-polish-v2
+**Path**: [2026-07-16-visual-polish-v2.md](./2026-07-16-visual-polish-v2.md)
 
 ## TL;DR
 
-Visual polish v1 round 1 mergeado a main. 4 cambios visibles: hero monetary totals (displayMedium/headlineMedium), EmptyView prominente (96dp), SectionHeader con background tonal. Push OK.
+Visual polish v1+v2 mergeados a main. M1+M2 (foundation) + V1-V4 (visible). V4 = AppSnackBar con 4 variantes semanticas. 7 call sites migrados.
 
 ## Key facts
 
-- main: `595b85c`
-- Branch `feature/visual-polish-v1` borrada
-- Round previo: [2026-07-16-design-system-overhaul.md](./2026-07-16-design-system-overhaul.md) (M1 theme M3 + M2 Google Fonts)
-- Pendiente: M3 (tokens), M4 (a11y), M5 (responsive), M6 (quality gates), V4 (SnackBar semantico)
-- Artefactos: `docs/prds/2026-07-16_1754-design-system-overhaul.prd.md` (con addendum V1-V3 al final)
+- main: post-merge --no-ff de `feature/visual-polish-v2`
+- Branch `feature/visual-polish-v2` borrada
+- Push OK a origin/main
+- Pendiente: M3 (tokens), M4 (a11y), M5 (responsive), M6 (quality gates)
+- Opcional: V5+ (loading states, hero headers, skeleton placeholders)
+- Artefactos: PRD + plan en `docs/prds/` y `docs/plans/`
