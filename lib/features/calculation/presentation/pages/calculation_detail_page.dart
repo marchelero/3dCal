@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs
+
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,12 +11,19 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../settings/domain/settings.dart';
+import '../../../settings/presentation/notifiers/settings_notifier.dart';
+import '../../domain/entities/calculation_output.dart';
 import '../notifiers/calculations_notifier.dart';
+import '../state/calculator_state.dart' show MaterialCostBreakdown;
+import '../widgets/quote_image_template.dart';
 
 /// Detalle de una cotizacion guardada. Readonly — version mejorada.
 class CalculationDetailPage extends ConsumerWidget {
@@ -67,16 +76,75 @@ class CalculationDetailPage extends ConsumerWidget {
   }
 }
 
-class _Detail extends ConsumerWidget {
+class _Detail extends ConsumerStatefulWidget {
   const _Detail({required this.calc});
 
   final Calculation calc;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final materials = ref.watch(_materialsOfProvider(calc.id));
+  ConsumerState<_Detail> createState() => _DetailState();
+}
+
+class _DetailState extends ConsumerState<_Detail> {
+  final GlobalKey _captureKey = GlobalKey();
+  bool _isBusy = false;
+  bool _showDetail = false;
+
+  Future<void> _handleShare() async {
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
+    try {
+      final bytes = await captureQuoteImageBytes(_captureKey);
+      await shareQuoteImage(bytes);
+    } on ShareQuoteException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.error('${EsBO.calcShareError}: $e'),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Future<void> _handleSave() async {
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
+    try {
+      final bytes = await captureQuoteImageBytes(_captureKey);
+      await saveQuoteImage(bytes);
+      if (!mounted) return;
+      final msg = kIsWeb ? 'Imagen descargada' : 'Imagen guardada en galería';
+      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.success(msg));
+    } on ShareQuoteException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.error('${EsBO.calcShareError}: $e'),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final calc = widget.calc;
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final materialsAsync = ref.watch(_materialsOfProvider(calc.id));
+    final settingsAsync = ref.watch(settingsNotifierProvider);
+    final printer = ref.watch(defaultPrinterProvider);
+
+    final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
+    final settings = settingsAsync.valueOrNull ?? Settings.defaults;
+
+    // Recompute output + detail values from stored data + current settings.
+    final result = _recomputeOutput(calc, materials, settings, printer);
 
     return MaxWidthScrollView(
       maxWidth: 720,
@@ -182,7 +250,7 @@ class _Detail extends ConsumerWidget {
             style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: AppSpacing.sm),
-        materials.when(
+        materialsAsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.all(AppSpacing.lg),
             child: Center(child: CircularProgressIndicator()),
@@ -252,7 +320,6 @@ class _Detail extends ConsumerWidget {
                                       ms[i].gramsPerBobbinSnapshot)
                                   .toStringAsFixed(2),
                             )),
-                            // M2: precio por material usa JetBrains Mono + tabular.
                             style: GoogleFonts.jetBrainsMono(
                               textStyle: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
@@ -328,8 +395,6 @@ class _Detail extends ConsumerWidget {
                   children: [
                     Text(
                       'Total',
-                      // V1: label del gran total sube a titleLarge para
-                      // acompanar el peso del valor (headlineMedium).
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -342,10 +407,6 @@ class _Detail extends ConsumerWidget {
                             calc.totalPriceSnapshot.toStringAsFixed(2),
                           ),
                         ),
-                        // M2: total del detalle usa JetBrains Mono + tabular
-                        // para coincidir con la cifra principal del calculator.
-                        // V1: headlineMedium (28sp) con FittedBox, mas prominente
-                        // que el headlineSmall anterior.
                         style: GoogleFonts.jetBrainsMono(
                           textStyle: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
@@ -361,6 +422,80 @@ class _Detail extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
+
+        // === Quote image preview (capturable) ===
+        if (result != null) ...[
+          Text('Vista previa',
+              style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: AppSpacing.sm),
+          Center(
+            child: RepaintBoundary(
+              key: _captureKey,
+              child: QuoteImageTemplate(
+                output: result.output,
+                label: calc.pieceName ?? '',
+                discountPct: calc.discountPercentage.toStringAsFixed(0),
+                showDetail: _showDetail,
+                detailMaterialBreakdown: result.breakdown,
+                detailElectricCost: result.electricCost,
+                detailBaseCost: result.baseCost,
+                detailProfitAmount: result.profitAmount,
+                detailTotalFinal: result.totalFinal,
+                metaGrams: result.metaGrams,
+                metaTime: result.metaTime,
+                companyName: settings.companyName,
+                companyLogoBase64: settings.companyLogoBase64,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Toggle detail (outside RepaintBoundary)
+          Align(
+            child: TextButton.icon(
+              icon: Icon(
+                _showDetail
+                    ? Icons.visibility_rounded
+                    : Icons.visibility_off_rounded,
+                size: 18,
+              ),
+              label: Text(
+                _showDetail
+                    ? EsBO.calcToggleHideDetail
+                    : EsBO.calcToggleShowDetail,
+              ),
+              onPressed: () => setState(() => _showDetail = !_showDetail),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Share / Save actions
+          Center(
+            child: Wrap(
+              spacing: AppSpacing.lg,
+              runSpacing: AppSpacing.sm,
+              alignment: WrapAlignment.center,
+              children: [
+                _DetailActionIcon(
+                  icon: Icons.ios_share_rounded,
+                  tooltip: 'Compartir imagen',
+                  color: color.primary,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handleShare,
+                ),
+                _DetailActionIcon(
+                  icon: Icons.download_rounded,
+                  tooltip: 'Guardar imagen',
+                  color: color.primary,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handleSave,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
 
         // === Acciones ===
         Row(
@@ -390,6 +525,136 @@ class _Detail extends ConsumerWidget {
   }
 }
 
+/// Reconstruye [CalculationOutput] + valores detallados desde datos
+/// guardados en DB + settings actuales.
+///
+/// Usa current settings para electricidad/ganancia — mismo approach que
+/// [CalculatorNotifier._recompute] y [PrefilledCalculatorPage].
+///
+/// Retorna null si materials aun no cargaron.
+({CalculationOutput output, List<MaterialCostBreakdown> breakdown,
+  Decimal electricCost, Decimal baseCost, Decimal profitAmount,
+  Decimal totalFinal, String? metaGrams, String? metaTime})?
+_recomputeOutput(
+  Calculation calc,
+  List<CalculationMaterial> materials,
+  Settings settings,
+  PrinterProfile? printer,
+) {
+  if (materials.isEmpty && calc.materialCostSnapshot <= 0) return null;
+
+  final materialCost =
+      Decimal.parse(calc.materialCostSnapshot.toStringAsFixed(2));
+  final hours = Decimal.parse(calc.totalHours.toStringAsFixed(2));
+  final discountPct = calc.discountPercentage > 0
+      ? Decimal.parse(calc.discountPercentage.toStringAsFixed(2))
+      : Decimal.zero;
+
+  // Per-material breakdown
+  final breakdown = <MaterialCostBreakdown>[];
+  var totalGrams = Decimal.zero;
+  for (final m in materials) {
+    final weight = Decimal.parse(m.weightGrams.toStringAsFixed(2));
+    final price =
+        Decimal.parse(m.pricePerBobbinSnapshot.toStringAsFixed(2));
+    final grams =
+        Decimal.parse(m.gramsPerBobbinSnapshot.toStringAsFixed(2));
+    final cost = grams > Decimal.zero
+        ? (weight * price / grams).toDecimal()
+        : Decimal.zero;
+    breakdown.add(MaterialCostBreakdown(label: m.label, cost: cost));
+    totalGrams += weight;
+  }
+
+  // Detail values (electricity + profit) with current settings
+  final watts = printer?.averageWatts ?? 0;
+  final electricCost = hours > Decimal.zero && watts > 0
+      ? (Decimal.fromInt(watts) * hours * settings.kwhRate /
+              Decimal.fromInt(1000))
+          .toDecimal()
+      : Decimal.zero;
+  final baseCost = materialCost + electricCost;
+  final profitAmount =
+      (baseCost * settings.profitBase / Decimal.fromInt(100)).toDecimal();
+  final totalFinal = baseCost + profitAmount;
+
+  // Discount on totalFinal
+  final discountOnTotalFinal = discountPct > Decimal.zero
+      ? (totalFinal * discountPct / Decimal.fromInt(100)).toDecimal()
+      : Decimal.zero;
+  final totalPrice = totalFinal - discountOnTotalFinal;
+
+  // Meta
+  final totalMinutes =
+      (hours * Decimal.fromInt(60)).toBigInt();
+  String? timeStr;
+  if (totalMinutes > BigInt.zero) {
+    final hh = totalMinutes ~/ BigInt.from(60);
+    final mm = totalMinutes.remainder(BigInt.from(60));
+    timeStr = '${hh.toInt()}h ${mm.toInt()}m';
+  }
+  final gramsStr = totalGrams > Decimal.zero
+      ? '${NumberFormat.decimalPattern('es_BO').format(totalGrams.toDouble())} g'
+      : null;
+
+  return (
+    output: CalculationOutput(
+      materialCost: materialCost,
+      discountAmount: discountOnTotalFinal,
+      totalPrice: totalPrice,
+    ),
+    breakdown: breakdown,
+    electricCost: electricCost,
+    baseCost: baseCost,
+    profitAmount: profitAmount,
+    totalFinal: totalFinal,
+    metaGrams: gramsStr,
+    metaTime: timeStr,
+  );
+}
+
+/// Boton circular icono, usado en la fila de acciones de imagen.
+class _DetailActionIcon extends StatelessWidget {
+  const _DetailActionIcon({
+    required this.icon,
+    required this.tooltip,
+    required this.color,
+    this.isBusy = false,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final Color color;
+  final bool isBusy;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      iconSize: 22,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        foregroundColor: color,
+        backgroundColor: color.withValues(alpha: 0.12),
+        shape: const CircleBorder(),
+        padding: const EdgeInsets.all(AppSpacing.md),
+      ),
+      icon: isBusy
+          ? SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: color,
+              ),
+            )
+          : Icon(icon, color: color, size: 22),
+    );
+  }
+}
+
 class _Row extends StatelessWidget {
   const _Row({required this.label, required this.value});
 
@@ -406,8 +671,6 @@ class _Row extends StatelessWidget {
           Text(label),
           Text(
             value,
-            // M2: cost breakdown usa JetBrains Mono + tabular para que
-            // cada linea del breakdown muestre cifras alineadas.
             style: GoogleFonts.jetBrainsMono(
               textStyle: const TextStyle(
                 fontFeatures: [FontFeature.tabularFigures()],
@@ -433,8 +696,6 @@ final _calculationByIdProvider =
 
 final _materialsOfProvider =
     FutureProvider.family<List<CalculationMaterial>, int>((ref, id) {
-  // watch (no read) para que los overrides de repository en tests sean
-  // respetados y para que el provider reaccione a cambios en el repo.
   final repo = ref.watch(calculationRepositoryProvider);
   return repo.materialsOf(id);
 });

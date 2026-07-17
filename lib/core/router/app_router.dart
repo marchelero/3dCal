@@ -117,8 +117,8 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/history/:id',
       pageBuilder: (context, state) {
-        final calc = state.extra as Calculation;
-        return _slideRight(CalculationDetailPage(calcId: calc.id));
+        final id = int.parse(state.pathParameters['id']!);
+        return _slideRight(CalculationDetailPage(calcId: id));
       },
     ),
 
