@@ -1,8 +1,12 @@
 // ignore_for_file: public_member_api_docs
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -144,6 +148,16 @@ class _SettingsBody extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: AppSpacing.xxl),
+
+        // === Empresa ===
+        SectionHeader(
+          icon: Icons.business_rounded,
+          title: EsBO.settingsCompany,
+          accentColor: color.secondary,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _CompanySection(settings: settings),
         const SizedBox(height: AppSpacing.xxl),
 
         // === Catalogos ===
@@ -375,5 +389,252 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
       validator: widget.validator,
       onBlur: _handleBlur,
     );
+  }
+}
+
+// ──────────────────────────────────────────────
+// Company section
+// ──────────────────────────────────────────────
+
+/// Seccion "Empresa" en settings: nombre de la empresa + logo.
+class _CompanySection extends ConsumerWidget {
+  const _CompanySection({required this.settings});
+
+  final Settings settings;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Company name field ──
+            _CompanyNameField(
+              initialValue: settings.companyName,
+              onSave: (value) {
+                ref.read(settingsNotifierProvider.notifier).updateCompanyName(value);
+                _showSavedSnack(context);
+              },
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Logo picker ──
+            _LogoPicker(
+              currentLogoBase64: settings.companyLogoBase64,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void _showSavedSnack(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(AppSnackBar.success(EsBO.settingsSaved));
+  }
+}
+
+/// TextField para el nombre de la empresa con auto-save on blur.
+/// Recibe [onSave] callback desde el padre ConsumerWidget.
+class _CompanyNameField extends StatefulWidget {
+  const _CompanyNameField({
+    required this.initialValue,
+    required this.onSave,
+  });
+
+  final String initialValue;
+  final ValueChanged<String> onSave;
+
+  @override
+  State<_CompanyNameField> createState() => _CompanyNameFieldState();
+}
+
+class _CompanyNameFieldState extends State<_CompanyNameField> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CompanyNameField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue) {
+      _ctrl.text = widget.initialValue;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _handleBlur(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed == widget.initialValue) return;
+    widget.onSave(trimmed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          EsBO.settingsCompanyName,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextField(
+          controller: _ctrl,
+          decoration: InputDecoration(
+            helperText: EsBO.settingsCompanyNameHelper,
+            helperMaxLines: 2,
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+          ),
+          onTapOutside: (_) {
+            final value = _ctrl.text;
+            if (value.trim().isNotEmpty) _handleBlur(value);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Logo picker: muestra logo actual + botones pick/remove.
+class _LogoPicker extends ConsumerWidget {
+  const _LogoPicker({required this.currentLogoBase64});
+
+  final String? currentLogoBase64;
+
+  Future<void> _pickLogo(BuildContext context, WidgetRef ref) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      final base64 = base64Encode(bytes);
+      if (!context.mounted) return;
+      ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64);
+      _showSavedSnack(context);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.error('${EsBO.settingsCompanyLogoError}: $e'),
+      );
+    }
+  }
+
+  Future<void> _removeLogo(BuildContext context, WidgetRef ref) async {
+    ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(null);
+    _showSavedSnack(context);
+  }
+
+  void _showSavedSnack(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(AppSnackBar.success(EsBO.settingsSaved));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final hasLogo = currentLogoBase64 != null &&
+        currentLogoBase64!.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          EsBO.settingsCompanyLogo,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            // Preview
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: color.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(
+                  color: color.outlineVariant,
+                  width: 1,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: hasLogo
+                  ? Image.memory(
+                      _base64ToBytes(currentLogoBase64!),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.broken_image_rounded,
+                        color: color.onSurfaceVariant,
+                        size: 32,
+                      ),
+                    )
+                  : Icon(
+                      Icons.add_photo_alternate_rounded,
+                      color: color.onSurfaceVariant,
+                      size: 32,
+                    ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            // Buttons
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.image_rounded, size: 18),
+                  label: Text(EsBO.settingsCompanyLogoPick),
+                  onPressed: () => _pickLogo(context, ref),
+                ),
+                if (hasLogo)
+                  TextButton.icon(
+                    icon: Icon(Icons.delete_outline_rounded,
+                        size: 18, color: color.error),
+                    label: Text(
+                      EsBO.settingsCompanyLogoRemove,
+                      style: TextStyle(color: color.error),
+                    ),
+                    onPressed: () => _removeLogo(context, ref),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Uint8List _base64ToBytes(String base64) {
+    try {
+      return base64Decode(base64);
+    } catch (_) {
+      return Uint8List(0);
+    }
   }
 }

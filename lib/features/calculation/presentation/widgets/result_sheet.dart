@@ -1,15 +1,20 @@
 // ignore_for_file: public_member_api_docs
 
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
+import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
+import 'quote_image_template.dart';
 import 'summary_card.dart';
 
 /// Sticky bar que aparece en la parte inferior de CalculatorPage.
@@ -59,7 +64,10 @@ class ResultBottomBar extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
+                // Icono con fondo animado (empty ↔ total)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
@@ -68,14 +76,20 @@ class ResultBottomBar extends StatelessWidget {
                         : color.primaryContainer,
                     borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
-                  child: Icon(
-                    isEmpty
-                        ? Icons.info_outline_rounded
-                        : Icons.receipt_long_rounded,
-                    color: isEmpty
-                        ? color.onSurfaceVariant
-                        : color.onPrimaryContainer,
-                    size: 22,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                    child: Icon(
+                      key: ValueKey(isEmpty),
+                      isEmpty
+                          ? Icons.info_outline_rounded
+                          : Icons.receipt_long_rounded,
+                      color: isEmpty
+                          ? color.onSurfaceVariant
+                          : color.onPrimaryContainer,
+                      size: 22,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -104,8 +118,10 @@ class ResultBottomBar extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         )
                       else
+                        // Total sin animación — cambio inmediato, sin parpadeo
                         Text(
                           totalText,
+                          key: ValueKey(totalText),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: color.onSurface,
@@ -169,11 +185,22 @@ Future<void> showResultSheet({
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (sheetCtx) => ResultSheetContent(
-      state: state,
-      onSave: onSave,
-      onReset: onReset,
-      onToggleDetail: onToggleDetail,
+    builder: (sheetCtx) => Consumer(
+      builder: (ctx, ref, _) {
+        // Usamos el state vivo del provider para que el toggle detail
+        // (showDetail) funcione dentro del sheet.
+        final liveState = ref.watch(calculatorNotifierProvider);
+        final asyncSettings = ref.watch(settingsNotifierProvider);
+        final settings = asyncSettings.valueOrNull;
+        return ResultSheetContent(
+          state: liveState,
+          companyName: settings?.companyName,
+          companyLogoBase64: settings?.companyLogoBase64,
+          onSave: onSave,
+          onReset: onReset,
+          onToggleDetail: onToggleDetail,
+        );
+      },
     ),
   );
 }
@@ -188,6 +215,8 @@ Future<void> showResultSheet({
 class ResultSheetContent extends StatefulWidget {
   const ResultSheetContent({
     required this.state,
+    this.companyName,
+    this.companyLogoBase64,
     required this.onSave,
     required this.onReset,
     required this.onToggleDetail,
@@ -195,6 +224,8 @@ class ResultSheetContent extends StatefulWidget {
   });
 
   final CalculatorState state;
+  final String? companyName;
+  final String? companyLogoBase64;
   final VoidCallback onSave;
   final VoidCallback onReset;
   final VoidCallback onToggleDetail;
@@ -204,28 +235,51 @@ class ResultSheetContent extends StatefulWidget {
 }
 
 class _ResultSheetContentState extends State<ResultSheetContent> {
-  // Key para RepaintBoundary del summary card. captureAndShareQuote la usa
-  // para encontrar el RenderObject y capturarlo como PNG.
+  // Key para RepaintBoundary del quote image template. captureQuoteImageBytes
+  // lo usa para encontrar el RenderObject y capturarlo como PNG.
   final GlobalKey _captureKey = GlobalKey();
-  bool _isSharing = false;
+  bool _isBusy = false;
 
   Future<void> _handleShare() async {
-    if (_isSharing) return;
-    setState(() => _isSharing = true);
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
     try {
-      await captureAndShareQuote(_captureKey);
+      final bytes = await captureQuoteImageBytes(_captureKey);
+      await shareQuoteImage(bytes);
     } on ShareQuoteException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(AppSnackBar.error(e.message));
+      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         AppSnackBar.error('${EsBO.calcShareError}: $e'),
       );
     } finally {
-      if (mounted) setState(() => _isSharing = false);
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Future<void> _handleSave() async {
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
+    try {
+      final bytes = await captureQuoteImageBytes(_captureKey);
+      await saveQuoteImage(bytes);
+      if (!mounted) return;
+      final msg = kIsWeb ? 'Imagen descargada' : 'Imagen guardada en galería';
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.success(msg),
+      );
+    } on ShareQuoteException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.error('${EsBO.calcShareError}: $e'),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
     }
   }
 
@@ -269,24 +323,46 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
               ),
             ),
 
-            // Summary card envuelto en RepaintBoundary para captura.
-            // SummaryCard ya tiene la meta info (gramos + tiempo) del Fix #2.
+            // ── Quote Image Template (capturable ──
+            // Este widget se captura como PNG. NO tiene elementos interactivos.
+            // El toggle detail se renderiza fuera del RepaintBoundary.
             RepaintBoundary(
               key: _captureKey,
-              child: SummaryCard(
+              child: QuoteImageTemplate(
                 output: output,
                 label: state.label,
                 discountPct:
                     state.detailDiscountPct?.toStringAsFixed(0) ??
                     state.discountPct,
                 showDetail: state.showDetail,
-                onToggleDetail: widget.onToggleDetail,
+                detailMaterialBreakdown: state.detailMaterialBreakdown,
                 detailElectricCost: state.detailElectricCost,
                 detailBaseCost: state.detailBaseCost,
                 detailProfitAmount: state.detailProfitAmount,
                 detailTotalFinal: state.detailTotalFinal,
                 metaGrams: meta.grams,
                 metaTime: meta.time,
+                companyName: widget.companyName,
+                companyLogoBase64: widget.companyLogoBase64,
+              ),
+            ),
+
+            // Toggle detail (fuera del RepaintBoundary para no salir en img)
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              child: TextButton.icon(
+                icon: Icon(
+                  state.showDetail
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                  size: 18,
+                ),
+                label: Text(
+                  state.showDetail
+                      ? EsBO.calcToggleHideDetail
+                      : EsBO.calcToggleShowDetail,
+                ),
+                onPressed: widget.onToggleDetail,
               ),
             ),
 
@@ -305,14 +381,15 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
             ),
             const SizedBox(height: AppSpacing.sm),
 
-            // Action row: Save (primary) + Share (outlined) + Reset (text).
-            _ResultActionRow(
-              isSharing: _isSharing,
-              onSave: () {
+            // Action row: Guardar cotización + Compartir + Guardar img + Reset.
+            _ActionIconRow(
+              isBusy: _isBusy,
+              onSaveDb: () {
                 Navigator.of(context).pop();
                 widget.onSave();
               },
               onShare: _handleShare,
+              onSaveImage: _handleSave,
               onReset: () {
                 Navigator.of(context).pop();
                 widget.onReset();
@@ -325,66 +402,99 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   }
 }
 
-/// Fila de 3 botones al final del sheet: Guardar, Compartir, Restablecer.
-class _ResultActionRow extends StatelessWidget {
-  const _ResultActionRow({
-    required this.isSharing,
-    required this.onSave,
+/// Fila de 4 botones circulares centrados: Guardar, Compartir, Descargar, Reset.
+class _ActionIconRow extends StatelessWidget {
+  const _ActionIconRow({
+    required this.isBusy,
+    required this.onSaveDb,
     required this.onShare,
+    required this.onSaveImage,
     required this.onReset,
   });
 
-  final bool isSharing;
-  final VoidCallback onSave;
+  final bool isBusy;
+  final VoidCallback onSaveDb;
   final VoidCallback onShare;
+  final VoidCallback onSaveImage;
   final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
-    return Row(
+    return Wrap(
+      spacing: AppSpacing.lg,
+      runSpacing: AppSpacing.sm,
+      alignment: WrapAlignment.center,
       children: [
-        Expanded(
-          child: FilledButton.icon(
-            icon: const Icon(Icons.save_rounded, size: 18),
-            label: Text(EsBO.calcBtnSave),
-            onPressed: onSave,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            ),
-          ),
+        _ActionIcon(
+          icon: Icons.save_rounded,
+          tooltip: 'Guardar cotización',
+          color: color.primary,
+          onPressed: isBusy ? null : onSaveDb,
         ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: OutlinedButton.icon(
-            icon: isSharing
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: color.primary,
-                    ),
-                  )
-                : const Icon(Icons.ios_share_rounded, size: 18),
-            label: Text(EsBO.calcBtnShare),
-            onPressed: isSharing ? null : onShare,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            ),
-          ),
+        _ActionIcon(
+          icon: Icons.ios_share_rounded,
+          tooltip: 'Compartir imagen',
+          color: color.primary,
+          isBusy: isBusy,
+          onPressed: isBusy ? null : onShare,
         ),
-        const SizedBox(width: AppSpacing.sm),
-        IconButton(
-          tooltip: EsBO.calcBtnReset,
-          onPressed: onReset,
-          style: IconButton.styleFrom(
-            foregroundColor: color.onSurfaceVariant,
-            padding: const EdgeInsets.all(AppSpacing.md),
-          ),
-          icon: const Icon(Icons.refresh_rounded),
+        _ActionIcon(
+          icon: Icons.download_rounded,
+          tooltip: 'Guardar imagen',
+          color: color.primary,
+          isBusy: isBusy,
+          onPressed: isBusy ? null : onSaveImage,
+        ),
+        _ActionIcon(
+          icon: Icons.refresh_rounded,
+          tooltip: 'Restablecer',
+          color: color.onSurfaceVariant,
+          onPressed: isBusy ? null : onReset,
         ),
       ],
+    );
+  }
+}
+
+/// Botón circular con ícono, usado en [_ActionIconRow].
+class _ActionIcon extends StatelessWidget {
+  const _ActionIcon({
+    required this.icon,
+    required this.tooltip,
+    required this.color,
+    this.isBusy = false,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final Color color;
+  final bool isBusy;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      iconSize: 22,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        foregroundColor: color,
+        backgroundColor: color.withValues(alpha: 0.12),
+        shape: const CircleBorder(),
+        padding: const EdgeInsets.all(AppSpacing.md),
+      ),
+      icon: isBusy
+          ? SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: color,
+              ),
+            )
+          : Icon(icon, color: color, size: 22),
     );
   }
 }

@@ -13,6 +13,7 @@ class CalculationDraft {
     this.filamentPrice = '',
     this.filamentGrams = '',
     this.label = '',
+    this.filamentLabel = '',
     this.clientName = '',
     this.isAdvanced = false,
     this.materials = const [],
@@ -27,6 +28,7 @@ class CalculationDraft {
       filamentPrice: json['filamentPrice'] as String? ?? '',
       filamentGrams: json['filamentGrams'] as String? ?? '',
       label: json['label'] as String? ?? '',
+      filamentLabel: json['filamentLabel'] as String? ?? '',
       clientName: json['clientName'] as String? ?? '',
       isAdvanced: json['isAdvanced'] as bool? ?? false,
       materials: (json['materials'] as List?)
@@ -44,6 +46,7 @@ class CalculationDraft {
   final String filamentPrice;
   final String filamentGrams;
   final String label;
+  final String filamentLabel;
   final String clientName;
   final bool isAdvanced;
   final List<MaterialDraft> materials;
@@ -56,6 +59,7 @@ class CalculationDraft {
         'filamentPrice': filamentPrice,
         'filamentGrams': filamentGrams,
         'label': label,
+        'filamentLabel': filamentLabel,
         'clientName': clientName,
         'isAdvanced': isAdvanced,
         'materials': materials.map((m) => m.toJson()).toList(),

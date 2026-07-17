@@ -48,10 +48,10 @@ void main() {
 
     expect(find.byType(CalculatorPage), findsOneWidget);
     expect(find.text('Cotizacion'), findsOneWidget);
-    expect(find.text('Peso de la pieza'), findsOneWidget);
+    expect(find.text('Peso'), findsOneWidget);
     expect(find.text('Horas'), findsOneWidget);
     expect(find.text('Precio bobina'), findsOneWidget);
-    expect(find.text('Gramos / bobina'), findsNothing);
+    expect(find.text('Gramos / bobina'), findsOneWidget);
     expect(find.text('Impresora'), findsOneWidget);
     expect(find.text('Sin impresora registrada'), findsOneWidget);
     expect(find.text('Tarifa kWh'), findsNothing);
@@ -95,7 +95,7 @@ void main() {
 
       // Llenar los inputs requeridos por label.
       await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Peso de la pieza'),
+        find.widgetWithText(NumericInputField, 'Peso'),
         '100',
       );
       await tester.pumpAndSettle();

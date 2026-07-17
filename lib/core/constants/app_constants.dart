@@ -49,4 +49,10 @@ class SettingsKeys {
 
   /// Tarifa electrica (BOB/kWh como double).
   static const String kwhRate = 'kwh_rate';
+
+  /// Nombre de la empresa/negocio (string).
+  static const String companyName = 'company_name';
+
+  /// Logo de la empresa en base64 (string). Null si no configurado.
+  static const String companyLogo = 'company_logo';
 }

@@ -49,6 +49,8 @@ void main() {
       await _pumpPage(tester);
       expect(find.text('Ajustes'), findsOneWidget);
       expect(find.text('Parametros globales'), findsOneWidget);
+      expect(find.text('Empresa'), findsOneWidget);
+      expect(find.text('Nombre de la empresa'), findsOneWidget);
       expect(find.text('Filamentos'), findsOneWidget);
       expect(find.text('Impresoras'), findsOneWidget);
       expect(find.textContaining('100% local'), findsOneWidget);

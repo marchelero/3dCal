@@ -69,6 +69,12 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     state = state.copyWith(label: value);
   }
 
+  // === Express material label ===
+
+  void setFilamentLabel(String value) {
+    state = state.copyWith(filamentLabel: value);
+  }
+
   // === Setters advanced (multi-material) ===
 
   void addMaterial() {
@@ -139,6 +145,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       printMinutes: draft.printMinutes,
       discountPct: draft.discountPct,
       label: draft.label,
+      filamentLabel: draft.filamentLabel,
       weight: draft.weight,
       filamentPrice: draft.filamentPrice,
       filamentGrams: draft.filamentGrams,
@@ -184,6 +191,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           printMinutes: '',
           discountPct: discount.toString(),
           label: calc.pieceName ?? '',
+          filamentLabel: m == null ? '' : m.label,
           weight: m == null ? '' : m.weightGrams.toStringAsFixed(0),
           filamentPrice:
               m == null ? '' : m.pricePerBobbinSnapshot.toStringAsFixed(2),
@@ -231,6 +239,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       totalHours: input.totalHours,
       discountPercentage: input.discountPercentage,
       output: state.output!,
+      filamentLabel: state.filamentLabel,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
           : (pieceName == null || pieceName.trim().isEmpty
@@ -260,6 +269,14 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     }
     final input = _buildInput(next);
     final output = CalculationEngine.compute(input);
+
+    // Desglose de costo por material
+    final breakdown = input.materials
+        .map((m) => MaterialCostBreakdown(
+              label: m.label,
+              cost: m.cost,
+            ))
+        .toList();
 
     // Computar valores detallados (electricidad + ganancia).
     final printer = ref.read(defaultPrinterProvider);
@@ -297,6 +314,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
     return next.copyWith(
       output: updatedOutput,
+      detailMaterialBreakdown: breakdown,
       detailElectricCost: electricCost,
       detailBaseCost: baseCost,
       detailProfitAmount: profitAmount,
@@ -310,8 +328,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   CalculationInput _buildInput(CalculatorState s) {
     final materials = <MaterialInput>[];
     if (s.mode == CalculatorMode.express) {
+      final matLabel =
+          s.filamentLabel.isNotEmpty ? s.filamentLabel : 'Filamento';
       materials.add(MaterialInput(
-        label: 'Filamento',
+        label: matLabel,
         weightGrams: CalculatorState.parseDecimal(s.weight)!,
         pricePerBobbin: CalculatorState.parseDecimal(s.filamentPrice)!,
         gramsPerBobbin: CalculatorState.parseDecimal(s.filamentGrams) ??

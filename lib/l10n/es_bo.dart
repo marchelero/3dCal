@@ -11,7 +11,7 @@ class EsBO {
   const EsBO._();
 
   // === App ===
-  static const String appName = '3dcal';
+  static const String appName = '3dcalc';
 
   // === Common verbs (shared across pages) ===
   static const String commonSave = 'Guardar';
@@ -51,6 +51,16 @@ class EsBO {
   static const String settingsTheme = 'Tema';
   static const String settingsManageFilaments = 'Gestiona tus filamentos';
   static const String settingsManagePrinters = 'Registra tus impresoras';
+
+  // === Company settings ===
+  static const String settingsCompany = 'Empresa';
+  static const String settingsCompanyName = 'Nombre de la empresa';
+  static const String settingsCompanyNameHelper =
+      'Aparece en la cotizacion. Default: 3dCalc';
+  static const String settingsCompanyLogo = 'Logo';
+  static const String settingsCompanyLogoPick = 'Seleccionar imagen';
+  static const String settingsCompanyLogoRemove = 'Eliminar logo';
+  static const String settingsCompanyLogoError = 'Error al cargar la imagen';
 
   // === Dashboard ===
   static const String dashboardTitle = 'Dashboard';
@@ -135,7 +145,7 @@ class EsBO {
   static const String calcBtnShareTooltip = 'Genera una imagen lista para enviar';
   static const String calcShareError = 'No se pudo generar la imagen';
   static const String calcShareSubject = 'Cotizacion 3D';
-  static const String calcShareText = 'Cotizacion generada en 3dCal';
+  static const String calcShareText = 'Cotizacion generada en 3dCalc';
   static const String calcSheetActionsLabel = 'Acciones';
 
   // === Filaments / Printers forms ===

@@ -13,7 +13,6 @@ Future<void> main() async {
   // Pre-cargar fuentes de Google Fonts en build time.
   // Bloquea hasta que todas las fuentes referenciadas en el TextTheme esten
   // descargadas, evitando el "flash of unstyled text" (FOUT) en el primer frame.
-  // Ver lib/core/theme/app_theme.dart para las fuentes usadas.
   await GoogleFonts.pendingFonts();
 
   // Pre-cargar SharedPreferences para que [sharedPreferencesProvider]

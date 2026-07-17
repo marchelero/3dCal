@@ -13,9 +13,29 @@ import '../../features/catalog/printers/presentation/pages/printer_form_page.dar
 import '../../features/catalog/printers/presentation/pages/printers_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../database/app_database.dart';
 import '../theme/app_spacing.dart';
+
+// ─────────────────────────────────────────────────────────────
+// Transition helpers — animaciones visibles para push routes
+// ─────────────────────────────────────────────────────────────
+
+Page<void> _slideRight(Widget child) => CustomTransitionPage<void>(
+      key: ValueKey(child.hashCode),
+      child: child,
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 250),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.35, 0);
+        const end = Offset.zero;
+        final tween = Tween<Offset>(begin: begin, end: end).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        );
+        return SlideTransition(position: tween, child: child);
+      },
+    );
 
 /// Router principal de la app (PRD §8.3, Sprint 7 — go_router migration).
 ///
@@ -32,9 +52,15 @@ import '../theme/app_spacing.dart';
 /// - Datos no serializables (Calculation, Filament, PrinterProfile) se pasan
 ///   via `state.extra` (no URL). Es valido porque la app es 100% local.
 final appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/splash',
   errorBuilder: (context, state) => const _RouterErrorPage(),
   routes: [
+    // === Splash screen (full-screen, sin shell) ===
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
+
     // === Shell: 4 tabs principales ===
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -79,54 +105,54 @@ final appRouter = GoRouter(
     // === Full-screen (push, no shell) ===
     GoRoute(
       path: '/calculator',
-      builder: (context, state) => const CalculatorPage(),
+      pageBuilder: (context, state) => _slideRight(const CalculatorPage()),
     ),
     GoRoute(
       path: '/calculator/prefill',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final calc = state.extra as Calculation;
-        return PrefilledCalculatorPage(calc: calc);
+        return _slideRight(PrefilledCalculatorPage(calc: calc));
       },
     ),
     GoRoute(
       path: '/history/:id',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final calc = state.extra as Calculation;
-        return CalculationDetailPage(calcId: calc.id);
+        return _slideRight(CalculationDetailPage(calcId: calc.id));
       },
     ),
 
     // === Catalogos ===
     GoRoute(
       path: '/settings/filaments',
-      builder: (context, state) => const FilamentsPage(),
+      pageBuilder: (context, state) => _slideRight(const FilamentsPage()),
       routes: [
         GoRoute(
           path: 'new',
-          builder: (context, state) => const FilamentFormPage(),
+          pageBuilder: (context, state) => _slideRight(const FilamentFormPage()),
         ),
         GoRoute(
           path: ':id',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final f = state.extra as Filament;
-            return FilamentFormPage(existing: f);
+            return _slideRight(FilamentFormPage(existing: f));
           },
         ),
       ],
     ),
     GoRoute(
       path: '/settings/printers',
-      builder: (context, state) => const PrintersPage(),
+      pageBuilder: (context, state) => _slideRight(const PrintersPage()),
       routes: [
         GoRoute(
           path: 'new',
-          builder: (context, state) => const PrinterFormPage(),
+          pageBuilder: (context, state) => _slideRight(const PrinterFormPage()),
         ),
         GoRoute(
           path: ':id',
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final p = state.extra as PrinterProfile;
-            return PrinterFormPage(existing: p);
+            return _slideRight(PrinterFormPage(existing: p));
           },
         ),
       ],

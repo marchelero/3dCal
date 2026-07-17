@@ -97,6 +97,36 @@ class SettingsRepository {
 
   Future<void> setKwhRate(Decimal value) =>
       setDecimal(SettingsKeys.kwhRate, value);
+
+  /// Nombre de la empresa. Default: '3dCalc'.
+  Future<String> getCompanyName() =>
+      getString(SettingsKeys.companyName, '3dCalc');
+
+  Future<void> setCompanyName(String value) =>
+      setString(SettingsKeys.companyName, value);
+
+  /// Logo de la empresa en base64. Null si no configurado.
+  Future<String?> getCompanyLogo() =>
+      getStringOrNull(SettingsKeys.companyLogo);
+
+  Future<void> setCompanyLogo(String? base64) async {
+    if (base64 == null) {
+      // Borrar la key
+      await (_db.delete(_db.settingsTable)
+            ..where((s) => s.key.equals(SettingsKeys.companyLogo)))
+          .go();
+      return;
+    }
+    await setString(SettingsKeys.companyLogo, base64);
+  }
+
+  /// Lee el valor como String? (null si no existe).
+  Future<String?> getStringOrNull(String key) async {
+    final row = await (_db.select(_db.settingsTable)
+          ..where((s) => s.key.equals(key)))
+        .getSingleOrNull();
+    return row?.value;
+  }
 }
 
 /// Helper privado para parseo seguro.

@@ -26,13 +26,12 @@ import '../widgets/result_sheet.dart';
 
 /// Pantalla principal del calculator con UX mejorada.
 ///
-/// **Secciones en Cards**:
-/// 1. Etiqueta + Peso de pieza
-/// 2. Filamento (precio bobina + gramos + selector catalogo)
-/// 3. Impresora activa
-/// 4. Tiempo de impresion (horas + minutos)
-/// 5. Descuento
-/// 6. Output (resumen con animacion "calculando...")
+/// **Secciones en Cards** (Express y Advanced):
+/// 1. Materiales (tile "Material 1" en Express, lista en Advanced)
+/// 2. Impresora activa
+/// 3. Tiempo de impresion (horas + minutos)
+/// 4. Descuento
+/// 5. Output (resumen con animacion "calculando...")
 class CalculatorPage extends ConsumerStatefulWidget {
   const CalculatorPage({super.key});
 
@@ -47,7 +46,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   late final TextEditingController _discountCtrl;
   late final TextEditingController _priceCtrl;
   late final TextEditingController _gramsCtrl;
-  late final TextEditingController _labelCtrl;
+  late final TextEditingController _labelCtrl; // material label (Express) / piece label (Advanced listener)
+  late final TextEditingController _pieceLabelCtrl; // piece name (Express only)
 
   // Advanced controllers.
   final List<_MaterialCtrls> _materialCtrls = [];
@@ -63,7 +63,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _discountCtrl = TextEditingController(text: initial.discountPct);
     _priceCtrl = TextEditingController(text: initial.filamentPrice);
     _gramsCtrl = TextEditingController(text: initial.filamentGrams);
-    _labelCtrl = TextEditingController(text: initial.label);
+    _labelCtrl = TextEditingController(text: initial.filamentLabel);
+    _pieceLabelCtrl = TextEditingController(text: initial.label);
 
     for (final c in [
       _weightCtrl,
@@ -76,7 +77,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       c.addListener(_scheduleDraftSave);
     }
     _labelCtrl.addListener(() {
-      ref.read(calculatorNotifierProvider.notifier).setLabel(_labelCtrl.text);
+      ref.read(calculatorNotifierProvider.notifier)
+          .setFilamentLabel(_labelCtrl.text);
+    });
+    _pieceLabelCtrl.addListener(() {
+      ref.read(calculatorNotifierProvider.notifier)
+          .setLabel(_pieceLabelCtrl.text);
     });
 
     if (initial.mode == CalculatorMode.advanced) {
@@ -87,6 +93,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // Resetear state al entrar (no arrastrar datos de sesion anterior).
+      ref.read(calculatorNotifierProvider.notifier).reset();
       final storage = ref.read(draftStorageProvider);
       final draft = await storage.load();
       if (!mounted) return;
@@ -100,10 +108,20 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         _discountCtrl.text = draft.discountPct;
         _priceCtrl.text = draft.filamentPrice;
         _gramsCtrl.text = draft.filamentGrams;
-        _labelCtrl.text = draft.label;
+        _labelCtrl.text = draft.filamentLabel;
+        _pieceLabelCtrl.text = draft.label;
         return;
       }
-      // Sin draft persistido: cargar defaults del filamento por defecto.
+      // Sin draft: resetear todos los controllers a vacio.
+      _weightCtrl.text = '';
+      _hoursCtrl.text = '';
+      _minutesCtrl.text = '';
+      _discountCtrl.text = '0';
+      _priceCtrl.text = '';
+      _gramsCtrl.text = '';
+      _labelCtrl.text = '';
+      _pieceLabelCtrl.text = '';
+      // Cargar defaults del filamento por defecto para precio/gramos.
       final defaultFilament = ref.read(defaultFilamentProvider);
       if (defaultFilament != null) {
         ref
@@ -136,7 +154,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       discountPct: _discountCtrl.text,
       filamentPrice: _priceCtrl.text,
       filamentGrams: _gramsCtrl.text,
-      label: _labelCtrl.text,
+      label: _pieceLabelCtrl.text,
+      filamentLabel: _labelCtrl.text,
     );
     await ref.read(draftStorageProvider).save(draft);
   }
@@ -151,6 +170,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _priceCtrl.dispose();
     _gramsCtrl.dispose();
     _labelCtrl.dispose();
+    _pieceLabelCtrl.dispose();
     for (final c in _materialCtrls) {
       c.dispose();
     }
@@ -189,7 +209,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           sizeFactor: animation,
           child: _MaterialRowTile(
             index: index,
-            ctrls: removed,
+            labelCtrl: removed.label,
+            weightCtrl: removed.weight,
+            priceCtrl: removed.price,
+            gramsCtrl: removed.grams,
+            deletable: true,
             onChanged: (_) {},
             onRemove: () {},
             pending: true,
@@ -210,7 +234,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _discountCtrl.text = i.discountPct;
     _priceCtrl.text = i.filamentPrice;
     _gramsCtrl.text = i.filamentGrams;
-    _labelCtrl.text = i.label;
+    _labelCtrl.text = i.filamentLabel;
+    _pieceLabelCtrl.text = i.label;
     for (final c in _materialCtrls) {
       c.dispose();
     }
@@ -280,10 +305,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       // Sticky bottom bar: SIEMPRE visible (Fix #3). Cumplio doble proposito:
       // - invalid → empty hint dinamico (lista campos faltantes).
       // - valid → total formateado + tap abre modal con resumen + acciones.
-      //
-      // Antes el output estaba al final del form y los botones Save/Reset
-      // estaban inline; ahora la action surface vive en el sheet, accesible
-      // siempre sin scroll.
       bottomNavigationBar: ResultBottomBar(
         totalText: state.output != null
             ? formatBob(state.output!.totalPrice)
@@ -362,40 +383,45 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             _ModeSelector(mode: state.mode, onChanged: _switchMode),
             const SizedBox(height: AppSpacing.lg),
 
-            // Card: Pieza
+            // Card: Pieza (nombre opcional de la pieza)
             SectionCard(
               icon: Icons.category_rounded,
               title: EsBO.calcSectionPiece,
-            child: Column(
-              children: [
-                _buildLabelField(theme),
-                const SizedBox(height: AppSpacing.md),
-                NumericInputField(
-                  label: EsBO.calcLabelWeight,
-                  controller: _weightCtrl,
-                  onChanged: notifier.setWeight,
-                  suffix: 'g',
-                  helperText: EsBO.calcLabelWeightHelper,
+              child: TextField(
+                controller: _pieceLabelCtrl,
+                decoration: const InputDecoration(
+                  labelText: EsBO.calcLabelOptional,
+                  helperText: 'Nombre de la pieza (ej: Jarron 3D, Posavasos)',
+                  prefixIcon: Icon(Icons.label_outline),
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
 
-          // Card: Filamento
-          SectionCard(
-            icon: Icons.inventory_2_rounded,
-            title: EsBO.calcSectionFilament,
-            child: _FilamentSection(
-              weightCtrl: _weightCtrl,
-              priceCtrl: _priceCtrl,
-              gramsCtrl: _gramsCtrl,
-              onWeightChanged: notifier.setWeight,
-              onPriceChanged: notifier.setFilamentPrice,
-              onGramsChanged: notifier.setFilamentGrams,
+            // Card: Materiales (Express: un solo material como en Advanced)
+            SectionCard(
+              icon: Icons.inventory_2_rounded,
+              title: 'Materiales',
+              child: _MaterialRowTile(
+                index: 0,
+                labelCtrl: _labelCtrl,
+                weightCtrl: _weightCtrl,
+                priceCtrl: _priceCtrl,
+                gramsCtrl: _gramsCtrl,
+                deletable: false,
+                showLabel: true,
+                onRemove: () {},
+                onChanged: (m) {
+                  // label actualiza filamentLabel (nombre del material)
+                  notifier.setFilamentLabel(m.label);
+                  notifier.setWeight(m.weight);
+                  notifier.setFilamentPrice(m.pricePerBobbin);
+                  notifier.setFilamentGrams(m.gramsPerBobbin);
+                },
+                pending: false,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
 
           // Card: Impresora
           SectionCard(
@@ -479,15 +505,22 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             _ModeSelector(mode: state.mode, onChanged: _switchMode),
             const SizedBox(height: AppSpacing.lg),
 
-            // Card: Pieza
+            // Card: Etiqueta de la pieza (nombre global de la pieza)
             SectionCard(
               icon: Icons.category_rounded,
               title: EsBO.calcSectionPiece,
-              child: _buildLabelField(theme),
+              child: TextField(
+                controller: _pieceLabelCtrl,
+                decoration: const InputDecoration(
+                  labelText: EsBO.calcLabelOptional,
+                  helperText: EsBO.calcLabelOptionalHelper,
+                  prefixIcon: Icon(Icons.label_outline),
+                ),
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
 
-          // Card: Materiales
+          // Card: Materiales (multi-material, agregable)
           SectionCard(
             icon: Icons.inventory_2_rounded,
             title: 'Materiales',
@@ -507,7 +540,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                       sizeFactor: animation,
                       child: _MaterialRowTile(
                         index: index,
-                        ctrls: _materialCtrls[index],
+                        labelCtrl: _materialCtrls[index].label,
+                        weightCtrl: _materialCtrls[index].weight,
+                        priceCtrl: _materialCtrls[index].price,
+                        gramsCtrl: _materialCtrls[index].grams,
+                        deletable: true,
                         onChanged: (m) => notifier.updateMaterial(
                           index,
                           label: m.label,
@@ -591,170 +628,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       ),
     );
   }
-
-  Widget _buildLabelField(ThemeData theme) {
-    return TextField(
-      controller: _labelCtrl,
-      decoration: const InputDecoration(
-        labelText: EsBO.calcLabelOptional,
-        helperText: EsBO.calcLabelOptionalHelper,
-        prefixIcon: Icon(Icons.label_outline),
-      ),
-    );
-  }
 }
 
 // ============================================================
-// FILAMENT SECTION
-// ============================================================
-
-class _FilamentSection extends ConsumerWidget {
-  const _FilamentSection({
-    required this.weightCtrl,
-    required this.priceCtrl,
-    required this.gramsCtrl,
-    required this.onWeightChanged,
-    required this.onPriceChanged,
-    required this.onGramsChanged,
-  });
-
-  final TextEditingController weightCtrl;
-  final TextEditingController priceCtrl;
-  final TextEditingController gramsCtrl;
-  final ValueChanged<String> onWeightChanged;
-  final ValueChanged<String> onPriceChanged;
-  final ValueChanged<String> onGramsChanged;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filamentsAsync = ref.watch(filamentsNotifierProvider);
-    final filaments = filamentsAsync.valueOrNull ?? <Filament>[];
-    final defaultFilament = ref.watch(defaultFilamentProvider);
-
-    return Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: NumericInputField(
-                label: 'Precio bobina',
-                controller: priceCtrl,
-                onChanged: onPriceChanged,
-                suffix: 'BOB',
-                helperText: 'Costo del rollo',
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: NumericInputField(
-                label: 'Gramos bobina',
-                controller: gramsCtrl,
-                onChanged: onGramsChanged,
-                suffix: 'g',
-                helperText: 'Tipico 1000g',
-              ),
-            ),
-          ],
-        ),
-        if (filaments.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              if (defaultFilament != null)
-                _ActionChip(
-                  icon: Icons.star_rounded,
-                  label: 'Usar ${defaultFilament.name}',
-                  onTap: () =>
-                      _loadFilament(ref, defaultFilament, priceCtrl, gramsCtrl),
-                ),
-              const SizedBox(width: AppSpacing.sm),
-              _ActionChip(
-                icon: Icons.inventory_2_rounded,
-                label: 'Catalogo',
-                onTap: () => _showFilamentDialog(
-                  context,
-                  ref,
-                  filaments,
-                  priceCtrl,
-                  gramsCtrl,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  void _loadFilament(
-    WidgetRef ref,
-    Filament f,
-    TextEditingController priceCtrl,
-    TextEditingController gramsCtrl,
-  ) {
-    ref
-        .read(calculatorNotifierProvider.notifier)
-        .loadFilamentDefaults(
-          pricePerBobbin: f.pricePerBobbin.toStringAsFixed(2),
-          gramsPerBobbin: f.gramsPerBobbin.toStringAsFixed(0),
-        );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final updated = ref.read(calculatorNotifierProvider);
-      priceCtrl.text = updated.filamentPrice;
-      gramsCtrl.text = updated.filamentGrams;
-    });
-  }
-
-  void _showFilamentDialog(
-    BuildContext context,
-    WidgetRef ref,
-    List<Filament> filaments,
-    TextEditingController priceCtrl,
-    TextEditingController gramsCtrl,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Seleccionar filamento'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: filaments.length,
-            itemBuilder: (_, i) {
-              final f = filaments[i];
-              return ListTile(
-                leading: AvatarIcon(
-                  icon: f.isDefault ? Icons.star_rounded : Icons.label_rounded,
-                  foreground: f.isDefault
-                      ? Theme.of(context).colorScheme.tertiary
-                      : null,
-                ),
-                title: Text(f.name),
-                subtitle: Text(
-                  '${f.pricePerBobbin.toStringAsFixed(0)} BOB Â· '
-                  '${f.gramsPerBobbin.toStringAsFixed(0)} g'
-                  '${f.isDefault ? ' (default)' : ''}',
-                ),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _loadFilament(ref, f, priceCtrl, gramsCtrl);
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar'),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Small action chip for filament catalog actions.
 class _ActionChip extends StatelessWidget {
@@ -837,7 +713,7 @@ class _PrinterIndicator extends ConsumerWidget {
                         Text(
                           activePrinter.brand != null &&
                                   activePrinter.brand!.isNotEmpty
-                              ? '${activePrinter.brand} Â· ${activePrinter.averageWatts} W'
+                              ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
                               : '${activePrinter.averageWatts} W',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
@@ -884,7 +760,7 @@ class _PrinterIndicator extends ConsumerWidget {
                 leading: AvatarIcon(icon: Icons.print_rounded),
                 title: Text(p.name),
                 subtitle: Text(
-                  '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} Â· ' : ''}${p.averageWatts} W'
+                  '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
                   '${p.isDefault ? ' (default)' : ''}',
                 ),
                 onTap: () {
@@ -906,7 +782,7 @@ class _PrinterIndicator extends ConsumerWidget {
   }
 }
 
-// === MaterialRow y controllers ===
+// === MaterialCtrls y MaterialRowTile ===
 
 class _MaterialCtrls {
   _MaterialCtrls({
@@ -956,25 +832,39 @@ class _MaterialUpdate {
   final String gramsPerBobbin;
 }
 
-class _MaterialRowTile extends StatelessWidget {
+class _MaterialRowTile extends ConsumerWidget {
   const _MaterialRowTile({
     required this.index,
-    required this.ctrls,
+    required this.labelCtrl,
+    required this.weightCtrl,
+    required this.priceCtrl,
+    required this.gramsCtrl,
     required this.onChanged,
+    required this.deletable,
+    this.showLabel = true,
     required this.onRemove,
     required this.pending,
   });
 
   final int index;
-  final _MaterialCtrls ctrls;
+  final TextEditingController labelCtrl;
+  final TextEditingController weightCtrl;
+  final TextEditingController priceCtrl;
+  final TextEditingController gramsCtrl;
   final ValueChanged<_MaterialUpdate> onChanged;
+  final bool deletable;
+  final bool showLabel;
   final VoidCallback onRemove;
   final bool pending;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (pending) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final filamentsAsync = ref.watch(filamentsNotifierProvider);
+    final filaments = filamentsAsync.valueOrNull ?? <Filament>[];
+    final defaultFilament = ref.watch(defaultFilamentProvider);
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -986,6 +876,7 @@ class _MaterialRowTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Header: badge + titulo + Spacer + catalog chips + (opcional) delete
           Row(
             children: [
               Container(
@@ -1008,34 +899,53 @@ class _MaterialRowTile extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Text('Material ${index + 1}', style: theme.textTheme.titleSmall),
               const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded),
-                tooltip: 'Quitar',
-                onPressed: onRemove,
-                style: IconButton.styleFrom(
-                  foregroundColor: theme.colorScheme.error,
+              if (filaments.isNotEmpty) ...[
+                if (defaultFilament != null)
+                  _ActionChip(
+                    icon: Icons.star_rounded,
+                    label: 'Usar ${defaultFilament.name}',
+                    onTap: () => _loadFromFilament(ref, defaultFilament),
+                  ),
+                if (defaultFilament != null)
+                  const SizedBox(width: AppSpacing.xs),
+                _ActionChip(
+                  icon: Icons.inventory_2_rounded,
+                  label: 'Catalogo',
+                  onTap: () => _showCatalogDialog(context, ref, filaments),
                 ),
-              ),
+                if (deletable) const SizedBox(width: AppSpacing.xs),
+              ],
+              if (deletable)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  tooltip: 'Quitar',
+                  onPressed: onRemove,
+                  style: IconButton.styleFrom(
+                    foregroundColor: theme.colorScheme.error,
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
-            controller: ctrls.label,
-            decoration: const InputDecoration(
-              labelText: 'Etiqueta',
-              helperText: 'Opcional (ej: PLA base)',
-              isDense: true,
-              prefixIcon: Icon(Icons.label_outline, size: 18),
+          if (showLabel) ...[
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: labelCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Etiqueta',
+                helperText: 'Opcional (ej: PLA base)',
+                isDense: true,
+                prefixIcon: Icon(Icons.label_outline, size: 18),
+              ),
+              onChanged: (v) => _emit(),
             ),
-            onChanged: (v) => _emit(),
-          ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
                 child: NumericInputField(
                   label: 'Peso',
-                  controller: ctrls.weight,
+                  controller: weightCtrl,
                   onChanged: (v) => _emit(),
                   suffix: 'g',
                 ),
@@ -1044,7 +954,7 @@ class _MaterialRowTile extends StatelessWidget {
               Expanded(
                 child: NumericInputField(
                   label: 'Precio bobina',
-                  controller: ctrls.price,
+                  controller: priceCtrl,
                   onChanged: (v) => _emit(),
                   suffix: 'BOB',
                 ),
@@ -1053,7 +963,7 @@ class _MaterialRowTile extends StatelessWidget {
               Expanded(
                 child: NumericInputField(
                   label: 'Gramos / bobina',
-                  controller: ctrls.grams,
+                  controller: gramsCtrl,
                   onChanged: (v) => _emit(),
                   suffix: 'g',
                 ),
@@ -1068,20 +978,68 @@ class _MaterialRowTile extends StatelessWidget {
   void _emit() {
     onChanged(
       _MaterialUpdate(
-        label: ctrls.label.text,
-        weight: ctrls.weight.text,
-        pricePerBobbin: ctrls.price.text,
-        gramsPerBobbin: ctrls.grams.text,
+        label: labelCtrl.text,
+        weight: weightCtrl.text,
+        pricePerBobbin: priceCtrl.text,
+        gramsPerBobbin: gramsCtrl.text,
+      ),
+    );
+  }
+
+  void _loadFromFilament(WidgetRef ref, Filament f) {
+    labelCtrl.text = f.name;
+    priceCtrl.text = f.pricePerBobbin.toStringAsFixed(2);
+    gramsCtrl.text = f.gramsPerBobbin.toStringAsFixed(0);
+    _emit();
+  }
+
+  void _showCatalogDialog(
+    BuildContext context,
+    WidgetRef ref,
+    List<Filament> filaments,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Seleccionar filamento'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: filaments.length,
+            itemBuilder: (_, i) {
+              final f = filaments[i];
+              return ListTile(
+                leading: AvatarIcon(
+                  icon: f.isDefault ? Icons.star_rounded : Icons.label_rounded,
+                  foreground: f.isDefault
+                      ? Theme.of(context).colorScheme.tertiary
+                      : null,
+                ),
+                title: Text(f.name),
+                subtitle: Text(
+                  '${f.pricePerBobbin.toStringAsFixed(0)} BOB · '
+                  '${f.gramsPerBobbin.toStringAsFixed(0)} g'
+                  '${f.isDefault ? ' (default)' : ''}',
+                ),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _loadFromFilament(ref, f);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+        ],
       ),
     );
   }
 }
-
-// _SummaryCard y _DetailSection fueron movidos a
-// lib/features/calculation/presentation/widgets/summary_card.dart para que
-// result_sheet.dart pueda reusarlos sin importar este page (Fix #3).
-
-// === Mode Selector ===
 
 // === Mode Selector ===
 

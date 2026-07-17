@@ -12,10 +12,21 @@ import '../../l10n/es_bo.dart';
 /// - `600-1023dp` (tablet): [NavigationRail] compacto con labels.
 /// - `>= 1024dp` (web/desktop): [NavigationRail] extendido.
 /// - `>= 1280dp`: [NavigationRail] extended con label visible siempre.
-class AppScaffold extends StatelessWidget {
+///
+/// **Transition**: cross-fade al cambiar de tab.
+class AppScaffold extends StatefulWidget {
   const AppScaffold({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
+
+  @override
+  State<AppScaffold> createState() => _AppScaffoldState();
+}
+
+class _AppScaffoldState extends State<AppScaffold>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fadeCtrl;
+  int _prevIndex = 0;
 
   static const _destinations = <_NavDest>[
     _NavDest(
@@ -40,10 +51,35 @@ class AppScaffold extends StatelessWidget {
     ),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _prevIndex = widget.navigationShell.currentIndex;
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    )..forward();
+  }
+
+  @override
+  void didUpdateWidget(AppScaffold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_prevIndex != widget.navigationShell.currentIndex) {
+      _prevIndex = widget.navigationShell.currentIndex;
+      _fadeCtrl.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
   void _onTap(int index) {
-    navigationShell.goBranch(
+    widget.navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
@@ -66,9 +102,12 @@ class AppScaffold extends StatelessWidget {
 
   Widget _buildMobileNav(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: FadeTransition(
+        opacity: _fadeCtrl,
+        child: widget.navigationShell,
+      ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
+        selectedIndex: widget.navigationShell.currentIndex,
         onDestinationSelected: _onTap,
         height: 65,
         destinations: [
@@ -91,7 +130,7 @@ class AppScaffold extends StatelessWidget {
             NavigationRail(
               extended: extended,
               minExtendedWidth: 180,
-              selectedIndex: navigationShell.currentIndex,
+              selectedIndex: widget.navigationShell.currentIndex,
               onDestinationSelected: _onTap,
               labelType: extended
                   ? NavigationRailLabelType.none
@@ -116,7 +155,12 @@ class AppScaffold extends StatelessWidget {
               ],
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: navigationShell),
+            Expanded(
+              child: FadeTransition(
+                opacity: _fadeCtrl,
+                child: widget.navigationShell,
+              ),
+            ),
           ],
         ),
       ),

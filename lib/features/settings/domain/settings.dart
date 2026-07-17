@@ -9,6 +9,8 @@ class Settings {
   const Settings({
     required this.profitBase,
     required this.kwhRate,
+    required this.companyName,
+    this.companyLogoBase64,
   });
 
   /// Ganancia base global en porcentaje. Default 200%.
@@ -17,10 +19,24 @@ class Settings {
   /// Tarifa electrica en BOB/kWh. Default 0.7.
   final Decimal kwhRate;
 
-  Settings copyWith({Decimal? profitBase, Decimal? kwhRate}) {
+  /// Nombre de la empresa/negocio para la cotizacion.
+  final String companyName;
+
+  /// Logo de la empresa en base64 (PNG). Null si no configurado.
+  final String? companyLogoBase64;
+
+  Settings copyWith({
+    Decimal? profitBase,
+    Decimal? kwhRate,
+    String? companyName,
+    String? companyLogoBase64,
+    bool clearLogo = false,
+  }) {
     return Settings(
       profitBase: profitBase ?? this.profitBase,
       kwhRate: kwhRate ?? this.kwhRate,
+      companyName: companyName ?? this.companyName,
+      companyLogoBase64: clearLogo ? null : (companyLogoBase64 ?? this.companyLogoBase64),
     );
   }
 
@@ -28,5 +44,7 @@ class Settings {
   static final Settings defaults = Settings(
     profitBase: Decimal.fromInt(200),
     kwhRate: Decimal.parse('0.7'),
+    companyName: '3dCalc',
+    companyLogoBase64: null,
   );
 }

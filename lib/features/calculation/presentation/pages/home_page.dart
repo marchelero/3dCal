@@ -1,5 +1,8 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
@@ -21,6 +25,8 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncStats = ref.watch(dashboardStatsProvider);
+    final asyncSettings = ref.watch(settingsNotifierProvider);
+    final settings = asyncSettings.valueOrNull;
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
@@ -33,10 +39,12 @@ class HomePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHeader(theme, color),
-                const SizedBox(height: 28),
+                _buildHeader(theme, color,
+                    companyName: settings?.companyName,
+                    companyLogoBase64: settings?.companyLogoBase64),
+                const SizedBox(height: AppSpacing.lg),
                 _buildQuickActions(context, color),
-                const SizedBox(height: 28),
+                const SizedBox(height: AppSpacing.xxl),
                 _buildStatsSection(context, ref, asyncStats, theme, color),
               ],
             ),
@@ -46,50 +54,212 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(ThemeData theme, ColorScheme color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+  Widget _buildHeader(ThemeData theme, ColorScheme color, {
+    String? companyName,
+    String? companyLogoBase64,
+  }) {
+    final hasCompanyConfig = companyName != null &&
+        companyName != '3dCalc' &&
+        companyName.isNotEmpty;
+    final hasLogo = companyLogoBase64 != null && companyLogoBase64.isNotEmpty;
+
+    // Modo empresa: muestra logo + nombre empresa grande, app name pequeno
+    if (hasCompanyConfig || hasLogo) {
+      final displayName = hasCompanyConfig ? companyName : '3dCalc';
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              color.primaryContainer,
+              color.primaryContainer.withValues(alpha: 0.4),
+              color.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadii.xxxl),
+        ),
+        child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color.primaryContainer,
-                borderRadius: BorderRadius.circular(AppRadii.xl),
-              ),
-              child: Icon(
-                Icons.calculate_rounded,
-                color: color.onPrimaryContainer,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Text(
-              '3dCal',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: color.onSurface,
+            // Logo o icono default
+            hasLogo
+                ? _buildCompanyLogo(theme, companyLogoBase64)
+                : _defaultHeroIcon(color),
+            const SizedBox(width: AppSpacing.lg),
+            // Texto
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: color.onSurface,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Row(
+                    children: [
+                      // Badge 3dCalc
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.primaryContainer,
+                          borderRadius: BorderRadius.circular(AppRadii.sm),
+                        ),
+                        child: Text(
+                          '3dCalc',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: color.onPrimaryContainer,
+                            fontWeight: FontWeight.w600,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Cotizaciones 3D · Rapido · Preciso · Sin internet',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.onSurfaceVariant,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'Cotizaciones 3D local-first',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: color.onSurfaceVariant,
-          ),
+      );
+    }
+
+    // Modo default: solo app name
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.primaryContainer,
+            color.primaryContainer.withValues(alpha: 0.4),
+            color.surface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        Text(
-          'Rapido. Preciso. Sin internet.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: color.onSurfaceVariant,
+        borderRadius: BorderRadius.circular(AppRadii.xxxl),
+      ),
+      child: Row(
+        children: [
+          // Icon area grande con decoracion
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.primary,
+                  color.primary.withValues(alpha: 0.7),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AppRadii.xxl),
+              boxShadow: [
+                BoxShadow(
+                  color: color.primary.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.calculate_rounded, color: Colors.white, size: 34),
           ),
-        ),
-      ],
+          const SizedBox(width: AppSpacing.lg),
+          // Texto
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '3dCalc',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color.onSurface,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Cotizaciones 3D · Rapido · Preciso · Sin internet',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: color.onSurfaceVariant,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _defaultHeroIcon(ColorScheme color) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.primary,
+            color.primary.withValues(alpha: 0.7),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
+        boxShadow: [
+          BoxShadow(
+            color: color.primary.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Icon(Icons.calculate_rounded, color: Colors.white, size: 30),
+    );
+  }
+
+  Widget _buildCompanyLogo(ThemeData theme, String base64) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.xl),
+      child: Image.memory(
+        _base64ToBytes(base64),
+        width: 56,
+        height: 56,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _defaultHeroIcon(theme.colorScheme),
+      ),
+    );
+  }
+
+  Uint8List _base64ToBytes(String base64) {
+    try {
+      return base64Decode(base64);
+    } catch (_) {
+      return Uint8List(0);
+    }
   }
 
   Widget _buildQuickActions(BuildContext context, ColorScheme color) {

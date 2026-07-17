@@ -15,6 +15,7 @@ class CalculationDraft {
     required this.totalHours,
     required this.discountPercentage,
     required this.output,
+    this.filamentLabel = '',
     this.pieceName,
     this.clientName,
   });
@@ -23,6 +24,7 @@ class CalculationDraft {
   final Decimal totalHours;
   final Decimal discountPercentage;
   final CalculationOutput output;
+  final String filamentLabel;
   final String? pieceName;
   final String? clientName;
 }

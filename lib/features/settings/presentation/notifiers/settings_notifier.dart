@@ -20,6 +20,8 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
     return Settings(
       profitBase: await repo.getProfitBase(),
       kwhRate: await repo.getKwhRate(),
+      companyName: await repo.getCompanyName(),
+      companyLogoBase64: await repo.getCompanyLogo(),
     );
   }
 
@@ -37,6 +39,25 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
     await repo.setKwhRate(value);
     final current = state.valueOrNull ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(kwhRate: value));
+  }
+
+  /// Persiste [value] como nombre de la empresa.
+  Future<void> updateCompanyName(String value) async {
+    final repo = ref.read(settingsRepositoryProvider);
+    await repo.setCompanyName(value);
+    final current = state.valueOrNull ?? Settings.defaults;
+    state = AsyncValue.data(current.copyWith(companyName: value));
+  }
+
+  /// Persiste el logo en base64. null para borrar.
+  Future<void> updateCompanyLogo(String? base64) async {
+    final repo = ref.read(settingsRepositoryProvider);
+    await repo.setCompanyLogo(base64);
+    final current = state.valueOrNull ?? Settings.defaults;
+    state = AsyncValue.data(current.copyWith(
+      companyLogoBase64: base64,
+      clearLogo: base64 == null,
+    ));
   }
 }
 

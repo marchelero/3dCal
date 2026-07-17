@@ -48,19 +48,22 @@ class CalculationsListPage extends ConsumerWidget {
               onCta: () => context.push('/calculator'),
             );
           }
-          return RefreshIndicator(
-            onRefresh: () =>
-                ref.refresh(calculationsNotifierProvider.future),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
-              itemCount: calcs.length,
-              itemBuilder: (_, i) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _CalculationCard(calc: calcs[i], notifier: notifier),
-              ),
-            ),
-          );
+              return RefreshIndicator(
+                onRefresh: () =>
+                    ref.refresh(calculationsNotifierProvider.future),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                  itemCount: calcs.length,
+                  itemBuilder: (_, i) => _StaggeredItem(
+                    index: i,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _CalculationCard(calc: calcs[i], notifier: notifier),
+                    ),
+                  ),
+                ),
+              );
         },
       ),
     );
@@ -262,3 +265,56 @@ class _PopupMenu extends StatelessWidget {
 }
 
 enum _TileAction { toggleSold, delete }
+
+/// Staggered entrance animation para items de lista.
+///
+/// Cada item hace slide-up + fade con delay progresivo segun [index].
+/// El efecto es visible al entrar a la pagina (entran uno tras otro).
+class _StaggeredItem extends StatefulWidget {
+  const _StaggeredItem({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  State<_StaggeredItem> createState() => _StaggeredItemState();
+}
+
+class _StaggeredItemState extends State<_StaggeredItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
+    Future.delayed(Duration(milliseconds: widget.index * 60), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _anim,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.12),
+          end: Offset.zero,
+        ).animate(_anim),
+        child: widget.child,
+      ),
+    );
+  }
+}

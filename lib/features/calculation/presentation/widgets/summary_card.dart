@@ -2,7 +2,6 @@
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/money/currency_formatter.dart';
@@ -10,7 +9,7 @@ import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../domain/entities/calculation_output.dart';
-import '../state/calculator_state.dart';
+import '../state/calculator_state.dart' show CalculatorMode, CalculatorState, MaterialCostBreakdown;
 
 /// Tarjeta resumen de la cotizacion.
 ///
@@ -28,6 +27,7 @@ class SummaryCard extends StatelessWidget {
     required this.discountPct,
     required this.showDetail,
     required this.onToggleDetail,
+    required this.detailMaterialBreakdown,
     required this.detailElectricCost,
     required this.detailBaseCost,
     required this.detailProfitAmount,
@@ -42,6 +42,7 @@ class SummaryCard extends StatelessWidget {
   final String discountPct;
   final bool showDetail;
   final VoidCallback onToggleDetail;
+  final List<MaterialCostBreakdown> detailMaterialBreakdown;
   final Decimal? detailElectricCost;
   final Decimal? detailBaseCost;
   final Decimal? detailProfitAmount;
@@ -111,22 +112,16 @@ class SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xxl),
 
-          // Big price - HERO display para que el resultado principal
-          // tenga peso visual (no se pierda como parrafo mas).
+          // Big price - HERO display. Usa estilo del tema + tabularFigures
+          // para digitos monoespaciados. Sin GoogleFonts para evitar FOUT.
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               formatBob(output.totalPrice),
-              // M2: cifra principal del resultado usa JetBrains Mono + tabular
-              // para look consistente con el resto de valores monetarios.
-              // V1: displayMedium (45sp) con FittedBox para que numeros largos
-              // (BOB 1,234,567.89) no rompan el layout en mobile angosto.
-              style: GoogleFonts.jetBrainsMono(
-                textStyle: theme.textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color.onPrimaryContainer,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+              style: theme.textTheme.displayMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color.onPrimaryContainer,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
               textAlign: TextAlign.center,
             ),
@@ -159,34 +154,46 @@ class SummaryCard extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
 
-          // Discount badge
+          // Discount breakdown: subtotal → descuento → total
           if (hasDiscount) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg,
-                vertical: 10,
+                vertical: AppSpacing.md,
               ),
               decoration: BoxDecoration(
                 color: color.errorContainer.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(AppRadii.lg),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Text(
+                  _discountRow(
+                    'Sin descuento',
+                    formatBob(output.totalPrice + output.discountAmount),
+                    theme,
+                    color.onErrorContainer,
+                  ),
+                  const SizedBox(height: 6),
+                  _discountRow(
                     'Descuento $discountPct%',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: color.onErrorContainer,
-                      fontWeight: FontWeight.w500,
+                    '-${formatBob(output.discountAmount)}',
+                    theme,
+                    color.onErrorContainer,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Divider(
+                      height: 1,
+                      color: color.onErrorContainer.withValues(alpha: 0.3),
                     ),
                   ),
-                  Text(
-                    '-${formatBob(output.discountAmount)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: color.onErrorContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  _discountRow(
+                    'Total con descuento',
+                    formatBob(output.totalPrice),
+                    theme,
+                    color.onErrorContainer,
+                    bold: true,
                   ),
                 ],
               ),
@@ -222,6 +229,7 @@ class SummaryCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             DetailSection(
               materialCost: output.materialCost,
+              materialBreakdown: detailMaterialBreakdown,
               electricCost: detailElectricCost ?? Decimal.zero,
               baseCost: detailBaseCost ?? Decimal.zero,
               profitAmount: detailProfitAmount ?? Decimal.zero,
@@ -240,6 +248,7 @@ class SummaryCard extends StatelessWidget {
 class DetailSection extends StatelessWidget {
   const DetailSection({
     required this.materialCost,
+    required this.materialBreakdown,
     required this.electricCost,
     required this.baseCost,
     required this.profitAmount,
@@ -249,6 +258,7 @@ class DetailSection extends StatelessWidget {
   });
 
   final Decimal materialCost;
+  final List<MaterialCostBreakdown> materialBreakdown;
   final Decimal electricCost;
   final Decimal baseCost;
   final Decimal profitAmount;
@@ -264,6 +274,11 @@ class DetailSection extends StatelessWidget {
     );
     return Column(
       children: [
+        // Per-material breakdown (si hay mas de 1 material)
+        if (materialBreakdown.length > 1) ...[
+          ...materialBreakdown.map((m) => _materialRow(m, theme, tc)),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         _dr(EsBO.calcDetailMaterial, formatBob(materialCost), s, tc: tc),
         _dr(EsBO.calcDetailEnergy, formatBob(electricCost), s, tc: tc),
         _dr(EsBO.calcDetailBase, formatBob(baseCost), s, tc: tc),
@@ -292,6 +307,39 @@ class DetailSection extends StatelessWidget {
     );
   }
 
+  /// Fila individual de costo por material en el desglose.
+  Widget _materialRow(
+    MaterialCostBreakdown m,
+    ThemeData theme,
+    Color tc,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.sm),
+            child: Text(
+              m.label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: tc.withValues(alpha: 0.7),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          Text(
+            formatBob(m.cost),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              color: tc.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _dr(
     String label,
     String value,
@@ -314,27 +362,54 @@ class DetailSection extends StatelessWidget {
           ),
           Text(
             value,
-            // M2: cifra en summary usa JetBrains Mono + tabular.
-            style: GoogleFonts.jetBrainsMono(
-              textStyle: style?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-                fontWeight: isTotal
-                    ? FontWeight.bold
-                    : isProfit
-                    ? FontWeight.w600
-                    : FontWeight.w500,
-                color: isProfit
-                    ? tc
-                    : isTotal
-                    ? tc
-                    : tc?.withValues(alpha: 0.8),
-              ),
+            style: style?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontWeight: isTotal
+                  ? FontWeight.bold
+                  : isProfit
+                  ? FontWeight.w600
+                  : FontWeight.w500,
+              color: isProfit
+                  ? tc
+                  : isTotal
+                  ? tc
+                  : tc?.withValues(alpha: 0.8),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+/// Helper: fila de breakdown de descuento (label | valor).
+Widget _discountRow(
+  String label,
+  String value,
+  ThemeData theme,
+  Color color, {
+  bool bold = false,
+}) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        label,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: color.withValues(alpha: 0.85),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      Text(
+        value,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: color,
+          fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    ],
+  );
 }
 
 /// Computa los strings de meta info (gramos usados + tiempo de impresion)

@@ -95,7 +95,7 @@ void main() {
 
     expect(find.byType(CalculatorPage), findsOneWidget);
     expect(
-        find.widgetWithText(NumericInputField, 'Peso de la pieza'),
+        find.widgetWithText(NumericInputField, 'Peso'),
         findsOneWidget);
     expect(find.widgetWithText(NumericInputField, 'Horas'), findsOneWidget);
   });
@@ -118,7 +118,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Peso de la pieza'),
+        find.widgetWithText(NumericInputField, 'Peso'),
         '100',
       );
       await tester.pumpAndSettle();

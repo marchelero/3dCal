@@ -19,7 +19,7 @@ class TresdcalApp extends ConsumerWidget {
     final appThemeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
-      title: '3dcal',
+      title: '3dcalc',
       debugShowCheckedModeBanner: false,
       themeMode: appThemeMode.themeMode,
       theme: AppTheme.light(),

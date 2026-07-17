@@ -16,6 +16,29 @@ enum CalculatorMode {
   advanced,
 }
 
+/// Item individual de desglose de costo de materiales.
+/// Usado en DetailSection para mostrar costo por material.
+@immutable
+class MaterialCostBreakdown {
+  const MaterialCostBreakdown({
+    required this.label,
+    required this.cost,
+  });
+
+  final String label;
+  final Decimal cost;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MaterialCostBreakdown &&
+          other.label == label &&
+          other.cost == cost);
+
+  @override
+  int get hashCode => Object.hash(label, cost);
+}
+
 /// Fila de material en el calculator (modo advanced).
 ///
 /// Strings raw, parsing en [parseDecimal]. Inmutable.
@@ -90,8 +113,10 @@ class CalculatorState {
     required this.filamentPrice,
     required this.filamentGrams,
     required this.label,
+    this.filamentLabel = '',
     required this.materials,
     required this.output,
+    this.detailMaterialBreakdown = const <MaterialCostBreakdown>[],
     this.showDetail = false,
     this.detailElectricCost,
     this.detailBaseCost,
@@ -130,6 +155,10 @@ class CalculatorState {
   /// Etiqueta opcional de la cotizacion (ej: "Soporte pared").
   final String label;
 
+  /// Etiqueta del filamento/material en modo Express.
+  /// En Advanced cada material tiene su propia label en [materials].
+  final String filamentLabel;
+
   // === Modo express (single material) ===
   final String weight;
   final String filamentPrice;
@@ -140,6 +169,10 @@ class CalculatorState {
 
   // === Computed ===
   final CalculationOutput? output;
+
+  /// Desglose de costo por material (solo para modo advanced).
+  /// Computado en _recompute(). Vacio en modo express.
+  final List<MaterialCostBreakdown> detailMaterialBreakdown;
 
   // === Detail (ojito toggle) ===
   final bool showDetail;
@@ -164,8 +197,10 @@ class CalculatorState {
     String? filamentPrice,
     String? filamentGrams,
     String? label,
+    String? filamentLabel,
     List<MaterialRow>? materials,
     CalculationOutput? output,
+    List<MaterialCostBreakdown>? detailMaterialBreakdown,
     bool clearOutput = false,
     bool? showDetail,
     Decimal? detailElectricCost,
@@ -185,8 +220,11 @@ class CalculatorState {
         filamentPrice: filamentPrice ?? this.filamentPrice,
         filamentGrams: filamentGrams ?? this.filamentGrams,
         label: label ?? this.label,
+        filamentLabel: filamentLabel ?? this.filamentLabel,
         materials: materials ?? this.materials,
         output: clearOutput ? null : (output ?? this.output),
+        detailMaterialBreakdown:
+            detailMaterialBreakdown ?? this.detailMaterialBreakdown,
         showDetail: showDetail ?? this.showDetail,
         detailElectricCost: clearDetail
             ? null
@@ -277,11 +315,13 @@ class CalculatorState {
         printMinutes == other.printMinutes &&
         discountPct == other.discountPct &&
         label == other.label &&
+        filamentLabel == other.filamentLabel &&
         weight == other.weight &&
         filamentPrice == other.filamentPrice &&
         filamentGrams == other.filamentGrams &&
         _listEq(materials, other.materials) &&
         output == other.output &&
+        _listEqBD(detailMaterialBreakdown, other.detailMaterialBreakdown) &&
         showDetail == other.showDetail &&
         detailElectricCost == other.detailElectricCost &&
         detailBaseCost == other.detailBaseCost &&
@@ -299,6 +339,15 @@ class CalculatorState {
     return true;
   }
 
+  static bool _listEqBD(
+      List<MaterialCostBreakdown> a, List<MaterialCostBreakdown> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
   @override
   int get hashCode => Object.hash(
         mode,
@@ -306,11 +355,13 @@ class CalculatorState {
         printMinutes,
         discountPct,
         label,
+        filamentLabel,
         weight,
         filamentPrice,
         filamentGrams,
         Object.hashAll(materials),
         output,
+        Object.hashAll(detailMaterialBreakdown),
         showDetail,
         detailElectricCost,
         detailBaseCost,

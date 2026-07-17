@@ -1,10 +1,22 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
+import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
+import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
+import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/result_sheet.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/summary_card.dart';
-import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
+
+/// Notifier que devuelve un estado fijo para tests.
+class _FixedStateNotifier extends CalculatorNotifier {
+  _FixedStateNotifier(this.fixedState);
+  final CalculatorState fixedState;
+
+  @override
+  CalculatorState build() => fixedState;
+}
 
 /// Helpers de rendering para que cada test sea declarativo.
 Widget _wrap(Widget child) =>
@@ -102,7 +114,7 @@ void main() {
   });
 
   group('ResultSheetContent', () {
-    testWidgets('renderiza SummaryCard con output del state', (tester) async {
+    testWidgets('renderiza QuoteImageTemplate con output del state', (tester) async {
       final state = _validState();
       await tester.pumpWidget(
         _wrap(
@@ -115,8 +127,8 @@ void main() {
         ),
       );
 
-      // Summary card visible.
-      expect(find.byType(SummaryCard), findsOneWidget);
+      // Quote template visible.
+      expect(find.byType(QuoteImageTemplate), findsOneWidget);
       // Titulo del sheet.
       expect(find.text('Cotizacion'), findsWidgets);
       // Label del state aparece en el card.
@@ -125,7 +137,7 @@ void main() {
       expect(find.text('Bs. 36,00'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('muestra botones de accion (Save, Share, Reset)',
+    testWidgets('muestra 4 botones de accion icon-only',
         (tester) async {
       final state = _validState();
       await tester.pumpWidget(
@@ -139,30 +151,37 @@ void main() {
         ),
       );
 
-      expect(find.text('Guardar cotizacion'), findsOneWidget);
-      expect(find.text('Compartir imagen'), findsOneWidget);
-      // Reset button es IconButton con tooltip.
-      expect(find.byTooltip('Restablecer valores'), findsOneWidget);
+      // 4 botones con tooltips (ahora icon-only, sin texto).
+      expect(find.byTooltip('Guardar cotización'), findsOneWidget);
+      expect(find.byTooltip('Compartir imagen'), findsOneWidget);
+      expect(find.byTooltip('Guardar imagen'), findsOneWidget);
+      expect(find.byTooltip('Restablecer'), findsOneWidget);
     });
 
     testWidgets('tap save cierra sheet y llama onSave', (tester) async {
       var saved = 0;
       final state = _validState();
-      bool? sheetClosed;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (ctx) => Scaffold(
-              body: ElevatedButton(
-                onPressed: () => showResultSheet(
-                  context: ctx,
-                  state: state,
-                  onSave: () => saved++,
-                  onReset: () {},
-                  onToggleDetail: () {},
+        ProviderScope(
+          overrides: [
+            calculatorNotifierProvider.overrideWith(
+              () => _FixedStateNotifier(state),
+            ),
+          ],
+          child: MaterialApp(
+            home: Builder(
+              builder: (ctx) => Scaffold(
+                body: ElevatedButton(
+                  onPressed: () => showResultSheet(
+                    context: ctx,
+                    state: state,
+                    onSave: () => saved++,
+                    onReset: () {},
+                    onToggleDetail: () {},
+                  ),
+                  child: const Text('open'),
                 ),
-                child: const Text('open'),
               ),
             ),
           ),
@@ -171,23 +190,20 @@ void main() {
 
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
-      sheetClosed = true;
 
-      // Tap save.
-      await tester.tap(find.text('Guardar cotizacion'));
+      // Tap save (buscar por tooltip del IconButton).
+      await tester.tap(find.byTooltip('Guardar cotización'));
       await tester.pumpAndSettle();
 
-      // Sheet cerrada (no hay mas SummaryCard en el tree).
-      expect(find.byType(SummaryCard), findsNothing);
+      // Sheet cerrada (no hay mas QuoteImageTemplate en el tree).
+      expect(find.byType(QuoteImageTemplate), findsNothing);
       expect(saved, 1);
     });
 
     testWidgets('boton share se deshabilita durante isSharing', (tester) async {
       // El share real necesita platform channels. Solo verificamos el
-      // estado de UI: el boton pasa a disabled cuando _isSharing=true.
-      // No testeamos el share en si (manual / integration).
+      // estado de UI: el boton arranca enabled.
       final state = _validState();
-      // Renderizamos y verificamos que el boton arranca enabled.
       await tester.pumpWidget(
         _wrap(
           ResultSheetContent(
@@ -199,9 +215,14 @@ void main() {
         ),
       );
 
-      final shareBtn = find.widgetWithText(OutlinedButton, 'Compartir imagen');
-      expect(shareBtn, findsOneWidget);
-      final OutlinedButton btn = tester.widget(shareBtn);
+      // Buscar el icono de compartir, el IconButton debe estar enabled.
+      expect(find.byIcon(Icons.ios_share_rounded), findsOneWidget);
+      final finder = find.ancestor(
+        of: find.byIcon(Icons.ios_share_rounded),
+        matching: find.byType(IconButton),
+      );
+      expect(finder, findsOneWidget);
+      final IconButton btn = tester.widget(finder);
       expect(btn.onPressed, isNotNull);
     });
   });

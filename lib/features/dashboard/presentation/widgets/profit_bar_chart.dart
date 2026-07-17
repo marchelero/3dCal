@@ -49,6 +49,7 @@ class ProfitBarChart extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: 1.5,
         child: BarChart(
+        // fl_chart 0.68 auto-anima en rebuilds con datos nuevos
         BarChartData(
           maxY: maxY,
           minY: 0,
@@ -60,6 +61,14 @@ class ProfitBarChart extends StatelessWidget {
                 BarChartRodData(
                   toY: quotedValue,
                   color: quotedColor,
+                  gradient: LinearGradient(
+                    colors: [
+                      quotedColor.withValues(alpha: 0.4),
+                      quotedColor,
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
                   width: 32,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(4),
@@ -73,6 +82,14 @@ class ProfitBarChart extends StatelessWidget {
                 BarChartRodData(
                   toY: soldValue,
                   color: soldColor,
+                  gradient: LinearGradient(
+                    colors: [
+                      soldColor.withValues(alpha: 0.4),
+                      soldColor,
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
                   width: 32,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(4),

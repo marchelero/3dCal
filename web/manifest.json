@@ -1,6 +1,6 @@
 {
-    "name": "tresdcal",
-    "short_name": "tresdcal",
+    "name": "3dCalc",
+    "short_name": "3dCalc",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
