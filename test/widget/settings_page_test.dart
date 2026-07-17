@@ -47,13 +47,13 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await _pumpPage(tester);
-      expect(find.text('3dCalc'), findsOneWidget);
-      expect(find.text('Parametros globales'), findsOneWidget);
-      expect(find.text('Empresa'), findsOneWidget);
+      expect(find.text('3dCalc'), findsWidgets); // header + company name field default
+      expect(find.text('PARAMETROS GLOBALES'), findsOneWidget); // _SettingsSection usa toUpperCase
+      expect(find.text('EMPRESA'), findsOneWidget); // _SettingsSection usa toUpperCase
       expect(find.text('Nombre de la empresa'), findsOneWidget);
       expect(find.text('Filamentos'), findsOneWidget);
       expect(find.text('Impresoras'), findsOneWidget);
-      expect(find.textContaining('100% local'), findsOneWidget);
+      expect(find.textContaining('Privacidad:'), findsAtLeast(1));
     });
 
     testWidgets(

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
 import '../presentation/notifiers/calculations_notifier.dart';
+import 'monthly_totals.dart';
 
 /// Stats agregadas del historial de cotizaciones.
 ///
@@ -16,12 +17,20 @@ class DashboardStats {
     required this.totalSold,
     required this.countAll,
     required this.countSold,
+    this.monthlyTotals = const [],
+    this.topMaterials = const [],
   });
 
   final Decimal totalQuoted;
   final Decimal totalSold;
   final int countAll;
   final int countSold;
+
+  /// Totales mensuales para trend chart.
+  final List<MonthlyTotal> monthlyTotals;
+
+  /// Top 5 materiales mas usados.
+  final List<TopMaterial> topMaterials;
 
   /// Porcentaje de cotizaciones vendidas (0.0 - 100.0).
   ///
@@ -32,8 +41,8 @@ class DashboardStats {
   }
 }
 
-/// Provider derivado: 4 queries agregadas. Se re-corre cuando
-/// [calculationsNotifierProvider] emite nuevo state.
+/// Provider derivado: queries agregadas + monthly + top materials.
+/// Se re-corre cuando [calculationsNotifierProvider] emite nuevo state.
 final dashboardStatsProvider =
     FutureProvider.autoDispose<DashboardStats>((ref) async {
   ref.watch(calculationsNotifierProvider);
@@ -43,5 +52,7 @@ final dashboardStatsProvider =
     totalSold: await repo.totalSold(),
     countAll: await repo.countAll(),
     countSold: await repo.countSold(),
+    monthlyTotals: await repo.monthlyTotals(),
+    topMaterials: await repo.topMaterials(),
   );
 });

@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../domain/entities/calculation_output.dart';
 import '../domain/entities/material_input.dart';
+import '../domain/monthly_totals.dart';
 
 /// Datos de entrada para crear una cotizacion.
 ///
@@ -154,16 +155,18 @@ class CalculationRepository {
 
   /// Total cotizado (suma de totalPriceSnapshot de todas las cotizaciones).
   Future<Decimal> totalQuoted() async {
-    final all = await listAll();
-    return all.fold<Decimal>(Decimal.zero, (acc, c) => acc + Decimal.parse(c.totalPriceSnapshot.toString()));
+    final result = await _db.customSelect(
+      'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations',
+    ).getSingle();
+    return Decimal.parse(result.read<double>('total')!.toStringAsFixed(2));
   }
 
   /// Total ganado (suma de totalPriceSnapshot donde isSold=true).
   Future<Decimal> totalSold() async {
-    final sold = await (_db.select(_db.calculations)
-          ..where((c) => c.isSold.equals(true)))
-        .get();
-    return sold.fold<Decimal>(Decimal.zero, (acc, c) => acc + Decimal.parse(c.totalPriceSnapshot.toString()));
+    final result = await _db.customSelect(
+      'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_sold = 1',
+    ).getSingle();
+    return Decimal.parse(result.read<double>('total')!.toStringAsFixed(2));
   }
 
   /// Cantidad de cotizaciones vendidas.
@@ -181,6 +184,52 @@ class CalculationRepository {
           ..addColumns([_db.calculations.id.count()]))
         .getSingle();
     return result.read(_db.calculations.id.count()) ?? 0;
+  }
+
+  /// Totales agrupados por mes (YYYY-MM).
+  /// Ordenados por mes ascendente. Maneja DB vacia (retorna []) y
+  /// created_at null (filtra esos rows).
+  Future<List<MonthlyTotal>> monthlyTotals() async {
+    final rows = await _db.customSelect(
+      '''
+      SELECT COALESCE(strftime('%Y-%m', created_at), 'desconocido') AS month,
+             COALESCE(SUM(total_price_snapshot), 0) AS quoted,
+             COALESCE(SUM(CASE WHEN is_sold = 1 THEN total_price_snapshot ELSE 0 END), 0) AS sold
+      FROM calculations
+      WHERE created_at IS NOT NULL
+      GROUP BY month
+      ORDER BY month ASC
+      ''',
+    ).get();
+    return rows.map((r) {
+      return MonthlyTotal(
+        yearMonth: r.read<String>('month') ?? '',
+        quoted: r.read<double>('quoted') ?? 0.0,
+        sold: r.read<double>('sold') ?? 0.0,
+      );
+    }).toList();
+  }
+
+  /// Top materiales mas usados en cotizaciones.
+  Future<List<TopMaterial>> topMaterials({int limit = 5}) async {
+    final rows = await _db.customSelect(
+      '''
+      SELECT label, COUNT(*) AS cnt, COALESCE(SUM(weight_grams), 0) AS total_g
+      FROM calculation_materials
+      WHERE label IS NOT NULL AND label != ''
+      GROUP BY label
+      ORDER BY cnt DESC
+      LIMIT ?
+      ''',
+      variables: [Variable<int>(limit)],
+    ).get();
+    return rows.map((r) {
+      return TopMaterial(
+        label: r.read<String>('label') ?? '',
+        count: (r.read<double>('cnt') ?? 0).round(),
+        totalWeightGrams: r.read<double>('total_g') ?? 0.0,
+      );
+    }).toList();
   }
 
   // -------- Helpers --------

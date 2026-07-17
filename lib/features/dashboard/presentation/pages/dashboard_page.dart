@@ -14,6 +14,8 @@ import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
+import '../../../calculation/domain/monthly_totals.dart';
+import '../widgets/monthly_trend_chart.dart';
 import '../widgets/profit_bar_chart.dart';
 
 /// Pagina `/dashboard` con stats agregadas + bar chart.
@@ -128,7 +130,7 @@ class _DashboardBody extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // Chart section
+          // Chart section — totals bar
           Card(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -148,9 +150,124 @@ class _DashboardBody extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Monthly trend chart
+          if (stats.monthlyTotals.length >= 2)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
+                      icon: Icons.trending_up_rounded,
+                      title: 'Tendencia mensual',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(
+                      height: 30,
+                      child: Row(
+                        children: [
+                          _LegendDot(color: color.primary, label: 'Cotizado'),
+                          const SizedBox(width: AppSpacing.lg),
+                          _LegendDot(
+                              color: color.tertiary, label: 'Vendido'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    MonthlyTrendChart(data: stats.monthlyTotals),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Top materials
+          if (stats.topMaterials.isNotEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
+                      icon: Icons.inventory_2_rounded,
+                      title: 'Materiales mas usados',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ...stats.topMaterials.map((m) => _MaterialRow(m: m)),
+                  ],
+                ),
+              ),
+            ),
+
           const SizedBox(height: AppSpacing.xxl),
         ],
         ),
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+  }
+}
+
+class _MaterialRow extends StatelessWidget {
+  const _MaterialRow({required this.m});
+  final TopMaterial m;
+
+  @override
+  Widget build(BuildContext context) {
+    final grams = m.totalWeightGrams;
+    final gramsStr = grams >= 1000
+        ? '${(grams / 1000).toStringAsFixed(1)}kg'
+        : '${grams.toStringAsFixed(0)}g';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              m.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+          Text(
+            '${m.count}x · $gramsStr',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
