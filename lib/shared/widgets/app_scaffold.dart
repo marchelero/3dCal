@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_radii.dart';
 import '../../l10n/es_bo.dart';
 
 /// Shell responsive que envuelve las 4 destinations principales del shell
@@ -101,60 +102,127 @@ class _AppScaffoldState extends State<AppScaffold>
   }
 
   Widget _buildMobileNav(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
     return Scaffold(
       body: FadeTransition(
         opacity: _fadeCtrl,
         child: widget.navigationShell,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: widget.navigationShell.currentIndex,
-        onDestinationSelected: _onTap,
-        height: 65,
-        destinations: [
-          for (final d in _destinations)
-            NavigationDestination(
-              icon: Icon(d.icon),
-              selectedIcon: Icon(d.selectedIcon),
-              label: d.label,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              color.surfaceContainerLow,
+              color.surfaceContainer,
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, -3),
             ),
-        ],
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Barra naranja superior (muy visible) ──
+            Container(
+              height: 2.5,
+              width: double.infinity,
+              color: color.secondary.withValues(alpha: 0.5),
+            ),
+            NavigationBar(
+              selectedIndex: widget.navigationShell.currentIndex,
+              onDestinationSelected: _onTap,
+              height: 68,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              indicatorShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.xl),
+              ),
+              destinations: [
+                for (final d in _destinations)
+                  NavigationDestination(
+                    icon: Icon(d.icon),
+                    selectedIcon: Icon(d.selectedIcon),
+                    label: d.label,
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTabletNav(BuildContext context, {required bool extended}) {
+    final color = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
         child: Row(
           children: [
-            NavigationRail(
-              extended: extended,
-              minExtendedWidth: 180,
-              selectedIndex: widget.navigationShell.currentIndex,
-              onDestinationSelected: _onTap,
-              labelType: extended
-                  ? NavigationRailLabelType.none
-                  : NavigationRailLabelType.all,
-              leading: extended
-                  ? Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Icon(
-                        Icons.calculate_rounded,
-                        size: 32,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    )
-                  : null,
-              destinations: [
-                for (final d in _destinations)
-                  NavigationRailDestination(
-                    icon: Icon(d.icon),
-                    selectedIcon: Icon(d.selectedIcon),
-                    label: Text(d.label),
+            // ── NavigationRail con fondo y borde ──
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    color.surfaceContainerLow,
+                    color.surfaceContainer,
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // App icon top
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+                    child: Icon(
+                      Icons.calculate_rounded,
+                      size: extended ? 32 : 24,
+                      color: color.primary,
+                    ),
                   ),
-              ],
+                  // Rail
+                  Expanded(
+                    child: NavigationRail(
+                      extended: extended,
+                      minExtendedWidth: 180,
+                      selectedIndex: widget.navigationShell.currentIndex,
+                      onDestinationSelected: _onTap,
+                      labelType: extended
+                          ? NavigationRailLabelType.none
+                          : NavigationRailLabelType.all,
+                      backgroundColor: Colors.transparent,
+                      indicatorShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.xl),
+                      ),
+                      leading: const SizedBox.shrink(),
+                      destinations: [
+                        for (final d in _destinations)
+                          NavigationRailDestination(
+                            icon: Icon(d.icon),
+                            selectedIcon: Icon(d.selectedIcon),
+                            label: Text(d.label),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const VerticalDivider(width: 1),
+            // ── Separador con borde naranja ──
+            Container(
+              width: 2.5,
+              color: color.secondary.withValues(alpha: 0.3),
+            ),
+            // ── Contenido ──
             Expanded(
               child: FadeTransition(
                 opacity: _fadeCtrl,

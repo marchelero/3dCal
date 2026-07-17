@@ -194,11 +194,18 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         indicatorColor: colorScheme.secondaryContainer,
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+        ),
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         backgroundColor: surfaceColor,
+        height: 68,
       ),
       navigationRailTheme: NavigationRailThemeData(
         indicatorColor: colorScheme.secondaryContainer,
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+        ),
         labelType: NavigationRailLabelType.all,
         backgroundColor: surfaceColor,
       ),
