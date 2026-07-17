@@ -17,6 +17,10 @@ class CalculationDraft {
     this.clientName = '',
     this.isAdvanced = false,
     this.materials = const [],
+    this.extraLaborRate = '',
+    this.extraPostProcessRate = '',
+    this.extraFailureRate = '',
+    this.extraMarkupOnMaterials = '',
   });
 
   factory CalculationDraft.fromJson(Map<String, dynamic> json) {
@@ -36,6 +40,10 @@ class CalculationDraft {
                   MaterialDraft.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      extraLaborRate: json['extraLaborRate'] as String? ?? '',
+      extraPostProcessRate: json['extraPostProcessRate'] as String? ?? '',
+      extraFailureRate: json['extraFailureRate'] as String? ?? '',
+      extraMarkupOnMaterials: json['extraMarkupOnMaterials'] as String? ?? '',
     );
   }
 
@@ -51,6 +59,12 @@ class CalculationDraft {
   final bool isAdvanced;
   final List<MaterialDraft> materials;
 
+  // === F1: OTROS ===
+  final String extraLaborRate;
+  final String extraPostProcessRate;
+  final String extraFailureRate;
+  final String extraMarkupOnMaterials;
+
   Map<String, dynamic> toJson() => {
         'weight': weight,
         'printHours': printHours,
@@ -63,6 +77,10 @@ class CalculationDraft {
         'clientName': clientName,
         'isAdvanced': isAdvanced,
         'materials': materials.map((m) => m.toJson()).toList(),
+        'extraLaborRate': extraLaborRate,
+        'extraPostProcessRate': extraPostProcessRate,
+        'extraFailureRate': extraFailureRate,
+        'extraMarkupOnMaterials': extraMarkupOnMaterials,
       };
 
   String encode() => jsonEncode(toJson());

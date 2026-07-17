@@ -439,7 +439,11 @@ class _DetailState extends ConsumerState<_Detail> {
                 showDetail: _showDetail,
                 detailMaterialBreakdown: result.breakdown,
                 detailElectricCost: result.electricCost,
+                detailLaborCost: result.laborCost,
+                detailPostProcessCost: result.postProcessCost,
                 detailBaseCost: result.baseCost,
+                detailFailureCost: result.failureCost,
+                detailMarkupCost: result.markupCost,
                 detailProfitAmount: result.profitAmount,
                 detailTotalFinal: result.totalFinal,
                 metaGrams: result.metaGrams,
@@ -533,8 +537,10 @@ class _DetailState extends ConsumerState<_Detail> {
 ///
 /// Retorna null si materials aun no cargaron.
 ({CalculationOutput output, List<MaterialCostBreakdown> breakdown,
-  Decimal electricCost, Decimal baseCost, Decimal profitAmount,
-  Decimal totalFinal, String? metaGrams, String? metaTime})?
+  Decimal electricCost, Decimal laborCost, Decimal postProcessCost,
+  Decimal baseCost, Decimal failureCost, Decimal markupCost,
+  Decimal profitAmount, Decimal totalFinal,
+  String? metaGrams, String? metaTime})?
 _recomputeOutput(
   Calculation calc,
   List<CalculationMaterial> materials,
@@ -566,17 +572,30 @@ _recomputeOutput(
     totalGrams += weight;
   }
 
-  // Detail values (electricity + profit) with current settings
+  // F1 formula with current settings + snapshots
   final watts = printer?.averageWatts ?? 0;
   final electricCost = hours > Decimal.zero && watts > 0
       ? (Decimal.fromInt(watts) * hours * settings.kwhRate /
               Decimal.fromInt(1000))
           .toDecimal()
       : Decimal.zero;
-  final baseCost = materialCost + electricCost;
-  final profitAmount =
-      (baseCost * settings.profitBase / Decimal.fromInt(100)).toDecimal();
-  final totalFinal = baseCost + profitAmount;
+  final laborCost = hours * settings.laborRate;
+  final postProcessCost = settings.postProcessRate > Decimal.zero
+      ? (materialCost * settings.postProcessRate / Decimal.fromInt(100)).toDecimal()
+      : Decimal.zero;
+  final baseCost = materialCost + electricCost + laborCost + postProcessCost;
+  final failureCost = settings.failureRate > Decimal.zero
+      ? (baseCost * settings.failureRate / Decimal.fromInt(100)).toDecimal()
+      : Decimal.zero;
+  final costWithFailure = baseCost + failureCost;
+  final markupCost = settings.markupOnMaterials > Decimal.zero
+      ? (materialCost * settings.markupOnMaterials / Decimal.fromInt(100)).toDecimal()
+      : Decimal.zero;
+  final totalBeforeProfit = costWithFailure + markupCost;
+  final profitAmount = settings.profitBase > Decimal.zero
+      ? (totalBeforeProfit * settings.profitBase / Decimal.fromInt(100)).toDecimal()
+      : Decimal.zero;
+  final totalFinal = totalBeforeProfit + profitAmount;
 
   // Discount on totalFinal
   final discountOnTotalFinal = discountPct > Decimal.zero
@@ -584,9 +603,24 @@ _recomputeOutput(
       : Decimal.zero;
   final totalPrice = totalFinal - discountOnTotalFinal;
 
+  final output = CalculationOutput(
+    materialCost: materialCost,
+    electricCost: electricCost,
+    laborCost: laborCost,
+    postProcessCost: postProcessCost,
+    baseCost: baseCost,
+    failureCost: failureCost,
+    costWithFailure: costWithFailure,
+    markupCost: markupCost,
+    totalBeforeProfit: totalBeforeProfit,
+    profitAmount: profitAmount,
+    totalFinal: totalFinal,
+    discountAmount: discountOnTotalFinal,
+    totalPrice: totalPrice,
+  );
+
   // Meta
-  final totalMinutes =
-      (hours * Decimal.fromInt(60)).toBigInt();
+  final totalMinutes = (hours * Decimal.fromInt(60)).toBigInt();
   String? timeStr;
   if (totalMinutes > BigInt.zero) {
     final hh = totalMinutes ~/ BigInt.from(60);
@@ -598,14 +632,14 @@ _recomputeOutput(
       : null;
 
   return (
-    output: CalculationOutput(
-      materialCost: materialCost,
-      discountAmount: discountOnTotalFinal,
-      totalPrice: totalPrice,
-    ),
+    output: output,
     breakdown: breakdown,
     electricCost: electricCost,
+    laborCost: laborCost,
+    postProcessCost: postProcessCost,
     baseCost: baseCost,
+    failureCost: failureCost,
+    markupCost: markupCost,
     profitAmount: profitAmount,
     totalFinal: totalFinal,
     metaGrams: gramsStr,

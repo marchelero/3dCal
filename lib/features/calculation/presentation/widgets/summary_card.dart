@@ -29,7 +29,11 @@ class SummaryCard extends StatelessWidget {
     required this.onToggleDetail,
     required this.detailMaterialBreakdown,
     required this.detailElectricCost,
+    required this.detailLaborCost,
+    required this.detailPostProcessCost,
     required this.detailBaseCost,
+    required this.detailFailureCost,
+    required this.detailMarkupCost,
     required this.detailProfitAmount,
     required this.detailTotalFinal,
     required this.metaGrams,
@@ -44,10 +48,13 @@ class SummaryCard extends StatelessWidget {
   final VoidCallback onToggleDetail;
   final List<MaterialCostBreakdown> detailMaterialBreakdown;
   final Decimal? detailElectricCost;
+  final Decimal? detailLaborCost;
+  final Decimal? detailPostProcessCost;
   final Decimal? detailBaseCost;
+  final Decimal? detailFailureCost;
+  final Decimal? detailMarkupCost;
   final Decimal? detailProfitAmount;
   final Decimal? detailTotalFinal;
-
   /// Texto formateado de gramos usados (ej: "100 g"). Si null, no se renderiza.
   final String? metaGrams;
 
@@ -231,7 +238,11 @@ class SummaryCard extends StatelessWidget {
               materialCost: output.materialCost,
               materialBreakdown: detailMaterialBreakdown,
               electricCost: detailElectricCost ?? Decimal.zero,
+              laborCost: detailLaborCost ?? Decimal.zero,
+              postProcessCost: detailPostProcessCost ?? Decimal.zero,
               baseCost: detailBaseCost ?? Decimal.zero,
+              failureCost: detailFailureCost ?? Decimal.zero,
+              markupCost: detailMarkupCost ?? Decimal.zero,
               profitAmount: detailProfitAmount ?? Decimal.zero,
               totalFinal: detailTotalFinal ?? Decimal.zero,
               textColor: color.onPrimaryContainer,
@@ -243,14 +254,18 @@ class SummaryCard extends StatelessWidget {
   }
 }
 
-/// Seccion de detalle expandible: costo material, energia, base, ganancia,
-/// total final. Renderizada dentro de [SummaryCard] cuando `showDetail`.
+/// Seccion de detalle expandible: costo material, energia, mano de obra,
+/// post-procesado, base, falla, markup, ganancia, cargo minimo y total final.
 class DetailSection extends StatelessWidget {
   const DetailSection({
     required this.materialCost,
     required this.materialBreakdown,
     required this.electricCost,
+    required this.laborCost,
+    required this.postProcessCost,
     required this.baseCost,
+    required this.failureCost,
+    required this.markupCost,
     required this.profitAmount,
     required this.totalFinal,
     this.textColor,
@@ -260,7 +275,11 @@ class DetailSection extends StatelessWidget {
   final Decimal materialCost;
   final List<MaterialCostBreakdown> materialBreakdown;
   final Decimal electricCost;
+  final Decimal laborCost;
+  final Decimal postProcessCost;
   final Decimal baseCost;
+  final Decimal failureCost;
+  final Decimal markupCost;
   final Decimal profitAmount;
   final Decimal totalFinal;
   final Color? textColor;
@@ -272,7 +291,12 @@ class DetailSection extends StatelessWidget {
     final s = theme.textTheme.bodySmall?.copyWith(
       color: tc.withValues(alpha: 0.8),
     );
+    final hasExtras = laborCost > Decimal.zero ||
+        postProcessCost > Decimal.zero ||
+        failureCost > Decimal.zero ||
+        markupCost > Decimal.zero;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Per-material breakdown (si hay mas de 1 material)
         if (materialBreakdown.length > 1) ...[
@@ -281,7 +305,18 @@ class DetailSection extends StatelessWidget {
         ],
         _dr(EsBO.calcDetailMaterial, formatBob(materialCost), s, tc: tc),
         _dr(EsBO.calcDetailEnergy, formatBob(electricCost), s, tc: tc),
-        _dr(EsBO.calcDetailBase, formatBob(baseCost), s, tc: tc),
+        if (laborCost > Decimal.zero)
+          _dr(EsBO.calcDetailLabor, formatBob(laborCost), s, tc: tc),
+        if (postProcessCost > Decimal.zero)
+          _dr(
+              EsBO.calcDetailPostProcess, formatBob(postProcessCost), s,
+              tc: tc),
+        _dr(EsBO.calcDetailBase, formatBob(baseCost), s, tc: tc,
+            isSubtotal: hasExtras),
+        if (failureCost > Decimal.zero)
+          _dr(EsBO.calcDetailFailure, formatBob(failureCost), s, tc: tc),
+        if (markupCost > Decimal.zero)
+          _dr(EsBO.calcDetailMarkup, formatBob(markupCost), s, tc: tc),
         _dr(
           EsBO.calcDetailProfit,
           formatBob(profitAmount),
@@ -347,6 +382,7 @@ class DetailSection extends StatelessWidget {
     Color? tc,
     bool isProfit = false,
     bool isTotal = false,
+    bool isSubtotal = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -356,8 +392,13 @@ class DetailSection extends StatelessWidget {
           Text(
             label,
             style: style?.copyWith(
-              fontWeight: isTotal ? FontWeight.w600 : null,
-              color: tc?.withValues(alpha: isTotal ? 1.0 : 0.8),
+              fontWeight: isTotal
+                  ? FontWeight.w600
+                  : isSubtotal
+                  ? FontWeight.w600
+                  : null,
+              color: tc?.withValues(
+                  alpha: isTotal ? 1.0 : isSubtotal ? 1.0 : 0.8),
             ),
           ),
           Text(
@@ -368,10 +409,14 @@ class DetailSection extends StatelessWidget {
                   ? FontWeight.bold
                   : isProfit
                   ? FontWeight.w600
+                  : isSubtotal
+                  ? FontWeight.w600
                   : FontWeight.w500,
               color: isProfit
                   ? tc
                   : isTotal
+                  ? tc
+                  : isSubtotal
                   ? tc
                   : tc?.withValues(alpha: 0.8),
             ),

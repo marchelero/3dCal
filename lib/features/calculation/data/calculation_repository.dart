@@ -45,6 +45,7 @@ class CalculationRepository {
   /// para nuevos registros; los historicos conservan sus valores.
   Future<int> create(CalculationDraft draft) {
     return _db.transaction(() async {
+      final o = draft.output;
       final calcId = await _db.into(_db.calculations).insert(
             CalculationsCompanion.insert(
               createdAt: DateTime.now().toUtc(),
@@ -57,11 +58,22 @@ class CalculationRepository {
               discountPercentage: draft.discountPercentage.toDouble(),
               kwhRateSnapshot: 0.0,
               profitBaseSnapshot: 0.0,
-              materialCostSnapshot: draft.output.materialCost.toDouble(),
-              electricCostSnapshot: 0.0,
-              baseCostSnapshot: draft.output.materialCost.toDouble(),
-              profitAmountSnapshot: 0.0,
-              totalPriceSnapshot: draft.output.totalPrice.toDouble(),
+              materialCostSnapshot: o.materialCost.toDouble(),
+              electricCostSnapshot: o.electricCost.toDouble(),
+              laborCostSnapshot: o.laborCost.toDouble(),
+              postProcessCostSnapshot: o.postProcessCost.toDouble(),
+              baseCostSnapshot: o.baseCost.toDouble(),
+              failureCostSnapshot: o.failureCost.toDouble(),
+              markupCostSnapshot: o.markupCost.toDouble(),
+              profitAmountSnapshot: o.profitAmount.toDouble(),
+              minimumChargeAppliedSnapshot: 0.0,
+              effectiveTotalSnapshot: o.totalFinal.toDouble(),
+              totalPriceSnapshot: o.totalPrice.toDouble(),
+              laborRateSnapshot: 0.0,
+              postProcessRateSnapshot: 0.0,
+              failureRateSnapshot: 0.0,
+              minimumChargeSnapshot: 0.0,
+              markupOnMaterialsSnapshot: 0.0,
             ),
           );
       for (final m in draft.materials) {

@@ -1063,6 +1063,29 @@ class $CalculationsTable extends Calculations
         type: DriftSqlType.double,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _laborCostSnapshotMeta = const VerificationMeta(
+    'laborCostSnapshot',
+  );
+  @override
+  late final GeneratedColumn<double> laborCostSnapshot =
+      GeneratedColumn<double>(
+        'labor_cost_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _postProcessCostSnapshotMeta =
+      const VerificationMeta('postProcessCostSnapshot');
+  @override
+  late final GeneratedColumn<double> postProcessCostSnapshot =
+      GeneratedColumn<double>(
+        'post_process_cost_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
   static const VerificationMeta _baseCostSnapshotMeta = const VerificationMeta(
     'baseCostSnapshot',
   );
@@ -1074,6 +1097,28 @@ class $CalculationsTable extends Calculations
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _failureCostSnapshotMeta =
+      const VerificationMeta('failureCostSnapshot');
+  @override
+  late final GeneratedColumn<double> failureCostSnapshot =
+      GeneratedColumn<double>(
+        'failure_cost_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _markupCostSnapshotMeta =
+      const VerificationMeta('markupCostSnapshot');
+  @override
+  late final GeneratedColumn<double> markupCostSnapshot =
+      GeneratedColumn<double>(
+        'markup_cost_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
   static const VerificationMeta _profitAmountSnapshotMeta =
       const VerificationMeta('profitAmountSnapshot');
   @override
@@ -1085,12 +1130,90 @@ class $CalculationsTable extends Calculations
         type: DriftSqlType.double,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _minimumChargeAppliedSnapshotMeta =
+      const VerificationMeta('minimumChargeAppliedSnapshot');
+  @override
+  late final GeneratedColumn<double> minimumChargeAppliedSnapshot =
+      GeneratedColumn<double>(
+        'minimum_charge_applied_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _effectiveTotalSnapshotMeta =
+      const VerificationMeta('effectiveTotalSnapshot');
+  @override
+  late final GeneratedColumn<double> effectiveTotalSnapshot =
+      GeneratedColumn<double>(
+        'effective_total_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
   static const VerificationMeta _totalPriceSnapshotMeta =
       const VerificationMeta('totalPriceSnapshot');
   @override
   late final GeneratedColumn<double> totalPriceSnapshot =
       GeneratedColumn<double>(
         'total_price_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _laborRateSnapshotMeta = const VerificationMeta(
+    'laborRateSnapshot',
+  );
+  @override
+  late final GeneratedColumn<double> laborRateSnapshot =
+      GeneratedColumn<double>(
+        'labor_rate_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _postProcessRateSnapshotMeta =
+      const VerificationMeta('postProcessRateSnapshot');
+  @override
+  late final GeneratedColumn<double> postProcessRateSnapshot =
+      GeneratedColumn<double>(
+        'post_process_rate_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _failureRateSnapshotMeta =
+      const VerificationMeta('failureRateSnapshot');
+  @override
+  late final GeneratedColumn<double> failureRateSnapshot =
+      GeneratedColumn<double>(
+        'failure_rate_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _minimumChargeSnapshotMeta =
+      const VerificationMeta('minimumChargeSnapshot');
+  @override
+  late final GeneratedColumn<double> minimumChargeSnapshot =
+      GeneratedColumn<double>(
+        'minimum_charge_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _markupOnMaterialsSnapshotMeta =
+      const VerificationMeta('markupOnMaterialsSnapshot');
+  @override
+  late final GeneratedColumn<double> markupOnMaterialsSnapshot =
+      GeneratedColumn<double>(
+        'markup_on_materials_snapshot',
         aliasedName,
         false,
         type: DriftSqlType.double,
@@ -1112,9 +1235,20 @@ class $CalculationsTable extends Calculations
     isSold,
     materialCostSnapshot,
     electricCostSnapshot,
+    laborCostSnapshot,
+    postProcessCostSnapshot,
     baseCostSnapshot,
+    failureCostSnapshot,
+    markupCostSnapshot,
     profitAmountSnapshot,
+    minimumChargeAppliedSnapshot,
+    effectiveTotalSnapshot,
     totalPriceSnapshot,
+    laborRateSnapshot,
+    postProcessRateSnapshot,
+    failureRateSnapshot,
+    minimumChargeSnapshot,
+    markupOnMaterialsSnapshot,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1244,6 +1378,28 @@ class $CalculationsTable extends Calculations
     } else if (isInserting) {
       context.missing(_electricCostSnapshotMeta);
     }
+    if (data.containsKey('labor_cost_snapshot')) {
+      context.handle(
+        _laborCostSnapshotMeta,
+        laborCostSnapshot.isAcceptableOrUnknown(
+          data['labor_cost_snapshot']!,
+          _laborCostSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_laborCostSnapshotMeta);
+    }
+    if (data.containsKey('post_process_cost_snapshot')) {
+      context.handle(
+        _postProcessCostSnapshotMeta,
+        postProcessCostSnapshot.isAcceptableOrUnknown(
+          data['post_process_cost_snapshot']!,
+          _postProcessCostSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_postProcessCostSnapshotMeta);
+    }
     if (data.containsKey('base_cost_snapshot')) {
       context.handle(
         _baseCostSnapshotMeta,
@@ -1254,6 +1410,28 @@ class $CalculationsTable extends Calculations
       );
     } else if (isInserting) {
       context.missing(_baseCostSnapshotMeta);
+    }
+    if (data.containsKey('failure_cost_snapshot')) {
+      context.handle(
+        _failureCostSnapshotMeta,
+        failureCostSnapshot.isAcceptableOrUnknown(
+          data['failure_cost_snapshot']!,
+          _failureCostSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_failureCostSnapshotMeta);
+    }
+    if (data.containsKey('markup_cost_snapshot')) {
+      context.handle(
+        _markupCostSnapshotMeta,
+        markupCostSnapshot.isAcceptableOrUnknown(
+          data['markup_cost_snapshot']!,
+          _markupCostSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_markupCostSnapshotMeta);
     }
     if (data.containsKey('profit_amount_snapshot')) {
       context.handle(
@@ -1266,6 +1444,28 @@ class $CalculationsTable extends Calculations
     } else if (isInserting) {
       context.missing(_profitAmountSnapshotMeta);
     }
+    if (data.containsKey('minimum_charge_applied_snapshot')) {
+      context.handle(
+        _minimumChargeAppliedSnapshotMeta,
+        minimumChargeAppliedSnapshot.isAcceptableOrUnknown(
+          data['minimum_charge_applied_snapshot']!,
+          _minimumChargeAppliedSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_minimumChargeAppliedSnapshotMeta);
+    }
+    if (data.containsKey('effective_total_snapshot')) {
+      context.handle(
+        _effectiveTotalSnapshotMeta,
+        effectiveTotalSnapshot.isAcceptableOrUnknown(
+          data['effective_total_snapshot']!,
+          _effectiveTotalSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectiveTotalSnapshotMeta);
+    }
     if (data.containsKey('total_price_snapshot')) {
       context.handle(
         _totalPriceSnapshotMeta,
@@ -1276,6 +1476,61 @@ class $CalculationsTable extends Calculations
       );
     } else if (isInserting) {
       context.missing(_totalPriceSnapshotMeta);
+    }
+    if (data.containsKey('labor_rate_snapshot')) {
+      context.handle(
+        _laborRateSnapshotMeta,
+        laborRateSnapshot.isAcceptableOrUnknown(
+          data['labor_rate_snapshot']!,
+          _laborRateSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_laborRateSnapshotMeta);
+    }
+    if (data.containsKey('post_process_rate_snapshot')) {
+      context.handle(
+        _postProcessRateSnapshotMeta,
+        postProcessRateSnapshot.isAcceptableOrUnknown(
+          data['post_process_rate_snapshot']!,
+          _postProcessRateSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_postProcessRateSnapshotMeta);
+    }
+    if (data.containsKey('failure_rate_snapshot')) {
+      context.handle(
+        _failureRateSnapshotMeta,
+        failureRateSnapshot.isAcceptableOrUnknown(
+          data['failure_rate_snapshot']!,
+          _failureRateSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_failureRateSnapshotMeta);
+    }
+    if (data.containsKey('minimum_charge_snapshot')) {
+      context.handle(
+        _minimumChargeSnapshotMeta,
+        minimumChargeSnapshot.isAcceptableOrUnknown(
+          data['minimum_charge_snapshot']!,
+          _minimumChargeSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_minimumChargeSnapshotMeta);
+    }
+    if (data.containsKey('markup_on_materials_snapshot')) {
+      context.handle(
+        _markupOnMaterialsSnapshotMeta,
+        markupOnMaterialsSnapshot.isAcceptableOrUnknown(
+          data['markup_on_materials_snapshot']!,
+          _markupOnMaterialsSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_markupOnMaterialsSnapshotMeta);
     }
     return context;
   }
@@ -1342,17 +1597,61 @@ class $CalculationsTable extends Calculations
         DriftSqlType.double,
         data['${effectivePrefix}electric_cost_snapshot'],
       )!,
+      laborCostSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}labor_cost_snapshot'],
+      )!,
+      postProcessCostSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}post_process_cost_snapshot'],
+      )!,
       baseCostSnapshot: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}base_cost_snapshot'],
+      )!,
+      failureCostSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}failure_cost_snapshot'],
+      )!,
+      markupCostSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}markup_cost_snapshot'],
       )!,
       profitAmountSnapshot: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}profit_amount_snapshot'],
       )!,
+      minimumChargeAppliedSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}minimum_charge_applied_snapshot'],
+      )!,
+      effectiveTotalSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}effective_total_snapshot'],
+      )!,
       totalPriceSnapshot: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}total_price_snapshot'],
+      )!,
+      laborRateSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}labor_rate_snapshot'],
+      )!,
+      postProcessRateSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}post_process_rate_snapshot'],
+      )!,
+      failureRateSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}failure_rate_snapshot'],
+      )!,
+      minimumChargeSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}minimum_charge_snapshot'],
+      )!,
+      markupOnMaterialsSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}markup_on_materials_snapshot'],
       )!,
     );
   }
@@ -1402,9 +1701,22 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   final double materialCostSnapshot;
   final double electricCostSnapshot;
+  final double laborCostSnapshot;
+  final double postProcessCostSnapshot;
   final double baseCostSnapshot;
+  final double failureCostSnapshot;
+  final double markupCostSnapshot;
   final double profitAmountSnapshot;
+  final double minimumChargeAppliedSnapshot;
+  final double effectiveTotalSnapshot;
   final double totalPriceSnapshot;
+
+  /// Snapshots de settings (F1) al momento de guardar.
+  final double laborRateSnapshot;
+  final double postProcessRateSnapshot;
+  final double failureRateSnapshot;
+  final double minimumChargeSnapshot;
+  final double markupOnMaterialsSnapshot;
   const Calculation({
     required this.id,
     required this.createdAt,
@@ -1420,9 +1732,20 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.isSold,
     required this.materialCostSnapshot,
     required this.electricCostSnapshot,
+    required this.laborCostSnapshot,
+    required this.postProcessCostSnapshot,
     required this.baseCostSnapshot,
+    required this.failureCostSnapshot,
+    required this.markupCostSnapshot,
     required this.profitAmountSnapshot,
+    required this.minimumChargeAppliedSnapshot,
+    required this.effectiveTotalSnapshot,
     required this.totalPriceSnapshot,
+    required this.laborRateSnapshot,
+    required this.postProcessRateSnapshot,
+    required this.failureRateSnapshot,
+    required this.minimumChargeSnapshot,
+    required this.markupOnMaterialsSnapshot,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1449,9 +1772,28 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     map['is_sold'] = Variable<bool>(isSold);
     map['material_cost_snapshot'] = Variable<double>(materialCostSnapshot);
     map['electric_cost_snapshot'] = Variable<double>(electricCostSnapshot);
+    map['labor_cost_snapshot'] = Variable<double>(laborCostSnapshot);
+    map['post_process_cost_snapshot'] = Variable<double>(
+      postProcessCostSnapshot,
+    );
     map['base_cost_snapshot'] = Variable<double>(baseCostSnapshot);
+    map['failure_cost_snapshot'] = Variable<double>(failureCostSnapshot);
+    map['markup_cost_snapshot'] = Variable<double>(markupCostSnapshot);
     map['profit_amount_snapshot'] = Variable<double>(profitAmountSnapshot);
+    map['minimum_charge_applied_snapshot'] = Variable<double>(
+      minimumChargeAppliedSnapshot,
+    );
+    map['effective_total_snapshot'] = Variable<double>(effectiveTotalSnapshot);
     map['total_price_snapshot'] = Variable<double>(totalPriceSnapshot);
+    map['labor_rate_snapshot'] = Variable<double>(laborRateSnapshot);
+    map['post_process_rate_snapshot'] = Variable<double>(
+      postProcessRateSnapshot,
+    );
+    map['failure_rate_snapshot'] = Variable<double>(failureRateSnapshot);
+    map['minimum_charge_snapshot'] = Variable<double>(minimumChargeSnapshot);
+    map['markup_on_materials_snapshot'] = Variable<double>(
+      markupOnMaterialsSnapshot,
+    );
     return map;
   }
 
@@ -1479,9 +1821,20 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       isSold: Value(isSold),
       materialCostSnapshot: Value(materialCostSnapshot),
       electricCostSnapshot: Value(electricCostSnapshot),
+      laborCostSnapshot: Value(laborCostSnapshot),
+      postProcessCostSnapshot: Value(postProcessCostSnapshot),
       baseCostSnapshot: Value(baseCostSnapshot),
+      failureCostSnapshot: Value(failureCostSnapshot),
+      markupCostSnapshot: Value(markupCostSnapshot),
       profitAmountSnapshot: Value(profitAmountSnapshot),
+      minimumChargeAppliedSnapshot: Value(minimumChargeAppliedSnapshot),
+      effectiveTotalSnapshot: Value(effectiveTotalSnapshot),
       totalPriceSnapshot: Value(totalPriceSnapshot),
+      laborRateSnapshot: Value(laborRateSnapshot),
+      postProcessRateSnapshot: Value(postProcessRateSnapshot),
+      failureRateSnapshot: Value(failureRateSnapshot),
+      minimumChargeSnapshot: Value(minimumChargeSnapshot),
+      markupOnMaterialsSnapshot: Value(markupOnMaterialsSnapshot),
     );
   }
 
@@ -1517,12 +1870,41 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       electricCostSnapshot: serializer.fromJson<double>(
         json['electricCostSnapshot'],
       ),
+      laborCostSnapshot: serializer.fromJson<double>(json['laborCostSnapshot']),
+      postProcessCostSnapshot: serializer.fromJson<double>(
+        json['postProcessCostSnapshot'],
+      ),
       baseCostSnapshot: serializer.fromJson<double>(json['baseCostSnapshot']),
+      failureCostSnapshot: serializer.fromJson<double>(
+        json['failureCostSnapshot'],
+      ),
+      markupCostSnapshot: serializer.fromJson<double>(
+        json['markupCostSnapshot'],
+      ),
       profitAmountSnapshot: serializer.fromJson<double>(
         json['profitAmountSnapshot'],
       ),
+      minimumChargeAppliedSnapshot: serializer.fromJson<double>(
+        json['minimumChargeAppliedSnapshot'],
+      ),
+      effectiveTotalSnapshot: serializer.fromJson<double>(
+        json['effectiveTotalSnapshot'],
+      ),
       totalPriceSnapshot: serializer.fromJson<double>(
         json['totalPriceSnapshot'],
+      ),
+      laborRateSnapshot: serializer.fromJson<double>(json['laborRateSnapshot']),
+      postProcessRateSnapshot: serializer.fromJson<double>(
+        json['postProcessRateSnapshot'],
+      ),
+      failureRateSnapshot: serializer.fromJson<double>(
+        json['failureRateSnapshot'],
+      ),
+      minimumChargeSnapshot: serializer.fromJson<double>(
+        json['minimumChargeSnapshot'],
+      ),
+      markupOnMaterialsSnapshot: serializer.fromJson<double>(
+        json['markupOnMaterialsSnapshot'],
       ),
     );
   }
@@ -1544,9 +1926,30 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'isSold': serializer.toJson<bool>(isSold),
       'materialCostSnapshot': serializer.toJson<double>(materialCostSnapshot),
       'electricCostSnapshot': serializer.toJson<double>(electricCostSnapshot),
+      'laborCostSnapshot': serializer.toJson<double>(laborCostSnapshot),
+      'postProcessCostSnapshot': serializer.toJson<double>(
+        postProcessCostSnapshot,
+      ),
       'baseCostSnapshot': serializer.toJson<double>(baseCostSnapshot),
+      'failureCostSnapshot': serializer.toJson<double>(failureCostSnapshot),
+      'markupCostSnapshot': serializer.toJson<double>(markupCostSnapshot),
       'profitAmountSnapshot': serializer.toJson<double>(profitAmountSnapshot),
+      'minimumChargeAppliedSnapshot': serializer.toJson<double>(
+        minimumChargeAppliedSnapshot,
+      ),
+      'effectiveTotalSnapshot': serializer.toJson<double>(
+        effectiveTotalSnapshot,
+      ),
       'totalPriceSnapshot': serializer.toJson<double>(totalPriceSnapshot),
+      'laborRateSnapshot': serializer.toJson<double>(laborRateSnapshot),
+      'postProcessRateSnapshot': serializer.toJson<double>(
+        postProcessRateSnapshot,
+      ),
+      'failureRateSnapshot': serializer.toJson<double>(failureRateSnapshot),
+      'minimumChargeSnapshot': serializer.toJson<double>(minimumChargeSnapshot),
+      'markupOnMaterialsSnapshot': serializer.toJson<double>(
+        markupOnMaterialsSnapshot,
+      ),
     };
   }
 
@@ -1565,9 +1968,20 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     bool? isSold,
     double? materialCostSnapshot,
     double? electricCostSnapshot,
+    double? laborCostSnapshot,
+    double? postProcessCostSnapshot,
     double? baseCostSnapshot,
+    double? failureCostSnapshot,
+    double? markupCostSnapshot,
     double? profitAmountSnapshot,
+    double? minimumChargeAppliedSnapshot,
+    double? effectiveTotalSnapshot,
     double? totalPriceSnapshot,
+    double? laborRateSnapshot,
+    double? postProcessRateSnapshot,
+    double? failureRateSnapshot,
+    double? minimumChargeSnapshot,
+    double? markupOnMaterialsSnapshot,
   }) => Calculation(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -1585,9 +1999,25 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     isSold: isSold ?? this.isSold,
     materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
     electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
+    laborCostSnapshot: laborCostSnapshot ?? this.laborCostSnapshot,
+    postProcessCostSnapshot:
+        postProcessCostSnapshot ?? this.postProcessCostSnapshot,
     baseCostSnapshot: baseCostSnapshot ?? this.baseCostSnapshot,
+    failureCostSnapshot: failureCostSnapshot ?? this.failureCostSnapshot,
+    markupCostSnapshot: markupCostSnapshot ?? this.markupCostSnapshot,
     profitAmountSnapshot: profitAmountSnapshot ?? this.profitAmountSnapshot,
+    minimumChargeAppliedSnapshot:
+        minimumChargeAppliedSnapshot ?? this.minimumChargeAppliedSnapshot,
+    effectiveTotalSnapshot:
+        effectiveTotalSnapshot ?? this.effectiveTotalSnapshot,
     totalPriceSnapshot: totalPriceSnapshot ?? this.totalPriceSnapshot,
+    laborRateSnapshot: laborRateSnapshot ?? this.laborRateSnapshot,
+    postProcessRateSnapshot:
+        postProcessRateSnapshot ?? this.postProcessRateSnapshot,
+    failureRateSnapshot: failureRateSnapshot ?? this.failureRateSnapshot,
+    minimumChargeSnapshot: minimumChargeSnapshot ?? this.minimumChargeSnapshot,
+    markupOnMaterialsSnapshot:
+        markupOnMaterialsSnapshot ?? this.markupOnMaterialsSnapshot,
   );
   Calculation copyWithCompanion(CalculationsCompanion data) {
     return Calculation(
@@ -1623,15 +2053,48 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       electricCostSnapshot: data.electricCostSnapshot.present
           ? data.electricCostSnapshot.value
           : this.electricCostSnapshot,
+      laborCostSnapshot: data.laborCostSnapshot.present
+          ? data.laborCostSnapshot.value
+          : this.laborCostSnapshot,
+      postProcessCostSnapshot: data.postProcessCostSnapshot.present
+          ? data.postProcessCostSnapshot.value
+          : this.postProcessCostSnapshot,
       baseCostSnapshot: data.baseCostSnapshot.present
           ? data.baseCostSnapshot.value
           : this.baseCostSnapshot,
+      failureCostSnapshot: data.failureCostSnapshot.present
+          ? data.failureCostSnapshot.value
+          : this.failureCostSnapshot,
+      markupCostSnapshot: data.markupCostSnapshot.present
+          ? data.markupCostSnapshot.value
+          : this.markupCostSnapshot,
       profitAmountSnapshot: data.profitAmountSnapshot.present
           ? data.profitAmountSnapshot.value
           : this.profitAmountSnapshot,
+      minimumChargeAppliedSnapshot: data.minimumChargeAppliedSnapshot.present
+          ? data.minimumChargeAppliedSnapshot.value
+          : this.minimumChargeAppliedSnapshot,
+      effectiveTotalSnapshot: data.effectiveTotalSnapshot.present
+          ? data.effectiveTotalSnapshot.value
+          : this.effectiveTotalSnapshot,
       totalPriceSnapshot: data.totalPriceSnapshot.present
           ? data.totalPriceSnapshot.value
           : this.totalPriceSnapshot,
+      laborRateSnapshot: data.laborRateSnapshot.present
+          ? data.laborRateSnapshot.value
+          : this.laborRateSnapshot,
+      postProcessRateSnapshot: data.postProcessRateSnapshot.present
+          ? data.postProcessRateSnapshot.value
+          : this.postProcessRateSnapshot,
+      failureRateSnapshot: data.failureRateSnapshot.present
+          ? data.failureRateSnapshot.value
+          : this.failureRateSnapshot,
+      minimumChargeSnapshot: data.minimumChargeSnapshot.present
+          ? data.minimumChargeSnapshot.value
+          : this.minimumChargeSnapshot,
+      markupOnMaterialsSnapshot: data.markupOnMaterialsSnapshot.present
+          ? data.markupOnMaterialsSnapshot.value
+          : this.markupOnMaterialsSnapshot,
     );
   }
 
@@ -1652,15 +2115,28 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('isSold: $isSold, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
+          ..write('laborCostSnapshot: $laborCostSnapshot, ')
+          ..write('postProcessCostSnapshot: $postProcessCostSnapshot, ')
           ..write('baseCostSnapshot: $baseCostSnapshot, ')
+          ..write('failureCostSnapshot: $failureCostSnapshot, ')
+          ..write('markupCostSnapshot: $markupCostSnapshot, ')
           ..write('profitAmountSnapshot: $profitAmountSnapshot, ')
-          ..write('totalPriceSnapshot: $totalPriceSnapshot')
+          ..write(
+            'minimumChargeAppliedSnapshot: $minimumChargeAppliedSnapshot, ',
+          )
+          ..write('effectiveTotalSnapshot: $effectiveTotalSnapshot, ')
+          ..write('totalPriceSnapshot: $totalPriceSnapshot, ')
+          ..write('laborRateSnapshot: $laborRateSnapshot, ')
+          ..write('postProcessRateSnapshot: $postProcessRateSnapshot, ')
+          ..write('failureRateSnapshot: $failureRateSnapshot, ')
+          ..write('minimumChargeSnapshot: $minimumChargeSnapshot, ')
+          ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     createdAt,
     pieceName,
@@ -1675,10 +2151,21 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     isSold,
     materialCostSnapshot,
     electricCostSnapshot,
+    laborCostSnapshot,
+    postProcessCostSnapshot,
     baseCostSnapshot,
+    failureCostSnapshot,
+    markupCostSnapshot,
     profitAmountSnapshot,
+    minimumChargeAppliedSnapshot,
+    effectiveTotalSnapshot,
     totalPriceSnapshot,
-  );
+    laborRateSnapshot,
+    postProcessRateSnapshot,
+    failureRateSnapshot,
+    minimumChargeSnapshot,
+    markupOnMaterialsSnapshot,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1697,9 +2184,21 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.isSold == this.isSold &&
           other.materialCostSnapshot == this.materialCostSnapshot &&
           other.electricCostSnapshot == this.electricCostSnapshot &&
+          other.laborCostSnapshot == this.laborCostSnapshot &&
+          other.postProcessCostSnapshot == this.postProcessCostSnapshot &&
           other.baseCostSnapshot == this.baseCostSnapshot &&
+          other.failureCostSnapshot == this.failureCostSnapshot &&
+          other.markupCostSnapshot == this.markupCostSnapshot &&
           other.profitAmountSnapshot == this.profitAmountSnapshot &&
-          other.totalPriceSnapshot == this.totalPriceSnapshot);
+          other.minimumChargeAppliedSnapshot ==
+              this.minimumChargeAppliedSnapshot &&
+          other.effectiveTotalSnapshot == this.effectiveTotalSnapshot &&
+          other.totalPriceSnapshot == this.totalPriceSnapshot &&
+          other.laborRateSnapshot == this.laborRateSnapshot &&
+          other.postProcessRateSnapshot == this.postProcessRateSnapshot &&
+          other.failureRateSnapshot == this.failureRateSnapshot &&
+          other.minimumChargeSnapshot == this.minimumChargeSnapshot &&
+          other.markupOnMaterialsSnapshot == this.markupOnMaterialsSnapshot);
 }
 
 class CalculationsCompanion extends UpdateCompanion<Calculation> {
@@ -1717,9 +2216,20 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<bool> isSold;
   final Value<double> materialCostSnapshot;
   final Value<double> electricCostSnapshot;
+  final Value<double> laborCostSnapshot;
+  final Value<double> postProcessCostSnapshot;
   final Value<double> baseCostSnapshot;
+  final Value<double> failureCostSnapshot;
+  final Value<double> markupCostSnapshot;
   final Value<double> profitAmountSnapshot;
+  final Value<double> minimumChargeAppliedSnapshot;
+  final Value<double> effectiveTotalSnapshot;
   final Value<double> totalPriceSnapshot;
+  final Value<double> laborRateSnapshot;
+  final Value<double> postProcessRateSnapshot;
+  final Value<double> failureRateSnapshot;
+  final Value<double> minimumChargeSnapshot;
+  final Value<double> markupOnMaterialsSnapshot;
   const CalculationsCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1735,9 +2245,20 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.isSold = const Value.absent(),
     this.materialCostSnapshot = const Value.absent(),
     this.electricCostSnapshot = const Value.absent(),
+    this.laborCostSnapshot = const Value.absent(),
+    this.postProcessCostSnapshot = const Value.absent(),
     this.baseCostSnapshot = const Value.absent(),
+    this.failureCostSnapshot = const Value.absent(),
+    this.markupCostSnapshot = const Value.absent(),
     this.profitAmountSnapshot = const Value.absent(),
+    this.minimumChargeAppliedSnapshot = const Value.absent(),
+    this.effectiveTotalSnapshot = const Value.absent(),
     this.totalPriceSnapshot = const Value.absent(),
+    this.laborRateSnapshot = const Value.absent(),
+    this.postProcessRateSnapshot = const Value.absent(),
+    this.failureRateSnapshot = const Value.absent(),
+    this.minimumChargeSnapshot = const Value.absent(),
+    this.markupOnMaterialsSnapshot = const Value.absent(),
   });
   CalculationsCompanion.insert({
     this.id = const Value.absent(),
@@ -1754,9 +2275,20 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.isSold = const Value.absent(),
     required double materialCostSnapshot,
     required double electricCostSnapshot,
+    required double laborCostSnapshot,
+    required double postProcessCostSnapshot,
     required double baseCostSnapshot,
+    required double failureCostSnapshot,
+    required double markupCostSnapshot,
     required double profitAmountSnapshot,
+    required double minimumChargeAppliedSnapshot,
+    required double effectiveTotalSnapshot,
     required double totalPriceSnapshot,
+    required double laborRateSnapshot,
+    required double postProcessRateSnapshot,
+    required double failureRateSnapshot,
+    required double minimumChargeSnapshot,
+    required double markupOnMaterialsSnapshot,
   }) : createdAt = Value(createdAt),
        totalHours = Value(totalHours),
        discountPercentage = Value(discountPercentage),
@@ -1764,9 +2296,20 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
        profitBaseSnapshot = Value(profitBaseSnapshot),
        materialCostSnapshot = Value(materialCostSnapshot),
        electricCostSnapshot = Value(electricCostSnapshot),
+       laborCostSnapshot = Value(laborCostSnapshot),
+       postProcessCostSnapshot = Value(postProcessCostSnapshot),
        baseCostSnapshot = Value(baseCostSnapshot),
+       failureCostSnapshot = Value(failureCostSnapshot),
+       markupCostSnapshot = Value(markupCostSnapshot),
        profitAmountSnapshot = Value(profitAmountSnapshot),
-       totalPriceSnapshot = Value(totalPriceSnapshot);
+       minimumChargeAppliedSnapshot = Value(minimumChargeAppliedSnapshot),
+       effectiveTotalSnapshot = Value(effectiveTotalSnapshot),
+       totalPriceSnapshot = Value(totalPriceSnapshot),
+       laborRateSnapshot = Value(laborRateSnapshot),
+       postProcessRateSnapshot = Value(postProcessRateSnapshot),
+       failureRateSnapshot = Value(failureRateSnapshot),
+       minimumChargeSnapshot = Value(minimumChargeSnapshot),
+       markupOnMaterialsSnapshot = Value(markupOnMaterialsSnapshot);
   static Insertable<Calculation> custom({
     Expression<int>? id,
     Expression<DateTime>? createdAt,
@@ -1782,9 +2325,20 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<bool>? isSold,
     Expression<double>? materialCostSnapshot,
     Expression<double>? electricCostSnapshot,
+    Expression<double>? laborCostSnapshot,
+    Expression<double>? postProcessCostSnapshot,
     Expression<double>? baseCostSnapshot,
+    Expression<double>? failureCostSnapshot,
+    Expression<double>? markupCostSnapshot,
     Expression<double>? profitAmountSnapshot,
+    Expression<double>? minimumChargeAppliedSnapshot,
+    Expression<double>? effectiveTotalSnapshot,
     Expression<double>? totalPriceSnapshot,
+    Expression<double>? laborRateSnapshot,
+    Expression<double>? postProcessRateSnapshot,
+    Expression<double>? failureRateSnapshot,
+    Expression<double>? minimumChargeSnapshot,
+    Expression<double>? markupOnMaterialsSnapshot,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1806,11 +2360,31 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         'material_cost_snapshot': materialCostSnapshot,
       if (electricCostSnapshot != null)
         'electric_cost_snapshot': electricCostSnapshot,
+      if (laborCostSnapshot != null) 'labor_cost_snapshot': laborCostSnapshot,
+      if (postProcessCostSnapshot != null)
+        'post_process_cost_snapshot': postProcessCostSnapshot,
       if (baseCostSnapshot != null) 'base_cost_snapshot': baseCostSnapshot,
+      if (failureCostSnapshot != null)
+        'failure_cost_snapshot': failureCostSnapshot,
+      if (markupCostSnapshot != null)
+        'markup_cost_snapshot': markupCostSnapshot,
       if (profitAmountSnapshot != null)
         'profit_amount_snapshot': profitAmountSnapshot,
+      if (minimumChargeAppliedSnapshot != null)
+        'minimum_charge_applied_snapshot': minimumChargeAppliedSnapshot,
+      if (effectiveTotalSnapshot != null)
+        'effective_total_snapshot': effectiveTotalSnapshot,
       if (totalPriceSnapshot != null)
         'total_price_snapshot': totalPriceSnapshot,
+      if (laborRateSnapshot != null) 'labor_rate_snapshot': laborRateSnapshot,
+      if (postProcessRateSnapshot != null)
+        'post_process_rate_snapshot': postProcessRateSnapshot,
+      if (failureRateSnapshot != null)
+        'failure_rate_snapshot': failureRateSnapshot,
+      if (minimumChargeSnapshot != null)
+        'minimum_charge_snapshot': minimumChargeSnapshot,
+      if (markupOnMaterialsSnapshot != null)
+        'markup_on_materials_snapshot': markupOnMaterialsSnapshot,
     });
   }
 
@@ -1829,9 +2403,20 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<bool>? isSold,
     Value<double>? materialCostSnapshot,
     Value<double>? electricCostSnapshot,
+    Value<double>? laborCostSnapshot,
+    Value<double>? postProcessCostSnapshot,
     Value<double>? baseCostSnapshot,
+    Value<double>? failureCostSnapshot,
+    Value<double>? markupCostSnapshot,
     Value<double>? profitAmountSnapshot,
+    Value<double>? minimumChargeAppliedSnapshot,
+    Value<double>? effectiveTotalSnapshot,
     Value<double>? totalPriceSnapshot,
+    Value<double>? laborRateSnapshot,
+    Value<double>? postProcessRateSnapshot,
+    Value<double>? failureRateSnapshot,
+    Value<double>? minimumChargeSnapshot,
+    Value<double>? markupOnMaterialsSnapshot,
   }) {
     return CalculationsCompanion(
       id: id ?? this.id,
@@ -1848,9 +2433,26 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       isSold: isSold ?? this.isSold,
       materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
       electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
+      laborCostSnapshot: laborCostSnapshot ?? this.laborCostSnapshot,
+      postProcessCostSnapshot:
+          postProcessCostSnapshot ?? this.postProcessCostSnapshot,
       baseCostSnapshot: baseCostSnapshot ?? this.baseCostSnapshot,
+      failureCostSnapshot: failureCostSnapshot ?? this.failureCostSnapshot,
+      markupCostSnapshot: markupCostSnapshot ?? this.markupCostSnapshot,
       profitAmountSnapshot: profitAmountSnapshot ?? this.profitAmountSnapshot,
+      minimumChargeAppliedSnapshot:
+          minimumChargeAppliedSnapshot ?? this.minimumChargeAppliedSnapshot,
+      effectiveTotalSnapshot:
+          effectiveTotalSnapshot ?? this.effectiveTotalSnapshot,
       totalPriceSnapshot: totalPriceSnapshot ?? this.totalPriceSnapshot,
+      laborRateSnapshot: laborRateSnapshot ?? this.laborRateSnapshot,
+      postProcessRateSnapshot:
+          postProcessRateSnapshot ?? this.postProcessRateSnapshot,
+      failureRateSnapshot: failureRateSnapshot ?? this.failureRateSnapshot,
+      minimumChargeSnapshot:
+          minimumChargeSnapshot ?? this.minimumChargeSnapshot,
+      markupOnMaterialsSnapshot:
+          markupOnMaterialsSnapshot ?? this.markupOnMaterialsSnapshot,
     );
   }
 
@@ -1907,16 +2509,65 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         electricCostSnapshot.value,
       );
     }
+    if (laborCostSnapshot.present) {
+      map['labor_cost_snapshot'] = Variable<double>(laborCostSnapshot.value);
+    }
+    if (postProcessCostSnapshot.present) {
+      map['post_process_cost_snapshot'] = Variable<double>(
+        postProcessCostSnapshot.value,
+      );
+    }
     if (baseCostSnapshot.present) {
       map['base_cost_snapshot'] = Variable<double>(baseCostSnapshot.value);
+    }
+    if (failureCostSnapshot.present) {
+      map['failure_cost_snapshot'] = Variable<double>(
+        failureCostSnapshot.value,
+      );
+    }
+    if (markupCostSnapshot.present) {
+      map['markup_cost_snapshot'] = Variable<double>(markupCostSnapshot.value);
     }
     if (profitAmountSnapshot.present) {
       map['profit_amount_snapshot'] = Variable<double>(
         profitAmountSnapshot.value,
       );
     }
+    if (minimumChargeAppliedSnapshot.present) {
+      map['minimum_charge_applied_snapshot'] = Variable<double>(
+        minimumChargeAppliedSnapshot.value,
+      );
+    }
+    if (effectiveTotalSnapshot.present) {
+      map['effective_total_snapshot'] = Variable<double>(
+        effectiveTotalSnapshot.value,
+      );
+    }
     if (totalPriceSnapshot.present) {
       map['total_price_snapshot'] = Variable<double>(totalPriceSnapshot.value);
+    }
+    if (laborRateSnapshot.present) {
+      map['labor_rate_snapshot'] = Variable<double>(laborRateSnapshot.value);
+    }
+    if (postProcessRateSnapshot.present) {
+      map['post_process_rate_snapshot'] = Variable<double>(
+        postProcessRateSnapshot.value,
+      );
+    }
+    if (failureRateSnapshot.present) {
+      map['failure_rate_snapshot'] = Variable<double>(
+        failureRateSnapshot.value,
+      );
+    }
+    if (minimumChargeSnapshot.present) {
+      map['minimum_charge_snapshot'] = Variable<double>(
+        minimumChargeSnapshot.value,
+      );
+    }
+    if (markupOnMaterialsSnapshot.present) {
+      map['markup_on_materials_snapshot'] = Variable<double>(
+        markupOnMaterialsSnapshot.value,
+      );
     }
     return map;
   }
@@ -1938,9 +2589,22 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('isSold: $isSold, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
+          ..write('laborCostSnapshot: $laborCostSnapshot, ')
+          ..write('postProcessCostSnapshot: $postProcessCostSnapshot, ')
           ..write('baseCostSnapshot: $baseCostSnapshot, ')
+          ..write('failureCostSnapshot: $failureCostSnapshot, ')
+          ..write('markupCostSnapshot: $markupCostSnapshot, ')
           ..write('profitAmountSnapshot: $profitAmountSnapshot, ')
-          ..write('totalPriceSnapshot: $totalPriceSnapshot')
+          ..write(
+            'minimumChargeAppliedSnapshot: $minimumChargeAppliedSnapshot, ',
+          )
+          ..write('effectiveTotalSnapshot: $effectiveTotalSnapshot, ')
+          ..write('totalPriceSnapshot: $totalPriceSnapshot, ')
+          ..write('laborRateSnapshot: $laborRateSnapshot, ')
+          ..write('postProcessRateSnapshot: $postProcessRateSnapshot, ')
+          ..write('failureRateSnapshot: $failureRateSnapshot, ')
+          ..write('minimumChargeSnapshot: $minimumChargeSnapshot, ')
+          ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot')
           ..write(')'))
         .toString();
   }
@@ -3218,9 +3882,20 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       Value<bool> isSold,
       required double materialCostSnapshot,
       required double electricCostSnapshot,
+      required double laborCostSnapshot,
+      required double postProcessCostSnapshot,
       required double baseCostSnapshot,
+      required double failureCostSnapshot,
+      required double markupCostSnapshot,
       required double profitAmountSnapshot,
+      required double minimumChargeAppliedSnapshot,
+      required double effectiveTotalSnapshot,
       required double totalPriceSnapshot,
+      required double laborRateSnapshot,
+      required double postProcessRateSnapshot,
+      required double failureRateSnapshot,
+      required double minimumChargeSnapshot,
+      required double markupOnMaterialsSnapshot,
     });
 typedef $$CalculationsTableUpdateCompanionBuilder =
     CalculationsCompanion Function({
@@ -3238,9 +3913,20 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<bool> isSold,
       Value<double> materialCostSnapshot,
       Value<double> electricCostSnapshot,
+      Value<double> laborCostSnapshot,
+      Value<double> postProcessCostSnapshot,
       Value<double> baseCostSnapshot,
+      Value<double> failureCostSnapshot,
+      Value<double> markupCostSnapshot,
       Value<double> profitAmountSnapshot,
+      Value<double> minimumChargeAppliedSnapshot,
+      Value<double> effectiveTotalSnapshot,
       Value<double> totalPriceSnapshot,
+      Value<double> laborRateSnapshot,
+      Value<double> postProcessRateSnapshot,
+      Value<double> failureRateSnapshot,
+      Value<double> minimumChargeSnapshot,
+      Value<double> markupOnMaterialsSnapshot,
     });
 
 final class $$CalculationsTableReferences
@@ -3355,8 +4041,28 @@ class $$CalculationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get laborCostSnapshot => $composableBuilder(
+    column: $table.laborCostSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get postProcessCostSnapshot => $composableBuilder(
+    column: $table.postProcessCostSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<double> get baseCostSnapshot => $composableBuilder(
     column: $table.baseCostSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get failureCostSnapshot => $composableBuilder(
+    column: $table.failureCostSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get markupCostSnapshot => $composableBuilder(
+    column: $table.markupCostSnapshot,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3365,8 +4071,43 @@ class $$CalculationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get minimumChargeAppliedSnapshot => $composableBuilder(
+    column: $table.minimumChargeAppliedSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get effectiveTotalSnapshot => $composableBuilder(
+    column: $table.effectiveTotalSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<double> get totalPriceSnapshot => $composableBuilder(
     column: $table.totalPriceSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get laborRateSnapshot => $composableBuilder(
+    column: $table.laborRateSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get postProcessRateSnapshot => $composableBuilder(
+    column: $table.postProcessRateSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get failureRateSnapshot => $composableBuilder(
+    column: $table.failureRateSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get minimumChargeSnapshot => $composableBuilder(
+    column: $table.minimumChargeSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get markupOnMaterialsSnapshot => $composableBuilder(
+    column: $table.markupOnMaterialsSnapshot,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3475,8 +4216,28 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get laborCostSnapshot => $composableBuilder(
+    column: $table.laborCostSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get postProcessCostSnapshot => $composableBuilder(
+    column: $table.postProcessCostSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get baseCostSnapshot => $composableBuilder(
     column: $table.baseCostSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get failureCostSnapshot => $composableBuilder(
+    column: $table.failureCostSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get markupCostSnapshot => $composableBuilder(
+    column: $table.markupCostSnapshot,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3485,8 +4246,44 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get minimumChargeAppliedSnapshot =>
+      $composableBuilder(
+        column: $table.minimumChargeAppliedSnapshot,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<double> get effectiveTotalSnapshot => $composableBuilder(
+    column: $table.effectiveTotalSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get totalPriceSnapshot => $composableBuilder(
     column: $table.totalPriceSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get laborRateSnapshot => $composableBuilder(
+    column: $table.laborRateSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get postProcessRateSnapshot => $composableBuilder(
+    column: $table.postProcessRateSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get failureRateSnapshot => $composableBuilder(
+    column: $table.failureRateSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get minimumChargeSnapshot => $composableBuilder(
+    column: $table.minimumChargeSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get markupOnMaterialsSnapshot => $composableBuilder(
+    column: $table.markupOnMaterialsSnapshot,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -3560,8 +4357,28 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get laborCostSnapshot => $composableBuilder(
+    column: $table.laborCostSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get postProcessCostSnapshot => $composableBuilder(
+    column: $table.postProcessCostSnapshot,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get baseCostSnapshot => $composableBuilder(
     column: $table.baseCostSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get failureCostSnapshot => $composableBuilder(
+    column: $table.failureCostSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get markupCostSnapshot => $composableBuilder(
+    column: $table.markupCostSnapshot,
     builder: (column) => column,
   );
 
@@ -3570,8 +4387,44 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get minimumChargeAppliedSnapshot =>
+      $composableBuilder(
+        column: $table.minimumChargeAppliedSnapshot,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<double> get effectiveTotalSnapshot => $composableBuilder(
+    column: $table.effectiveTotalSnapshot,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get totalPriceSnapshot => $composableBuilder(
     column: $table.totalPriceSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get laborRateSnapshot => $composableBuilder(
+    column: $table.laborRateSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get postProcessRateSnapshot => $composableBuilder(
+    column: $table.postProcessRateSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get failureRateSnapshot => $composableBuilder(
+    column: $table.failureRateSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get minimumChargeSnapshot => $composableBuilder(
+    column: $table.minimumChargeSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get markupOnMaterialsSnapshot => $composableBuilder(
+    column: $table.markupOnMaterialsSnapshot,
     builder: (column) => column,
   );
 
@@ -3644,9 +4497,21 @@ class $$CalculationsTableTableManager
                 Value<bool> isSold = const Value.absent(),
                 Value<double> materialCostSnapshot = const Value.absent(),
                 Value<double> electricCostSnapshot = const Value.absent(),
+                Value<double> laborCostSnapshot = const Value.absent(),
+                Value<double> postProcessCostSnapshot = const Value.absent(),
                 Value<double> baseCostSnapshot = const Value.absent(),
+                Value<double> failureCostSnapshot = const Value.absent(),
+                Value<double> markupCostSnapshot = const Value.absent(),
                 Value<double> profitAmountSnapshot = const Value.absent(),
+                Value<double> minimumChargeAppliedSnapshot =
+                    const Value.absent(),
+                Value<double> effectiveTotalSnapshot = const Value.absent(),
                 Value<double> totalPriceSnapshot = const Value.absent(),
+                Value<double> laborRateSnapshot = const Value.absent(),
+                Value<double> postProcessRateSnapshot = const Value.absent(),
+                Value<double> failureRateSnapshot = const Value.absent(),
+                Value<double> minimumChargeSnapshot = const Value.absent(),
+                Value<double> markupOnMaterialsSnapshot = const Value.absent(),
               }) => CalculationsCompanion(
                 id: id,
                 createdAt: createdAt,
@@ -3662,9 +4527,20 @@ class $$CalculationsTableTableManager
                 isSold: isSold,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
+                laborCostSnapshot: laborCostSnapshot,
+                postProcessCostSnapshot: postProcessCostSnapshot,
                 baseCostSnapshot: baseCostSnapshot,
+                failureCostSnapshot: failureCostSnapshot,
+                markupCostSnapshot: markupCostSnapshot,
                 profitAmountSnapshot: profitAmountSnapshot,
+                minimumChargeAppliedSnapshot: minimumChargeAppliedSnapshot,
+                effectiveTotalSnapshot: effectiveTotalSnapshot,
                 totalPriceSnapshot: totalPriceSnapshot,
+                laborRateSnapshot: laborRateSnapshot,
+                postProcessRateSnapshot: postProcessRateSnapshot,
+                failureRateSnapshot: failureRateSnapshot,
+                minimumChargeSnapshot: minimumChargeSnapshot,
+                markupOnMaterialsSnapshot: markupOnMaterialsSnapshot,
               ),
           createCompanionCallback:
               ({
@@ -3682,9 +4558,20 @@ class $$CalculationsTableTableManager
                 Value<bool> isSold = const Value.absent(),
                 required double materialCostSnapshot,
                 required double electricCostSnapshot,
+                required double laborCostSnapshot,
+                required double postProcessCostSnapshot,
                 required double baseCostSnapshot,
+                required double failureCostSnapshot,
+                required double markupCostSnapshot,
                 required double profitAmountSnapshot,
+                required double minimumChargeAppliedSnapshot,
+                required double effectiveTotalSnapshot,
                 required double totalPriceSnapshot,
+                required double laborRateSnapshot,
+                required double postProcessRateSnapshot,
+                required double failureRateSnapshot,
+                required double minimumChargeSnapshot,
+                required double markupOnMaterialsSnapshot,
               }) => CalculationsCompanion.insert(
                 id: id,
                 createdAt: createdAt,
@@ -3700,9 +4587,20 @@ class $$CalculationsTableTableManager
                 isSold: isSold,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
+                laborCostSnapshot: laborCostSnapshot,
+                postProcessCostSnapshot: postProcessCostSnapshot,
                 baseCostSnapshot: baseCostSnapshot,
+                failureCostSnapshot: failureCostSnapshot,
+                markupCostSnapshot: markupCostSnapshot,
                 profitAmountSnapshot: profitAmountSnapshot,
+                minimumChargeAppliedSnapshot: minimumChargeAppliedSnapshot,
+                effectiveTotalSnapshot: effectiveTotalSnapshot,
                 totalPriceSnapshot: totalPriceSnapshot,
+                laborRateSnapshot: laborRateSnapshot,
+                postProcessRateSnapshot: postProcessRateSnapshot,
+                failureRateSnapshot: failureRateSnapshot,
+                minimumChargeSnapshot: minimumChargeSnapshot,
+                markupOnMaterialsSnapshot: markupOnMaterialsSnapshot,
               ),
           withReferenceMapper: (p0) => p0
               .map(

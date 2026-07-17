@@ -52,6 +52,24 @@ class EsBO {
   static const String settingsManageFilaments = 'Gestiona tus filamentos';
   static const String settingsManagePrinters = 'Registra tus impresoras';
 
+  // === F1: Mano de obra + Post-procesado ===
+  static const String settingsLaborPost = 'Mano de obra y post-procesado';
+  static const String settingsLaborRate = 'Mano de obra (BOB/hora)';
+  static const String settingsLaborRateHelper =
+      'Costo operador/tecnico por hora de impresion. 0 = desactivado';
+  static const String settingsPostProcessRate = 'Post-procesado (%)';
+  static const String settingsPostProcessRateHelper =
+      '% del costo de materiales. Ej: 10 = +10% en acabado/lijado/pintura';
+  static const String settingsFailureRate = 'Tasa de falla (%)';
+  static const String settingsFailureRateHelper =
+      '% del costo base para cubrir impresiones fallidas. 0 = desactivado';
+  static const String settingsMinimumCharge = 'Cargo minimo (BOB)';
+  static const String settingsMinimumChargeHelper =
+      'Cotizaciones por debajo de este monto se ajustan automaticamente';
+  static const String settingsMarkupOnMaterials = 'Markup desperdicio (%)';
+  static const String settingsMarkupOnMaterialsHelper =
+      '% extra sobre costo de materiales por desperdicio/desgaste';
+
   // === Company settings ===
   static const String settingsCompany = 'Empresa';
   static const String settingsCompanyName = 'Nombre de la empresa';
@@ -114,9 +132,14 @@ class EsBO {
   static const String calcTotalFinal = 'Total final';
   static const String calcDetailMaterial = 'Costo material';
   static const String calcDetailEnergy = 'Costo energia';
+  static const String calcDetailLabor = 'Mano de obra';
+  static const String calcDetailPostProcess = 'Post-procesado';
   static const String calcDetailBase = 'Costo base';
+  static const String calcDetailFailure = 'Tasa falla';
+  static const String calcDetailMarkup = 'Markup desperdicio';
   static const String calcDetailProfit = 'Ganancia';
-  static const String calcDetailTotal = 'Costo total final';
+  static const String calcDetailMinimumCharge = 'Cargo minimo';
+  static const String calcDetailTotal = 'Total final';
   static const String calcEmptyHint =
       'Completa peso, filamento y horas para ver el precio';
 

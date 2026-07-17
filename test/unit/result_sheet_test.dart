@@ -23,7 +23,7 @@ Widget _wrap(Widget child) =>
     MaterialApp(home: Scaffold(body: child));
 
 CalculatorState _validState() {
-  final out = CalculationOutput(
+  final out = CalculationOutput.simple(
     materialCost: Decimal.fromInt(12),
     discountAmount: Decimal.zero,
     totalPrice: Decimal.fromInt(36),

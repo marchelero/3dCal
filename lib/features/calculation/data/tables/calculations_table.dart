@@ -50,9 +50,22 @@ class Calculations extends Table {
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   RealColumn get materialCostSnapshot => real()();
   RealColumn get electricCostSnapshot => real()();
+  RealColumn get laborCostSnapshot => real()();
+  RealColumn get postProcessCostSnapshot => real()();
   RealColumn get baseCostSnapshot => real()();
+  RealColumn get failureCostSnapshot => real()();
+  RealColumn get markupCostSnapshot => real()();
   RealColumn get profitAmountSnapshot => real()();
+  RealColumn get minimumChargeAppliedSnapshot => real()();
+  RealColumn get effectiveTotalSnapshot => real()();
   RealColumn get totalPriceSnapshot => real()();
+
+  /// Snapshots de settings (F1) al momento de guardar.
+  RealColumn get laborRateSnapshot => real()();
+  RealColumn get postProcessRateSnapshot => real()();
+  RealColumn get failureRateSnapshot => real()();
+  RealColumn get minimumChargeSnapshot => real()();
+  RealColumn get markupOnMaterialsSnapshot => real()();
 
   @override
   List<Set<Column>> get uniqueKeys => [];

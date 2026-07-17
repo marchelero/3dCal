@@ -29,9 +29,10 @@ import '../widgets/result_sheet.dart';
 /// **Secciones en Cards** (Express y Advanced):
 /// 1. Materiales (tile "Material 1" en Express, lista en Advanced)
 /// 2. Impresora activa
-/// 3. Tiempo de impresion (horas + minutos)
-/// 4. Descuento
-/// 5. Output (resumen con animacion "calculando...")
+/// 3. OTROS (mano obra, post-procesado, falla, minimo, markup) — collapsable
+/// 4. Tiempo de impresion (horas + minutos)
+/// 5. Descuento
+/// 6. Output (resumen con animacion "calculando...")
 class CalculatorPage extends ConsumerStatefulWidget {
   const CalculatorPage({super.key});
 
@@ -49,9 +50,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   late final TextEditingController _labelCtrl; // material label (Express) / piece label (Advanced listener)
   late final TextEditingController _pieceLabelCtrl; // piece name (Express only)
 
+  // OTROS controllers (F1: mano de obra, post-procesado, falla, minimo, markup).
+  late final TextEditingController _extraLaborRateCtrl;
+  late final TextEditingController _extraPostProcessRateCtrl;
+  late final TextEditingController _extraFailureRateCtrl;
+  late final TextEditingController _extraMarkupOnMaterialsCtrl;
+
   // Advanced controllers.
   final List<_MaterialCtrls> _materialCtrls = [];
   final _advancedListKey = GlobalKey<AnimatedListState>();
+
+  /// Toggle local para la seccion OTROS (puramente visual, no persiste).
+  bool _showOtros = false;
 
   @override
   void initState() {
@@ -65,6 +75,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _gramsCtrl = TextEditingController(text: initial.filamentGrams);
     _labelCtrl = TextEditingController(text: initial.filamentLabel);
     _pieceLabelCtrl = TextEditingController(text: initial.label);
+    _extraLaborRateCtrl =
+        TextEditingController(text: initial.extraLaborRate);
+    _extraPostProcessRateCtrl =
+        TextEditingController(text: initial.extraPostProcessRate);
+    _extraFailureRateCtrl =
+        TextEditingController(text: initial.extraFailureRate);
+    _extraMarkupOnMaterialsCtrl =
+        TextEditingController(text: initial.extraMarkupOnMaterials);
 
     for (final c in [
       _weightCtrl,
@@ -73,6 +91,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       _discountCtrl,
       _priceCtrl,
       _gramsCtrl,
+      _extraLaborRateCtrl,
+      _extraPostProcessRateCtrl,
+      _extraFailureRateCtrl,
+      _extraMarkupOnMaterialsCtrl,
     ]) {
       c.addListener(_scheduleDraftSave);
     }
@@ -110,6 +132,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         _gramsCtrl.text = draft.filamentGrams;
         _labelCtrl.text = draft.filamentLabel;
         _pieceLabelCtrl.text = draft.label;
+        _extraLaborRateCtrl.text = draft.extraLaborRate;
+        _extraPostProcessRateCtrl.text = draft.extraPostProcessRate;
+        _extraFailureRateCtrl.text = draft.extraFailureRate;
+        _extraMarkupOnMaterialsCtrl.text = draft.extraMarkupOnMaterials;
         return;
       }
       // Sin draft: resetear todos los controllers a vacio.
@@ -121,6 +147,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       _gramsCtrl.text = '';
       _labelCtrl.text = '';
       _pieceLabelCtrl.text = '';
+      _extraLaborRateCtrl.text = '';
+      _extraPostProcessRateCtrl.text = '';
+      _extraFailureRateCtrl.text = '';
+      _extraMarkupOnMaterialsCtrl.text = '';
       // Cargar defaults del filamento por defecto para precio/gramos.
       final defaultFilament = ref.read(defaultFilamentProvider);
       if (defaultFilament != null) {
@@ -156,6 +186,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       filamentGrams: _gramsCtrl.text,
       label: _pieceLabelCtrl.text,
       filamentLabel: _labelCtrl.text,
+      extraLaborRate: _extraLaborRateCtrl.text,
+      extraPostProcessRate: _extraPostProcessRateCtrl.text,
+      extraFailureRate: _extraFailureRateCtrl.text,
+      extraMarkupOnMaterials: _extraMarkupOnMaterialsCtrl.text,
     );
     await ref.read(draftStorageProvider).save(draft);
   }
@@ -171,6 +205,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _gramsCtrl.dispose();
     _labelCtrl.dispose();
     _pieceLabelCtrl.dispose();
+    _extraLaborRateCtrl.dispose();
+    _extraPostProcessRateCtrl.dispose();
+    _extraFailureRateCtrl.dispose();
+    _extraMarkupOnMaterialsCtrl.dispose();
     for (final c in _materialCtrls) {
       c.dispose();
     }
@@ -236,6 +274,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _gramsCtrl.text = i.filamentGrams;
     _labelCtrl.text = i.filamentLabel;
     _pieceLabelCtrl.text = i.label;
+    _extraLaborRateCtrl.text = '';
+    _extraPostProcessRateCtrl.text = '';
+    _extraFailureRateCtrl.text = '';
+    _extraMarkupOnMaterialsCtrl.text = '';
     for (final c in _materialCtrls) {
       c.dispose();
     }
@@ -431,6 +473,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
           const SizedBox(height: AppSpacing.md),
 
+          // Card: OTROS (mano de obra, post-procesado, falla, minimo, markup)
+          // Collapsable. Primero porque sus valores afectan tiempo y descuento.
+          _buildOtrosSection(notifier),
+          const SizedBox(height: AppSpacing.md),
+
           // Card: Tiempo
           SectionCard(
             icon: Icons.timer_rounded,
@@ -577,6 +624,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
           const SizedBox(height: AppSpacing.md),
 
+          // Card: OTROS (mano de obra, post-procesado, falla, minimo, markup)
+          // Collapsable. Primero porque sus valores afectan tiempo y descuento.
+          _buildOtrosSection(notifier),
+          const SizedBox(height: AppSpacing.md),
+
           // Card: Tiempo
           SectionCard(
             icon: Icons.timer_rounded,
@@ -624,6 +676,109 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Output + Save/Reset viven en el ResultBottomBar + modal sheet
           // (Fix #3). Ver seccion EXPRESS para la nota completa.
         ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // OTROS SECTION — collapsable card
+  // ============================================================
+
+  /// Seccion colapsable "Otros" con 4 campos F1 en grid 2x2.
+  /// Toggle via [_showOtros]. Reutilizada en ambas formas (Express y Advanced).
+  Widget _buildOtrosSection(CalculatorNotifier notifier) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(AppRadii.sm),
+              onTap: () => setState(() => _showOtros = !_showOtros),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.more_horiz_rounded, size: 20),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text('Otros',
+                        style: Theme.of(context).textTheme.titleSmall),
+                    const Spacer(),
+                    AnimatedRotation(
+                      turns: _showOtros ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(Icons.expand_more, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: _showOtros
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.md),
+                      child: Column(
+                        children: [
+                          // Row 1: Mano de obra + Post-procesado
+                          Row(
+                            children: [
+                              Expanded(
+                                child: NumericInputField(
+                                  label: 'Mano de obra',
+                                  controller: _extraLaborRateCtrl,
+                                  onChanged: notifier.setExtraLaborRate,
+                                  suffix: 'Bs/h',
+                                  helperText: 'Tarifa por hora',
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: NumericInputField(
+                                  label: 'Post-procesado',
+                                  controller: _extraPostProcessRateCtrl,
+                                  onChanged: notifier.setExtraPostProcessRate,
+                                  suffix: '%',
+                                  helperText: '% del costo mat.',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          // Row 2: Tasa de falla + Desperdicio
+                          Row(
+                            children: [
+                              Expanded(
+                                child: NumericInputField(
+                                  label: 'Tasa de falla',
+                                  controller: _extraFailureRateCtrl,
+                                  onChanged: notifier.setExtraFailureRate,
+                                  suffix: '%',
+                                  helperText: '% del costo base',
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: NumericInputField(
+                                  label: 'Desperdicio',
+                                  controller: _extraMarkupOnMaterialsCtrl,
+                                  onChanged: notifier.setExtraMarkupOnMaterials,
+                                  suffix: '%',
+                                  helperText: '% markup desperdicio',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
         ),
       ),
     );

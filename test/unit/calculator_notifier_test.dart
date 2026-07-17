@@ -210,12 +210,12 @@ void main() {
 
   group('CalculatorState equality', () {
     test('dos states con mismos campos son iguales', () {
-      final a = CalculationOutput(
+      final a = CalculationOutput.simple(
         materialCost: Decimal.fromInt(10),
         discountAmount: Decimal.fromInt(1),
         totalPrice: Decimal.fromInt(9),
       );
-      final b = CalculationOutput(
+      final b = CalculationOutput.simple(
         materialCost: Decimal.fromInt(10),
         discountAmount: Decimal.fromInt(1),
         totalPrice: Decimal.fromInt(9),

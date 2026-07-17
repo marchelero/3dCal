@@ -18,6 +18,13 @@ CalculationInput _input({
     materials: materials,
     totalHours: DecimalParse.fromString(totalHours),
     discountPercentage: DecimalParse.fromString(discount),
+    printerWatts: 0,
+    kwhRate: Decimal.zero,
+    profitBase: Decimal.zero,
+    laborRate: Decimal.zero,
+    postProcessRate: Decimal.zero,
+    failureRate: Decimal.zero,
+    markupOnMaterials: Decimal.zero,
   );
 }
 
@@ -132,12 +139,12 @@ void main() {
     });
 
     test('Inmutabilidad: CalculationOutput es value object', () {
-      final out1 = CalculationOutput(
+      final out1 = CalculationOutput.simple(
         materialCost: DecimalParse.fromString('1'),
         discountAmount: DecimalParse.fromString('2'),
         totalPrice: DecimalParse.fromString('3'),
       );
-      final out2 = CalculationOutput(
+      final out2 = CalculationOutput.simple(
         materialCost: DecimalParse.fromString('1'),
         discountAmount: DecimalParse.fromString('2'),
         totalPrice: DecimalParse.fromString('3'),
@@ -219,6 +226,52 @@ void main() {
 
     test('kMaxDiscountPercentage <= 50%', () {
       expect(kMaxDiscountPercentage, lessThanOrEqualTo(50));
+    });
+
+    test('F1 labor rate: 1h + 2 Bs/h labor aumenta total en 2 (sin profit)', () {
+      final out = CalculationEngine.compute(CalculationInput(
+        materials: [_material(weight: '23', pricePerBobbin: '200', gramsPerBobbin: '1000')],
+        totalHours: Decimal.one,
+        discountPercentage: Decimal.zero,
+        printerWatts: 0,
+        kwhRate: Decimal.zero,
+        profitBase: Decimal.zero,
+        laborRate: DecimalParse.fromString('2'),
+        postProcessRate: Decimal.zero,
+        failureRate: Decimal.zero,
+        markupOnMaterials: Decimal.zero,
+      ));
+      // materialCost = 23 * 200/1000 = 4.60
+      expect(out.materialCost, DecimalParse.fromString('4.6'));
+      // laborCost = 1h * 2 Bs/h = 2.00
+      expect(out.laborCost, DecimalParse.fromString('2'));
+      // baseCost = 4.60 + 0 (electric) + 2.00 (labor) + 0 (post) = 6.60
+      expect(out.baseCost, DecimalParse.fromString('6.6'));
+      // profit = 0 → totalFinal = 6.60
+      expect(out.totalFinal, DecimalParse.fromString('6.6'));
+      // totalPrice = 6.60 - 0 descuento = 6.60
+      expect(out.totalPrice, DecimalParse.fromString('6.6'));
+    });
+
+    test('F1 labor rate: 1h + 2 Bs/h + 200% profit', () {
+      final out = CalculationEngine.compute(CalculationInput(
+        materials: [_material(weight: '23', pricePerBobbin: '200', gramsPerBobbin: '1000')],
+        totalHours: Decimal.one,
+        discountPercentage: Decimal.zero,
+        printerWatts: 0,
+        kwhRate: Decimal.zero,
+        profitBase: Decimal.fromInt(200),
+        laborRate: DecimalParse.fromString('2'),
+        postProcessRate: Decimal.zero,
+        failureRate: Decimal.zero,
+        markupOnMaterials: Decimal.zero,
+      ));
+      // materialCost = 4.60, laborCost = 2.00, baseCost = 6.60
+      // profit = 6.60 * 200/100 = 13.20
+      expect(out.profitAmount, DecimalParse.fromString('13.2'));
+      // totalFinal = 6.60 + 13.20 = 19.80
+      expect(out.totalFinal, DecimalParse.fromString('19.8'));
+      expect(out.totalPrice, DecimalParse.fromString('19.8'));
     });
   });
 }

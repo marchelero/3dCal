@@ -127,6 +127,43 @@ class SettingsRepository {
         .getSingleOrNull();
     return row?.value;
   }
+
+  // === F1: Mano de obra + Post-procesado ===
+
+  /// Tarifa de mano de obra (BOB/hora).
+  Future<Decimal> getLaborRate() =>
+      getDecimal(SettingsKeys.laborRate, Decimal.zero);
+
+  Future<void> setLaborRate(Decimal value) =>
+      setDecimal(SettingsKeys.laborRate, value);
+
+  /// Tasa de post-procesado (% del costo de materiales).
+  Future<Decimal> getPostProcessRate() =>
+      getDecimal(SettingsKeys.postProcessRate, Decimal.zero);
+
+  Future<void> setPostProcessRate(Decimal value) =>
+      setDecimal(SettingsKeys.postProcessRate, value);
+
+  /// Tasa de falla (% del costo base).
+  Future<Decimal> getFailureRate() =>
+      getDecimal(SettingsKeys.failureRate, Decimal.zero);
+
+  Future<void> setFailureRate(Decimal value) =>
+      setDecimal(SettingsKeys.failureRate, value);
+
+  /// Cargo minimo por cotizacion (BOB).
+  Future<Decimal> getMinimumCharge() =>
+      getDecimal(SettingsKeys.minimumCharge, Decimal.zero);
+
+  Future<void> setMinimumCharge(Decimal value) =>
+      setDecimal(SettingsKeys.minimumCharge, value);
+
+  /// Markup por desperdicio de materiales (%).
+  Future<Decimal> getMarkupOnMaterials() =>
+      getDecimal(SettingsKeys.markupOnMaterials, Decimal.zero);
+
+  Future<void> setMarkupOnMaterials(Decimal value) =>
+      setDecimal(SettingsKeys.markupOnMaterials, value);
 }
 
 /// Helper privado para parseo seguro.

@@ -37,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,6 +48,20 @@ class AppDatabase extends _$AppDatabase {
           if (from == 1) {
             // v1→v2: agregar columna brand a printers
             await m.addColumn(printers, printers.brand);
+          }
+          if (from <= 2) {
+            // v2→v3: agregar columnas F1 (mano de obra + post-procesado)
+            await m.addColumn(calculations, calculations.laborCostSnapshot);
+            await m.addColumn(calculations, calculations.postProcessCostSnapshot);
+            await m.addColumn(calculations, calculations.failureCostSnapshot);
+            await m.addColumn(calculations, calculations.markupCostSnapshot);
+            await m.addColumn(calculations, calculations.minimumChargeAppliedSnapshot);
+            await m.addColumn(calculations, calculations.effectiveTotalSnapshot);
+            await m.addColumn(calculations, calculations.laborRateSnapshot);
+            await m.addColumn(calculations, calculations.postProcessRateSnapshot);
+            await m.addColumn(calculations, calculations.failureRateSnapshot);
+            await m.addColumn(calculations, calculations.minimumChargeSnapshot);
+            await m.addColumn(calculations, calculations.markupOnMaterialsSnapshot);
           }
         },
       );

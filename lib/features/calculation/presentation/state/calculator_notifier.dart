@@ -69,6 +69,24 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     state = state.copyWith(label: value);
   }
 
+  // === OTROS (F1: extras por cotizacion) ===
+
+  void setExtraLaborRate(String value) {
+    state = _recompute(state.copyWith(extraLaborRate: value));
+  }
+
+  void setExtraPostProcessRate(String value) {
+    state = _recompute(state.copyWith(extraPostProcessRate: value));
+  }
+
+  void setExtraFailureRate(String value) {
+    state = _recompute(state.copyWith(extraFailureRate: value));
+  }
+
+  void setExtraMarkupOnMaterials(String value) {
+    state = _recompute(state.copyWith(extraMarkupOnMaterials: value));
+  }
+
   // === Express material label ===
 
   void setFilamentLabel(String value) {
@@ -255,9 +273,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     return id;
   }
 
-  /// Recalcula el output si el form es valido.
-  /// Ademas computa los valores detallados (electricidad, ganancia, total final)
-  /// para mostrarlos en el numero grande y el desglose del ojito.
+  /// Recalcula el output si el form es valido usando el engine completo (F1).
+  ///
+  /// El engine recibe todos los parametros de settings (printerWatts, kwhRate,
+  /// profitBase, laborRate, etc.) via [CalculationInput]. No hay calculo
+  /// secundario — el output del engine es la unica fuente de verdad.
   CalculatorState _recompute(CalculatorState next) {
     final version = next.computeVersion + 1;
     if (!next.isValid) {
@@ -278,54 +298,35 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
             ))
         .toList();
 
-    // Computar valores detallados (electricidad + ganancia).
-    final printer = ref.read(defaultPrinterProvider);
-    final asyncSettings =
-        ref.read<AsyncValue<Settings>>(settingsNotifierProvider);
-    final settings = asyncSettings.valueOrNull ?? Settings.defaults;
-
-    final watts = printer?.averageWatts ?? 0;
-    final hours = next.totalHoursDecimal ?? Decimal.zero;
-    final kwhRate = settings.kwhRate;
-    final profitPct = settings.profitBase;
-
-    final wattsDecimal = Decimal.fromInt(watts);
-    final electricCost = hours > Decimal.zero && watts > 0
-        ? (wattsDecimal * hours * kwhRate / Decimal.fromInt(1000))
-            .toDecimal()
-        : Decimal.zero;
-    final baseCost = output.materialCost + electricCost;
-    final profitAmount =
-        (baseCost * profitPct / Decimal.fromInt(100)).toDecimal();
-    final totalFinal = baseCost + profitAmount;
-
-    // Descuento directo sobre totalFinal (0-100% segun lo que ingrese el user).
     final discountPct =
         CalculatorState.parseDecimal(next.discountPct) ?? Decimal.zero;
-    final discountOnTotalFinal =
-        (totalFinal * discountPct / Decimal.fromInt(100)).toDecimal();
-    final finalPrice = totalFinal - discountOnTotalFinal;
-
-    final updatedOutput = CalculationOutput(
-      materialCost: output.materialCost,
-      discountAmount: discountOnTotalFinal,
-      totalPrice: finalPrice,
-    );
 
     return next.copyWith(
-      output: updatedOutput,
+      output: output,
       detailMaterialBreakdown: breakdown,
-      detailElectricCost: electricCost,
-      detailBaseCost: baseCost,
-      detailProfitAmount: profitAmount,
-      detailTotalFinal: totalFinal,
+      detailElectricCost: output.electricCost,
+      detailLaborCost: output.laborCost,
+      detailPostProcessCost: output.postProcessCost,
+      detailBaseCost: output.baseCost,
+      detailFailureCost: output.failureCost,
+      detailMarkupCost: output.markupCost,
+      detailProfitAmount: output.profitAmount,
+      detailTotalFinal: output.totalFinal,
       detailDiscountPct: discountPct,
       computeVersion: version,
     );
   }
 
-  /// Construye [CalculationInput] desde el state. Asume valido.
+  /// Construye [CalculationInput] desde el state + settings + printer.
+  ///
+  /// Lee [Settings] y [defaultPrinter] de los providers para pasar watts,
+  /// kwhRate, profitBase y los 5 nuevos parametros F1 al engine.
   CalculationInput _buildInput(CalculatorState s) {
+    final asyncSettings =
+        ref.read<AsyncValue<Settings>>(settingsNotifierProvider);
+    final settings = asyncSettings.valueOrNull ?? Settings.defaults;
+    final printer = ref.read(defaultPrinterProvider);
+
     final materials = <MaterialInput>[];
     if (s.mode == CalculatorMode.express) {
       final matLabel =
@@ -348,10 +349,22 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         ));
       }
     }
+
     return CalculationInput(
       materials: materials,
       totalHours: s.totalHoursDecimal ?? Decimal.zero,
-      discountPercentage: CalculatorState.parseDecimal(s.discountPct) ?? Decimal.zero,
+      discountPercentage:
+          CalculatorState.parseDecimal(s.discountPct) ?? Decimal.zero,
+      printerWatts: printer?.averageWatts ?? 0,
+      kwhRate: settings.kwhRate,
+      profitBase: settings.profitBase,
+      laborRate: CalculatorState.parseDecimal(s.extraLaborRate) ?? Decimal.zero,
+      postProcessRate:
+          CalculatorState.parseDecimal(s.extraPostProcessRate) ?? Decimal.zero,
+      failureRate:
+          CalculatorState.parseDecimal(s.extraFailureRate) ?? Decimal.zero,
+      markupOnMaterials: CalculatorState.parseDecimal(s.extraMarkupOnMaterials) ??
+          Decimal.zero,
     );
   }
 }

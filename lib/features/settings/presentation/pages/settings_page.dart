@@ -126,8 +126,6 @@ class _SettingsBody extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xl),
-
                 // ── Apariencia ──
                 _SettingsSection(
                   icon: Icons.palette_rounded,

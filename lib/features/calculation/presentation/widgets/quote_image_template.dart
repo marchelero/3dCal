@@ -32,12 +32,16 @@ class QuoteImageTemplate extends StatelessWidget {
     required this.showDetail,
     required this.detailMaterialBreakdown,
     required this.detailElectricCost,
+    required this.detailLaborCost,
+    required this.detailPostProcessCost,
     required this.detailBaseCost,
+    required this.detailFailureCost,
+    required this.detailMarkupCost,
     required this.detailProfitAmount,
     required this.detailTotalFinal,
     required this.metaGrams,
     required this.metaTime,
-    this.companyName,
+    required this.companyName,
     this.companyLogoBase64,
     super.key,
   });
@@ -48,7 +52,11 @@ class QuoteImageTemplate extends StatelessWidget {
   final bool showDetail;
   final List<MaterialCostBreakdown> detailMaterialBreakdown;
   final Decimal? detailElectricCost;
+  final Decimal? detailLaborCost;
+  final Decimal? detailPostProcessCost;
   final Decimal? detailBaseCost;
+  final Decimal? detailFailureCost;
+  final Decimal? detailMarkupCost;
   final Decimal? detailProfitAmount;
   final Decimal? detailTotalFinal;
   final String? metaGrams;
@@ -240,7 +248,11 @@ class QuoteImageTemplate extends StatelessWidget {
               materialCost: output.materialCost,
               materialBreakdown: detailMaterialBreakdown,
               electricCost: detailElectricCost ?? Decimal.zero,
+              laborCost: detailLaborCost ?? Decimal.zero,
+              postProcessCost: detailPostProcessCost ?? Decimal.zero,
               baseCost: detailBaseCost ?? Decimal.zero,
+              failureCost: detailFailureCost ?? Decimal.zero,
+              markupCost: detailMarkupCost ?? Decimal.zero,
               profitAmount: detailProfitAmount ?? Decimal.zero,
               totalFinal: detailTotalFinal ?? Decimal.zero,
               textColor: color.onSurface,
