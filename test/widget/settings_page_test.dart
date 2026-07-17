@@ -47,7 +47,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await _pumpPage(tester);
-      expect(find.text('Ajustes'), findsOneWidget);
+      expect(find.text('3dCalc'), findsOneWidget);
       expect(find.text('Parametros globales'), findsOneWidget);
       expect(find.text('Empresa'), findsOneWidget);
       expect(find.text('Nombre de la empresa'), findsOneWidget);

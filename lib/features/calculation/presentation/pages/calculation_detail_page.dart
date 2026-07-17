@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -125,6 +126,37 @@ class _DetailState extends ConsumerState<_Detail> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         AppSnackBar.error('${EsBO.calcShareError}: $e'),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Future<void> _handleSharePdf() async {
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
+    try {
+      final calc = widget.calc;
+      final materialsAsync = ref.read(_materialsOfProvider(calc.id));
+      final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
+      final settingsAsync = ref.read(settingsNotifierProvider);
+      final settings = settingsAsync.valueOrNull ?? Settings.defaults;
+      final printer = ref.read(defaultPrinterProvider);
+      final result = _recomputeOutput(calc, materials, settings, printer);
+      if (result == null) return;
+      await shareQuotePdf(
+        output: result.output,
+        materials: result.breakdown,
+        totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
+        discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        companyName: settings.companyName,
+        companyLogoBase64: settings.companyLogoBase64,
+        pieceName: calc.pieceName,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.error('Error al exportar PDF: $e'),
       );
     } finally {
       if (mounted) setState(() => _isBusy = false);
@@ -494,6 +526,13 @@ class _DetailState extends ConsumerState<_Detail> {
                   color: color.primary,
                   isBusy: _isBusy,
                   onPressed: _isBusy ? null : _handleSave,
+                ),
+                _DetailActionIcon(
+                  icon: Icons.picture_as_pdf_rounded,
+                  tooltip: 'Exportar PDF',
+                  color: Colors.red,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handleSharePdf,
                 ),
               ],
             ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -240,6 +241,33 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
 
+  Future<void> _handleSharePdf() async {
+    if (_isBusy) return;
+    final state = widget.state;
+    final output = state.output;
+    if (output == null) return;
+    setState(() => _isBusy = true);
+    try {
+      await shareQuotePdf(
+        output: output,
+        materials: state.detailMaterialBreakdown,
+        totalHours: state.totalHoursDecimal ?? Decimal.zero,
+        discountPct:
+            CalculatorState.parseDecimal(state.discountPct) ?? Decimal.zero,
+        companyName: widget.companyName,
+        companyLogoBase64: widget.companyLogoBase64,
+        pieceName: state.label.isNotEmpty ? state.label : null,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.error('Error al exportar PDF: $e'),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
   Future<void> _handleShare() async {
     if (_isBusy) return;
     setState(() => _isBusy = true);
@@ -393,6 +421,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                 widget.onSave();
               },
               onShare: _handleShare,
+              onSharePdf: _handleSharePdf,
               onSaveImage: _handleSave,
               onReset: () {
                 Navigator.of(context).pop();
@@ -412,6 +441,7 @@ class _ActionIconRow extends StatelessWidget {
     required this.isBusy,
     required this.onSaveDb,
     required this.onShare,
+    required this.onSharePdf,
     required this.onSaveImage,
     required this.onReset,
   });
@@ -419,6 +449,7 @@ class _ActionIconRow extends StatelessWidget {
   final bool isBusy;
   final VoidCallback onSaveDb;
   final VoidCallback onShare;
+  final VoidCallback onSharePdf;
   final VoidCallback onSaveImage;
   final VoidCallback onReset;
 
@@ -435,6 +466,13 @@ class _ActionIconRow extends StatelessWidget {
           tooltip: 'Guardar cotización',
           color: color.primary,
           onPressed: isBusy ? null : onSaveDb,
+        ),
+        _ActionIcon(
+          icon: Icons.picture_as_pdf_rounded,
+          tooltip: 'Compartir PDF',
+          color: Colors.red,
+          isBusy: isBusy,
+          onPressed: isBusy ? null : onSharePdf,
         ),
         _ActionIcon(
           icon: Icons.ios_share_rounded,

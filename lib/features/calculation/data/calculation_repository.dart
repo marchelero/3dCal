@@ -99,6 +99,16 @@ class CalculationRepository {
         .get();
   }
 
+  /// Busca cotizaciones por nombre de pieza o cliente (LIKE %query%).
+  Future<List<Calculation>> search(String query) {
+    final pattern = '%$query%';
+    return (_db.select(_db.calculations)
+          ..where((c) =>
+              c.pieceName.like(pattern) | c.clientName.like(pattern))
+          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
+        .get();
+  }
+
   Stream<List<Calculation>> watchAll() {
     return (_db.select(_db.calculations)
           ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))

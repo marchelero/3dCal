@@ -1,6 +1,10 @@
 // ignore_for_file: public_member_api_docs
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,56 +21,206 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../notifiers/calculations_notifier.dart';
 
-/// Historial de cotizaciones guardadas — version mejorada con cards.
-class CalculationsListPage extends ConsumerWidget {
+/// Historial de cotizaciones guardadas con search + filtros.
+class CalculationsListPage extends ConsumerStatefulWidget {
   const CalculationsListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CalculationsListPage> createState() =>
+      _CalculationsListPageState();
+}
+
+class _CalculationsListPageState
+    extends ConsumerState<CalculationsListPage> {
+  late final TextEditingController _searchCtrl;
+  bool? _soldFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final async = ref.watch(calculationsNotifierProvider);
     final notifier = ref.read(calculationsNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(EsBO.historyTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined, size: 20),
+            tooltip: 'Exportar CSV',
+            onPressed: () => _exportCsv(notifier),
+          ),
+        ],
       ),
-      body: async.when(
-        loading: () => const LoadingView(),
-        error: (e, _) => ErrorView(
-          message: EsBO.historyErrorLoad,
-          details: e.toString(),
-          onRetry: () => ref.invalidate(calculationsNotifierProvider),
-        ),
-        data: (calcs) {
-          if (calcs.isEmpty) {
-            return EmptyView(
-              icon: Icons.receipt_long_outlined,
-              message: EsBO.historyEmpty,
-              subtitle: 'Crea una desde el calculator y toca Guardar.',
-              ctaLabel: EsBO.homeActionNewCalc,
-              ctaIcon: Icons.add_rounded,
-              onCta: () => context.push('/calculator'),
-            );
-          }
-              return RefreshIndicator(
-                onRefresh: () =>
-                    ref.refresh(calculationsNotifierProvider.future),
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  itemCount: calcs.length,
-                  itemBuilder: (_, i) => _StaggeredItem(
-                    index: i,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _CalculationCard(calc: calcs[i], notifier: notifier),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: 'Buscar por nombre o cliente...',
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 18),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          notifier.search('');
+                          setState(() {});
+                        },
+                      )
+                    : null,
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                ),
+              ),
+              onChanged: (v) {
+                notifier.search(v);
+                setState(() {});
+              },
+            ),
+          ),
+          // Filter chips
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                _filterChip('Todas', null),
+                _filterChip('Vendidas', true),
+                _filterChip('Pendientes', false),
+              ],
+            ),
+          ),
+          // List
+          Expanded(
+            child: async.when(
+              loading: () => const LoadingView(),
+              error: (e, _) => ErrorView(
+                message: EsBO.historyErrorLoad,
+                details: e.toString(),
+                onRetry: () => ref.invalidate(calculationsNotifierProvider),
+              ),
+              data: (calcs) {
+                if (calcs.isEmpty) {
+                  return EmptyView(
+                    icon: Icons.receipt_long_outlined,
+                    message: _searchCtrl.text.isNotEmpty
+                        ? 'Sin resultados para "${_searchCtrl.text}"'
+                        : EsBO.historyEmpty,
+                    subtitle: _searchCtrl.text.isNotEmpty
+                        ? 'Prueba con otro termino.'
+                        : 'Crea una desde el calculator y toca Guardar.',
+                    ctaLabel: EsBO.homeActionNewCalc,
+                    ctaIcon: Icons.add_rounded,
+                    onCta: () => context.push('/calculator'),
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      ref.refresh(calculationsNotifierProvider.future),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    itemCount: calcs.length,
+                    itemBuilder: (_, i) => _StaggeredItem(
+                      index: i,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _CalculationCard(
+                            calc: calcs[i], notifier: notifier),
+                      ),
                     ),
                   ),
-                ),
-              );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _filterChip(String label, bool? filter) {
+    final selected = _soldFilter == filter;
+    return FilterChip(
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      selected: selected,
+      onSelected: (_) {
+        setState(() => _soldFilter = _soldFilter == filter ? null : filter);
+        ref
+            .read(calculationsNotifierProvider.notifier)
+            .setSoldFilter(_soldFilter);
+      },
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
+  Future<void> _exportCsv(CalculationsNotifier notifier) async {
+    final async = ref.read(calculationsNotifierProvider);
+    final calcs = async.valueOrNull;
+    if (calcs == null || calcs.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay cotizaciones para exportar')),
+      );
+      return;
+    }
+
+    final buf = StringBuffer();
+    // Header
+    buf.writeln(
+        'Fecha,Pieza,Cliente,Total,Vendido,Materiales,Horas,Descuento,'
+        'CostoMat,Elect,Profit');
+    // Rows
+    for (final c in calcs) {
+      final date = DateFormat('yyyy-MM-dd HH:mm').format(c.createdAt.toLocal());
+      final piece = _escapeCsv(c.pieceName ?? '');
+      final client = _escapeCsv(c.clientName ?? '');
+      final total = formatRaw(c.totalPriceSnapshot);
+      final sold = c.isSold ? 'Si' : 'No';
+      final hours = c.totalHours.toStringAsFixed(2);
+      final discount = c.discountPercentage.toStringAsFixed(1);
+      final matCost = formatRaw(c.materialCostSnapshot);
+      final elect = formatRaw(c.electricCostSnapshot);
+      final profit = formatRaw(c.profitAmountSnapshot);
+      buf.writeln('$date,$piece,$client,$total,$sold,$hours,$discount,'
+          '$matCost,$elect,$profit');
+    }
+
+    final bytes = Uint8List.fromList(utf8.encode(buf.toString()));
+    final xfile = XFile.fromData(bytes,
+        name: 'cotizaciones_3dcalc.csv', mimeType: 'text/csv');
+    await Share.shareXFiles([xfile], text: 'Cotizaciones 3dCalc');
+  }
+
+  /// Formatea double sin separadores de miles (raw para CSV).
+  static String formatRaw(double v) =>
+      v.toStringAsFixed(2).replaceAll('.', ',');
+
+  /// Escapa string para CSV (envuelve en quotes si contiene coma o quote).
+  static String _escapeCsv(String s) {
+    if (s.contains(',') || s.contains('"') || s.contains('\n')) {
+      return '"${s.replaceAll('"', '""')}"';
+    }
+    return s;
   }
 }
 
