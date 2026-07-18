@@ -6,11 +6,11 @@ library;
 /// Organizacion del paquete (declarada en pubspec.yaml `name`).
 const String kPackageName = 'bo.3dcal.tresdcal';
 
-/// Codigo de moneda por defecto. BOB unico MVP.
-const String kCurrencyCode = 'BOB';
+/// Codigo de moneda por defecto. USD default.
+const String kCurrencyCode = 'USD';
 
-/// Simbolo visible: "Bs." segun convencion boliviana.
-const String kCurrencySymbol = 'Bs.';
+/// Simbolo visible: "$" segun convencion.
+const String kCurrencySymbol = r'$';
 
 /// Separador de miles: "." (formato es_BO).
 const String kThousandsSeparator = '.';
@@ -88,4 +88,9 @@ class SettingsKeys {
 
   /// Markup por desperdicio de materiales (% del costo de materiales como double).
   static const String markupOnMaterials = 'markup_on_materials';
+
+  // === F4: Moneda ===
+
+  /// Codigo ISO 4217 de la moneda activa: USD, BOB, EUR...
+  static const String currencyCode = 'currency_code';
 }

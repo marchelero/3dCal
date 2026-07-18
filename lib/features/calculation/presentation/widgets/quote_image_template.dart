@@ -7,6 +7,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -43,6 +44,7 @@ class QuoteImageTemplate extends StatelessWidget {
     required this.metaTime,
     required this.companyName,
     this.companyLogoBase64,
+    required this.currency,
     super.key,
   });
 
@@ -67,6 +69,9 @@ class QuoteImageTemplate extends StatelessWidget {
 
   /// Logo de la empresa en base64. Si es null, muestra icono default.
   final String? companyLogoBase64;
+
+  /// Configuracion monetaria activa para formateo.
+  final WorldCurrency currency;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +132,7 @@ class QuoteImageTemplate extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              formatBob(output.totalPrice),
+                    formatCurrency(output.totalPrice, currency),
               style: theme.textTheme.displayMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: color.primary,
@@ -195,14 +200,14 @@ class QuoteImageTemplate extends StatelessWidget {
                 children: [
                   _discountRow(
                     'Sin descuento',
-                    formatBob(output.totalPrice + output.discountAmount),
+                    formatCurrency(output.totalPrice + output.discountAmount, currency),
                     theme,
                     color.onErrorContainer,
                   ),
                   const SizedBox(height: 6),
                   _discountRow(
                     'Descuento $discountPct%',
-                    '-${formatBob(output.discountAmount)}',
+                    '-${formatCurrency(output.discountAmount, currency)}',
                     theme,
                     color.onErrorContainer,
                   ),
@@ -215,7 +220,7 @@ class QuoteImageTemplate extends StatelessWidget {
                   ),
                   _discountRow(
                     'Total con descuento',
-                    formatBob(output.totalPrice),
+              formatCurrency(output.totalPrice, currency),
                     theme,
                     color.onErrorContainer,
                     bold: true,

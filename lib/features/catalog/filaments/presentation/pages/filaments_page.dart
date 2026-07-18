@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../core/money/currency_settings_provider.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../../shared/widgets/default_badge.dart';
@@ -29,7 +30,7 @@ class FilamentsPage extends ConsumerWidget {
     final async = ref.watch(filamentsNotifierProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(EsBO.filamentTitle),
+        title: Text(EsBO.filamentTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -71,29 +72,28 @@ class _FilamentTile extends ConsumerWidget {
 
   final Filament filament;
 
-  String _subtitle() {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currency = ref.watch(selectedCurrencyProvider);
     final price = filament.pricePerBobbin.toStringAsFixed(2);
     final grams = filament.gramsPerBobbin.toStringAsFixed(0);
     final brand = filament.brand;
-    final base = 'BOB $price · $grams g';
-    return brand == null || brand.isEmpty ? base : '$brand · $base';
-  }
+    final base = '${currency.symbol} $price · $grams g';
+    final subtitle = brand == null || brand.isEmpty ? base : '$brand · $base';
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
     return Semantics(
       container: true,
-      label: '${filament.name}, ${_subtitle()}'
+      label: '${filament.name}, $subtitle'
           '${filament.isDefault ? ", ${EsBO.filamentDefaultToggle}" : ""}',
       child: ListTile(
         leading: filament.isDefault
             ? const DefaultBadge()
             : const Icon(Icons.label_outline),
         title: Text(filament.name),
-        subtitle: Text(_subtitle()),
+        subtitle: Text(subtitle),
         trailing: PopupMenuButton<_TileAction>(
           onSelected: (a) => _handle(context, ref, a),
-          itemBuilder: (_) => const [
+          itemBuilder: (_) => [
             PopupMenuItem<_TileAction>(
               value: _TileAction.setDefault,
               child: ListTile(

@@ -1,35 +1,48 @@
-/// Formateo de moneda BOB segun convencion boliviana.
+/// Formateo de moneda segun la moneda seleccionada.
 ///
-/// Formato: `Bs. 1.234,56` (punto como miles, coma como decimal).
+/// No hace conversion de montos. Solo muestra el simbolo de la moneda
+/// seleccionada + el numero formateado con formato es_BO.
+///
+/// Formato: `$ 1.234,56` o `Bs. 1.234,56`
 library;
 
 import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 
-import '../constants/app_constants.dart';
+import 'currency.dart';
 
-/// Formateador unico para montos BOB.
-/// Pattern explicito con 2 decimales forzados.
-final NumberFormat _bobFormatter = NumberFormat('#,##0.00', 'es_BO');
+/// Formatea un [Decimal] como moneda segun la moneda seleccionada.
+///
+/// Ejemplos:
+///   1234.56, USD -> "$ 1.234,56"
+///   1234.56, BOB -> "Bs. 1.234,56"
+///   0            -> "$ 0,00"
+String formatCurrency(Decimal amount, WorldCurrency currency) {
+  final formatter = NumberFormat('#,##0.00', 'es_BO');
+  return '${currency.symbol} ${formatter.format(amount.toDouble())}';
+}
 
-/// Formatea un [Decimal] como BOB legible.
+/// Formatea un [Decimal] como numero sin el simbolo de moneda.
 ///
-/// **Convención boliviana**: simbolo "Bs." antes del monto.
-///   1234.56  -> "Bs. 1.234,56"
-///   0        -> "Bs. 0,00"
-///   1000000  -> "Bs. 1.000.000,00"
-///
-/// Usamos pattern custom en lugar de `NumberFormat.currency` porque intl
-/// pone el simbolo DESPUES en locales `es*`. Bolivia usa "Bs. X" antes
-/// (convencion de recibos y facturacion local).
+/// Ejemplo: `1234.56` -> `"1.234,56"`
+String formatCurrencyNumber(Decimal amount, WorldCurrency currency) {
+  final formatter = NumberFormat('#,##0.00', 'es_BO');
+  return formatter.format(amount.toDouble());
+}
+
+// ─── Backwards compat (mantener hasta migrar ultimos callers) ───
+
+/// @deprecated Usar [formatCurrency] con WorldCurrency.
 String formatBob(Decimal amount) {
-  return '$kCurrencySymbol ${_bobFormatter.format(amount.toDouble())}';
+  return formatCurrency(amount, WorldCurrency.bob);
 }
 
-/// Formatea un [Decimal] como BOB sin el simbolo.
+/// @deprecated Usar [formatCurrencyNumber] con WorldCurrency.
 String formatBobNumber(Decimal amount) {
-  return _bobFormatter.format(amount.toDouble());
+  return formatCurrencyNumber(amount, WorldCurrency.bob);
 }
+
+// ─── Funciones independientes de moneda ────────────
 
 /// Formatea un [Decimal] como porcentaje.
 ///
@@ -37,7 +50,8 @@ String formatBobNumber(Decimal amount) {
 ///   200.0  -> "200%"
 ///   12.5   -> "12,5%"
 String formatPercentage(Decimal value) {
-  final formatted = NumberFormat.decimalPattern('es_BO').format(value.toDouble());
+  final formatted =
+      NumberFormat.decimalPattern('es_BO').format(value.toDouble());
   return '$formatted%';
 }
 

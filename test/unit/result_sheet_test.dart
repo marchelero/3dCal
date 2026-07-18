@@ -6,6 +6,7 @@ import 'package:tresdcal/features/calculation/domain/entities/calculation_output
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
+import 'package:tresdcal/core/money/currency.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/result_sheet.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/summary_card.dart';
 
@@ -78,14 +79,14 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           ResultBottomBar(
-            totalText: 'Bs. 36,00',
+            totalText: r'$ 36,00',
             hasDiscount: false,
             onTap: () => tapped++,
           ),
         ),
       );
 
-      expect(find.text('Bs. 36,00'), findsOneWidget);
+      expect(find.text(r'$ 36,00'), findsOneWidget);
       expect(find.text('Ver cotizacion'), findsOneWidget);
       expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsOneWidget);
       // Empty hint no presente.
@@ -100,7 +101,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           ResultBottomBar(
-            totalText: 'Bs. 27,00',
+            totalText: r'$ 27,00',
             hasDiscount: true,
             onTap: () {},
           ),
@@ -123,6 +124,7 @@ void main() {
             onSave: () {},
             onReset: () {},
             onToggleDetail: () {},
+            currency: WorldCurrency.usd,
           ),
         ),
       );
@@ -134,7 +136,7 @@ void main() {
       // Label del state aparece en el card.
       expect(find.text('Pieza de prueba'), findsOneWidget);
       // Total formateado.
-      expect(find.text('Bs. 36,00'), findsAtLeastNWidgets(1));
+      expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('muestra 4 botones de accion icon-only',
@@ -147,6 +149,7 @@ void main() {
             onSave: () {},
             onReset: () {},
             onToggleDetail: () {},
+            currency: WorldCurrency.usd,
           ),
         ),
       );
@@ -211,6 +214,7 @@ void main() {
             onSave: () {},
             onReset: () {},
             onToggleDetail: () {},
+            currency: WorldCurrency.usd,
           ),
         ),
       );

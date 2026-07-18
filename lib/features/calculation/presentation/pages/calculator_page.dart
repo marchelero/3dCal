@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
@@ -327,6 +329,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(calculatorNotifierProvider);
     final notifier = ref.read(calculatorNotifierProvider.notifier);
+    final currency = ref.watch(selectedCurrencyProvider);
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -341,15 +344,15 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       ),
       body: SafeArea(
         child: state.mode == CalculatorMode.express
-            ? _buildExpressForm(state, notifier, theme)
-            : _buildAdvancedForm(state, notifier, theme),
+            ? _buildExpressForm(state, notifier, theme, currency)
+            : _buildAdvancedForm(state, notifier, theme, currency),
       ),
       // Sticky bottom bar: SIEMPRE visible (Fix #3). Cumplio doble proposito:
       // - invalid → empty hint dinamico (lista campos faltantes).
       // - valid → total formateado + tap abre modal con resumen + acciones.
       bottomNavigationBar: ResultBottomBar(
         totalText: state.output != null
-            ? formatBob(state.output!.totalPrice)
+            ? formatCurrency(state.output!.totalPrice, currency)
             : '—',
         hasDiscount:
             state.output != null && state.output!.discountAmount > Decimal.zero,
@@ -410,6 +413,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     CalculatorState state,
     CalculatorNotifier notifier,
     ThemeData theme,
+    WorldCurrency currency,
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
@@ -431,7 +435,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               title: EsBO.calcSectionPiece,
               child: TextField(
                 controller: _pieceLabelCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: EsBO.calcLabelOptional,
                   helperText: 'Nombre de la pieza (ej: Jarron 3D, Posavasos)',
                   prefixIcon: Icon(Icons.label_outline),
@@ -443,7 +447,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             // Card: Materiales (Express: un solo material como en Advanced)
             SectionCard(
               icon: Icons.inventory_2_rounded,
-              title: 'Materiales',
+              title: EsBO.calcSectionMaterials,
               child: _MaterialRowTile(
                 index: 0,
                 labelCtrl: _labelCtrl,
@@ -468,14 +472,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Card: Impresora
           SectionCard(
             icon: Icons.print_rounded,
-            title: 'Impresora',
+            title: EsBO.calcSectionPrinter,
             child: _PrinterIndicator(),
           ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: OTROS (mano de obra, post-procesado, falla, minimo, markup)
           // Collapsable. Primero porque sus valores afectan tiempo y descuento.
-          _buildOtrosSection(notifier),
+          _buildOtrosSection(notifier, currency),
           const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
@@ -538,6 +542,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     CalculatorState state,
     CalculatorNotifier notifier,
     ThemeData theme,
+    WorldCurrency currency,
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
@@ -558,7 +563,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               title: EsBO.calcSectionPiece,
               child: TextField(
                 controller: _pieceLabelCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: EsBO.calcLabelOptional,
                   helperText: EsBO.calcLabelOptionalHelper,
                   prefixIcon: Icon(Icons.label_outline),
@@ -570,7 +575,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           // Card: Materiales (multi-material, agregable)
           SectionCard(
             icon: Icons.inventory_2_rounded,
-            title: 'Materiales',
+            title: EsBO.calcSectionMaterials,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -626,7 +631,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
           // Card: OTROS (mano de obra, post-procesado, falla, minimo, markup)
           // Collapsable. Primero porque sus valores afectan tiempo y descuento.
-          _buildOtrosSection(notifier),
+          _buildOtrosSection(notifier, currency),
           const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
@@ -687,7 +692,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
   /// Seccion colapsable "Otros" con 4 campos F1 en grid 2x2.
   /// Toggle via [_showOtros]. Reutilizada en ambas formas (Express y Advanced).
-  Widget _buildOtrosSection(CalculatorNotifier notifier) {
+  Widget _buildOtrosSection(
+    CalculatorNotifier notifier,
+    WorldCurrency currency,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -732,7 +740,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                                   label: 'Mano de obra',
                                   controller: _extraLaborRateCtrl,
                                   onChanged: notifier.setExtraLaborRate,
-                                  suffix: 'Bs/h',
+                                  suffix: '${currency.symbol}/h',
                                   helperText: 'Tarifa por hora',
                                 ),
                               ),
@@ -877,7 +885,7 @@ class _PrinterIndicator extends ConsumerWidget {
                       ],
                     )
                   : Text(
-                      'Sin impresora registrada',
+                      EsBO.calcNoPrinter,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -902,37 +910,77 @@ class _PrinterIndicator extends ConsumerWidget {
   ) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Cambiar impresora'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: printers.length,
-            itemBuilder: (_, i) {
-              final p = printers[i];
-              return ListTile(
-                leading: AvatarIcon(icon: Icons.print_rounded),
-                title: Text(p.name),
-                subtitle: Text(
-                  '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
-                  '${p.isDefault ? ' (default)' : ''}',
-                ),
-                onTap: () {
-                  ref.read(activePrinterIdProvider.notifier).state = p.id;
-                  Navigator.of(ctx).pop();
-                },
-              );
-            },
+      builder: (ctx) {
+        List<PrinterProfile> filtered = printers;
+        void applyFilter(String q) {
+          if (q.isEmpty) {
+            filtered = printers;
+          } else {
+            final lower = q.toLowerCase();
+            filtered = printers.where((p) =>
+              p.name.toLowerCase().contains(lower) ||
+              (p.brand?.toLowerCase().contains(lower) ?? false)
+            ).toList();
+          }
+        }
+        return StatefulBuilder(
+          builder: (context, setInnerState) => AlertDialog(
+            title: const Text('Cambiar impresora'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Buscar impresora...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (v) =>
+                        setInnerState(() => applyFilter(v)),
+                  ),
+                  const SizedBox(height: 12),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 400),
+                    child: filtered.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Center(child: Text('Sin resultados')),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final p = filtered[i];
+                              return ListTile(
+                                leading: AvatarIcon(icon: Icons.print_rounded),
+                                title: Text(p.name),
+                                subtitle: Text(
+                                  '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
+                                  '${p.isDefault ? ' (default)' : ''}',
+                                ),
+                                onTap: () {
+                                  ref.read(activePrinterIdProvider.notifier).state = p.id;
+                                  Navigator.of(ctx).pop();
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancelar'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -1019,6 +1067,7 @@ class _MaterialRowTile extends ConsumerWidget {
     final filamentsAsync = ref.watch(filamentsNotifierProvider);
     final filaments = filamentsAsync.valueOrNull ?? <Filament>[];
     final defaultFilament = ref.watch(defaultFilamentProvider);
+    final currency = ref.watch(selectedCurrencyProvider);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -1111,7 +1160,7 @@ class _MaterialRowTile extends ConsumerWidget {
                   label: 'Precio bobina',
                   controller: priceCtrl,
                   onChanged: (v) => _emit(),
-                  suffix: 'BOB',
+                  suffix: currency.symbol,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1153,45 +1202,88 @@ class _MaterialRowTile extends ConsumerWidget {
     WidgetRef ref,
     List<Filament> filaments,
   ) {
+    final sym = ref.read(selectedCurrencyProvider).symbol;
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Seleccionar filamento'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: filaments.length,
-            itemBuilder: (_, i) {
-              final f = filaments[i];
-              return ListTile(
-                leading: AvatarIcon(
-                  icon: f.isDefault ? Icons.star_rounded : Icons.label_rounded,
-                  foreground: f.isDefault
-                      ? Theme.of(context).colorScheme.tertiary
-                      : null,
-                ),
-                title: Text(f.name),
-                subtitle: Text(
-                  '${f.pricePerBobbin.toStringAsFixed(0)} BOB · '
-                  '${f.gramsPerBobbin.toStringAsFixed(0)} g'
-                  '${f.isDefault ? ' (default)' : ''}',
-                ),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _loadFromFilament(ref, f);
-                },
-              );
-            },
+      builder: (ctx) {
+        List<Filament> filtered = filaments;
+        void applyFilter(String q) {
+          if (q.isEmpty) {
+            filtered = filaments;
+          } else {
+            final lower = q.toLowerCase();
+            filtered = filaments.where((f) =>
+              f.name.toLowerCase().contains(lower) ||
+              (f.brand?.toLowerCase().contains(lower) ?? false)
+            ).toList();
+          }
+        }
+        return StatefulBuilder(
+          builder: (context, setInnerState) => AlertDialog(
+            title: const Text('Seleccionar filamento'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Buscar filamento...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (v) =>
+                        setInnerState(() => applyFilter(v)),
+                  ),
+                  const SizedBox(height: 12),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 400),
+                    child: filtered.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Center(child: Text('Sin resultados')),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final f = filtered[i];
+                              return ListTile(
+                                leading: AvatarIcon(
+                                  icon: f.isDefault
+                                      ? Icons.star_rounded
+                                      : Icons.label_rounded,
+                                  foreground: f.isDefault
+                                      ? Theme.of(context).colorScheme.tertiary
+                                      : null,
+                                ),
+                                title: Text(f.name),
+                                subtitle: Text(
+                                  '${f.pricePerBobbin.toStringAsFixed(0)} $sym · '
+                                  '${f.gramsPerBobbin.toStringAsFixed(0)} g'
+                                  '${f.isDefault ? ' (default)' : ''}',
+                                ),
+                                onTap: () {
+                                  Navigator.of(ctx).pop();
+                                  _loadFromFilament(ref, f);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancelar'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme_mode_provider.dart';
+import 'l10n/app_locale.dart';
+import 'l10n/en_us.dart';
+import 'l10n/es_bo.dart';
 
 /// Widget raiz de tresdcal.
 ///
@@ -17,6 +20,14 @@ class TresdcalApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Escuchar el theme mode persistido.
     final appThemeMode = ref.watch(themeModeProvider);
+
+    // Escuchar locale para rebuild completo + actualizar EsBO estatico.
+    final locale = ref.watch(localeProvider);
+    ref.listen(localeProvider, (_, next) {
+      EsBO.setImpl(next == AppLocale.en ? const EnImpl() : const EsImpl());
+    });
+    // Inicializar EsBO en el locale actual (antes del primer render).
+    EsBO.setImpl(locale == AppLocale.en ? const EnImpl() : const EsImpl());
 
     return MaterialApp.router(
       title: '3dcalc',

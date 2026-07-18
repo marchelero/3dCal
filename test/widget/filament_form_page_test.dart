@@ -45,7 +45,7 @@ void main() {
       expect(find.widgetWithText(TextField, 'Nombre'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'Marca'), findsOneWidget);
       expect(
-          find.widgetWithText(TextField, 'Precio filamento (BOB)'),
+          find.widgetWithText(TextField, 'Precio filamento (\$)'),
           findsOneWidget);
       expect(
           find.widgetWithText(TextField, 'Gramos por rollo'),
@@ -70,7 +70,7 @@ void main() {
       await tester.enterText(
           find.widgetWithText(TextField, 'Nombre'), 'PLA Test');
       await tester.enterText(
-          find.widgetWithText(TextField, 'Precio filamento (BOB)'), '120');
+          find.widgetWithText(TextField, 'Precio filamento (\$)'), '120');
       await tester.enterText(
           find.widgetWithText(TextField, 'Gramos por rollo'), '1000');
       await tester.pump();

@@ -111,14 +111,14 @@ void main() {
       await tester.pumpAndSettle();
       // Gramos / bobina ya no se muestra — default 1000 internamente.
 
-      // Output card visible con formato BOB
-      expect(find.textContaining('Bs.'), findsWidgets);
+      // Output card visible con formato USD
+      expect(find.textContaining(r'$ '), findsWidgets);
       // Costo material solo en ojito detail (oculto por default)
       expect(find.text('Costo material'), findsNothing);
       expect(
-        find.textContaining('Bs.'),
+        find.textContaining(r'$ '),
         findsWidgets,
-        reason: 'Output live debe usar CurrencyFormatter BOB',
+        reason: 'Output live debe mostrar simbolo de moneda activa',
       );
     },
   );

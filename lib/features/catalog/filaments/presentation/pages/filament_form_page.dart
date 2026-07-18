@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
+import '../../../../../core/money/currency_settings_provider.dart';
 import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
@@ -136,6 +137,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currency = ref.watch(selectedCurrencyProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit
@@ -153,7 +155,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               children: [
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: EsBO.filamentName,
                   helperText: EsBO.filamentNameHelper,
                   border: OutlineInputBorder(),
@@ -164,7 +166,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _brandCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: EsBO.filamentBrand,
                   helperText: EsBO.filamentBrandHelper,
                   border: OutlineInputBorder(),
@@ -175,8 +177,8 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _priceCtrl,
-                decoration: const InputDecoration(
-                  labelText: EsBO.filamentPrice,
+                decoration: InputDecoration(
+                  labelText: EsBO.filamentPrice(currency.symbol),
                   helperText: EsBO.filamentPriceHelper,
                 ),
                 keyboardType:
@@ -194,7 +196,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
-                title: const Text(EsBO.filamentDefaultToggle),
+                title: Text(EsBO.filamentDefaultToggle),
                 subtitle: const Text(
                   'Se usara en nuevas cotizaciones. '
                   'Solo un filamento puede ser default.',
@@ -211,7 +213,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save),
-                label: const Text(EsBO.commonSave),
+                label: Text(EsBO.commonSave),
                 onPressed: _saving ? null : _save,
               ),
             ],

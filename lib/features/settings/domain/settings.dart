@@ -16,6 +16,7 @@ class Settings {
     required this.failureRate,
     required this.minimumCharge,
     required this.markupOnMaterials,
+    this.currencyCode = 'USD',
   });
 
   /// Ganancia base global en porcentaje. Default 200%.
@@ -45,6 +46,9 @@ class Settings {
   /// Markup por desperdicio de materiales (% del costo de materiales).
   final Decimal markupOnMaterials;
 
+  /// Codigo ISO 4217 de la moneda activa: USD, BOB, EUR...
+  final String currencyCode;
+
   Settings copyWith({
     Decimal? profitBase,
     Decimal? kwhRate,
@@ -56,6 +60,7 @@ class Settings {
     Decimal? failureRate,
     Decimal? minimumCharge,
     Decimal? markupOnMaterials,
+    String? currencyCode,
   }) {
     return Settings(
       profitBase: profitBase ?? this.profitBase,
@@ -69,6 +74,7 @@ class Settings {
       failureRate: failureRate ?? this.failureRate,
       minimumCharge: minimumCharge ?? this.minimumCharge,
       markupOnMaterials: markupOnMaterials ?? this.markupOnMaterials,
+      currencyCode: currencyCode ?? this.currencyCode,
     );
   }
 

@@ -24,10 +24,12 @@ Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
   required String message,
-  String confirmLabel = EsBO.commonDelete,
-  String cancelLabel = EsBO.commonCancel,
+  String? confirmLabel,
+  String? cancelLabel,
   bool destructive = true,
 }) async {
+  final confirm = confirmLabel ?? EsBO.commonDelete;
+  final cancel = cancelLabel ?? EsBO.commonCancel;
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) {
@@ -38,7 +40,7 @@ Future<bool> showConfirmDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(cancelLabel),
+            child: Text(cancel),
           ),
           FilledButton(
             style: destructive
@@ -48,7 +50,7 @@ Future<bool> showConfirmDialog(
                   )
                 : null,
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(confirmLabel),
+            child: Text(confirm),
           ),
         ],
       );

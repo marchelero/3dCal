@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/features/calculation/domain/dashboard_stats.dart';
 import 'package:tresdcal/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:tresdcal/core/money/currency.dart';
 import 'package:tresdcal/features/dashboard/presentation/widgets/profit_bar_chart.dart';
 
 /// Helper: monta [DashboardPage] dentro de un [ProviderScope] con
@@ -124,6 +125,7 @@ void main() {
             body: ProfitBarChart(
               totalQuoted: Decimal.fromInt(1000),
               totalSold: Decimal.fromInt(500),
+              currency: WorldCurrency.usd,
             ),
           ),
         ),
@@ -138,6 +140,7 @@ void main() {
             body: ProfitBarChart(
               totalQuoted: Decimal.zero,
               totalSold: Decimal.zero,
+              currency: WorldCurrency.usd,
             ),
           ),
         ),

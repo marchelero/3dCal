@@ -29,7 +29,7 @@ class _AppScaffoldState extends State<AppScaffold>
   late final AnimationController _fadeCtrl;
   int _prevIndex = 0;
 
-  static const _destinations = <_NavDest>[
+  static final _destinations = <_NavDest>[
     _NavDest(
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,

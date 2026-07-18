@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
@@ -193,10 +195,12 @@ Future<void> showResultSheet({
         final liveState = ref.watch(calculatorNotifierProvider);
         final asyncSettings = ref.watch(settingsNotifierProvider);
         final settings = asyncSettings.valueOrNull;
+        final currency = ref.watch(selectedCurrencyProvider);
         return ResultSheetContent(
           state: liveState,
           companyName: settings?.companyName,
           companyLogoBase64: settings?.companyLogoBase64,
+          currency: currency,
           onSave: onSave,
           onReset: onReset,
           onToggleDetail: onToggleDetail,
@@ -218,6 +222,7 @@ class ResultSheetContent extends StatefulWidget {
     required this.state,
     this.companyName,
     this.companyLogoBase64,
+    required this.currency,
     required this.onSave,
     required this.onReset,
     required this.onToggleDetail,
@@ -227,6 +232,7 @@ class ResultSheetContent extends StatefulWidget {
   final CalculatorState state;
   final String? companyName;
   final String? companyLogoBase64;
+  final WorldCurrency currency;
   final VoidCallback onSave;
   final VoidCallback onReset;
   final VoidCallback onToggleDetail;
@@ -376,6 +382,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                 metaTime: meta.time,
                 companyName: widget.companyName,
                 companyLogoBase64: widget.companyLogoBase64,
+                currency: widget.currency,
               ),
             ),
 

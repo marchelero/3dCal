@@ -85,8 +85,9 @@ class SettingsRepository {
   // -------- Typed accessors para settings comunes --------
 
   /// Ganancia base global (%). Default: [kDefaultProfitBasePercentage].
-  Future<Decimal> getProfitBase() =>
-      getDecimal(SettingsKeys.profitBasePercentage, Decimal.fromInt(kDefaultProfitBasePercentage.toInt()));
+  Future<Decimal> getProfitBase() => getDecimal(
+      SettingsKeys.profitBasePercentage,
+      Decimal.fromInt(kDefaultProfitBasePercentage.toInt()));
 
   Future<void> setProfitBase(Decimal value) =>
       setDecimal(SettingsKeys.profitBasePercentage, value);
@@ -164,6 +165,15 @@ class SettingsRepository {
 
   Future<void> setMarkupOnMaterials(Decimal value) =>
       setDecimal(SettingsKeys.markupOnMaterials, value);
+
+  // === F4: Moneda ===
+
+  /// Codigo ISO de moneda activa. Default: "USD".
+  Future<String> getCurrencyCode() =>
+      getString(SettingsKeys.currencyCode, 'USD');
+
+  Future<void> setCurrencyCode(String value) =>
+      setString(SettingsKeys.currencyCode, value);
 }
 
 /// Helper privado para parseo seguro.

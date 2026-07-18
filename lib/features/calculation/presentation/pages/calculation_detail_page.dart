@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
@@ -38,7 +39,7 @@ class CalculationDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(EsBO.calcDetailTitle),
+        title: Text(EsBO.calcDetailTitle),
         actions: [
           IconButton(
             tooltip: EsBO.calcDetailDelete,
@@ -68,7 +69,7 @@ class CalculationDetailPage extends ConsumerWidget {
           ? null
           : FloatingActionButton.extended(
               icon: const Icon(Icons.replay_rounded),
-              label: const Text(EsBO.calcDetailReuse),
+              label: Text(EsBO.calcDetailReuse),
               onPressed: () {
                 context.push('/calculator/prefill', extra: calc);
               },
@@ -170,6 +171,7 @@ class _DetailState extends ConsumerState<_Detail> {
     final color = theme.colorScheme;
     final materialsAsync = ref.watch(_materialsOfProvider(calc.id));
     final settingsAsync = ref.watch(settingsNotifierProvider);
+    final currency = ref.watch(selectedCurrencyProvider);
     final printer = ref.watch(defaultPrinterProvider);
 
     final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
@@ -216,7 +218,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   ),
                   if (calc.isSold)
                     Chip(
-                      label: const Text(EsBO.calcDetailSold),
+                      label: Text(EsBO.calcDetailSold),
                       backgroundColor: color.tertiaryContainer,
                       labelStyle: TextStyle(color: color.onTertiaryContainer),
                       avatar: Icon(
@@ -278,7 +280,7 @@ class _DetailState extends ConsumerState<_Detail> {
         const SizedBox(height: AppSpacing.lg),
 
         // === Materiales ===
-        Text('Materiales',
+        Text(EsBO.calcSectionMaterials,
             style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: AppSpacing.sm),
@@ -293,7 +295,7 @@ class _DetailState extends ConsumerState<_Detail> {
               return Card(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Text('Sin materiales.',
+                  child: Text(EsBO.calcNoMaterials,
                       style: theme.textTheme.bodyMedium?.copyWith(
                           color: color.onSurfaceVariant)),
                 ),
@@ -346,12 +348,12 @@ class _DetailState extends ConsumerState<_Detail> {
                             ),
                           ),
                           Text(
-                            formatBob(Decimal.parse(
+                            formatCurrency(Decimal.parse(
                               (ms[i].weightGrams *
                                       ms[i].pricePerBobbinSnapshot /
                                       ms[i].gramsPerBobbinSnapshot)
                                   .toStringAsFixed(2),
-                            )),
+                            ), currency),
                             style: GoogleFonts.jetBrainsMono(
                               textStyle: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
@@ -384,10 +386,11 @@ class _DetailState extends ConsumerState<_Detail> {
               children: [
                 _Row(
                   label: 'Costo material',
-                  value: formatBob(
+                  value: formatCurrency(
                     Decimal.parse(
                       calc.materialCostSnapshot.toStringAsFixed(2),
                     ),
+                    currency,
                   ),
                 ),
                 if (calc.discountPercentage > 0) ...[
@@ -409,7 +412,7 @@ class _DetailState extends ConsumerState<_Detail> {
                           ),
                         ),
                         Text(
-                          '-${formatBob(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)))}',
+                          '-${formatCurrency(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)), currency)}',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: color.onErrorContainer,
                             fontWeight: FontWeight.w700,
@@ -434,10 +437,11 @@ class _DetailState extends ConsumerState<_Detail> {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        formatBob(
+                        formatCurrency(
                           Decimal.parse(
                             calc.totalPriceSnapshot.toStringAsFixed(2),
                           ),
+                          currency,
                         ),
                         style: GoogleFonts.jetBrainsMono(
                           textStyle: theme.textTheme.headlineMedium?.copyWith(
@@ -482,6 +486,7 @@ class _DetailState extends ConsumerState<_Detail> {
                 metaTime: result.metaTime,
                 companyName: settings.companyName,
                 companyLogoBase64: settings.companyLogoBase64,
+                currency: currency,
               ),
             ),
           ),

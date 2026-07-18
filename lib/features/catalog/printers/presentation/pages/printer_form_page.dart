@@ -126,7 +126,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               children: [
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: EsBO.printerModel,
                   helperText: EsBO.printerModelHelper,
                   border: OutlineInputBorder(),
@@ -137,7 +137,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _brandCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: EsBO.filamentBrand,
                   helperText: EsBO.printerBrandHelper,
                   border: OutlineInputBorder(),
@@ -155,7 +155,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
-                title: const Text(EsBO.filamentDefaultToggle),
+                title: Text(EsBO.filamentDefaultToggle),
                 subtitle: const Text(
                   'Se usara en nuevas cotizaciones. '
                   'Solo una impresora puede ser default.',
@@ -172,7 +172,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save),
-                label: const Text(EsBO.commonSave),
+                label: Text(EsBO.commonSave),
                 onPressed: _saving ? null : _save,
               ),
             ],

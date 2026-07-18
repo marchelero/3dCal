@@ -76,7 +76,7 @@ void main() {
       await _fillValid(tester);
 
       // Output card visible con precio grande en Bs
-      expect(find.textContaining('Bs.'), findsWidgets);
+      expect(find.textContaining(r'$ '), findsWidgets);
       // Calculo esperado:
       //   materialCost = 100 * (120/1000) = 12
       //   discountAmount = 0 (sin descuento)
@@ -84,7 +84,7 @@ void main() {
       //   profitBase default 200% → profitAmount = 12 * 200% = 24
       //   totalFinal = materialCost + profit = 36
       // Bs. 36,00 aparece como precio grande (costo total final)
-      expect(find.text('Bs. 36,00'), findsAtLeastNWidgets(1));
+      expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
       // Costo material solo en ojito detail (oculto por default)
       expect(find.text('Costo material'), findsNothing);
       // Detalle electrico/base/profit solo aparece al tocar ojito
@@ -96,20 +96,20 @@ void main() {
     testWidgets('output desaparece al borrar weight', (tester) async {
       await _pumpPage(tester);
       await _fillValid(tester);
-      expect(find.textContaining('Bs.'), findsWidgets);
+      expect(find.textContaining(r'$ '), findsWidgets);
 
       await tester.enterText(
           find.widgetWithText(TextField, 'Peso'), '');
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Bs. 12,00'), findsNothing);
+      expect(find.textContaining(r'$ 12,00'), findsNothing);
       expect(find.textContaining('Completa peso'), findsOneWidget);
     });
 
     testWidgets('boton reset restaura defaults', (tester) async {
       await _pumpPage(tester);
       await _fillValid(tester);
-      expect(find.textContaining('Bs.'), findsWidgets);
+      expect(find.textContaining(r'$ '), findsWidgets);
 
       // Reset ahora vive en el AppBar (siempre accesible) Y en el modal
       // sheet. Usamos el AppBar para este test (mas simple, no requiere
@@ -119,7 +119,7 @@ void main() {
 
       // Output card se fue, vuelve el empty hint del bar
       expect(find.textContaining('Completa peso'), findsOneWidget);
-      expect(find.textContaining('Bs. 36,00'), findsNothing);
+      expect(find.textContaining(r'$ 36,00'), findsNothing);
     });
 
     testWidgets('descuento reduce precio final', (tester) async {
@@ -128,7 +128,7 @@ void main() {
 
       // Sin descuento: totalFinal = 36 (materialCost 12 + profit 200%).
       // El total vive en el ResultBottomBar.
-      expect(find.text('Bs. 36,00'), findsAtLeastNWidgets(1));
+      expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
 
       // Aplicar descuento 25%
       await tester.enterText(
@@ -136,15 +136,15 @@ void main() {
       await tester.pumpAndSettle();
 
       // Big number = finalPrice (totalFinal 36 - 25% = 27). Tambien en el bar.
-      expect(find.text('Bs. 27,00'), findsAtLeastNWidgets(1));
+      expect(find.text(r'$ 27,00'), findsAtLeastNWidgets(1));
 
       // El badge de descuento y el monto viven en el SummaryCard dentro
       // del modal sheet. Hay que abrir el sheet para verlos.
-      await tester.tap(find.text('Bs. 27,00'));
+      await tester.tap(find.text(r'$ 27,00'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Descuento 25%'), findsOneWidget);
-      expect(find.textContaining('Bs. 9,00'), findsOneWidget);
+      expect(find.textContaining(r'$ 9,00'), findsOneWidget);
     });
   });
 }

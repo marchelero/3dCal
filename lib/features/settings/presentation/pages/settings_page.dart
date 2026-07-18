@@ -8,10 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/money/currency.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../l10n/app_locale.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
@@ -59,6 +61,7 @@ class _SettingsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final currency = WorldCurrency.fromCode(settings.currencyCode);
 
     return MaxWidthScrollView(
       maxWidth: 640,
@@ -102,7 +105,7 @@ class _SettingsBody extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _AutoSaveField(
-                      label: EsBO.settingsKwhRate,
+                      label: EsBO.settingsKwhRate(currency.symbol),
                       helper: EsBO.settingsKwhRateHelper,
                       initialValue: settings.kwhRate.toString(),
                       allowDecimals: true,
@@ -140,6 +143,19 @@ class _SettingsBody extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _ThemeModeSelector(),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // ── Moneda ──
+                _SettingsSection(
+                  icon: Icons.attach_money_rounded,
+                  title: EsBO.settingsCurrency,
+                  accentColor: color.primary,
+                  children: [
+                    _CurrencyPicker(),
+                    const SizedBox(height: AppSpacing.lg),
+                    _LocalePicker(),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -182,8 +198,8 @@ class _SettingsBody extends ConsumerWidget {
                           background: color.secondaryContainer,
                           foreground: color.onSecondaryContainer,
                         ),
-                        title: const Text(EsBO.settingsFilamentos),
-                        subtitle: const Text(EsBO.settingsManageFilaments),
+                        title: Text(EsBO.settingsFilamentos),
+                        subtitle: Text(EsBO.settingsManageFilaments),
                         trailing: Icon(Icons.chevron_right_rounded,
                             color: color.onSurfaceVariant),
                         onTap: () => context.push('/settings/filaments'),
@@ -199,8 +215,8 @@ class _SettingsBody extends ConsumerWidget {
                           background: color.tertiaryContainer,
                           foreground: color.onTertiaryContainer,
                         ),
-                        title: const Text(EsBO.settingsImpresoras),
-                        subtitle: const Text(EsBO.settingsManagePrinters),
+                        title: Text(EsBO.settingsImpresoras),
+                        subtitle: Text(EsBO.settingsManagePrinters),
                         trailing: Icon(Icons.chevron_right_rounded,
                             color: color.onSurfaceVariant),
                         onTap: () => context.push('/settings/printers'),
@@ -804,5 +820,112 @@ class _LogoPicker extends ConsumerWidget {
     } catch (_) {
       return Uint8List(0);
     }
+  }
+}
+
+// ─────────────────────────────────────────────────
+// CurrencyPicker — dropdown de monedas del mundo
+// ─────────────────────────────────────────────────
+
+/// Selector de moneda desde la lista parametrica de monedas del mundo.
+class _CurrencyPicker extends ConsumerWidget {
+  const _CurrencyPicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final settings =
+        ref.watch(settingsNotifierProvider).valueOrNull ?? Settings.defaults;
+    final current = WorldCurrency.fromCode(settings.currencyCode);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          EsBO.settingsCurrency,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          EsBO.settingsCurrencyHelper,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<WorldCurrency>(
+          value: current,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+          ),
+          items: WorldCurrency.all.map((wc) {
+            return DropdownMenuItem(
+              value: wc,
+              child: Text('${wc.code} — ${wc.name} (${wc.symbol})'),
+            );
+          }).toList(),
+          onChanged: (selected) {
+            if (selected == null) return;
+            ref
+                .read(settingsNotifierProvider.notifier)
+                .updateCurrency(selected.code);
+            _showSavedSnack(context);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────
+// LOCALE PICKER
+// ─────────────────────────────────────────────────
+
+class _LocalePicker extends ConsumerWidget {
+  const _LocalePicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final locale = ref.watch(localeProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          EsBO.localeLabel,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SegmentedButton<AppLocale>(
+          segments: const [
+            ButtonSegment(
+              value: AppLocale.es,
+              label: Text('ES'),
+              icon: Icon(Icons.language, size: 18),
+            ),
+            ButtonSegment(
+              value: AppLocale.en,
+              label: Text('EN'),
+              icon: Icon(Icons.language, size: 18),
+            ),
+          ],
+          selected: {locale},
+          onSelectionChanged: (s) {
+            ref.read(localeProvider.notifier).setLocale(s.first);
+          },
+          showSelectedIcon: false,
+        ),
+      ],
+    );
   }
 }

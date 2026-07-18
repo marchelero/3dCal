@@ -1,229 +1,681 @@
-// ignore_for_file: public_member_api_docs
-
-/// Strings centralizados de la app (es_BO).
+/// Strings en espanol (es_BO).
 ///
-/// **Scope (Sprint 7)**: solo los strings que se referencian desde el shell
-/// de navegacion y la Settings page. Los strings inline de paginas existentes
-/// se mantienen como literales — refactor global queda para Sprint 8 (a11y/l10n).
+/// [EsBO] es la API publica — todas las call sites existentes siguen usando
+/// `EsBO.xxx`. Internamente delega a la implementacion del locale activo.
 library;
 
+import 'app_strings.dart';
+
+// ─── API publica (sin cambios en call sites) ─────
+
 class EsBO {
-  const EsBO._();
+  EsBO._();
+
+  static AppStrings _impl = EsImpl();
+
+  /// Actualiza la implementacion activa. Llamado por el sistema de locale.
+  // ignore: use_setters_to_change_properties
+  static void setImpl(AppStrings impl) {
+    _impl = impl;
+  }
 
   // === App ===
-  static const String appName = '3dcalc';
+  static String get appName => _impl.appName;
 
-  // === Common verbs (shared across pages) ===
-  static const String commonSave = 'Guardar';
-  static const String commonCancel = 'Cancelar';
-  static const String commonDelete = 'Eliminar';
-  static const String commonRetry = 'Reintentar';
-  static const String commonEdit = 'Editar';
-  static const String commonNew = 'Nuevo';
-  static const String commonRequired = 'Requerido';
-  static const String commonInvalidNumber = 'Numero invalido';
-  static const String commonLoading = 'Cargando...';
-  static const String commonErrorGeneric = 'Algo salio mal. Intenta de nuevo.';
+  // === Common verbs ===
+  static String get commonSave => _impl.commonSave;
+  static String get commonCancel => _impl.commonCancel;
+  static String get commonDelete => _impl.commonDelete;
+  static String get commonRetry => _impl.commonRetry;
+  static String get commonEdit => _impl.commonEdit;
+  static String get commonNew => _impl.commonNew;
+  static String get commonRequired => _impl.commonRequired;
+  static String get commonInvalidNumber => _impl.commonInvalidNumber;
+  static String get commonLoading => _impl.commonLoading;
+  static String get commonErrorGeneric => _impl.commonErrorGeneric;
 
-  // === Navegacion (4 destinations) ===
-  static const String navHome = 'Inicio';
-  static const String navHistory = 'Historial';
-  static const String navDashboard = 'Dashboard';
-  static const String navSettings = 'Ajustes';
+  // === Navigation ===
+  static String get navHome => _impl.navHome;
+  static String get navHistory => _impl.navHistory;
+  static String get navDashboard => _impl.navDashboard;
+  static String get navSettings => _impl.navSettings;
 
-  // === Settings page ===
-  static const String settingsTitle = 'Ajustes';
-  static const String settingsGlobalParams = 'Parametros globales';
-  static const String settingsProfitBase = 'Ganancia base (%)';
-  static const String settingsProfitBaseHelper =
-      'Margen sobre costo base. 0-1000';
-  static const String settingsKwhRate = 'Tarifa electrica (BOB/kWh)';
-  static const String settingsKwhRateHelper =
-      'Rango residencial Bolivia: 0.10-5.00';
-  static const String settingsCatalogos = 'Catalogos';
-  static const String settingsFilamentos = 'Filamentos';
-  static const String settingsImpresoras = 'Impresoras';
-  static const String settingsAbout = 'Acerca de';
-  static const String settingsPrivacy =
-      'Privacidad: 100% local, sin telemetria';
-  static const String settingsSaved = 'Guardado';
-  static const String settingsAppearance = 'Apariencia';
-  static const String settingsTheme = 'Tema';
-  static const String settingsManageFilaments = 'Gestiona tus filamentos';
-  static const String settingsManagePrinters = 'Registra tus impresoras';
+  // === Settings ===
+  static String get settingsTitle => _impl.settingsTitle;
+  static String get settingsGlobalParams => _impl.settingsGlobalParams;
+  static String get settingsProfitBase => _impl.settingsProfitBase;
+  static String get settingsProfitBaseHelper =>
+      _impl.settingsProfitBaseHelper;
+  static String settingsKwhRate(String symbol) =>
+      _impl.settingsKwhRate(symbol);
+  static String get settingsKwhRateHelper => _impl.settingsKwhRateHelper;
+  static String get settingsCatalogos => _impl.settingsCatalogos;
+  static String get settingsFilamentos => _impl.settingsFilamentos;
+  static String get settingsImpresoras => _impl.settingsImpresoras;
+  static String get settingsAbout => _impl.settingsAbout;
+  static String get settingsPrivacy => _impl.settingsPrivacy;
+  static String get settingsSaved => _impl.settingsSaved;
+  static String get settingsAppearance => _impl.settingsAppearance;
+  static String get settingsTheme => _impl.settingsTheme;
+  static String get settingsManageFilaments => _impl.settingsManageFilaments;
+  static String get settingsManagePrinters => _impl.settingsManagePrinters;
 
-  // === F1: Mano de obra + Post-procesado ===
-  static const String settingsLaborPost = 'Mano de obra y post-procesado';
-  static const String settingsLaborRate = 'Mano de obra (BOB/hora)';
-  static const String settingsLaborRateHelper =
-      'Costo operador/tecnico por hora de impresion. 0 = desactivado';
-  static const String settingsPostProcessRate = 'Post-procesado (%)';
-  static const String settingsPostProcessRateHelper =
-      '% del costo de materiales. Ej: 10 = +10% en acabado/lijado/pintura';
-  static const String settingsFailureRate = 'Tasa de falla (%)';
-  static const String settingsFailureRateHelper =
-      '% del costo base para cubrir impresiones fallidas. 0 = desactivado';
-  static const String settingsMinimumCharge = 'Cargo minimo (BOB)';
-  static const String settingsMinimumChargeHelper =
-      'Cotizaciones por debajo de este monto se ajustan automaticamente';
-  static const String settingsMarkupOnMaterials = 'Markup desperdicio (%)';
-  static const String settingsMarkupOnMaterialsHelper =
-      '% extra sobre costo de materiales por desperdicio/desgaste';
+  // === F1: Labor + Post-process ===
+  static String get settingsLaborPost => _impl.settingsLaborPost;
+  static String settingsLaborRate(String symbol) =>
+      _impl.settingsLaborRate(symbol);
+  static String get settingsLaborRateHelper => _impl.settingsLaborRateHelper;
+  static String get settingsPostProcessRate => _impl.settingsPostProcessRate;
+  static String get settingsPostProcessRateHelper =>
+      _impl.settingsPostProcessRateHelper;
+  static String get settingsFailureRate => _impl.settingsFailureRate;
+  static String get settingsFailureRateHelper =>
+      _impl.settingsFailureRateHelper;
+  static String settingsMinimumCharge(String symbol) =>
+      _impl.settingsMinimumCharge(symbol);
+  static String get settingsMinimumChargeHelper =>
+      _impl.settingsMinimumChargeHelper;
+  static String get settingsMarkupOnMaterials =>
+      _impl.settingsMarkupOnMaterials;
+  static String get settingsMarkupOnMaterialsHelper =>
+      _impl.settingsMarkupOnMaterialsHelper;
 
-  // === Company settings ===
-  static const String settingsCompany = 'Empresa';
-  static const String settingsCompanyName = 'Nombre de la empresa';
-  static const String settingsCompanyNameHelper =
-      'Aparece en la cotizacion. Default: 3dCalc';
-  static const String settingsCompanyLogo = 'Logo';
-  static const String settingsCompanyLogoPick = 'Seleccionar imagen';
-  static const String settingsCompanyLogoRemove = 'Eliminar logo';
-  static const String settingsCompanyLogoError = 'Error al cargar la imagen';
+  // === F4: Currency ===
+  static String get settingsCurrency => _impl.settingsCurrency;
+  static String get settingsCurrencyHelper => _impl.settingsCurrencyHelper;
+
+  // === Company ===
+  static String get settingsCompany => _impl.settingsCompany;
+  static String get settingsCompanyName => _impl.settingsCompanyName;
+  static String get settingsCompanyNameHelper =>
+      _impl.settingsCompanyNameHelper;
+  static String get settingsCompanyLogo => _impl.settingsCompanyLogo;
+  static String get settingsCompanyLogoPick => _impl.settingsCompanyLogoPick;
+  static String get settingsCompanyLogoRemove =>
+      _impl.settingsCompanyLogoRemove;
+  static String get settingsCompanyLogoError =>
+      _impl.settingsCompanyLogoError;
 
   // === Dashboard ===
-  static const String dashboardTitle = 'Dashboard';
-  static const String dashboardErrorLoad = 'Error al cargar el dashboard';
-  static const String dashboardEmpty = 'Aun no cotizaste nada';
-  static const String dashboardEmptyCta = 'Ir a Home';
-  static const String dashboardStatQuotations = 'Cotizaciones';
-  static const String dashboardStatSold = 'Vendidas';
-  static const String dashboardStatConversion = 'Conversion';
-  static const String dashboardTotalQuoted = 'Total cotizado';
-  static const String dashboardTotalSold = 'Total vendido';
-  static const String dashboardChartTitle = 'Cotizado vs Ganado';
-  static const String dashboardChartQuoted = 'Cotizado';
-  static const String dashboardChartSold = 'Ganado';
+  static String get dashboardTitle => _impl.dashboardTitle;
+  static String get dashboardErrorLoad => _impl.dashboardErrorLoad;
+  static String get dashboardEmpty => _impl.dashboardEmpty;
+  static String get dashboardEmptyCta => _impl.dashboardEmptyCta;
+  static String get dashboardStatQuotations => _impl.dashboardStatQuotations;
+  static String get dashboardStatSold => _impl.dashboardStatSold;
+  static String get dashboardStatConversion => _impl.dashboardStatConversion;
+  static String get dashboardTotalQuoted => _impl.dashboardTotalQuoted;
+  static String get dashboardTotalSold => _impl.dashboardTotalSold;
+  static String get dashboardChartTitle => _impl.dashboardChartTitle;
+  static String get dashboardChartQuoted => _impl.dashboardChartQuoted;
+  static String get dashboardChartSold => _impl.dashboardChartSold;
 
-  // === Home / Quick actions ===
-  static const String homeActionNewCalc = 'Nueva cotizacion';
-  static const String homeActionNewCalcSub = 'Calcula precio de impresion';
-  static const String homeActionHistory = 'Historial';
-  static const String homeActionHistorySub = 'Cotizaciones guardadas';
-  static const String homeActionDashboard = 'Dashboard';
-  static const String homeActionDashboardSub = 'Estadisticas y graficos';
-  static const String homeQuickAccess = 'Acceso rapido';
-  static const String homeErrorLoadStats = 'Error cargando stats';
-  static const String homeEmptyQuotations = 'Todavia no hay cotizaciones';
-  static const String homeSummary = 'Resumen';
-  static const String homeSeeAll = 'Ver todo';
+  // === Home ===
+  static String get homeActionNewCalc => _impl.homeActionNewCalc;
+  static String get homeActionNewCalcSub => _impl.homeActionNewCalcSub;
+  static String get homeActionHistory => _impl.homeActionHistory;
+  static String get homeActionHistorySub => _impl.homeActionHistorySub;
+  static String get homeActionDashboard => _impl.homeActionDashboard;
+  static String get homeActionDashboardSub => _impl.homeActionDashboardSub;
+  static String get homeQuickAccess => _impl.homeQuickAccess;
+  static String get homeErrorLoadStats => _impl.homeErrorLoadStats;
+  static String get homeEmptyQuotations => _impl.homeEmptyQuotations;
+  static String get homeSummary => _impl.homeSummary;
+  static String get homeSeeAll => _impl.homeSeeAll;
 
-  // === Calculator (sections + fields) ===
-  static const String calcSectionPiece = 'Pieza';
-  static const String calcSectionFilament = 'Filamento';
-  static const String calcSectionTime = 'Tiempo de impresion';
-  static const String calcSectionDiscount = 'Descuento';
-  static const String calcLabelOptional = 'Etiqueta (opcional)';
-  static const String calcLabelOptionalHelper =
+  // === Calculator ===
+  static String get calcSectionPiece => _impl.calcSectionPiece;
+  static String get calcSectionFilament => _impl.calcSectionFilament;
+  static String get calcSectionTime => _impl.calcSectionTime;
+  static String get calcSectionDiscount => _impl.calcSectionDiscount;
+  static String get calcLabelOptional => _impl.calcLabelOptional;
+  static String get calcLabelOptionalHelper => _impl.calcLabelOptionalHelper;
+  static String get calcLabelWeight => _impl.calcLabelWeight;
+  static String get calcLabelWeightHelper => _impl.calcLabelWeightHelper;
+  static String get calcLabelHours => _impl.calcLabelHours;
+  static String get calcLabelHoursHelper => _impl.calcLabelHoursHelper;
+  static String get calcLabelMinutes => _impl.calcLabelMinutes;
+  static String get calcLabelMinutesHelper => _impl.calcLabelMinutesHelper;
+  static String get calcLabelDiscount => _impl.calcLabelDiscount;
+  static String get calcLabelDiscountHelper => _impl.calcLabelDiscountHelper;
+  static String get calcBtnSave => _impl.calcBtnSave;
+  static String get calcBtnReset => _impl.calcBtnReset;
+  static String get calcToggleShowDetail => _impl.calcToggleShowDetail;
+  static String get calcToggleHideDetail => _impl.calcToggleHideDetail;
+  static String get calcTotalWithDiscount => _impl.calcTotalWithDiscount;
+  static String get calcTotalFinal => _impl.calcTotalFinal;
+  static String get calcDetailMaterial => _impl.calcDetailMaterial;
+  static String get calcDetailEnergy => _impl.calcDetailEnergy;
+  static String get calcDetailLabor => _impl.calcDetailLabor;
+  static String get calcDetailPostProcess => _impl.calcDetailPostProcess;
+  static String get calcDetailBase => _impl.calcDetailBase;
+  static String get calcDetailFailure => _impl.calcDetailFailure;
+  static String get calcDetailMarkup => _impl.calcDetailMarkup;
+  static String get calcDetailProfit => _impl.calcDetailProfit;
+  static String get calcDetailMinimumCharge => _impl.calcDetailMinimumCharge;
+  static String get calcDetailTotal => _impl.calcDetailTotal;
+  static String get calcEmptyHint => _impl.calcEmptyHint;
+  static String get calcSectionMaterials => _impl.calcSectionMaterials;
+  static String get calcSectionPrinter => _impl.calcSectionPrinter;
+  static String get calcNoPrinter => _impl.calcNoPrinter;
+  static String get calcNoMaterials => _impl.calcNoMaterials;
+
+  // === Dynamic empty hint ===
+  static String get calcEmptyHintPrefix => _impl.calcEmptyHintPrefix;
+  static String get calcEmptyHintSuffix => _impl.calcEmptyHintSuffix;
+  static String get calcFieldWeightShort => _impl.calcFieldWeightShort;
+  static String get calcFieldPriceShort => _impl.calcFieldPriceShort;
+  static String get calcFieldTimeShort => _impl.calcFieldTimeShort;
+  static String get calcFieldMaterialShort => _impl.calcFieldMaterialShort;
+
+  // === Summary card meta ===
+  static String get calcMetaSeparator => _impl.calcMetaSeparator;
+
+  // === Result sheet ===
+  static String get calcResultBarTapHint => _impl.calcResultBarTapHint;
+  static String get calcResultBarEmptyHint => _impl.calcResultBarEmptyHint;
+  static String get calcSheetTitle => _impl.calcSheetTitle;
+  static String get calcBtnShare => _impl.calcBtnShare;
+  static String get calcBtnShareTooltip => _impl.calcBtnShareTooltip;
+  static String get calcShareError => _impl.calcShareError;
+  static String get calcShareSubject => _impl.calcShareSubject;
+  static String get calcShareText => _impl.calcShareText;
+  static String get calcSheetActionsLabel => _impl.calcSheetActionsLabel;
+
+  // === Filaments / Printers ===
+  static String get filamentTitle => _impl.filamentTitle;
+  static String get filamentNew => _impl.filamentNew;
+  static String get filamentEdit => _impl.filamentEdit;
+  static String get filamentName => _impl.filamentName;
+  static String get filamentNameHelper => _impl.filamentNameHelper;
+  static String get filamentBrand => _impl.filamentBrand;
+  static String get filamentBrandHelper => _impl.filamentBrandHelper;
+  static String filamentPrice(String symbol) => _impl.filamentPrice(symbol);
+  static String get filamentPriceHelper => _impl.filamentPriceHelper;
+  static String get filamentGrams => _impl.filamentGrams;
+  static String get filamentGramsHelper => _impl.filamentGramsHelper;
+  static String get filamentDefaultToggle => _impl.filamentDefaultToggle;
+  static String get filamentDefaultSubtitle => _impl.filamentDefaultSubtitle;
+  static String get filamentNewTooltip => _impl.filamentNewTooltip;
+  static String get filamentDeleteTitle => _impl.filamentDeleteTitle;
+  static String get filamentErrorSave => _impl.filamentErrorSave;
+  static String get filamentMustBePositive => _impl.filamentMustBePositive;
+  static String get filamentMustBeInteger => _impl.filamentMustBeInteger;
+  static String get filamentMax100 => _impl.filamentMax100;
+
+  static String get printerTitle => _impl.printerTitle;
+  static String get printerNew => _impl.printerNew;
+  static String get printerEdit => _impl.printerEdit;
+  static String get printerModel => _impl.printerModel;
+  static String get printerModelHelper => _impl.printerModelHelper;
+  static String get printerBrandHelper => _impl.printerBrandHelper;
+  static String get printerWatts => _impl.printerWatts;
+  static String get printerWattsHelper => _impl.printerWattsHelper;
+  static String get printerDefaultSubtitle => _impl.printerDefaultSubtitle;
+  static String get printerNewTooltip => _impl.printerNewTooltip;
+  static String get printerDeleteTitle => _impl.printerDeleteTitle;
+  static String get printerMustBeNonNegative =>
+      _impl.printerMustBeNonNegative;
+
+  // === Calculator output ===
+  static String get calcNotifFilament => _impl.calcNotifFilament;
+  static String get calcNotifMaterial => _impl.calcNotifMaterial;
+
+  // === Detail page ===
+  static String get calcDetailTitle => _impl.calcDetailTitle;
+  static String get calcDetailDelete => _impl.calcDetailDelete;
+  static String get calcDetailDeleteTitle => _impl.calcDetailDeleteTitle;
+  static String get calcDetailDeleteConfirm => _impl.calcDetailDeleteConfirm;
+  static String get calcDetailNoName => _impl.calcDetailNoName;
+  static String get calcDetailSold => _impl.calcDetailSold;
+  static String get calcDetailReuse => _impl.calcDetailReuse;
+  static String get calcDetailMarkSold => _impl.calcDetailMarkSold;
+  static String get calcDetailMarkPending => _impl.calcDetailMarkPending;
+
+  // === History ===
+  static String get historyTitle => _impl.historyTitle;
+  static String get historyErrorLoad => _impl.historyErrorLoad;
+  static String get historyEmpty => _impl.historyEmpty;
+
+  // === Locale ===
+  static String get localeLabel => _impl.localeLabel;
+  static String get localeEs => _impl.localeEs;
+  static String get localeEn => _impl.localeEn;
+}
+
+// ─── Implementacion espanol ─────────────────────
+
+class EsImpl implements AppStrings {
+  const EsImpl();
+
+  @override
+  String get appName => '3dcalc';
+
+  @override
+  String get commonSave => 'Guardar';
+  @override
+  String get commonCancel => 'Cancelar';
+  @override
+  String get commonDelete => 'Eliminar';
+  @override
+  String get commonRetry => 'Reintentar';
+  @override
+  String get commonEdit => 'Editar';
+  @override
+  String get commonNew => 'Nuevo';
+  @override
+  String get commonRequired => 'Requerido';
+  @override
+  String get commonInvalidNumber => 'Numero invalido';
+  @override
+  String get commonLoading => 'Cargando...';
+  @override
+  String get commonErrorGeneric =>
+      'Algo salio mal. Intenta de nuevo.';
+
+  @override
+  String get navHome => 'Inicio';
+  @override
+  String get navHistory => 'Historial';
+  @override
+  String get navDashboard => 'Dashboard';
+  @override
+  String get navSettings => 'Ajustes';
+
+  @override
+  String get settingsTitle => 'Ajustes';
+  @override
+  String get settingsGlobalParams => 'Parametros globales';
+  @override
+  String get settingsProfitBase => 'Ganancia base (%)';
+  @override
+  String get settingsProfitBaseHelper =>
+      'Margen sobre costo base. 0-1000';
+  @override
+  String settingsKwhRate(String symbol) =>
+      'Tarifa electrica ($symbol/kWh)';
+  @override
+  String get settingsKwhRateHelper =>
+      'Rango residencial Bolivia: 0.10-5.00';
+  @override
+  String get settingsCatalogos => 'Catalogos';
+  @override
+  String get settingsFilamentos => 'Filamentos';
+  @override
+  String get settingsImpresoras => 'Impresoras';
+  @override
+  String get settingsAbout => 'Acerca de';
+  @override
+  String get settingsPrivacy =>
+      'Privacidad: 100% local, sin telemetria';
+  @override
+  String get settingsSaved => 'Guardado';
+  @override
+  String get settingsAppearance => 'Apariencia';
+  @override
+  String get settingsTheme => 'Tema';
+  @override
+  String get settingsManageFilaments =>
+      'Gestiona tus filamentos';
+  @override
+  String get settingsManagePrinters =>
+      'Registra tus impresoras';
+
+  @override
+  String get settingsLaborPost =>
+      'Mano de obra y post-procesado';
+  @override
+  String settingsLaborRate(String symbol) =>
+      'Mano de obra ($symbol/hora)';
+  @override
+  String get settingsLaborRateHelper =>
+      'Costo operador/tecnico por hora de impresion. 0 = desactivado';
+  @override
+  String get settingsPostProcessRate => 'Post-procesado (%)';
+  @override
+  String get settingsPostProcessRateHelper =>
+      '% del costo de materiales. Ej: 10 = +10% en acabado/lijado/pintura';
+  @override
+  String get settingsFailureRate => 'Tasa de falla (%)';
+  @override
+  String get settingsFailureRateHelper =>
+      '% del costo base para cubrir impresiones fallidas. 0 = desactivado';
+  @override
+  String settingsMinimumCharge(String symbol) =>
+      'Cargo minimo ($symbol)';
+  @override
+  String get settingsMinimumChargeHelper =>
+      'Cotizaciones por debajo de este monto se ajustan automaticamente';
+  @override
+  String get settingsMarkupOnMaterials =>
+      'Markup desperdicio (%)';
+  @override
+  String get settingsMarkupOnMaterialsHelper =>
+      '% extra sobre costo de materiales por desperdicio/desgaste';
+
+  @override
+  String get settingsCurrency => 'Moneda';
+  @override
+  String get settingsCurrencyHelper =>
+      'Define la moneda que se muestra en precios, cotizaciones y dashboard. Sin conversion automatica.';
+
+  @override
+  String get settingsCompany => 'Empresa';
+  @override
+  String get settingsCompanyName => 'Nombre de la empresa';
+  @override
+  String get settingsCompanyNameHelper =>
+      'Aparece en la cotizacion. Default: 3dCalc';
+  @override
+  String get settingsCompanyLogo => 'Logo';
+  @override
+  String get settingsCompanyLogoPick =>
+      'Seleccionar imagen';
+  @override
+  String get settingsCompanyLogoRemove =>
+      'Eliminar logo';
+  @override
+  String get settingsCompanyLogoError =>
+      'Error al cargar la imagen';
+
+  @override
+  String get dashboardTitle => 'Dashboard';
+  @override
+  String get dashboardErrorLoad =>
+      'Error al cargar el dashboard';
+  @override
+  String get dashboardEmpty => 'Aun no cotizaste nada';
+  @override
+  String get dashboardEmptyCta => 'Ir a Home';
+  @override
+  String get dashboardStatQuotations => 'Cotizaciones';
+  @override
+  String get dashboardStatSold => 'Vendidas';
+  @override
+  String get dashboardStatConversion => 'Conversion';
+  @override
+  String get dashboardTotalQuoted => 'Total cotizado';
+  @override
+  String get dashboardTotalSold => 'Total vendido';
+  @override
+  String get dashboardChartTitle => 'Cotizado vs Ganado';
+  @override
+  String get dashboardChartQuoted => 'Cotizado';
+  @override
+  String get dashboardChartSold => 'Ganado';
+
+  @override
+  String get homeActionNewCalc => 'Nueva cotizacion';
+  @override
+  String get homeActionNewCalcSub =>
+      'Calcula precio de impresion';
+  @override
+  String get homeActionHistory => 'Historial';
+  @override
+  String get homeActionHistorySub =>
+      'Cotizaciones guardadas';
+  @override
+  String get homeActionDashboard => 'Dashboard';
+  @override
+  String get homeActionDashboardSub =>
+      'Estadisticas y graficos';
+  @override
+  String get homeQuickAccess => 'Acceso rapido';
+  @override
+  String get homeErrorLoadStats =>
+      'Error cargando stats';
+  @override
+  String get homeEmptyQuotations =>
+      'Todavia no hay cotizaciones';
+  @override
+  String get homeSummary => 'Resumen';
+  @override
+  String get homeSeeAll => 'Ver todo';
+
+  @override
+  String get calcSectionPiece => 'Pieza';
+  @override
+  String get calcSectionFilament => 'Filamento';
+  @override
+  String get calcSectionTime => 'Tiempo de impresion';
+  @override
+  String get calcSectionDiscount => 'Descuento';
+  @override
+  String get calcLabelOptional => 'Etiqueta (opcional)';
+  @override
+  String get calcLabelOptionalHelper =>
       'Ej: Soporte pared, Engranaje PETG';
-  static const String calcLabelWeight = 'Peso de la pieza';
-  static const String calcLabelWeightHelper = 'Gramos del modelo';
-  static const String calcLabelHours = 'Horas';
-  static const String calcLabelHoursHelper = '0-24';
-  static const String calcLabelMinutes = 'Minutos';
-  static const String calcLabelMinutesHelper = '0-59';
-  static const String calcLabelDiscount = 'Descuento';
-  static const String calcLabelDiscountHelper =
+  @override
+  String get calcLabelWeight => 'Peso de la pieza';
+  @override
+  String get calcLabelWeightHelper =>
+      'Gramos del modelo';
+  @override
+  String get calcLabelHours => 'Horas';
+  @override
+  String get calcLabelHoursHelper => '0-24';
+  @override
+  String get calcLabelMinutes => 'Minutos';
+  @override
+  String get calcLabelMinutesHelper => '0-59';
+  @override
+  String get calcLabelDiscount => 'Descuento';
+  @override
+  String get calcLabelDiscountHelper =>
       'Porcentaje sobre el total final';
-  static const String calcBtnSave = 'Guardar cotizacion';
-  static const String calcBtnReset = 'Restablecer valores';
-  static const String calcToggleShowDetail = 'Ver detalle';
-  static const String calcToggleHideDetail = 'Ocultar detalle';
-  static const String calcTotalWithDiscount = 'Total con descuento';
-  static const String calcTotalFinal = 'Total final';
-  static const String calcDetailMaterial = 'Costo material';
-  static const String calcDetailEnergy = 'Costo energia';
-  static const String calcDetailLabor = 'Mano de obra';
-  static const String calcDetailPostProcess = 'Post-procesado';
-  static const String calcDetailBase = 'Costo base';
-  static const String calcDetailFailure = 'Tasa falla';
-  static const String calcDetailMarkup = 'Markup desperdicio';
-  static const String calcDetailProfit = 'Ganancia';
-  static const String calcDetailMinimumCharge = 'Cargo minimo';
-  static const String calcDetailTotal = 'Total final';
-  static const String calcEmptyHint =
+  @override
+  String get calcBtnSave => 'Guardar cotizacion';
+  @override
+  String get calcBtnReset => 'Restablecer valores';
+  @override
+  String get calcToggleShowDetail => 'Ver detalle';
+  @override
+  String get calcToggleHideDetail => 'Ocultar detalle';
+  @override
+  String get calcTotalWithDiscount =>
+      'Total con descuento';
+  @override
+  String get calcTotalFinal => 'Total final';
+  @override
+  String get calcDetailMaterial => 'Costo material';
+  @override
+  String get calcDetailEnergy => 'Costo energia';
+  @override
+  String get calcDetailLabor => 'Mano de obra';
+  @override
+  String get calcDetailPostProcess =>
+      'Post-procesado';
+  @override
+  String get calcDetailBase => 'Costo base';
+  @override
+  String get calcDetailFailure => 'Tasa falla';
+  @override
+  String get calcDetailMarkup => 'Markup desperdicio';
+  @override
+  String get calcDetailProfit => 'Ganancia';
+  @override
+  String get calcDetailMinimumCharge =>
+      'Cargo minimo';
+  @override
+  String get calcDetailTotal => 'Total final';
+  @override
+  String get calcEmptyHint =>
       'Completa peso, filamento y horas para ver el precio';
+  @override
+  String get calcSectionMaterials => 'Materiales';
+  @override
+  String get calcSectionPrinter => 'Impresora';
+  @override
+  String get calcNoPrinter => 'Sin impresora registrada';
+  @override
+  String get calcNoMaterials => 'Sin materiales.';
 
-  // === Dynamic empty hint: lista los campos requeridos que faltan ===
-  // Used por CalculatorState.missingRequiredFields + _EmptyOutput.
-  // El join final lo hace la UI (con "y" antes del ultimo elemento).
-  static const String calcEmptyHintPrefix = 'Completa';
-  static const String calcEmptyHintSuffix = 'para ver la cotizacion';
-  static const String calcFieldWeightShort = 'peso de la pieza';
-  static const String calcFieldPriceShort = 'precio del filamento';
-  static const String calcFieldTimeShort = 'tiempo de impresion';
-  static const String calcFieldMaterialShort = 'al menos un material';
+  @override
+  String get calcEmptyHintPrefix => 'Completa';
+  @override
+  String get calcEmptyHintSuffix =>
+      'para ver la cotizacion';
+  @override
+  String get calcFieldWeightShort =>
+      'peso de la pieza';
+  @override
+  String get calcFieldPriceShort =>
+      'precio del filamento';
+  @override
+  String get calcFieldTimeShort =>
+      'tiempo de impresion';
+  @override
+  String get calcFieldMaterialShort =>
+      'al menos un material';
 
-  // === Summary card meta info (Fix #2) ===
-  // Shows grams used + print time inside the summary card, debajo del precio.
-  // Format: "100 g · 5h 30m".
-  static const String calcMetaSeparator = ' · ';
+  @override
+  String get calcMetaSeparator => ' · ';
 
-  // === Result sheet / sticky bar (Fix #3) ===
-  // Sticky bottom bar aparece cuando isValid, con el total + flecha.
-  // Tap expande a modal sheet con summary + acciones.
-  static const String calcResultBarTapHint = 'Ver cotizacion';
-  static const String calcResultBarEmptyHint = 'Falta completar';
-  static const String calcSheetTitle = 'Cotizacion';
-  static const String calcBtnShare = 'Compartir imagen';
-  static const String calcBtnShareTooltip = 'Genera una imagen lista para enviar';
-  static const String calcShareError = 'No se pudo generar la imagen';
-  static const String calcShareSubject = 'Cotizacion 3D';
-  static const String calcShareText = 'Cotizacion generada en 3dCalc';
-  static const String calcSheetActionsLabel = 'Acciones';
+  @override
+  String get calcResultBarTapHint => 'Ver cotizacion';
+  @override
+  String get calcResultBarEmptyHint =>
+      'Falta completar';
+  @override
+  String get calcSheetTitle => 'Cotizacion';
+  @override
+  String get calcBtnShare => 'Compartir imagen';
+  @override
+  String get calcBtnShareTooltip =>
+      'Genera una imagen lista para enviar';
+  @override
+  String get calcShareError =>
+      'No se pudo generar la imagen';
+  @override
+  String get calcShareSubject => 'Cotizacion 3D';
+  @override
+  String get calcShareText =>
+      'Cotizacion generada en 3dCalc';
+  @override
+  String get calcSheetActionsLabel => 'Acciones';
 
-  // === Filaments / Printers forms ===
-  static const String filamentTitle = 'Filamentos';
-  static const String filamentNew = 'Nuevo filamento';
-  static const String filamentEdit = 'Editar filamento';
-  static const String filamentName = 'Nombre';
-  static const String filamentNameHelper = 'Ej: PLA Negro';
-  static const String filamentBrand = 'Marca';
-  static const String filamentBrandHelper = 'Opcional';
-  static const String filamentPrice = 'Precio filamento (BOB)';
-  static const String filamentPriceHelper = 'Costo del rollo completo';
-  static const String filamentGrams = 'Gramos por rollo';
-  static const String filamentGramsHelper = 'Tipico 1000';
-  static const String filamentDefaultToggle = 'Marcar como default';
-  static const String filamentDefaultSubtitle =
+  @override
+  String get filamentTitle => 'Filamentos';
+  @override
+  String get filamentNew => 'Nuevo filamento';
+  @override
+  String get filamentEdit => 'Editar filamento';
+  @override
+  String get filamentName => 'Nombre';
+  @override
+  String get filamentNameHelper => 'Ej: PLA Negro';
+  @override
+  String get filamentBrand => 'Marca';
+  @override
+  String get filamentBrandHelper => 'Opcional';
+  @override
+  String filamentPrice(String symbol) =>
+      'Precio filamento ($symbol)';
+  @override
+  String get filamentPriceHelper =>
+      'Costo del rollo completo';
+  @override
+  String get filamentGrams => 'Gramos por rollo';
+  @override
+  String get filamentGramsHelper =>
+      'Tipico 1000';
+  @override
+  String get filamentDefaultToggle =>
+      'Marcar como default';
+  @override
+  String get filamentDefaultSubtitle =>
       'Se usara en nuevas cotizaciones. Solo un filamento puede ser default.';
-  static const String filamentNewTooltip = 'Nuevo filamento';
-  static const String filamentDeleteTitle = 'Eliminar filamento';
-  static const String filamentErrorSave = 'Error guardando';
-  static const String filamentMustBePositive = 'Debe ser > 0';
-  static const String filamentMustBeInteger = 'Debe ser entero';
-  static const String filamentMax100 = 'Maximo 100 caracteres';
+  @override
+  String get filamentNewTooltip => 'Nuevo filamento';
+  @override
+  String get filamentDeleteTitle =>
+      'Eliminar filamento';
+  @override
+  String get filamentErrorSave => 'Error guardando';
+  @override
+  String get filamentMustBePositive =>
+      'Debe ser > 0';
+  @override
+  String get filamentMustBeInteger =>
+      'Debe ser entero';
+  @override
+  String get filamentMax100 =>
+      'Maximo 100 caracteres';
 
-  static const String printerTitle = 'Impresoras';
-  static const String printerNew = 'Nueva impresora';
-  static const String printerEdit = 'Editar impresora';
-  static const String printerModel = 'Modelo';
-  static const String printerModelHelper = 'Ej: Ender 3 V2';
-  static const String printerBrandHelper = 'Ej: Creality, Anycubic';
-  static const String printerWatts = 'Consumo promedio (W)';
-  static const String printerWattsHelper = 'Tipico 100-300 W';
-  static const String printerDefaultSubtitle =
+  @override
+  String get printerTitle => 'Impresoras';
+  @override
+  String get printerNew => 'Nueva impresora';
+  @override
+  String get printerEdit => 'Editar impresora';
+  @override
+  String get printerModel => 'Modelo';
+  @override
+  String get printerModelHelper => 'Ej: Ender 3 V2';
+  @override
+  String get printerBrandHelper =>
+      'Ej: Creality, Anycubic';
+  @override
+  String get printerWatts =>
+      'Consumo promedio (W)';
+  @override
+  String get printerWattsHelper =>
+      'Tipico 100-300 W';
+  @override
+  String get printerDefaultSubtitle =>
       'Se usara en nuevas cotizaciones. Solo una impresora puede ser default.';
-  static const String printerNewTooltip = 'Nueva impresora';
-  static const String printerDeleteTitle = 'Eliminar impresora';
-  static const String printerMustBeNonNegative = 'Debe ser >= 0';
+  @override
+  String get printerNewTooltip =>
+      'Nueva impresora';
+  @override
+  String get printerDeleteTitle =>
+      'Eliminar impresora';
+  @override
+  String get printerMustBeNonNegative =>
+      'Debe ser >= 0';
 
-  // === Calculator output + notifier labels ===
-  static const String calcNotifFilament = 'Filamento';
-  static const String calcNotifMaterial = 'Material';
+  @override
+  String get calcNotifFilament => 'Filamento';
+  @override
+  String get calcNotifMaterial => 'Material';
 
-  // === Calculation detail page ===
-  static const String calcDetailTitle = 'Detalle cotizacion';
-  static const String calcDetailDelete = 'Eliminar';
-  static const String calcDetailDeleteTitle = 'Eliminar cotizacion';
-  static const String calcDetailDeleteConfirm = '¿Eliminar definitivamente?';
-  static const String calcDetailNoName = 'Sin nombre';
-  static const String calcDetailSold = 'Vendida';
-  static const String calcDetailReuse = 'Reusar';
-  static const String calcDetailMarkSold = 'Marcar vendida';
-  static const String calcDetailMarkPending = 'Marcar pendiente';
+  @override
+  String get calcDetailTitle =>
+      'Detalle cotizacion';
+  @override
+  String get calcDetailDelete => 'Eliminar';
+  @override
+  String get calcDetailDeleteTitle =>
+      'Eliminar cotizacion';
+  @override
+  String get calcDetailDeleteConfirm =>
+      '�Eliminar definitivamente?';
+  @override
+  String get calcDetailNoName => 'Sin nombre';
+  @override
+  String get calcDetailSold => 'Vendida';
+  @override
+  String get calcDetailReuse => 'Reusar';
+  @override
+  String get calcDetailMarkSold =>
+      'Marcar vendida';
+  @override
+  String get calcDetailMarkPending =>
+      'Marcar pendiente';
 
-  // === History / Calculations list ===
-  static const String historyTitle = 'Cotizaciones';
-  static const String historyErrorLoad = 'Error cargando cotizaciones';
-  static const String historyEmpty = 'Sin cotizaciones guardadas';
+  @override
+  String get historyTitle => 'Cotizaciones';
+  @override
+  String get historyErrorLoad =>
+      'Error cargando cotizaciones';
+  @override
+  String get historyEmpty =>
+      'Sin cotizaciones guardadas';
+
+  @override
+  String get localeLabel => 'Idioma';
+  @override
+  String get localeEs => 'Espanol';
+  @override
+  String get localeEn => 'Ingles';
 }

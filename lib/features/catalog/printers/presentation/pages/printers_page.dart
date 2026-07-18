@@ -21,7 +21,7 @@ class PrintersPage extends ConsumerWidget {
     final async = ref.watch(printersNotifierProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(EsBO.printerTitle),
+        title: Text(EsBO.printerTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -85,7 +85,7 @@ class _PrinterTile extends ConsumerWidget {
         subtitle: Text(_subtitle(printer)),
         trailing: PopupMenuButton<_TileAction>(
           onSelected: (a) => _handle(context, ref, a),
-          itemBuilder: (_) => const [
+          itemBuilder: (_) => [
             PopupMenuItem<_TileAction>(
               value: _TileAction.setDefault,
               child: ListTile(

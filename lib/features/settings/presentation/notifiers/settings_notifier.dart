@@ -27,6 +27,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
       failureRate: await repo.getFailureRate(),
       minimumCharge: await repo.getMinimumCharge(),
       markupOnMaterials: await repo.getMarkupOnMaterials(),
+      currencyCode: await repo.getCurrencyCode(),
     );
   }
 
@@ -105,6 +106,16 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
     await repo.setMarkupOnMaterials(value);
     final current = state.valueOrNull ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(markupOnMaterials: value));
+  }
+
+  // === F4: Moneda ===
+
+  /// Persiste [value] como codigo ISO de moneda activa.
+  Future<void> updateCurrency(String code) async {
+    final repo = ref.read(settingsRepositoryProvider);
+    await repo.setCurrencyCode(code);
+    final current = state.valueOrNull ?? Settings.defaults;
+    state = AsyncValue.data(current.copyWith(currencyCode: code));
   }
 }
 

@@ -73,7 +73,7 @@ class ErrorView extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text(EsBO.commonRetry),
+                label: Text(EsBO.commonRetry),
               ),
             ],
           ],

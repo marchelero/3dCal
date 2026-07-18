@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
@@ -334,6 +336,7 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildStatsSection(BuildContext context, WidgetRef ref,
       AsyncValue<DashboardStats> asyncStats, ThemeData theme, ColorScheme color) {
+    final currency = ref.watch(selectedCurrencyProvider);
     return asyncStats.when(
       loading: () => const HomePageSkeleton(),
       error: (e, _) => Card(
@@ -360,7 +363,7 @@ class HomePage extends ConsumerWidget {
         if (stats.countAll == 0) {
           return _buildEmptyStats(color, theme);
         }
-        return _buildStatsContent(context, stats, theme, color);
+        return _buildStatsContent(context, stats, theme, color, currency);
       },
     );
   }
@@ -395,7 +398,7 @@ class HomePage extends ConsumerWidget {
   }
 
   Widget _buildStatsContent(
-      BuildContext context, DashboardStats stats, ThemeData theme, ColorScheme color) {
+      BuildContext context, DashboardStats stats, ThemeData theme, ColorScheme color, WorldCurrency currency) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -408,7 +411,7 @@ class HomePage extends ConsumerWidget {
             ),
             TextButton.icon(
               icon: const Icon(Icons.open_in_new, size: 16),
-              label: const Text(EsBO.homeSeeAll),
+              label: Text(EsBO.homeSeeAll),
               onPressed: () => context.go('/dashboard'),
             ),
           ],
@@ -454,13 +457,13 @@ class HomePage extends ConsumerWidget {
               children: [
                 MoneyRow(
                   label: EsBO.dashboardTotalQuoted,
-                  value: formatBob(stats.totalQuoted),
+                  value: formatCurrency(stats.totalQuoted, currency),
                   valueColor: color.onSurface,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 MoneyRow(
                   label: EsBO.dashboardTotalSold,
-                  value: formatBob(stats.totalSold),
+                  value: formatCurrency(stats.totalSold, currency),
                   valueColor: color.tertiary,
                   isBold: true,
                 ),

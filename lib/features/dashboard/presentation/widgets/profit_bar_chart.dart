@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../l10n/es_bo.dart';
 
@@ -22,6 +23,7 @@ class ProfitBarChart extends StatelessWidget {
   const ProfitBarChart({
     required this.totalQuoted,
     required this.totalSold,
+    required this.currency,
     super.key,
   });
 
@@ -30,6 +32,9 @@ class ProfitBarChart extends StatelessWidget {
 
   /// Suma de `totalPriceSnapshot` de las cotizaciones con `isSold=true`.
   final Decimal totalSold;
+
+  /// Configuracion monetaria activa para formateo.
+  final WorldCurrency currency;
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +49,8 @@ class ProfitBarChart extends StatelessWidget {
     final maxY = (maxValue * 1.2).clamp(100.0, double.infinity);
 
     return Semantics(
-      label: '${EsBO.dashboardChartQuoted} ${formatBob(totalQuoted)}, '
-          '${EsBO.dashboardChartSold} ${formatBob(totalSold)}',
+      label: '${EsBO.dashboardChartQuoted} ${formatCurrency(totalQuoted, currency)}, '
+          '${EsBO.dashboardChartSold} ${formatCurrency(totalSold, currency)}',
       child: AspectRatio(
         aspectRatio: 1.5,
         child: BarChart(
@@ -154,7 +159,7 @@ class ProfitBarChart extends StatelessWidget {
                 final label =
                     group.x == 0 ? EsBO.dashboardChartQuoted : EsBO.dashboardChartSold;
                 return BarTooltipItem(
-                  '$label\nBs. ${rod.toY.toStringAsFixed(2)}',
+                  '$label\n${currency.symbol} ${rod.toY.toStringAsFixed(2)}',
                   theme.textTheme.bodyMedium!.copyWith(
                     color: theme.colorScheme.onInverseSurface,
                   ),

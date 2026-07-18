@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
@@ -54,7 +55,7 @@ class _CalculationsListPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(EsBO.historyTitle),
+        title: Text(EsBO.historyTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.file_download_outlined, size: 20),
@@ -243,10 +244,11 @@ class _CalculationCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final client = calc.clientName;
+    final currency = ref.watch(selectedCurrencyProvider);
 
     return Semantics(
       container: true,
-      label: '${_title()}, ${formatBob(Decimal.parse(calc.totalPriceSnapshot.toString()))}'
+      label: '${_title()}, ${formatCurrency(Decimal.parse(calc.totalPriceSnapshot.toString()), currency)}'
           '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
       child: Card(
         child: InkWell(
@@ -338,8 +340,8 @@ class _CalculationCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    formatBob(Decimal.parse(
-                        calc.totalPriceSnapshot.toString())),
+                    formatCurrency(Decimal.parse(
+                        calc.totalPriceSnapshot.toString()), currency),
                     // M2: precio en list item usa JetBrains Mono + tabular
                     // para alineacion vertical de cifras en el listado.
                     style: GoogleFonts.jetBrainsMono(
@@ -389,7 +391,7 @@ class _PopupMenu extends StatelessWidget {
             dense: true,
           ),
         ),
-        const PopupMenuItem<_TileAction>(
+        PopupMenuItem<_TileAction>(
           value: _TileAction.delete,
           child: ListTile(
             leading: Icon(Icons.delete_outline_rounded, size: 20),

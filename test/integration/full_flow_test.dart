@@ -134,7 +134,7 @@ void main() {
       await tester.pumpAndSettle();
       // Gramos / bobina ya no se muestra — default 1000 internamente.
 
-      expect(find.textContaining('Bs.'), findsWidgets);
+      expect(find.textContaining(r'$ '), findsWidgets);
     },
   );
 

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
+import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/empty_view.dart';
@@ -25,9 +27,10 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncStats = ref.watch(dashboardStatsProvider);
+    final currency = ref.watch(selectedCurrencyProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(EsBO.dashboardTitle),
+        title: Text(EsBO.dashboardTitle),
       ),
       body: SafeArea(
         child: asyncStats.when(
@@ -48,7 +51,7 @@ class DashboardPage extends ConsumerWidget {
                 onCta: () => context.go('/'),
               );
             }
-            return _DashboardBody(stats: stats);
+            return _DashboardBody(stats: stats, currency: currency);
           },
         ),
       ),
@@ -57,9 +60,10 @@ class DashboardPage extends ConsumerWidget {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody({required this.stats});
+  const _DashboardBody({required this.stats, required this.currency});
 
   final DashboardStats stats;
+  final WorldCurrency currency;
 
   @override
   Widget build(BuildContext context) {
@@ -114,13 +118,13 @@ class _DashboardBody extends StatelessWidget {
                 children: [
                   MoneyRow(
                     label: EsBO.dashboardTotalQuoted,
-                    value: formatBob(stats.totalQuoted),
+                    value: formatCurrency(stats.totalQuoted, currency),
                     valueColor: color.onSurface,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   MoneyRow(
                     label: EsBO.dashboardTotalSold,
-                    value: formatBob(stats.totalSold),
+                    value: formatCurrency(stats.totalSold, currency),
                     valueColor: color.tertiary,
                     isBold: true,
                   ),
@@ -137,7 +141,7 @@ class _DashboardBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SectionHeader(
+                  SectionHeader(
                     icon: Icons.bar_chart_rounded,
                     title: EsBO.dashboardChartTitle,
                   ),
@@ -145,6 +149,7 @@ class _DashboardBody extends StatelessWidget {
                   ProfitBarChart(
                     totalQuoted: stats.totalQuoted,
                     totalSold: stats.totalSold,
+                    currency: currency,
                   ),
                 ],
               ),
