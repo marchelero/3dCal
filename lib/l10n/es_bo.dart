@@ -160,6 +160,46 @@ class EsBO {
   static String get calcNoPrinter => _impl.calcNoPrinter;
   static String get calcNoMaterials => _impl.calcNoMaterials;
 
+  // === Key field hints (campos indispensables) ===
+  static String get calcKeyWeightHint => _impl.calcKeyWeightHint;
+  static String get calcKeyHoursHint => _impl.calcKeyHoursHint;
+  static String get calcKeyMinutesHint => _impl.calcKeyMinutesHint;
+
+  // === Material row (Advanced / Express calculator) ===
+  static String calcMaterialTitle(int index) => _impl.calcMaterialTitle(index);
+  static String calcMaterialRemove(int index) => _impl.calcMaterialRemove(index);
+  static String get calcMaterialCatalog => _impl.calcMaterialCatalog;
+  static String calcMaterialUse(String filamentName) =>
+      _impl.calcMaterialUse(filamentName);
+  static String get calcFieldLabel => _impl.calcFieldLabel;
+  static String get calcFieldLabelHelper => _impl.calcFieldLabelHelper;
+  static String get calcFieldWeight => _impl.calcFieldWeight;
+  static String get calcFieldSpoolPrice => _impl.calcFieldSpoolPrice;
+  static String get calcFieldSpoolGrams => _impl.calcFieldSpoolGrams;
+
+  // === Otros / extras (seccion final) ===
+  static String get calcFieldLabor => _impl.calcFieldLabor;
+  static String get calcFieldLaborHelper => _impl.calcFieldLaborHelper;
+  static String get calcFieldPostProcess => _impl.calcFieldPostProcess;
+  static String get calcFieldPostProcessHelper =>
+      _impl.calcFieldPostProcessHelper;
+  static String get calcFieldFailure => _impl.calcFieldFailure;
+  static String get calcFieldFailureHelper => _impl.calcFieldFailureHelper;
+  static String get calcFieldWaste => _impl.calcFieldWaste;
+  static String get calcFieldWasteHelper => _impl.calcFieldWasteHelper;
+
+  // === Calculator modes ===
+  static String get calcModeExpress => _impl.calcModeExpress;
+  static String get calcModeAdvanced => _impl.calcModeAdvanced;
+  static String calcSemanticMode(String mode) => _impl.calcSemanticMode(mode);
+
+  // === Action labels ===
+  static String get calcActionReset => _impl.calcActionReset;
+
+  // === Save dialog ===
+  static String get calcDialogClient => _impl.calcDialogClient;
+  static String get calcDialogClientHelper => _impl.calcDialogClientHelper;
+
   // === Dynamic empty hint ===
   static String get calcEmptyHintPrefix => _impl.calcEmptyHintPrefix;
   static String get calcEmptyHintSuffix => _impl.calcEmptyHintSuffix;
@@ -528,6 +568,67 @@ class EsImpl implements AppStrings {
   String get calcNoPrinter => 'Sin impresora registrada';
   @override
   String get calcNoMaterials => 'Sin materiales.';
+
+  @override
+  String get calcKeyWeightHint =>
+      'Clave: sin este dato no se puede cotizar';
+  @override
+  String get calcKeyHoursHint =>
+      'Clave: define el costo de mano de obra y energia';
+  @override
+  String get calcKeyMinutesHint =>
+      'Clave: completa el tiempo real de impresion';
+
+  @override
+  String calcMaterialTitle(int index) => 'Material $index';
+  @override
+  String calcMaterialRemove(int index) => 'Quitar material $index';
+  @override
+  String get calcMaterialCatalog => 'Catalogo';
+  @override
+  String calcMaterialUse(String filamentName) => 'Usar $filamentName';
+  @override
+  String get calcFieldLabel => 'Etiqueta';
+  @override
+  String get calcFieldLabelHelper => 'Opcional (ej: PLA base)';
+  @override
+  String get calcFieldWeight => 'Peso';
+  @override
+  String get calcFieldSpoolPrice => 'Precio bobina';
+  @override
+  String get calcFieldSpoolGrams => 'Gramos / bobina';
+
+  @override
+  String get calcFieldLabor => 'Mano de obra';
+  @override
+  String get calcFieldLaborHelper => 'Tarifa por hora';
+  @override
+  String get calcFieldPostProcess => 'Post-procesado';
+  @override
+  String get calcFieldPostProcessHelper => '% del costo mat.';
+  @override
+  String get calcFieldFailure => 'Tasa de falla';
+  @override
+  String get calcFieldFailureHelper => '% del costo base';
+  @override
+  String get calcFieldWaste => 'Desperdicio';
+  @override
+  String get calcFieldWasteHelper => '% markup desperdicio';
+
+  @override
+  String get calcModeExpress => 'Express';
+  @override
+  String get calcModeAdvanced => 'Advanced';
+  @override
+  String calcSemanticMode(String mode) => 'Modo de calculo: $mode';
+
+  @override
+  String get calcActionReset => 'Restablecer';
+
+  @override
+  String get calcDialogClient => 'Cliente';
+  @override
+  String get calcDialogClientHelper => 'Opcional';
 
   @override
   String get calcEmptyHintPrefix => 'Completa';

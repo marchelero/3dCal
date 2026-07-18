@@ -298,6 +298,67 @@ class EnImpl implements AppStrings {
   String get calcNoMaterials => 'No materials.';
 
   @override
+  String get calcKeyWeightHint =>
+      'Key: required to calculate the quotation';
+  @override
+  String get calcKeyHoursHint =>
+      'Key: drives labor and energy costs';
+  @override
+  String get calcKeyMinutesHint =>
+      'Key: enter the actual print time';
+
+  @override
+  String calcMaterialTitle(int index) => 'Material $index';
+  @override
+  String calcMaterialRemove(int index) => 'Remove material $index';
+  @override
+  String get calcMaterialCatalog => 'Catalog';
+  @override
+  String calcMaterialUse(String filamentName) => 'Use $filamentName';
+  @override
+  String get calcFieldLabel => 'Label';
+  @override
+  String get calcFieldLabelHelper => 'Optional (e.g.: PLA base)';
+  @override
+  String get calcFieldWeight => 'Weight';
+  @override
+  String get calcFieldSpoolPrice => 'Spool price';
+  @override
+  String get calcFieldSpoolGrams => 'Grams / spool';
+
+  @override
+  String get calcFieldLabor => 'Labor';
+  @override
+  String get calcFieldLaborHelper => 'Hourly rate';
+  @override
+  String get calcFieldPostProcess => 'Post-processing';
+  @override
+  String get calcFieldPostProcessHelper => '% of material cost';
+  @override
+  String get calcFieldFailure => 'Failure rate';
+  @override
+  String get calcFieldFailureHelper => '% of base cost';
+  @override
+  String get calcFieldWaste => 'Waste';
+  @override
+  String get calcFieldWasteHelper => '% waste markup';
+
+  @override
+  String get calcModeExpress => 'Express';
+  @override
+  String get calcModeAdvanced => 'Advanced';
+  @override
+  String calcSemanticMode(String mode) => 'Calculation mode: $mode';
+
+  @override
+  String get calcActionReset => 'Reset';
+
+  @override
+  String get calcDialogClient => 'Client';
+  @override
+  String get calcDialogClientHelper => 'Optional';
+
+  @override
   String get calcEmptyHintPrefix => 'Fill in';
   @override
   String get calcEmptyHintSuffix =>

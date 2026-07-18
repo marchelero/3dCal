@@ -135,6 +135,44 @@ abstract class AppStrings {
   String get calcNoMaterials;
   String get calcEmptyHint;
 
+  // === Key field hints (campos indispensables) ===
+  String get calcKeyWeightHint;
+  String get calcKeyHoursHint;
+  String get calcKeyMinutesHint;
+
+  // === Material row (Advanced / Express calculator) ===
+  String calcMaterialTitle(int index);
+  String calcMaterialRemove(int index);
+  String get calcMaterialCatalog;
+  String calcMaterialUse(String filamentName);
+  String get calcFieldLabel;
+  String get calcFieldLabelHelper;
+  String get calcFieldWeight;
+  String get calcFieldSpoolPrice;
+  String get calcFieldSpoolGrams;
+
+  // === Otros / extras (seccion final) ===
+  String get calcFieldLabor;
+  String get calcFieldLaborHelper;
+  String get calcFieldPostProcess;
+  String get calcFieldPostProcessHelper;
+  String get calcFieldFailure;
+  String get calcFieldFailureHelper;
+  String get calcFieldWaste;
+  String get calcFieldWasteHelper;
+
+  // === Calculator modes ===
+  String get calcModeExpress;
+  String get calcModeAdvanced;
+  String calcSemanticMode(String mode);
+
+  // === Action labels ===
+  String get calcActionReset;
+
+  // === Save dialog ===
+  String get calcDialogClient;
+  String get calcDialogClientHelper;
+
   // === Dynamic empty hint ===
   String get calcEmptyHintPrefix;
   String get calcEmptyHintSuffix;

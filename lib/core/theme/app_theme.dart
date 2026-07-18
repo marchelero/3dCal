@@ -69,7 +69,13 @@ class AppTheme {
     // Cambiar el seed propaga todas las superficies en un solo lugar.
     final surfaceColor = colorScheme.surfaceContainerLow;
     final dialogSurface = colorScheme.surfaceContainerHigh;
-    final inputSurface = colorScheme.surfaceContainerHighest;
+    // Input fill: en light mode evitamos el gris oscuro de
+    // `surfaceContainerHighest` (se ve apagado sobre la card clara). Usamos
+    // `surface` (casi blanco) con un borde sutil; en dark mode mantenemos un
+    // fill mas oscuro que destaque contra la card.
+    final inputSurface = isLight
+        ? colorScheme.surface
+        : colorScheme.surfaceContainerHighest;
 
     return ThemeData(
       useMaterial3: true,
@@ -122,7 +128,12 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
-          borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1),
+          borderSide: BorderSide(
+            color: isLight
+                ? colorScheme.outline.withValues(alpha: 0.35)
+                : colorScheme.outlineVariant,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -132,6 +143,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide(color: colorScheme.error, width: 1),
         ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: colorScheme.error, width: 2),
+        ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,
@@ -139,6 +154,9 @@ class AppTheme {
         labelStyle: TextStyle(
           color: colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w500,
+        ),
+        helperStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
         ),
       ),
       sliderTheme: SliderThemeData(

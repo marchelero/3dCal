@@ -54,16 +54,22 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = accentColor ?? theme.colorScheme.primary;
+    final cs = theme.colorScheme;
+    final color = accentColor ?? cs.primary;
+    // Padding vertical compacto (sm en vez de md) para que el header no
+    // visualmente "flote" mas alto que el resto del contenido de la card.
+    // Antes: vertical=md (12) + textMedium + border = bloque mas grueso que
+    // el resto. Ahora: vertical=sm (8) + textSmall alineado al mismo ritmo
+    // que los inputs y filas de la card.
     final rowChildren = <Widget>[
-      Icon(icon, size: 20, color: color),
+      Icon(icon, size: 18, color: color),
       const SizedBox(width: AppSpacing.sm),
       Expanded(
         child: Text(
           title,
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
+            color: cs.onPrimaryContainer,
           ),
         ),
       ),
@@ -77,22 +83,35 @@ class SectionHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.sm),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 2),
           child: row,
         ),
       );
     }
 
+    // Header con gradiente azul (primaryContainer) identico al hero de home.
+    // Antes era un fill gris apagado (surfaceContainerHighest) que contrastaba
+    // poco con la card; ahora tiene identidad visual y se integra con la
+    // paleta "Industrial 3D".
     final container = Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        gradient: LinearGradient(
+          colors: [
+            cs.primaryContainer,
+            cs.primaryContainer.withValues(alpha: 0.7),
+            cs.primaryContainer.withValues(alpha: 0.35),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: const [0.0, 0.55, 1.0],
+        ),
         borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant,
+          color: cs.primary.withValues(alpha: 0.25),
           width: 1,
         ),
       ),

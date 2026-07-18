@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/theme/app_radii.dart';
+
 // ignore_for_file: public_member_api_docs
 
 /// Input especializado para valores numericos.
@@ -55,6 +57,8 @@ class NumericInputField extends StatefulWidget {
     this.textInputAction = TextInputAction.next,
     this.validator,
     this.showValidation = false,
+    this.isKey = false,
+    this.keyHint,
     super.key,
   });
 
@@ -95,6 +99,18 @@ class NumericInputField extends StatefulWidget {
   /// Si `true`, fuerza validacion visual incluso sin interaccion previa.
   /// Util para mostrar errores al intentar guardar con campos vacios.
   final bool showValidation;
+
+  /// Si `true`, marca el field como critico para el calculo. Aplica:
+  /// - Borde mas visible en color de acento (primary).
+  /// - Fill levemente tintado para distinguirlo de los demas.
+  /// - Prefijo con icono de "estrella" para senalar importancia.
+  /// - [keyHint] como helper prioritario (si se provee).
+  final bool isKey;
+
+  /// Helper prioritario para campos clave. Si se provee, reemplaza
+  /// [helperText] cuando [isKey] es `true`. Sirve para explicar al usuario
+  /// por que el campo es indispensable (ej: "Sin este dato no se cotiza").
+  final String? keyHint;
 
   @override
   State<NumericInputField> createState() => _NumericInputFieldState();
@@ -165,6 +181,73 @@ class _NumericInputFieldState extends State<NumericInputField> {
             return widget.validator!(value);
           };
 
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    // === Estilos condicionales para campos clave (isKey) ===
+    // Senalamos los inputs indispensables (ej: peso, tiempo) con un borde
+    // de acento mas visible y un fill levemente tintado. Asi el usuario
+    // entiende que sin esos datos la cotizacion no se puede generar.
+    //
+    // **Importante**: el helperText NO se renderiza abajo del field cuando
+    // isKey=true. La razon: agrega una linea que rompe la alineacion
+    // vertical con los demas inputs de la fila. En su lugar, la
+    // explicacion (keyHint) se muestra como Tooltip del push_pin icon.
+    // Asi el field mantiene exactamente la misma altura que sus vecinos.
+    final isKey = widget.isKey;
+    final keyFill = isKey
+        ? cs.primaryContainer.withValues(alpha: 0.35)
+        : null;
+    final keyBorderColor = isKey ? cs.primary : cs.outlineVariant;
+    final keyLabelColor = isKey ? cs.primary : cs.onSurfaceVariant;
+    final keyIcon = Icon(
+      Icons.push_pin_rounded,
+      size: 18,
+      color: cs.primary,
+      semanticLabel: widget.keyHint,
+    );
+    final keyPrefixIcon = isKey
+        ? (widget.keyHint != null
+            ? Tooltip(
+                message: widget.keyHint!,
+                triggerMode: TooltipTriggerMode.tap,
+                child: keyIcon,
+              )
+            : keyIcon)
+        : null;
+
+    // Cuando es key, suprimimos el helperText para que el field quede a
+    // la misma altura que los inputs adyacentes. La info sigue accesible
+    // via el Tooltip del push_pin icon (toque largo / hover).
+    final effectiveHelper = isKey ? null : widget.helperText;
+
+    final decoration = InputDecoration(
+      labelText: widget.label,
+      helperText: effectiveHelper,
+      suffixText: widget.suffix,
+      prefixIcon: keyPrefixIcon,
+      filled: true,
+      fillColor: keyFill,
+      // Sobreescribimos bordes solo si es key: mas visible y en color de
+      // acento. Si no, dejamos los del theme (OutlineInputBorder generico).
+      enabledBorder: isKey
+          ? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              borderSide: BorderSide(color: keyBorderColor, width: 1.5),
+            )
+          : null,
+      focusedBorder: isKey
+          ? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              borderSide: BorderSide(color: cs.primary, width: 2),
+            )
+          : null,
+      labelStyle: TextStyle(
+        color: keyLabelColor,
+        fontWeight: isKey ? FontWeight.w600 : FontWeight.w500,
+      ),
+    );
+
     final textField = TextFormField(
       controller: widget.controller,
       autofocus: widget.autofocus,
@@ -178,10 +261,7 @@ class _NumericInputFieldState extends State<NumericInputField> {
           widget.allowDecimals ? RegExp('[0-9.,]') : RegExp('[0-9]'),
         ),
       ],
-      decoration: InputDecoration(
-        labelText: widget.label,
-        suffixText: widget.suffix,
-      ),
+      decoration: decoration,
       // Si no hay validator, manejamos errorText en vivo via _onTextChanged.
       onChanged: _handleChange,
       validator: combined,
@@ -198,8 +278,12 @@ class _NumericInputFieldState extends State<NumericInputField> {
       listenable: widget.controller,
       builder: (context, _) {
         final error = _internalValidator(widget.controller.text);
-        // No podemos reutilizar textField porque ya cambio el decoration
-        // arriba. Construimos un TextField equivalente aqui.
+        // Misma decoration, pero con errorText en vivo (no se puede pasar
+        // via validator porque no hay FormField wrapper).
+        final liveDecoration = decoration.copyWith(
+          errorText: error,
+          helperText: error == null ? effectiveHelper : null,
+        );
         return TextField(
           controller: widget.controller,
           onChanged: _handleChange,
@@ -214,12 +298,7 @@ class _NumericInputFieldState extends State<NumericInputField> {
               widget.allowDecimals ? RegExp('[0-9.,]') : RegExp('[0-9]'),
             ),
           ],
-          decoration: InputDecoration(
-            labelText: widget.label,
-            helperText: error == null ? widget.helperText : null,
-            errorText: error,
-            suffixText: widget.suffix,
-          ),
+          decoration: liveDecoration,
         );
       },
     );

@@ -365,10 +365,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
         actions: [
           Semantics(
             button: true,
-            label: 'Restablecer',
+            label: EsBO.calcActionReset,
             child: IconButton(
               icon: const Icon(Icons.refresh_rounded),
-              tooltip: 'Restablecer',
+              tooltip: EsBO.calcActionReset,
               onPressed: _resetAll,
             ),
           ),
@@ -480,7 +480,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                 controller: _pieceLabelCtrl,
                 decoration: InputDecoration(
                   labelText: EsBO.calcLabelOptional,
-                  helperText: 'Nombre de la pieza (ej: Jarron 3D, Posavasos)',
+                  helperText: EsBO.calcLabelOptionalHelper,
                   prefixIcon: Icon(Icons.label_outline),
                 ),
               ),
@@ -504,6 +504,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                 deletable: false,
                 showLabel: true,
                 showValidation: _showValidationErrors,
+                isKeyWeight: true,
                 onRemove: () {},
                 onChanged: (m) {
                   // label actualiza filamentLabel (nombre del material)
@@ -555,6 +556,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
                     helperText: EsBO.calcLabelHoursHelper,
+                    keyHint: EsBO.calcKeyHoursHint,
+                    isKey: true,
                     showValidation: _showValidationErrors,
                   ),
                 ),
@@ -566,6 +569,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
                     helperText: EsBO.calcLabelMinutesHelper,
+                    keyHint: EsBO.calcKeyMinutesHint,
+                    isKey: true,
                     showValidation: _showValidationErrors,
                   ),
                 ),
@@ -583,7 +588,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
             icon: Icons.local_offer_rounded,
             title: EsBO.calcSectionDiscount,
             child: NumericInputField(
-              label: 'Descuento',
+              label: EsBO.calcLabelDiscount,
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
               suffix: '%',
@@ -678,6 +683,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                         gramsCtrl: _materialCtrls[index].grams,
                         deletable: true,
                         showValidation: _showValidationErrors,
+                        isKeyWeight: true,
                         onChanged: (m) => notifier.updateMaterial(
                           index,
                           label: m.label,
@@ -740,6 +746,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
                     helperText: EsBO.calcLabelHoursHelper,
+                    keyHint: EsBO.calcKeyHoursHint,
+                    isKey: true,
                     showValidation: _showValidationErrors,
                   ),
                 ),
@@ -751,6 +759,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
                     helperText: EsBO.calcLabelMinutesHelper,
+                    keyHint: EsBO.calcKeyMinutesHint,
+                    isKey: true,
                     showValidation: _showValidationErrors,
                   ),
                 ),
@@ -768,7 +778,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
             icon: Icons.local_offer_rounded,
             title: EsBO.calcSectionDiscount,
             child: NumericInputField(
-              label: 'Descuento',
+              label: EsBO.calcLabelDiscount,
               controller: _discountCtrl,
               onChanged: notifier.setDiscountPct,
               suffix: '%',
@@ -828,21 +838,21 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                             children: [
                               Expanded(
                                 child: NumericInputField(
-                                  label: 'Mano de obra',
+                                  label: EsBO.calcFieldLabor,
                                   controller: _extraLaborRateCtrl,
                                   onChanged: notifier.setExtraLaborRate,
                                   suffix: '${currency.symbol}/h',
-                                  helperText: 'Tarifa por hora',
+                                  helperText: EsBO.calcFieldLaborHelper,
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.md),
                               Expanded(
                                 child: NumericInputField(
-                                  label: 'Post-procesado',
+                                  label: EsBO.calcFieldPostProcess,
                                   controller: _extraPostProcessRateCtrl,
                                   onChanged: notifier.setExtraPostProcessRate,
                                   suffix: '%',
-                                  helperText: '% del costo mat.',
+                                  helperText: EsBO.calcFieldPostProcessHelper,
                                 ),
                               ),
                             ],
@@ -853,21 +863,21 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                             children: [
                               Expanded(
                                 child: NumericInputField(
-                                  label: 'Tasa de falla',
+                                  label: EsBO.calcFieldFailure,
                                   controller: _extraFailureRateCtrl,
                                   onChanged: notifier.setExtraFailureRate,
                                   suffix: '%',
-                                  helperText: '% del costo base',
+                                  helperText: EsBO.calcFieldFailureHelper,
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.md),
                               Expanded(
                                 child: NumericInputField(
-                                  label: 'Desperdicio',
+                                  label: EsBO.calcFieldWaste,
                                   controller: _extraMarkupOnMaterialsCtrl,
                                   onChanged: notifier.setExtraMarkupOnMaterials,
                                   suffix: '%',
-                                  helperText: '% markup desperdicio',
+                                  helperText: EsBO.calcFieldWasteHelper,
                                 ),
                               ),
                             ],
@@ -1145,6 +1155,7 @@ class _MaterialRowTile extends ConsumerWidget {
     required this.onRemove,
     required this.pending,
     this.showValidation = false,
+    this.isKeyWeight = false,
   });
 
   final int index;
@@ -1159,6 +1170,9 @@ class _MaterialRowTile extends ConsumerWidget {
   final bool pending;
   final bool showValidation;
 
+  /// Si `true`, marca el campo peso como clave (resaltado visual).
+  final bool isKeyWeight;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (pending) return const SizedBox.shrink();
@@ -1170,7 +1184,7 @@ class _MaterialRowTile extends ConsumerWidget {
 
     return Semantics(
       container: true,
-      label: 'Material ${index + 1}',
+      label: EsBO.calcMaterialTitle(index + 1),
       child: Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -1186,7 +1200,7 @@ class _MaterialRowTile extends ConsumerWidget {
           Row(
             children: [
               Semantics(
-                label: 'Material ${index + 1}',
+                label: EsBO.calcMaterialTitle(index + 1),
                 excludeSemantics: true,
                 child: Container(
                 width: 28,
@@ -1207,20 +1221,20 @@ class _MaterialRowTile extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-              Text('Material ${index + 1}', style: theme.textTheme.titleSmall),
+              Text(EsBO.calcMaterialTitle(index + 1), style: theme.textTheme.titleSmall),
               const Spacer(),
               if (filaments.isNotEmpty) ...[
                 if (defaultFilament != null)
                   _ActionChip(
                     icon: Icons.star_rounded,
-                    label: 'Usar ${defaultFilament.name}',
+                    label: EsBO.calcMaterialUse(defaultFilament.name),
                     onTap: () => _loadFromFilament(ref, defaultFilament),
                   ),
                 if (defaultFilament != null)
                   const SizedBox(width: AppSpacing.xs),
                 _ActionChip(
                   icon: Icons.inventory_2_rounded,
-                  label: 'Catalogo',
+                  label: EsBO.calcMaterialCatalog,
                   onTap: () => _showCatalogDialog(context, ref, filaments),
                 ),
                 if (deletable) const SizedBox(width: AppSpacing.xs),
@@ -1228,10 +1242,10 @@ class _MaterialRowTile extends ConsumerWidget {
               if (deletable)
                 Semantics(
                   button: true,
-                  label: 'Quitar material ${index + 1}',
+                  label: EsBO.calcMaterialRemove(index + 1),
                   child: IconButton(
                   icon: const Icon(Icons.delete_outline_rounded),
-                  tooltip: 'Quitar',
+                  tooltip: EsBO.calcMaterialRemove(index + 1),
                   onPressed: onRemove,
                   style: IconButton.styleFrom(
                     foregroundColor: theme.colorScheme.error,
@@ -1244,11 +1258,11 @@ class _MaterialRowTile extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: labelCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Etiqueta',
-                helperText: 'Opcional (ej: PLA base)',
+              decoration: InputDecoration(
+                labelText: EsBO.calcFieldLabel,
+                helperText: EsBO.calcFieldLabelHelper,
                 isDense: true,
-                prefixIcon: Icon(Icons.label_outline, size: 18),
+                prefixIcon: const Icon(Icons.label_outline, size: 18),
               ),
               onChanged: (v) => _emit(),
             ),
@@ -1258,17 +1272,19 @@ class _MaterialRowTile extends ConsumerWidget {
             children: [
               Expanded(
                 child: NumericInputField(
-                  label: 'Peso',
+                  label: EsBO.calcFieldWeight,
                   controller: weightCtrl,
                   onChanged: (v) => _emit(),
                   suffix: 'g',
+                  isKey: isKeyWeight,
+                  keyHint: EsBO.calcKeyWeightHint,
                   showValidation: showValidation,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: NumericInputField(
-                  label: 'Precio bobina',
+                  label: EsBO.calcFieldSpoolPrice,
                   controller: priceCtrl,
                   onChanged: (v) => _emit(),
                   suffix: currency.symbol,
@@ -1278,7 +1294,7 @@ class _MaterialRowTile extends ConsumerWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: NumericInputField(
-                  label: 'Gramos / bobina',
+                  label: EsBO.calcFieldSpoolGrams,
                   controller: gramsCtrl,
                   onChanged: (v) => _emit(),
                   suffix: 'g',
@@ -1413,18 +1429,22 @@ class _ModeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Modo de calculo: ${mode == CalculatorMode.express ? "Express" : "Advanced"}',
+      label: EsBO.calcSemanticMode(
+        mode == CalculatorMode.express
+            ? EsBO.calcModeExpress
+            : EsBO.calcModeAdvanced,
+      ),
       child: SegmentedButton<CalculatorMode>(
-        segments: const [
+        segments: [
           ButtonSegment(
             value: CalculatorMode.express,
-            label: Text('Express'),
-            icon: Icon(Icons.flash_on_rounded),
+            label: Text(EsBO.calcModeExpress),
+            icon: const Icon(Icons.flash_on_rounded),
           ),
           ButtonSegment(
             value: CalculatorMode.advanced,
-            label: Text('Advanced'),
-            icon: Icon(Icons.layers_rounded),
+            label: Text(EsBO.calcModeAdvanced),
+            icon: const Icon(Icons.layers_rounded),
           ),
         ],
         selected: {mode},
@@ -1471,10 +1491,10 @@ class _SaveDialogState extends State<_SaveDialog> {
         children: [
           TextField(
             controller: _clientCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Cliente',
-              helperText: 'Opcional',
-              prefixIcon: Icon(Icons.person_outline_rounded),
+            decoration: InputDecoration(
+              labelText: EsBO.calcDialogClient,
+              helperText: EsBO.calcDialogClientHelper,
+              prefixIcon: const Icon(Icons.person_outline_rounded),
             ),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
