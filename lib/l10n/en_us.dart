@@ -480,4 +480,34 @@ class EnImpl implements AppStrings {
   String get localeEs => 'Spanish';
   @override
   String get localeEn => 'English';
+  @override
+  String get onboardingTitle1 => 'Welcome to 3dCalc';
+  @override
+  String get onboardingDesc1 => 'Calculate 3D print pricing instantly.\nMaterials, electricity, labor and more.';
+  @override
+  String get onboardingTitle2 => 'Two calculation modes';
+  @override
+  String get onboardingDesc2 => 'Express: quick calculation with one material.\nAdvanced: multiple materials, discount and more.';
+  @override
+  String get onboardingTitle3 => 'Built-in catalog';
+  @override
+  String get onboardingDesc3 => 'Save your favorite filaments and printers.\nPick them instantly from the catalog.';
+  @override
+  String get onboardingTitle4 => 'Dashboard & more';
+  @override
+  String get onboardingDesc4 => 'Track quotations, monthly trends,\nPDF export and search history.';
+  @override
+  String get onboardingNext => 'Next';
+  @override
+  String get onboardingSkip => 'Skip';
+  @override
+  String get onboardingStart => 'Get Started';
+  @override
+  String get configTitle => 'Initial Setup';
+  @override
+  String get configLanguage => 'Language';
+  @override
+  String get configCurrency => 'Currency';
+  @override
+  String get configContinue => 'Continue';
 }

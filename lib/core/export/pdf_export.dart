@@ -30,7 +30,7 @@ Future<void> shareQuotePdf({
   String? companyLogoBase64,
   String? pieceName,
 }) async {
-  final pdfBytes = await _buildPdf(
+  final pdfBytes = await buildQuotePdfBytes(
     output: output,
     materials: materials,
     totalHours: totalHours,
@@ -47,7 +47,10 @@ Future<void> shareQuotePdf({
   );
 }
 
-Future<Uint8List> _buildPdf({
+/// Genera los bytes del PDF de cotizacion.
+///
+/// Reutilizable para share, print, preview.
+Future<Uint8List> buildQuotePdfBytes({
   required CalculationOutput output,
   required List<MaterialCostBreakdown> materials,
   required Decimal totalHours,

@@ -241,6 +241,25 @@ class EsBO {
   static String get localeLabel => _impl.localeLabel;
   static String get localeEs => _impl.localeEs;
   static String get localeEn => _impl.localeEn;
+
+  // === Onboarding ===
+  static String get onboardingTitle1 => _impl.onboardingTitle1;
+  static String get onboardingDesc1 => _impl.onboardingDesc1;
+  static String get onboardingTitle2 => _impl.onboardingTitle2;
+  static String get onboardingDesc2 => _impl.onboardingDesc2;
+  static String get onboardingTitle3 => _impl.onboardingTitle3;
+  static String get onboardingDesc3 => _impl.onboardingDesc3;
+  static String get onboardingTitle4 => _impl.onboardingTitle4;
+  static String get onboardingDesc4 => _impl.onboardingDesc4;
+  static String get onboardingNext => _impl.onboardingNext;
+  static String get onboardingSkip => _impl.onboardingSkip;
+  static String get onboardingStart => _impl.onboardingStart;
+
+  // === Initial config ===
+  static String get configTitle => _impl.configTitle;
+  static String get configLanguage => _impl.configLanguage;
+  static String get configCurrency => _impl.configCurrency;
+  static String get configContinue => _impl.configContinue;
 }
 
 // ─── Implementacion espanol ─────────────────────
@@ -678,4 +697,34 @@ class EsImpl implements AppStrings {
   String get localeEs => 'Espanol';
   @override
   String get localeEn => 'Ingles';
+  @override
+  String get onboardingTitle1 => 'Bienvenido a 3dCalc';
+  @override
+  String get onboardingDesc1 => 'Calcula el precio de impresiones 3D al instante.\nMateriales, electricidad, mano de obra y mas.';
+  @override
+  String get onboardingTitle2 => 'Dos modos de calculo';
+  @override
+  String get onboardingDesc2 => 'Express: calculo rapido con un solo material.\nAdvanced: multiple materiales, descuento y mas parametros.';
+  @override
+  String get onboardingTitle3 => 'Catalogo integrado';
+  @override
+  String get onboardingDesc3 => 'Guarda tus filamentos e impresoras favoritos.\nSeleccionalos al instante desde el catalogo.';
+  @override
+  String get onboardingTitle4 => 'Dashboard & mas';
+  @override
+  String get onboardingDesc4 => 'Seguimiento de cotizaciones, tendencias mensuales,\nexportacion a PDF e historial con busqueda.';
+  @override
+  String get onboardingNext => 'Siguiente';
+  @override
+  String get onboardingSkip => 'Saltar';
+  @override
+  String get onboardingStart => 'Comenzar';
+  @override
+  String get configTitle => 'Configuracion inicial';
+  @override
+  String get configLanguage => 'Idioma';
+  @override
+  String get configCurrency => 'Moneda';
+  @override
+  String get configContinue => 'Continuar';
 }

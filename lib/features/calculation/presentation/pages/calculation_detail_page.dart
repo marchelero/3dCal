@@ -12,6 +12,8 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/providers.dart';
+import 'package:printing/printing.dart';
+
 import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
@@ -158,6 +160,40 @@ class _DetailState extends ConsumerState<_Detail> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         AppSnackBar.error('Error al exportar PDF: $e'),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Future<void> _handlePrint() async {
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
+    try {
+      final calc = widget.calc;
+      final materialsAsync = ref.read(_materialsOfProvider(calc.id));
+      final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
+      final settingsAsync = ref.read(settingsNotifierProvider);
+      final settings = settingsAsync.valueOrNull ?? Settings.defaults;
+      final printer = ref.read(defaultPrinterProvider);
+      final result = _recomputeOutput(calc, materials, settings, printer);
+      if (result == null) return;
+      final pdfBytes = await buildQuotePdfBytes(
+        output: result.output,
+        materials: result.breakdown,
+        totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
+        discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        companyName: settings.companyName,
+        companyLogoBase64: settings.companyLogoBase64,
+        pieceName: calc.pieceName,
+      );
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdfBytes,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        AppSnackBar.error('Error al imprimir: $e'),
       );
     } finally {
       if (mounted) setState(() => _isBusy = false);
@@ -538,6 +574,13 @@ class _DetailState extends ConsumerState<_Detail> {
                   color: Colors.red,
                   isBusy: _isBusy,
                   onPressed: _isBusy ? null : _handleSharePdf,
+                ),
+                _DetailActionIcon(
+                  icon: Icons.print_rounded,
+                  tooltip: 'Imprimir',
+                  color: Colors.green,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handlePrint,
                 ),
               ],
             ),

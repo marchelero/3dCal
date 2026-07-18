@@ -1,6 +1,9 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../core/constants/app_constants.dart';
 
 /// Pantalla de carga inicial antes del home.
 ///
@@ -41,8 +44,18 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    // Navegar al home (StatefulShellRoute)
-    GoRouter.of(context).go('/');
+    // Verificar onboarding
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone =
+        prefs.getBool(SettingsKeys.onboardingDone) ?? false;
+
+    if (!mounted) return;
+
+    if (onboardingDone) {
+      GoRouter.of(context).go('/');
+    } else {
+      GoRouter.of(context).go('/initial-config');
+    }
   }
 
   @override

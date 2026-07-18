@@ -33,7 +33,9 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({
+      'onboarding_done': true,
+    });
     prefs = await SharedPreferences.getInstance();
     // Reset GoRouter state (es global, persiste entre tests en el mismo file).
     appRouter.go('/');

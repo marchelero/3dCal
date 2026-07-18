@@ -93,4 +93,7 @@ class SettingsKeys {
 
   /// Codigo ISO 4217 de la moneda activa: USD, BOB, EUR...
   static const String currencyCode = 'currency_code';
+
+  /// Onboarding completado (bool). False = mostrar onboarding al inicio.
+  static const String onboardingDone = 'onboarding_done';
 }

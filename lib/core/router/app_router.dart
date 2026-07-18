@@ -13,6 +13,8 @@ import '../../features/catalog/printers/presentation/pages/printer_form_page.dar
 import '../../features/catalog/printers/presentation/pages/printers_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/onboarding/presentation/pages/initial_config_page.dart';
+import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../database/app_database.dart';
@@ -59,6 +61,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/splash',
       builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/initial-config',
+      builder: (context, state) => const InitialConfigPage(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingPage(),
     ),
 
     // === Shell: 4 tabs principales ===

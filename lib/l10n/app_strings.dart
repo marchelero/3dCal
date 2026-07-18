@@ -215,4 +215,23 @@ abstract class AppStrings {
   String get localeLabel;
   String get localeEs;
   String get localeEn;
+
+  // === Onboarding ===
+  String get onboardingTitle1;
+  String get onboardingDesc1;
+  String get onboardingTitle2;
+  String get onboardingDesc2;
+  String get onboardingTitle3;
+  String get onboardingDesc3;
+  String get onboardingTitle4;
+  String get onboardingDesc4;
+  String get onboardingNext;
+  String get onboardingSkip;
+  String get onboardingStart;
+
+  // === Initial config ===
+  String get configTitle;
+  String get configLanguage;
+  String get configCurrency;
+  String get configContinue;
 }

@@ -18,7 +18,9 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({
+      'onboarding_done': true,
+    });
     prefs = await SharedPreferences.getInstance();
   });
 
