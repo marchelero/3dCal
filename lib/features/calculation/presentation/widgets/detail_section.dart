@@ -7,7 +7,7 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../state/calculator_state.dart'
-    show CalculatorMode, CalculatorState, MaterialCostBreakdown;
+    show MaterialCostBreakdown;
 
 /// Seccion de detalle expandible: costo material, energia, mano de obra,
 /// post-procesado, base, falla, markup, ganancia, cargo minimo y total final.

@@ -1,7 +1,6 @@
 // ignore_for_file: public_member_api_docs
 
 import 'package:decimal/decimal.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../state/calculator_state.dart' show CalculatorMode, CalculatorState;

@@ -38,7 +38,6 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: MaxWidthScrollView(
             maxWidth: 960,
             child: Column(
@@ -47,10 +46,22 @@ class HomePage extends ConsumerWidget {
                 _buildHeader(theme, color,
                     companyName: settings?.companyName,
                     companyLogoBase64: settings?.companyLogoBase64),
-                const SizedBox(height: AppSpacing.lg),
-                _buildQuickActions(context, color),
-                const SizedBox(height: AppSpacing.xxl),
-                _buildStatsSection(context, ref, asyncStats, theme, color),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildQuickActions(context, color),
+                      const SizedBox(height: AppSpacing.xxl),
+                      _buildStatsSection(
+                          context, ref, asyncStats, theme, color),
+                      const SizedBox(height: AppSpacing.xxl),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -76,18 +87,24 @@ class HomePage extends ConsumerWidget {
       label: '$displayName — Cotizaciones 3D',
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xxl,
+          AppSpacing.xl,
+          AppSpacing.xxl,
+          AppSpacing.xxl,
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
               color.primaryContainer,
-              color.primaryContainer.withValues(alpha: 0.4),
-              color.surface,
+              color.primaryContainer.withValues(alpha: 0.6),
+              color.primaryContainer.withValues(alpha: 0.15),
+              Colors.transparent,
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: const [0.0, 0.3, 0.7, 1.0],
           ),
-          borderRadius: BorderRadius.circular(AppRadii.xxxl),
         ),
         child: Row(
           children: [
@@ -158,18 +175,24 @@ class HomePage extends ConsumerWidget {
     label: '3dCalc — Cotizaciones 3D',
     child: Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxl,
+        AppSpacing.xl,
+        AppSpacing.xxl,
+        AppSpacing.xxl,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
             color.primaryContainer,
-            color.primaryContainer.withValues(alpha: 0.4),
-            color.surface,
+            color.primaryContainer.withValues(alpha: 0.6),
+            color.primaryContainer.withValues(alpha: 0.15),
+            Colors.transparent,
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: const [0.0, 0.3, 0.7, 1.0],
         ),
-        borderRadius: BorderRadius.circular(AppRadii.xxxl),
       ),
       child: Row(
         children: [

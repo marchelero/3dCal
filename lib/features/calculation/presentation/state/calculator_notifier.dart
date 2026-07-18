@@ -11,7 +11,6 @@ import '../../../../features/settings/presentation/notifiers/settings_notifier.d
 import '../../data/calculation_repository.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_input.dart';
-import '../../domain/entities/calculation_output.dart';
 import '../../domain/entities/material_input.dart';
 import '../notifiers/calculations_notifier.dart';
 import 'calculator_state.dart';

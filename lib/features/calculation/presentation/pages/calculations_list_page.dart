@@ -20,7 +20,7 @@ import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
-import '../../../../shared/widgets/loading_view.dart';
+
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../notifiers/calculations_notifier.dart';
 

@@ -1412,8 +1412,6 @@ class _ModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
     return Semantics(
       label: 'Modo de calculo: ${mode == CalculatorMode.express ? "Express" : "Advanced"}',
       child: SegmentedButton<CalculatorMode>(
