@@ -7,6 +7,7 @@ import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
@@ -26,6 +27,7 @@ class DashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(localeProvider);
     final asyncStats = ref.watch(dashboardStatsProvider);
     final currency = ref.watch(selectedCurrencyProvider);
     return Scaffold(
@@ -51,7 +53,11 @@ class DashboardPage extends ConsumerWidget {
                 onCta: () => context.go('/'),
               );
             }
-            return _DashboardBody(stats: stats, currency: currency);
+            return RefreshIndicator(
+              onRefresh: () =>
+                  ref.refresh(dashboardStatsProvider.future),
+              child: _DashboardBody(stats: stats, currency: currency),
+            );
           },
         ),
       ),
@@ -71,6 +77,7 @@ class _DashboardBody extends StatelessWidget {
     final color = theme.colorScheme;
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: MaxWidthScrollView(
         maxWidth: 960,
@@ -174,10 +181,10 @@ class _DashboardBody extends StatelessWidget {
                       height: 30,
                       child: Row(
                         children: [
-                          _LegendDot(color: color.primary, label: 'Cotizado'),
+                          _LegendDot(color: color.primary, label: EsBO.dashboardChartQuoted),
                           const SizedBox(width: AppSpacing.lg),
                           _LegendDot(
-                              color: color.tertiary, label: 'Vendido'),
+                              color: color.tertiary, label: EsBO.dashboardChartSold),
                         ],
                       ),
                     ),

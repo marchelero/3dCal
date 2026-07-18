@@ -130,9 +130,9 @@ class MonthlyTrendChart extends StatelessWidget {
 
   String _formatAxis(double value) {
     if (value >= 1000) {
-      return 'Bs. ${(value / 1000).toStringAsFixed(1)}K';
+      return '${(value / 1000).toStringAsFixed(1)}K';
     }
-    return 'Bs. ${value.toStringAsFixed(0)}';
+    return value.toStringAsFixed(0);
   }
 
   String _monthAbbr(int m) {

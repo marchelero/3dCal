@@ -15,12 +15,14 @@ import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/section_card.dart';
+import '../../../../shared/widgets/section_header.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
@@ -42,7 +44,8 @@ class CalculatorPage extends ConsumerStatefulWidget {
   ConsumerState<CalculatorPage> createState() => _CalculatorPageState();
 }
 
-class _CalculatorPageState extends ConsumerState<CalculatorPage> {
+class _CalculatorPageState extends ConsumerState<CalculatorPage>
+    with SingleTickerProviderStateMixin {
   late final TextEditingController _weightCtrl;
   late final TextEditingController _hoursCtrl;
   late final TextEditingController _minutesCtrl;
@@ -65,9 +68,21 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   /// Toggle local para la seccion OTROS (puramente visual, no persiste).
   bool _showOtros = false;
 
+  /// Si `true`, los campos requeridos muestran error visual (border rojo).
+  /// Se activa al tocar la barra inferior con form invalido.
+  bool _showValidationErrors = false;
+
+  /// Controlador para la animacion staggered de las secciones.
+  late final AnimationController _staggerCtrl;
+
   @override
   void initState() {
     super.initState();
+    _staggerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _staggerCtrl.forward(); // ← iniciar staggered entrance animation
     final initial = ref.read(calculatorNotifierProvider);
     _weightCtrl = TextEditingController(text: initial.weight);
     _hoursCtrl = TextEditingController(text: initial.printHours);
@@ -98,7 +113,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       _extraFailureRateCtrl,
       _extraMarkupOnMaterialsCtrl,
     ]) {
-      c.addListener(_scheduleDraftSave);
+      c.addListener(_onAnyFieldChange);
     }
     _labelCtrl.addListener(() {
       ref.read(calculatorNotifierProvider.notifier)
@@ -172,6 +187,15 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
   Timer? _saveTimer;
 
+  void _onAnyFieldChange() {
+    // Resetear errores visuales cuando el usuario empieza a escribir.
+    if (_showValidationErrors) {
+      _showValidationErrors = false;
+      if (mounted) setState(() {});
+    }
+    _scheduleDraftSave();
+  }
+
   void _scheduleDraftSave() {
     _saveTimer?.cancel();
     _saveTimer = Timer(const Duration(milliseconds: 500), _saveDraft);
@@ -214,6 +238,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     for (final c in _materialCtrls) {
       c.dispose();
     }
+    _staggerCtrl.dispose();
     super.dispose();
   }
 
@@ -333,12 +358,19 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cotizacion'),
+        title: Semantics(
+          header: true,
+          child: Text(ref.watch(localeStringsProvider).calcSheetTitle),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Restablecer',
-            onPressed: _resetAll,
+          Semantics(
+            button: true,
+            label: 'Restablecer',
+            child: IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              tooltip: 'Restablecer',
+              onPressed: _resetAll,
+            ),
           ),
         ],
       ),
@@ -359,16 +391,20 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         emptyHint: state.isValid
             ? null
             : _buildEmptyHint(state.missingRequiredFields),
-        onTap: state.isValid && state.output != null
-            ? () => showResultSheet(
-                context: context,
-                state: state,
-                onSave: _showSaveDialog,
-                onReset: _resetAll,
-                onToggleDetail: () =>
-                    ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
-              )
-            : null,
+        onTap: () {
+          if (state.isValid && state.output != null) {
+            showResultSheet(
+              context: context,
+              state: state,
+              onSave: _showSaveDialog,
+              onReset: _resetAll,
+              onToggleDetail: () =>
+                  ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
+            );
+          } else {
+            setState(() => _showValidationErrors = true);
+          }
+        },
       ),
     );
   }
@@ -426,11 +462,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Mode selector
-            _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            _StaggeredSection(
+              index: 0,
+              controller: _staggerCtrl,
+              child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            ),
             const SizedBox(height: AppSpacing.lg),
 
             // Card: Pieza (nombre opcional de la pieza)
-            SectionCard(
+            _StaggeredSection(
+              index: 1,
+              controller: _staggerCtrl,
+              child: SectionCard(
               icon: Icons.category_rounded,
               title: EsBO.calcSectionPiece,
               child: TextField(
@@ -442,10 +485,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 ),
               ),
             ),
+            ),
             const SizedBox(height: AppSpacing.md),
 
             // Card: Materiales (Express: un solo material como en Advanced)
-            SectionCard(
+            _StaggeredSection(
+              index: 2,
+              controller: _staggerCtrl,
+              child: SectionCard(
               icon: Icons.inventory_2_rounded,
               title: EsBO.calcSectionMaterials,
               child: _MaterialRowTile(
@@ -456,6 +503,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 gramsCtrl: _gramsCtrl,
                 deletable: false,
                 showLabel: true,
+                showValidation: _showValidationErrors,
                 onRemove: () {},
                 onChanged: (m) {
                   // label actualiza filamentLabel (nombre del material)
@@ -467,23 +515,35 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 pending: false,
               ),
             ),
+            ),
             const SizedBox(height: AppSpacing.md),
 
           // Card: Impresora
-          SectionCard(
+          _StaggeredSection(
+            index: 3,
+            controller: _staggerCtrl,
+            child: SectionCard(
             icon: Icons.print_rounded,
             title: EsBO.calcSectionPrinter,
             child: _PrinterIndicator(),
+          ),
           ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: OTROS (mano de obra, post-procesado, falla, minimo, markup)
           // Collapsable. Primero porque sus valores afectan tiempo y descuento.
-          _buildOtrosSection(notifier, currency),
+          _StaggeredSection(
+            index: 4,
+            controller: _staggerCtrl,
+            child: _buildOtrosSection(notifier, currency),
+          ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
-          SectionCard(
+          _StaggeredSection(
+            index: 5,
+            controller: _staggerCtrl,
+            child: SectionCard(
             icon: Icons.timer_rounded,
             title: EsBO.calcSectionTime,
             child: Row(
@@ -495,6 +555,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
                     helperText: EsBO.calcLabelHoursHelper,
+                    showValidation: _showValidationErrors,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -505,15 +566,20 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
                     helperText: EsBO.calcLabelMinutesHelper,
+                    showValidation: _showValidationErrors,
                   ),
                 ),
               ],
             ),
           ),
+          ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: Descuento
-          SectionCard(
+          _StaggeredSection(
+            index: 6,
+            controller: _staggerCtrl,
+            child: SectionCard(
             icon: Icons.local_offer_rounded,
             title: EsBO.calcSectionDiscount,
             child: NumericInputField(
@@ -524,16 +590,19 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               helperText: EsBO.calcLabelDiscountHelper,
             ),
           ),
+          ),
           const SizedBox(height: AppSpacing.xl),
 
-          // El output + botones Save/Reset ahora viven en el ResultBottomBar
-          // sticky + modal sheet (Fix #3). El form queda limpio: solo inputs.
+        // El output + botones Save/Reset ahora viven en el ResultBottomBar
+        // sticky + modal sheet (Fix #3). El form queda limpio: solo inputs.
         ],
-        ),
+      ),
       ),
     );
   }
 
+  // ============================================================
+  // ADVANCED FORM
   // ============================================================
   // ADVANCED FORM
   // ============================================================
@@ -554,11 +623,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            _StaggeredSection(
+              index: 0,
+              controller: _staggerCtrl,
+              child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
+            ),
             const SizedBox(height: AppSpacing.lg),
 
             // Card: Etiqueta de la pieza (nombre global de la pieza)
-            SectionCard(
+            _StaggeredSection(
+              index: 1,
+              controller: _staggerCtrl,
+              child: SectionCard(
               icon: Icons.category_rounded,
               title: EsBO.calcSectionPiece,
               child: TextField(
@@ -570,10 +646,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 ),
               ),
             ),
+            ),
             const SizedBox(height: AppSpacing.md),
 
           // Card: Materiales (multi-material, agregable)
-          SectionCard(
+          _StaggeredSection(
+            index: 2,
+            controller: _staggerCtrl,
+            child: SectionCard(
             icon: Icons.inventory_2_rounded,
             title: EsBO.calcSectionMaterials,
             child: Column(
@@ -597,6 +677,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                         priceCtrl: _materialCtrls[index].price,
                         gramsCtrl: _materialCtrls[index].grams,
                         deletable: true,
+                        showValidation: _showValidationErrors,
                         onChanged: (m) => notifier.updateMaterial(
                           index,
                           label: m.label,
@@ -619,23 +700,35 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ],
             ),
           ),
+          ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: Impresora
-          SectionCard(
+          _StaggeredSection(
+            index: 3,
+            controller: _staggerCtrl,
+            child: SectionCard(
             icon: Icons.print_rounded,
             title: 'Impresora',
             child: _PrinterIndicator(),
+          ),
           ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: OTROS (mano de obra, post-procesado, falla, minimo, markup)
           // Collapsable. Primero porque sus valores afectan tiempo y descuento.
-          _buildOtrosSection(notifier, currency),
+          _StaggeredSection(
+            index: 4,
+            controller: _staggerCtrl,
+            child: _buildOtrosSection(notifier, currency),
+          ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: Tiempo
-          SectionCard(
+          _StaggeredSection(
+            index: 5,
+            controller: _staggerCtrl,
+            child: SectionCard(
             icon: Icons.timer_rounded,
             title: EsBO.calcSectionTime,
             child: Row(
@@ -647,6 +740,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     onChanged: notifier.setPrintHours,
                     suffix: 'h',
                     helperText: EsBO.calcLabelHoursHelper,
+                    showValidation: _showValidationErrors,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -657,15 +751,20 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     onChanged: notifier.setPrintMinutes,
                     suffix: 'min',
                     helperText: EsBO.calcLabelMinutesHelper,
+                    showValidation: _showValidationErrors,
                   ),
                 ),
               ],
             ),
           ),
+          ),
           const SizedBox(height: AppSpacing.md),
 
           // Card: Descuento
-          SectionCard(
+          _StaggeredSection(
+            index: 6,
+            controller: _staggerCtrl,
+            child: SectionCard(
             icon: Icons.local_offer_rounded,
             title: EsBO.calcSectionDiscount,
             child: NumericInputField(
@@ -675,6 +774,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               suffix: '%',
               helperText: EsBO.calcLabelDiscountHelper,
             ),
+          ),
           ),
           const SizedBox(height: AppSpacing.xl),
 
@@ -696,31 +796,22 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     CalculatorNotifier notifier,
     WorldCurrency currency,
   ) {
+    final theme = Theme.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(AppRadii.sm),
+            SectionHeader(
+              icon: Icons.more_horiz_rounded,
+              title: 'Otros',
               onTap: () => setState(() => _showOtros = !_showOtros),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Icon(Icons.more_horiz_rounded, size: 20),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text('Otros',
-                        style: Theme.of(context).textTheme.titleSmall),
-                    const Spacer(),
-                    AnimatedRotation(
-                      turns: _showOtros ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(Icons.expand_more, size: 20),
-                    ),
-                  ],
-                ),
+              trailing: AnimatedRotation(
+                turns: _showOtros ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(Icons.expand_more, size: 20,
+                    color: theme.colorScheme.onSurfaceVariant),
               ),
             ),
             AnimatedSize(
@@ -830,7 +921,12 @@ class _PrinterIndicator extends ConsumerWidget {
     final printersAsync = ref.watch(printersListProvider);
     final printers = printersAsync.valueOrNull ?? <PrinterProfile>[];
 
-    return InkWell(
+    return Semantics(
+      button: true,
+      label: activePrinter != null
+          ? 'Impresora: ${activePrinter.name}'
+          : EsBO.calcNoPrinter,
+      child: InkWell(
       borderRadius: BorderRadius.circular(AppRadii.lg),
       onTap: printers.isEmpty
           ? null
@@ -898,6 +994,7 @@ class _PrinterIndicator extends ConsumerWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
           ],
+        ),
         ),
       ),
     );
@@ -1047,6 +1144,7 @@ class _MaterialRowTile extends ConsumerWidget {
     this.showLabel = true,
     required this.onRemove,
     required this.pending,
+    this.showValidation = false,
   });
 
   final int index;
@@ -1059,6 +1157,7 @@ class _MaterialRowTile extends ConsumerWidget {
   final bool showLabel;
   final VoidCallback onRemove;
   final bool pending;
+  final bool showValidation;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1069,7 +1168,10 @@ class _MaterialRowTile extends ConsumerWidget {
     final defaultFilament = ref.watch(defaultFilamentProvider);
     final currency = ref.watch(selectedCurrencyProvider);
 
-    return Container(
+    return Semantics(
+      container: true,
+      label: 'Material ${index + 1}',
+      child: Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -1083,7 +1185,10 @@ class _MaterialRowTile extends ConsumerWidget {
           // Header: badge + titulo + Spacer + catalog chips + (opcional) delete
           Row(
             children: [
-              Container(
+              Semantics(
+                label: 'Material ${index + 1}',
+                excludeSemantics: true,
+                child: Container(
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
@@ -1100,7 +1205,8 @@ class _MaterialRowTile extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+            ),
+            const SizedBox(width: AppSpacing.sm),
               Text('Material ${index + 1}', style: theme.textTheme.titleSmall),
               const Spacer(),
               if (filaments.isNotEmpty) ...[
@@ -1120,7 +1226,10 @@ class _MaterialRowTile extends ConsumerWidget {
                 if (deletable) const SizedBox(width: AppSpacing.xs),
               ],
               if (deletable)
-                IconButton(
+                Semantics(
+                  button: true,
+                  label: 'Quitar material ${index + 1}',
+                  child: IconButton(
                   icon: const Icon(Icons.delete_outline_rounded),
                   tooltip: 'Quitar',
                   onPressed: onRemove,
@@ -1128,6 +1237,7 @@ class _MaterialRowTile extends ConsumerWidget {
                     foregroundColor: theme.colorScheme.error,
                   ),
                 ),
+              ),
             ],
           ),
           if (showLabel) ...[
@@ -1152,6 +1262,7 @@ class _MaterialRowTile extends ConsumerWidget {
                   controller: weightCtrl,
                   onChanged: (v) => _emit(),
                   suffix: 'g',
+                  showValidation: showValidation,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1161,6 +1272,7 @@ class _MaterialRowTile extends ConsumerWidget {
                   controller: priceCtrl,
                   onChanged: (v) => _emit(),
                   suffix: currency.symbol,
+                  showValidation: showValidation,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1170,11 +1282,13 @@ class _MaterialRowTile extends ConsumerWidget {
                   controller: gramsCtrl,
                   onChanged: (v) => _emit(),
                   suffix: 'g',
+                  showValidation: showValidation,
                 ),
               ),
             ],
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1298,22 +1412,27 @@ class _ModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<CalculatorMode>(
-      segments: const [
-        ButtonSegment(
-          value: CalculatorMode.express,
-          label: Text('Express'),
-          icon: Icon(Icons.flash_on_rounded),
-        ),
-        ButtonSegment(
-          value: CalculatorMode.advanced,
-          label: Text('Advanced'),
-          icon: Icon(Icons.layers_rounded),
-        ),
-      ],
-      selected: {mode},
-      onSelectionChanged: (s) => onChanged(s.first),
-      showSelectedIcon: false,
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Semantics(
+      label: 'Modo de calculo: ${mode == CalculatorMode.express ? "Express" : "Advanced"}',
+      child: SegmentedButton<CalculatorMode>(
+        segments: const [
+          ButtonSegment(
+            value: CalculatorMode.express,
+            label: Text('Express'),
+            icon: Icon(Icons.flash_on_rounded),
+          ),
+          ButtonSegment(
+            value: CalculatorMode.advanced,
+            label: Text('Advanced'),
+            icon: Icon(Icons.layers_rounded),
+          ),
+        ],
+        selected: {mode},
+        onSelectionChanged: (s) => onChanged(s.first),
+        showSelectedIcon: false,
+      ),
     );
   }
 }
@@ -1371,6 +1490,41 @@ class _SaveDialogState extends State<_SaveDialog> {
         ),
         FilledButton(onPressed: _submit, child: const Text('Guardar')),
       ],
+    );
+  }
+}
+
+/// Staggered entrance animation for calculator sections.
+///
+/// Each child fades in + slides up with progressive delay based on [index].
+class _StaggeredSection extends StatelessWidget {
+  const _StaggeredSection({
+    required this.index,
+    required this.controller,
+    required this.child,
+  });
+
+  final int index;
+  final Animation<double> controller;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final delay = index * 0.07;
+        final raw = (controller.value - delay).clamp(0.0, 1.0);
+        final t = Curves.easeOutCubic.transform(raw);
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, 16 * (1 - t)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }

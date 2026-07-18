@@ -494,7 +494,7 @@ class EsImpl implements AppStrings {
   String get calcTotalWithDiscount =>
       'Total con descuento';
   @override
-  String get calcTotalFinal => 'Total final';
+  String get calcTotalFinal => 'Total';
   @override
   String get calcDetailMaterial => 'Costo material';
   @override
@@ -516,7 +516,7 @@ class EsImpl implements AppStrings {
   String get calcDetailMinimumCharge =>
       'Cargo minimo';
   @override
-  String get calcDetailTotal => 'Total final';
+  String get calcDetailTotal => 'Total';
   @override
   String get calcEmptyHint =>
       'Completa peso, filamento y horas para ver el precio';

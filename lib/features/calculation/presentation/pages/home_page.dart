@@ -13,9 +13,11 @@ import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
+import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../domain/dashboard_stats.dart';
@@ -26,6 +28,7 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(localeProvider);
     final asyncStats = ref.watch(dashboardStatsProvider);
     final asyncSettings = ref.watch(settingsNotifierProvider);
     final settings = asyncSettings.valueOrNull;
@@ -68,7 +71,10 @@ class HomePage extends ConsumerWidget {
     // Modo empresa: muestra logo + nombre empresa grande, app name pequeno
     if (hasCompanyConfig || hasLogo) {
       final displayName = hasCompanyConfig ? companyName : '3dCalc';
-      return Container(
+    return Semantics(
+      header: true,
+      label: '$displayName — Cotizaciones 3D',
+      child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
         decoration: BoxDecoration(
@@ -142,11 +148,15 @@ class HomePage extends ConsumerWidget {
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    // Modo default: solo app name
-    return Container(
+  // Modo default: solo app name
+  return Semantics(
+    header: true,
+    label: '3dCalc — Cotizaciones 3D',
+    child: Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
       decoration: BoxDecoration(
@@ -164,28 +174,36 @@ class HomePage extends ConsumerWidget {
       child: Row(
         children: [
           // Icon area grande con decoracion
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.primary,
-                  color.primary.withValues(alpha: 0.7),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(AppRadii.xxl),
-              boxShadow: [
-                BoxShadow(
-                  color: color.primary.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+          Semantics(
+            excludeSemantics: true,
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    color.primary,
+                    color.primary.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
+                borderRadius: BorderRadius.circular(AppRadii.xxl),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.primary.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/images/3dlogo.png',
+                width: 34,
+                height: 34,
+                fit: BoxFit.contain,
+              ),
             ),
-            child: const Icon(Icons.calculate_rounded, color: Colors.white, size: 34),
           ),
           const SizedBox(width: AppSpacing.lg),
           // Texto
@@ -214,7 +232,8 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _defaultHeroIcon(ColorScheme color) {
@@ -239,7 +258,12 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
-      child: const Icon(Icons.calculate_rounded, color: Colors.white, size: 30),
+      child: Image.asset(
+        'assets/images/3dlogo.png',
+        width: 30,
+        height: 30,
+        fit: BoxFit.contain,
+      ),
     );
   }
 
@@ -295,25 +319,31 @@ class HomePage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          EsBO.homeQuickAccess,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: color.onSurface,
-              ),
+        Semantics(
+          header: true,
+          label: EsBO.homeQuickAccess,
+          child: Text(
+            EsBO.homeQuickAccess,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: color.onSurface,
+                ),
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
-        // Mobile: column, Tablet/Web: row
+        // Mobile/tablet portrait: column, Desktop/Web: row.
+        // Threshold subido a 800 para que 3 cards en row tengan espacio
+        // suficiente y el texto no rompa mid-word en viewports intermedios.
         LayoutBuilder(
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth > 500;
+            final isWide = constraints.maxWidth > 800;
             if (isWide) {
               return Row(
                 children: [
                   for (final a in actions)
                     Expanded(child: Padding(
                       padding: EdgeInsets.only(
-                        left: actions.indexOf(a) > 0 ? 8 : 0,
-                        right: actions.indexOf(a) < actions.length - 1 ? 8 : 0,
+                        left: actions.indexOf(a) > 0 ? AppSpacing.sm : 0,
+                        right: actions.indexOf(a) < actions.length - 1 ? AppSpacing.sm : 0,
                       ),
                       child: _QuickActionCard(action: a),
                     )),
@@ -323,7 +353,7 @@ class HomePage extends ConsumerWidget {
             return Column(
               children: [
                 for (final a in actions) ...[
-                  if (actions.indexOf(a) > 0) const SizedBox(height: 10),
+                  if (actions.indexOf(a) > 0) const SizedBox(height: AppSpacing.md),
                   _QuickActionCard(action: a),
                 ],
               ],
@@ -339,25 +369,10 @@ class HomePage extends ConsumerWidget {
     final currency = ref.watch(selectedCurrencyProvider);
     return asyncStats.when(
       loading: () => const HomePageSkeleton(),
-      error: (e, _) => Card(
-        color: color.errorContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Row(
-            children: [
-              Icon(Icons.error_outline, color: color.error),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  EsBO.homeErrorLoadStats,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: color.onErrorContainer,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      error: (e, _) => ErrorView(
+        message: EsBO.homeErrorLoadStats,
+        details: e.toString(),
+        onRetry: () => ref.invalidate(dashboardStatsProvider),
       ),
       data: (stats) {
         if (stats.countAll == 0) {
@@ -502,24 +517,28 @@ class _QuickActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.xxl),
-        onTap: action.onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+    return Semantics(
+      button: true,
+      label: action.label,
+      hint: action.subtitle,
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.xxl),
+          onTap: action.onTap,
+          child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: action.bgColor,
-                  borderRadius: BorderRadius.circular(AppRadii.xl),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
                 ),
-                child: Icon(action.icon, color: action.color, size: 24),
+                child: Icon(action.icon, color: action.color, size: 22),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.sm + 2),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,6 +548,8 @@ class _QuickActionCard extends StatelessWidget {
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppSpacing.xxs),
                     Text(
@@ -536,6 +557,8 @@ class _QuickActionCard extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -548,6 +571,7 @@ class _QuickActionCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

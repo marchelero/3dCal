@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/core/theme/app_theme.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filaments_page.dart';
@@ -17,9 +19,12 @@ import 'package:tresdcal/features/catalog/filaments/presentation/pages/filaments
 /// un `MaterialApp.router` con un [GoRouter] que tenga las rutas de form.
 /// Para los tests de "tap en X navega a Y" solo necesitamos la ruta destino.
 Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final container = ProviderContainer(overrides: [
     appDatabaseProvider.overrideWithValue(db),
+    sharedPreferencesProvider.overrideWithValue(prefs),
   ]);
   addTearDown(() async {
     container.dispose();

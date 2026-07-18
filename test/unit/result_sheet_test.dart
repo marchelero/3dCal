@@ -8,7 +8,7 @@ import 'package:tresdcal/features/calculation/presentation/state/calculator_stat
 import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
 import 'package:tresdcal/core/money/currency.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/result_sheet.dart';
-import 'package:tresdcal/features/calculation/presentation/widgets/summary_card.dart';
+import 'package:tresdcal/features/calculation/presentation/widgets/calc_meta.dart';
 
 /// Notifier que devuelve un estado fijo para tests.
 class _FixedStateNotifier extends CalculatorNotifier {
@@ -220,9 +220,9 @@ void main() {
       );
 
       // Buscar el icono de compartir, el IconButton debe estar enabled.
-      expect(find.byIcon(Icons.ios_share_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.share_rounded), findsOneWidget);
       final finder = find.ancestor(
-        of: find.byIcon(Icons.ios_share_rounded),
+        of: find.byIcon(Icons.share_rounded),
         matching: find.byType(IconButton),
       );
       expect(finder, findsOneWidget);

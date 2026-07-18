@@ -4,8 +4,10 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filament_form_page.dart';
 
@@ -13,9 +15,12 @@ Future<ProviderContainer> _pumpForm(
   WidgetTester tester, {
   Filament? existing,
 }) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final container = ProviderContainer(overrides: [
     appDatabaseProvider.overrideWithValue(db),
+    sharedPreferencesProvider.overrideWithValue(prefs),
   ]);
   addTearDown(() async {
     container.dispose();

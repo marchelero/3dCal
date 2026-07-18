@@ -15,11 +15,13 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/skeleton_widget.dart';
 import '../notifiers/calculations_notifier.dart';
 
 /// Historial de cotizaciones guardadas con search + filtros.
@@ -50,6 +52,7 @@ class _CalculationsListPageState
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider);
     final async = ref.watch(calculationsNotifierProvider);
     final notifier = ref.read(calculationsNotifierProvider.notifier);
 
@@ -112,7 +115,7 @@ class _CalculationsListPageState
           // List
           Expanded(
             child: async.when(
-              loading: () => const LoadingView(),
+              loading: () => const ListPageSkeleton(),
               error: (e, _) => ErrorView(
                 message: EsBO.historyErrorLoad,
                 details: e.toString(),
@@ -250,33 +253,38 @@ class _CalculationCard extends ConsumerWidget {
       container: true,
       label: '${_title()}, ${formatCurrency(Decimal.parse(calc.totalPriceSnapshot.toString()), currency)}'
           '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
-      child: Card(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadii.xxl),
-          onTap: () => context.push('/history/${calc.id}', extra: calc),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Row(
-              children: [
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadii.xxl),
+            onTap: () => context.push('/history/${calc.id}', extra: calc),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
                 // Leading icon (decorative — sale status already in label)
                 ExcludeSemantics(
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: calc.isSold
-                          ? color.tertiaryContainer
-                          : color.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(AppRadii.lg),
-                    ),
-                    child: Icon(
-                      calc.isSold
-                          ? Icons.check_circle_rounded
-                          : Icons.receipt_long_rounded,
-                      color: calc.isSold
-                          ? color.tertiary
-                          : color.onSurfaceVariant,
-                      size: 22,
+                  child: Hero(
+                    tag: 'calc-hero-${calc.id}',
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: calc.isSold
+                            ? color.tertiaryContainer
+                            : color.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppRadii.lg),
+                      ),
+                      child: Icon(
+                        calc.isSold
+                            ? Icons.check_circle_rounded
+                            : Icons.receipt_long_rounded,
+                        color: calc.isSold
+                            ? color.tertiary
+                            : color.onSurfaceVariant,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ),
@@ -361,6 +369,7 @@ class _CalculationCard extends ConsumerWidget {
         ),
       ),
     ),
+  ),
     );
   }
 }

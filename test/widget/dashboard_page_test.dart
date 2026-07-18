@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/domain/dashboard_stats.dart';
 import 'package:tresdcal/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:tresdcal/core/money/currency.dart';
@@ -15,12 +17,15 @@ Future<void> _pumpPage(
   WidgetTester tester, {
   required DashboardStats stats,
 }) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         dashboardStatsProvider.overrideWith(
           (ref) => Future<DashboardStats>.value(stats),
         ),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
       child: const MaterialApp(home: DashboardPage()),
     ),

@@ -41,8 +41,12 @@ class InitialConfigPage extends ConsumerWidget {
                     color: color.primaryContainer,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(Icons.calculate_rounded,
-                      size: 40, color: color.onPrimaryContainer),
+                  child: Image.asset(
+                    'assets/images/3dlogo.png',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.contain,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xxl),
                 // Title

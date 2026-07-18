@@ -14,7 +14,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../domain/entities/calculation_output.dart';
 import '../state/calculator_state.dart' show MaterialCostBreakdown;
-import 'summary_card.dart';
+import 'detail_section.dart';
 
 /// Template visual para la imagen compartida de la cotizacion.
 ///
@@ -148,8 +148,8 @@ class QuoteImageTemplate extends StatelessWidget {
           Center(
             child: Text(
               hasDiscount
-                  ? 'Total con descuento'
-                  : 'Total final',
+                  ? EsBO.calcTotalWithDiscount
+                  : EsBO.calcTotalFinal,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: color.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
@@ -272,10 +272,11 @@ class QuoteImageTemplate extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.calculate_rounded,
-                  size: 14,
-                  color: color.onSurfaceVariant.withValues(alpha: 0.6),
+                Image.asset(
+                  'assets/images/3dlogo.png',
+                  width: 14,
+                  height: 14,
+                  fit: BoxFit.contain,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -334,10 +335,11 @@ class QuoteImageTemplate extends StatelessWidget {
         color: color.primary,
         borderRadius: BorderRadius.circular(AppRadii.md),
       ),
-      child: const Icon(
-        Icons.calculate_rounded,
-        color: Colors.white,
-        size: 22,
+      child: Image.asset(
+        'assets/images/3dlogo.png',
+        width: 22,
+        height: 22,
+        fit: BoxFit.contain,
       ),
     );
   }

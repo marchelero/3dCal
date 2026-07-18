@@ -255,7 +255,7 @@ class EnImpl implements AppStrings {
       'Total with discount';
   @override
   String get calcTotalFinal =>
-      'Final total';
+      'Total';
   @override
   String get calcDetailMaterial =>
       'Material cost';
@@ -284,7 +284,7 @@ class EnImpl implements AppStrings {
       'Minimum charge';
   @override
   String get calcDetailTotal =>
-      'Final total';
+      'Total';
   @override
   String get calcEmptyHint =>
       'Fill in weight, filament and time to see the price';

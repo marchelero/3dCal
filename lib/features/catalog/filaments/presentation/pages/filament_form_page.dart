@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../../core/database/app_database.dart';
 import '../../../../../core/money/currency_settings_provider.dart';
 import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
@@ -137,12 +138,11 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider);
     final currency = ref.watch(selectedCurrencyProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit
-            ? '${EsBO.commonEdit} filamento'
-            : '${EsBO.commonNew} filamento'),
+        title: Text(_isEdit ? EsBO.filamentEdit : EsBO.filamentNew),
       ),
       body: SafeArea(
         child: Form(

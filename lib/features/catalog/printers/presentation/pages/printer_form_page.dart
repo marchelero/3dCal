@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../core/database/app_database.dart';
 import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
@@ -109,11 +110,10 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(localeProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit
-            ? '${EsBO.commonEdit} impresora'
-            : '${EsBO.commonNew} impresora'),
+        title: Text(_isEdit ? EsBO.printerEdit : EsBO.printerNew),
       ),
       body: SafeArea(
         child: Form(

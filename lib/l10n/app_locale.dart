@@ -9,6 +9,8 @@ import 'app_strings.dart';
 import 'en_us.dart';
 import 'es_bo.dart';
 
+export 'app_strings.dart' show AppStrings;
+
 // ─── Enum ────────────────────────────────────────
 
 enum AppLocale { es, en }

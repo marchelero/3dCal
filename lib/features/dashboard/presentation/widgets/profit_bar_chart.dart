@@ -128,7 +128,7 @@ class ProfitBarChart extends StatelessWidget {
                     axisSide: meta.axisSide,
                     space: 4,
                     child: Text(
-                      _formatYLabel(value),
+                      _formatYLabel(value, currency.symbol),
                       style: theme.textTheme.bodySmall,
                     ),
                   );
@@ -173,11 +173,11 @@ class ProfitBarChart extends StatelessWidget {
     );
   }
 
-  /// Formato corto del eje Y: "Bs. 0" / "Bs. 1.5K" / "Bs. 12.3K".
-  static String _formatYLabel(double value) {
-    if (value == 0) return 'Bs. 0';
-    if (value < 1000) return 'Bs. ${value.toStringAsFixed(0)}';
+  /// Formato corto del eje Y: "{symbol} 0" / "{symbol} 1.5K" / "{symbol} 12.3K".
+  static String _formatYLabel(double value, String symbol) {
+    if (value == 0) return '$symbol 0';
+    if (value < 1000) return '$symbol ${value.toStringAsFixed(0)}';
     final k = value / 1000;
-    return 'Bs. ${k.toStringAsFixed(1)}K';
+    return '$symbol ${k.toStringAsFixed(1)}K';
   }
 }

@@ -18,7 +18,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import 'quote_image_template.dart';
-import 'summary_card.dart';
+import 'calc_meta.dart';
 
 /// Sticky bar que aparece en la parte inferior de CalculatorPage.
 ///
@@ -121,14 +121,33 @@ class ResultBottomBar extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         )
                       else
-                        // Total sin animación — cambio inmediato, sin parpadeo
-                        Text(
-                          totalText,
-                          key: ValueKey(totalText),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: color.onSurface,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                        // Total con AnimatedSwitcher — anima cambio de cifra
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) =>
+                              SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0, 0.3),
+                                  end: Offset.zero,
+                                ).animate(
+                                  CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOut,
+                                  ),
+                                ),
+                                child: FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                              ),
+                          child: Text(
+                            totalText,
+                            key: ValueKey(totalText),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: color.onSurface,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
                           ),
                         ),
                     ],
@@ -482,7 +501,7 @@ class _ActionIconRow extends StatelessWidget {
           onPressed: isBusy ? null : onSharePdf,
         ),
         _ActionIcon(
-          icon: Icons.ios_share_rounded,
+          icon: Icons.share_rounded,
           tooltip: 'Compartir imagen',
           color: color.primary,
           isBusy: isBusy,

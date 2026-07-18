@@ -18,6 +18,7 @@ import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
@@ -37,6 +38,7 @@ class CalculationDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(localeProvider);
     final calc = ref.watch(_calculationByIdProvider(calcId));
 
     return Scaffold(
@@ -223,23 +225,25 @@ class _DetailState extends ConsumerState<_Detail> {
         shrinkWrap: true,
         children: [
         // === Header card (hero) ===
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                color.primaryContainer,
-                color.primaryContainer.withValues(alpha: 0.6),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        Hero(
+          tag: 'calc-hero-${calc.id}',
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.primaryContainer,
+                  color.primaryContainer.withValues(alpha: 0.6),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AppRadii.xxxl),
             ),
-            borderRadius: BorderRadius.circular(AppRadii.xxxl),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -310,7 +314,8 @@ class _DetailState extends ConsumerState<_Detail> {
                   ],
                 ],
               ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
@@ -555,7 +560,7 @@ class _DetailState extends ConsumerState<_Detail> {
               alignment: WrapAlignment.center,
               children: [
                 _DetailActionIcon(
-                  icon: Icons.ios_share_rounded,
+                  icon: Icons.share_rounded,
                   tooltip: 'Compartir imagen',
                   color: color.primary,
                   isBusy: _isBusy,
@@ -608,10 +613,10 @@ class _DetailState extends ConsumerState<_Detail> {
             ),
           ],
         ),
-        // Padding bottom para FAB.
-        const SizedBox(height: 80),
+        // Padding bottom para FAB + bottom inset.
+        SizedBox(height: 80 + MediaQuery.of(context).padding.bottom),
       ],
-      ),
+    ),
     );
   }
 }

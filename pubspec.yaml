@@ -44,5 +44,6 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/images/3dlogo.png
     - assets/fonts/Roboto-Regular.ttf
     - assets/fonts/Roboto-Bold.ttf

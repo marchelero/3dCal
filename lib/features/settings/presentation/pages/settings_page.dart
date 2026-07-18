@@ -18,6 +18,8 @@ import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
+import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/loading_view.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
 
@@ -34,12 +36,11 @@ class SettingsPage extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: asyncSettings.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.xxl),
-              child: Text('Error cargando ajustes: $e'),
-            ),
+          loading: () => const LoadingView(),
+          error: (e, _) => ErrorView(
+            message: 'Error cargando ajustes',
+            details: e.toString(),
+            onRetry: () => ref.invalidate(settingsNotifierProvider),
           ),
           data: (settings) => _SettingsBody(settings: settings),
         ),
@@ -64,7 +65,7 @@ class _SettingsBody extends ConsumerWidget {
     final currency = WorldCurrency.fromCode(settings.currencyCode);
 
     return MaxWidthScrollView(
-      maxWidth: 640,
+      maxWidth: 960,
       child: ListView(
         padding: EdgeInsets.zero,
         shrinkWrap: true,
@@ -255,8 +256,8 @@ class _SettingsBody extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.calculate_rounded,
-                              color: Colors.white, size: 26),
+                          child: Image.asset('assets/images/3dlogo.png',
+                              width: 26, height: 26, fit: BoxFit.contain),
                         ),
                         const SizedBox(width: 14),
                         Column(
@@ -365,8 +366,8 @@ class _SettingsHeader extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.calculate_rounded,
-                color: Colors.white, size: 34),
+            child: Image.asset('assets/images/3dlogo.png',
+                width: 34, height: 34, fit: BoxFit.contain),
           ),
           const SizedBox(width: AppSpacing.lg),
           // Texto
@@ -824,10 +825,10 @@ class _LogoPicker extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────
-// CurrencyPicker — dropdown de monedas del mundo
+// CurrencyPicker — searchable dialog
 // ─────────────────────────────────────────────────
 
-/// Selector de moneda desde la lista parametrica de monedas del mundo.
+/// Selector de moneda con busqueda integrada.
 class _CurrencyPicker extends ConsumerWidget {
   const _CurrencyPicker();
 
@@ -855,31 +856,174 @@ class _CurrencyPicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        DropdownButtonFormField<WorldCurrency>(
-          value: current,
-          isExpanded: true,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
+        InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          onTap: () => _showCurrencySearch(context, ref, current),
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
+              suffixIcon: Icon(Icons.search),
+            ),
+            child: Text(
+              '${current.code} — ${current.name} (${current.symbol})',
+              style: theme.textTheme.bodyLarge,
             ),
           ),
-          items: WorldCurrency.all.map((wc) {
-            return DropdownMenuItem(
-              value: wc,
-              child: Text('${wc.code} — ${wc.name} (${wc.symbol})'),
-            );
-          }).toList(),
-          onChanged: (selected) {
-            if (selected == null) return;
-            ref
-                .read(settingsNotifierProvider.notifier)
-                .updateCurrency(selected.code);
-            _showSavedSnack(context);
-          },
         ),
       ],
+    );
+  }
+
+  Future<void> _showCurrencySearch(
+    BuildContext context,
+    WidgetRef ref,
+    WorldCurrency current,
+  ) async {
+    final selected = await showDialog<WorldCurrency>(
+      context: context,
+      useSafeArea: false,
+      builder: (_) => _CurrencySearchDialog(initial: current),
+    );
+    if (selected != null && context.mounted) {
+      ref.read(settingsNotifierProvider.notifier).updateCurrency(selected.code);
+      _showSavedSnack(context);
+    }
+  }
+}
+
+/// Dialog de busqueda de monedas.
+class _CurrencySearchDialog extends StatefulWidget {
+  const _CurrencySearchDialog({required this.initial});
+  final WorldCurrency initial;
+
+  @override
+  State<_CurrencySearchDialog> createState() => _CurrencySearchDialogState();
+}
+
+class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
+  late final TextEditingController _ctrl;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    // Filtrar
+    final all = WorldCurrency.all;
+    final filtered = _query.isEmpty
+        ? all
+        : all.where((c) {
+            final q = _query.toLowerCase();
+            return c.code.toLowerCase().contains(q) ||
+                c.name.toLowerCase().contains(q);
+          }).toList();
+
+    return Dialog.fullscreen(
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header with search
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: TextField(
+                      controller: _ctrl,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar moneda por codigo o nombre...',
+                        border: InputBorder.none,
+                        isDense: true,
+                        suffixIcon: _query.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _ctrl.clear();
+                                  setState(() => _query = '');
+                                },
+                              )
+                            : null,
+                      ),
+                      onChanged: (v) => setState(() => _query = v),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // List
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Sin resultados para "$_query"',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, _) =>
+                          const Divider(height: 1, indent: 16, endIndent: 16),
+                      itemBuilder: (_, i) {
+                        final c = filtered[i];
+                        final isSelected = c.code == widget.initial.code;
+                        return ListTile(
+                          selected: isSelected,
+                          selectedTileColor:
+                              color.primaryContainer.withValues(alpha: 0.4),
+                          leading: Icon(
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.circle_outlined,
+                            color: isSelected
+                                ? color.primary
+                                : color.onSurfaceVariant,
+                          ),
+                          title: Text(
+                            '${c.code} — ${c.name}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Simbolo: ${c.symbol}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: color.onSurfaceVariant,
+                            ),
+                          ),
+                          onTap: () => Navigator.of(context).pop(c),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

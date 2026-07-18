@@ -54,6 +54,7 @@ class NumericInputField extends StatefulWidget {
     this.autofocus = false,
     this.textInputAction = TextInputAction.next,
     this.validator,
+    this.showValidation = false,
     super.key,
   });
 
@@ -90,6 +91,10 @@ class NumericInputField extends StatefulWidget {
   /// Validador opcional. Si se provee, el widget se monta como [FormField]
   /// para integrarse con un `Form` padre (validacion en submit).
   final FormFieldValidator<String>? validator;
+
+  /// Si `true`, fuerza validacion visual incluso sin interaccion previa.
+  /// Util para mostrar errores al intentar guardar con campos vacios.
+  final bool showValidation;
 
   @override
   State<NumericInputField> createState() => _NumericInputFieldState();
@@ -133,10 +138,11 @@ class _NumericInputFieldState extends State<NumericInputField> {
 
   /// Validador interno: rechaza strings que no parsean como numero.
   /// Retorna `null` si la validacion interna pasa.
+  /// Si [widget.showValidation] es true, tambien marca vacios como error.
   String? _internalValidator(String? value) {
-    if (!_hasInteracted) return null;
+    if (!_hasInteracted && !widget.showValidation) return null;
     final raw = (value ?? widget.controller.text).trim();
-    if (raw.isEmpty) return null;
+    if (raw.isEmpty) return widget.showValidation ? 'Requerido' : null;
     final cleaned = raw.replaceAll(',', '.');
     final n = num.tryParse(cleaned);
     if (n == null) return 'Numero invalido';

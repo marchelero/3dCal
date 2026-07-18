@@ -1,9 +1,10 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_radii.dart';
-import '../../l10n/es_bo.dart';
+import '../../l10n/app_locale.dart';
 
 /// Shell responsive que envuelve las 4 destinations principales del shell
 /// de go_router (Inicio, Historial, Dashboard, Ajustes).
@@ -15,42 +16,42 @@ import '../../l10n/es_bo.dart';
 /// - `>= 1280dp`: [NavigationRail] extended con label visible siempre.
 ///
 /// **Transition**: cross-fade al cambiar de tab.
-class AppScaffold extends StatefulWidget {
+class AppScaffold extends ConsumerStatefulWidget {
   const AppScaffold({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  State<AppScaffold> createState() => _AppScaffoldState();
+  ConsumerState<AppScaffold> createState() => _AppScaffoldState();
 }
 
-class _AppScaffoldState extends State<AppScaffold>
+class _AppScaffoldState extends ConsumerState<AppScaffold>
     with SingleTickerProviderStateMixin {
   late final AnimationController _fadeCtrl;
   int _prevIndex = 0;
 
-  static final _destinations = <_NavDest>[
-    _NavDest(
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home,
-      label: EsBO.navHome,
-    ),
-    _NavDest(
-      icon: Icons.history_outlined,
-      selectedIcon: Icons.history,
-      label: EsBO.navHistory,
-    ),
-    _NavDest(
-      icon: Icons.bar_chart_outlined,
-      selectedIcon: Icons.bar_chart,
-      label: EsBO.navDashboard,
-    ),
-    _NavDest(
-      icon: Icons.settings_outlined,
-      selectedIcon: Icons.settings,
-      label: EsBO.navSettings,
-    ),
-  ];
+  List<_NavDest> _destinations(AppStrings s) => [
+        _NavDest(
+          icon: Icons.home_outlined,
+          selectedIcon: Icons.home,
+          label: s.navHome,
+        ),
+        _NavDest(
+          icon: Icons.history_outlined,
+          selectedIcon: Icons.history,
+          label: s.navHistory,
+        ),
+        _NavDest(
+          icon: Icons.bar_chart_outlined,
+          selectedIcon: Icons.bar_chart,
+          label: s.navDashboard,
+        ),
+        _NavDest(
+          icon: Icons.settings_outlined,
+          selectedIcon: Icons.settings,
+          label: s.navSettings,
+        ),
+      ];
 
   @override
   void initState() {
@@ -86,22 +87,24 @@ class _AppScaffoldState extends State<AppScaffold>
 
   @override
   Widget build(BuildContext context) {
+    final strings = ref.watch(localeStringsProvider);
     final width = MediaQuery.sizeOf(context).width;
     final isExtended = width >= 1280;
+    final dests = _destinations(strings);
 
     if (width < 600) {
-      return _buildMobileNav(context);
+      return _buildMobileNav(context, dests);
     }
 
     if (width < 1024) {
-      return _buildTabletNav(context, extended: false);
+      return _buildTabletNav(context, dests, extended: false);
     }
 
     // 1024+
-    return _buildTabletNav(context, extended: isExtended);
+    return _buildTabletNav(context, dests, extended: isExtended);
   }
 
-  Widget _buildMobileNav(BuildContext context) {
+  Widget _buildMobileNav(BuildContext context, List<_NavDest> dests) {
     final color = Theme.of(context).colorScheme;
     return Scaffold(
       body: FadeTransition(
@@ -145,7 +148,7 @@ class _AppScaffoldState extends State<AppScaffold>
                 borderRadius: BorderRadius.circular(AppRadii.xl),
               ),
               destinations: [
-                for (final d in _destinations)
+                for (final d in dests)
                   NavigationDestination(
                     icon: Icon(d.icon),
                     selectedIcon: Icon(d.selectedIcon),
@@ -159,7 +162,7 @@ class _AppScaffoldState extends State<AppScaffold>
     );
   }
 
-  Widget _buildTabletNav(BuildContext context, {required bool extended}) {
+  Widget _buildTabletNav(BuildContext context, List<_NavDest> dests, {required bool extended}) {
     final color = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
@@ -183,10 +186,11 @@ class _AppScaffoldState extends State<AppScaffold>
                   // App icon top
                   Padding(
                     padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
-                    child: Icon(
-                      Icons.calculate_rounded,
-                      size: extended ? 32 : 24,
-                      color: color.primary,
+                    child: Image.asset(
+                      'assets/images/3dlogo.png',
+                      width: extended ? 32 : 24,
+                      height: extended ? 32 : 24,
+                      fit: BoxFit.contain,
                     ),
                   ),
                   // Rail
@@ -205,7 +209,7 @@ class _AppScaffoldState extends State<AppScaffold>
                       ),
                       leading: const SizedBox.shrink(),
                       destinations: [
-                        for (final d in _destinations)
+                        for (final d in dests)
                           NavigationRailDestination(
                             icon: Icon(d.icon),
                             selectedIcon: Icon(d.selectedIcon),
