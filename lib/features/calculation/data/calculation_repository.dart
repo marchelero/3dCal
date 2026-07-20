@@ -16,6 +16,7 @@ class CalculationDraft {
     required this.totalHours,
     required this.discountPercentage,
     required this.output,
+    this.printMinutes = 0,
     this.filamentLabel = '',
     this.pieceName,
     this.clientName,
@@ -28,6 +29,10 @@ class CalculationDraft {
   final String filamentLabel;
   final String? pieceName;
   final String? clientName;
+
+  /// Minutos del tiempo de impresion (0-59). Persistido por separado de
+  /// [totalHours] para preservar el split h/m al recargar.
+  final int printMinutes;
 }
 
 /// CRUD + queries de cotizaciones.
@@ -56,6 +61,7 @@ class CalculationRepository {
               printerNameSnapshot: const Value(null),
               printerWattsSnapshot: Value(0.0),
               totalHours: draft.totalHours.toDouble(),
+              printMinutes: Value(draft.printMinutes),
               discountPercentage: draft.discountPercentage.toDouble(),
               kwhRateSnapshot: 0.0,
               profitBaseSnapshot: 0.0,

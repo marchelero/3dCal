@@ -190,10 +190,32 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final mats = await repo.materialsOf(calc.id);
     final mode =
         mats.length > 1 ? CalculatorMode.advanced : CalculatorMode.express;
-    final hours = CalculatorState.parseDecimal(
+    final total = CalculatorState.parseDecimal(
           calc.totalHours.toStringAsFixed(2),
         ) ??
         Decimal.zero;
+
+    // Recuperar el split h/m.
+    // - Nuevos: printMinutes esta persistido (v4+).
+    // - Viejos (v3): printMinutes=0 default. Si total tiene parte fraccional,
+    //   derivamos (best-effort: 1.55h -> 1h 33min).
+    //
+    // Estrategia: convertir total a minutos totales, separar.
+    final totalMinutesInt =
+        (total * Decimal.fromInt(60)).toBigInt().toInt();
+    int minutes;
+    Decimal hours;
+    if (calc.printMinutes > 0) {
+      // Trust the stored value: take it from the DB.
+      minutes = calc.printMinutes;
+      final hoursAsMinutes = totalMinutesInt - minutes;
+      hours = Decimal.fromInt(hoursAsMinutes ~/ 60);
+    } else {
+      // Backfill: derive from total.
+      minutes = totalMinutesInt % 60;
+      hours = Decimal.fromInt(totalMinutesInt ~/ 60);
+    }
+
     final discount = CalculatorState.parseDecimal(
           calc.discountPercentage.toStringAsFixed(2),
         ) ??
@@ -205,7 +227,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         CalculatorState(
           mode: CalculatorMode.express,
           printHours: hours.toString(),
-          printMinutes: '',
+          printMinutes: minutes > 0 ? minutes.toString() : '',
           discountPct: discount.toString(),
           label: calc.pieceName ?? '',
           filamentLabel: m == null ? '' : m.label,
@@ -235,7 +257,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       CalculatorState(
         mode: CalculatorMode.advanced,
         printHours: hours.toString(),
-        printMinutes: '',
+        printMinutes: minutes > 0 ? minutes.toString() : '',
         discountPct: discount.toString(),
         label: calc.pieceName ?? '',
         weight: '',
@@ -254,6 +276,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final draft = CalculationDraft(
       materials: input.materials,
       totalHours: input.totalHours,
+      printMinutes: CalculatorState.parseDecimal(state.printMinutes)?.toBigInt().toInt() ?? 0,
       discountPercentage: input.discountPercentage,
       output: state.output!,
       filamentLabel: state.filamentLabel,

@@ -995,6 +995,18 @@ class $CalculationsTable extends Calculations
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _printMinutesMeta = const VerificationMeta(
+    'printMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> printMinutes = GeneratedColumn<int>(
+    'print_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _discountPercentageMeta =
       const VerificationMeta('discountPercentage');
   @override
@@ -1229,6 +1241,7 @@ class $CalculationsTable extends Calculations
     printerNameSnapshot,
     printerWattsSnapshot,
     totalHours,
+    printMinutes,
     discountPercentage,
     kwhRateSnapshot,
     profitBaseSnapshot,
@@ -1316,6 +1329,15 @@ class $CalculationsTable extends Calculations
       );
     } else if (isInserting) {
       context.missing(_totalHoursMeta);
+    }
+    if (data.containsKey('print_minutes')) {
+      context.handle(
+        _printMinutesMeta,
+        printMinutes.isAcceptableOrUnknown(
+          data['print_minutes']!,
+          _printMinutesMeta,
+        ),
+      );
     }
     if (data.containsKey('discount_percentage')) {
       context.handle(
@@ -1573,6 +1595,10 @@ class $CalculationsTable extends Calculations
         DriftSqlType.double,
         data['${effectivePrefix}total_hours'],
       )!,
+      printMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}print_minutes'],
+      )!,
       discountPercentage: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}discount_percentage'],
@@ -1683,8 +1709,19 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// Snapshot de watts de la impresora al guardar.
   final double printerWattsSnapshot;
 
-  /// Tiempo total en horas.
+  /// Tiempo total en horas (decimal, ej: 1.55 = 1h 33min).
   final double totalHours;
+
+  /// Parte de minutos del tiempo de impresion (0-59).
+  ///
+  /// **Por que existe**: el form tiene 2 inputs separados (Horas, Minutos) por
+  /// UX. Persistir solo `totalHours` como decimal perdia el split: al recargar
+  /// con "Reusar", el campo Minutos quedaba vacio. Esta columna preserva la
+  /// entrada original del usuario.
+  ///
+  /// Para registros pre-migracion v4 el valor es 0 (default). El notifier
+  /// deriva los minutos del decimal en ese caso (best-effort).
+  final int printMinutes;
 
   /// Descuento aplicado en % (0-50).
   final double discountPercentage;
@@ -1726,6 +1763,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     this.printerNameSnapshot,
     required this.printerWattsSnapshot,
     required this.totalHours,
+    required this.printMinutes,
     required this.discountPercentage,
     required this.kwhRateSnapshot,
     required this.profitBaseSnapshot,
@@ -1766,6 +1804,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     }
     map['printer_watts_snapshot'] = Variable<double>(printerWattsSnapshot);
     map['total_hours'] = Variable<double>(totalHours);
+    map['print_minutes'] = Variable<int>(printMinutes);
     map['discount_percentage'] = Variable<double>(discountPercentage);
     map['kwh_rate_snapshot'] = Variable<double>(kwhRateSnapshot);
     map['profit_base_snapshot'] = Variable<double>(profitBaseSnapshot);
@@ -1815,6 +1854,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           : Value(printerNameSnapshot),
       printerWattsSnapshot: Value(printerWattsSnapshot),
       totalHours: Value(totalHours),
+      printMinutes: Value(printMinutes),
       discountPercentage: Value(discountPercentage),
       kwhRateSnapshot: Value(kwhRateSnapshot),
       profitBaseSnapshot: Value(profitBaseSnapshot),
@@ -1856,6 +1896,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
         json['printerWattsSnapshot'],
       ),
       totalHours: serializer.fromJson<double>(json['totalHours']),
+      printMinutes: serializer.fromJson<int>(json['printMinutes']),
       discountPercentage: serializer.fromJson<double>(
         json['discountPercentage'],
       ),
@@ -1920,6 +1961,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'printerNameSnapshot': serializer.toJson<String?>(printerNameSnapshot),
       'printerWattsSnapshot': serializer.toJson<double>(printerWattsSnapshot),
       'totalHours': serializer.toJson<double>(totalHours),
+      'printMinutes': serializer.toJson<int>(printMinutes),
       'discountPercentage': serializer.toJson<double>(discountPercentage),
       'kwhRateSnapshot': serializer.toJson<double>(kwhRateSnapshot),
       'profitBaseSnapshot': serializer.toJson<double>(profitBaseSnapshot),
@@ -1962,6 +2004,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     Value<String?> printerNameSnapshot = const Value.absent(),
     double? printerWattsSnapshot,
     double? totalHours,
+    int? printMinutes,
     double? discountPercentage,
     double? kwhRateSnapshot,
     double? profitBaseSnapshot,
@@ -1993,6 +2036,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
         : this.printerNameSnapshot,
     printerWattsSnapshot: printerWattsSnapshot ?? this.printerWattsSnapshot,
     totalHours: totalHours ?? this.totalHours,
+    printMinutes: printMinutes ?? this.printMinutes,
     discountPercentage: discountPercentage ?? this.discountPercentage,
     kwhRateSnapshot: kwhRateSnapshot ?? this.kwhRateSnapshot,
     profitBaseSnapshot: profitBaseSnapshot ?? this.profitBaseSnapshot,
@@ -2037,6 +2081,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       totalHours: data.totalHours.present
           ? data.totalHours.value
           : this.totalHours,
+      printMinutes: data.printMinutes.present
+          ? data.printMinutes.value
+          : this.printMinutes,
       discountPercentage: data.discountPercentage.present
           ? data.discountPercentage.value
           : this.discountPercentage,
@@ -2109,6 +2156,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('printerNameSnapshot: $printerNameSnapshot, ')
           ..write('printerWattsSnapshot: $printerWattsSnapshot, ')
           ..write('totalHours: $totalHours, ')
+          ..write('printMinutes: $printMinutes, ')
           ..write('discountPercentage: $discountPercentage, ')
           ..write('kwhRateSnapshot: $kwhRateSnapshot, ')
           ..write('profitBaseSnapshot: $profitBaseSnapshot, ')
@@ -2145,6 +2193,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     printerNameSnapshot,
     printerWattsSnapshot,
     totalHours,
+    printMinutes,
     discountPercentage,
     kwhRateSnapshot,
     profitBaseSnapshot,
@@ -2178,6 +2227,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.printerNameSnapshot == this.printerNameSnapshot &&
           other.printerWattsSnapshot == this.printerWattsSnapshot &&
           other.totalHours == this.totalHours &&
+          other.printMinutes == this.printMinutes &&
           other.discountPercentage == this.discountPercentage &&
           other.kwhRateSnapshot == this.kwhRateSnapshot &&
           other.profitBaseSnapshot == this.profitBaseSnapshot &&
@@ -2210,6 +2260,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<String?> printerNameSnapshot;
   final Value<double> printerWattsSnapshot;
   final Value<double> totalHours;
+  final Value<int> printMinutes;
   final Value<double> discountPercentage;
   final Value<double> kwhRateSnapshot;
   final Value<double> profitBaseSnapshot;
@@ -2239,6 +2290,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.printerNameSnapshot = const Value.absent(),
     this.printerWattsSnapshot = const Value.absent(),
     this.totalHours = const Value.absent(),
+    this.printMinutes = const Value.absent(),
     this.discountPercentage = const Value.absent(),
     this.kwhRateSnapshot = const Value.absent(),
     this.profitBaseSnapshot = const Value.absent(),
@@ -2269,6 +2321,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.printerNameSnapshot = const Value.absent(),
     this.printerWattsSnapshot = const Value.absent(),
     required double totalHours,
+    this.printMinutes = const Value.absent(),
     required double discountPercentage,
     required double kwhRateSnapshot,
     required double profitBaseSnapshot,
@@ -2319,6 +2372,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<String>? printerNameSnapshot,
     Expression<double>? printerWattsSnapshot,
     Expression<double>? totalHours,
+    Expression<int>? printMinutes,
     Expression<double>? discountPercentage,
     Expression<double>? kwhRateSnapshot,
     Expression<double>? profitBaseSnapshot,
@@ -2351,6 +2405,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       if (printerWattsSnapshot != null)
         'printer_watts_snapshot': printerWattsSnapshot,
       if (totalHours != null) 'total_hours': totalHours,
+      if (printMinutes != null) 'print_minutes': printMinutes,
       if (discountPercentage != null) 'discount_percentage': discountPercentage,
       if (kwhRateSnapshot != null) 'kwh_rate_snapshot': kwhRateSnapshot,
       if (profitBaseSnapshot != null)
@@ -2397,6 +2452,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<String?>? printerNameSnapshot,
     Value<double>? printerWattsSnapshot,
     Value<double>? totalHours,
+    Value<int>? printMinutes,
     Value<double>? discountPercentage,
     Value<double>? kwhRateSnapshot,
     Value<double>? profitBaseSnapshot,
@@ -2427,6 +2483,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       printerNameSnapshot: printerNameSnapshot ?? this.printerNameSnapshot,
       printerWattsSnapshot: printerWattsSnapshot ?? this.printerWattsSnapshot,
       totalHours: totalHours ?? this.totalHours,
+      printMinutes: printMinutes ?? this.printMinutes,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       kwhRateSnapshot: kwhRateSnapshot ?? this.kwhRateSnapshot,
       profitBaseSnapshot: profitBaseSnapshot ?? this.profitBaseSnapshot,
@@ -2486,6 +2543,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     }
     if (totalHours.present) {
       map['total_hours'] = Variable<double>(totalHours.value);
+    }
+    if (printMinutes.present) {
+      map['print_minutes'] = Variable<int>(printMinutes.value);
     }
     if (discountPercentage.present) {
       map['discount_percentage'] = Variable<double>(discountPercentage.value);
@@ -2583,6 +2643,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('printerNameSnapshot: $printerNameSnapshot, ')
           ..write('printerWattsSnapshot: $printerWattsSnapshot, ')
           ..write('totalHours: $totalHours, ')
+          ..write('printMinutes: $printMinutes, ')
           ..write('discountPercentage: $discountPercentage, ')
           ..write('kwhRateSnapshot: $kwhRateSnapshot, ')
           ..write('profitBaseSnapshot: $profitBaseSnapshot, ')
@@ -3876,6 +3937,7 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       Value<String?> printerNameSnapshot,
       Value<double> printerWattsSnapshot,
       required double totalHours,
+      Value<int> printMinutes,
       required double discountPercentage,
       required double kwhRateSnapshot,
       required double profitBaseSnapshot,
@@ -3907,6 +3969,7 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<String?> printerNameSnapshot,
       Value<double> printerWattsSnapshot,
       Value<double> totalHours,
+      Value<int> printMinutes,
       Value<double> discountPercentage,
       Value<double> kwhRateSnapshot,
       Value<double> profitBaseSnapshot,
@@ -4008,6 +4071,11 @@ class $$CalculationsTableFilterComposer
 
   ColumnFilters<double> get totalHours => $composableBuilder(
     column: $table.totalHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get printMinutes => $composableBuilder(
+    column: $table.printMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4186,6 +4254,11 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get printMinutes => $composableBuilder(
+    column: $table.printMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get discountPercentage => $composableBuilder(
     column: $table.discountPercentage,
     builder: (column) => ColumnOrderings(column),
@@ -4326,6 +4399,11 @@ class $$CalculationsTableAnnotationComposer
 
   GeneratedColumn<double> get totalHours => $composableBuilder(
     column: $table.totalHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get printMinutes => $composableBuilder(
+    column: $table.printMinutes,
     builder: (column) => column,
   );
 
@@ -4491,6 +4569,7 @@ class $$CalculationsTableTableManager
                 Value<String?> printerNameSnapshot = const Value.absent(),
                 Value<double> printerWattsSnapshot = const Value.absent(),
                 Value<double> totalHours = const Value.absent(),
+                Value<int> printMinutes = const Value.absent(),
                 Value<double> discountPercentage = const Value.absent(),
                 Value<double> kwhRateSnapshot = const Value.absent(),
                 Value<double> profitBaseSnapshot = const Value.absent(),
@@ -4521,6 +4600,7 @@ class $$CalculationsTableTableManager
                 printerNameSnapshot: printerNameSnapshot,
                 printerWattsSnapshot: printerWattsSnapshot,
                 totalHours: totalHours,
+                printMinutes: printMinutes,
                 discountPercentage: discountPercentage,
                 kwhRateSnapshot: kwhRateSnapshot,
                 profitBaseSnapshot: profitBaseSnapshot,
@@ -4552,6 +4632,7 @@ class $$CalculationsTableTableManager
                 Value<String?> printerNameSnapshot = const Value.absent(),
                 Value<double> printerWattsSnapshot = const Value.absent(),
                 required double totalHours,
+                Value<int> printMinutes = const Value.absent(),
                 required double discountPercentage,
                 required double kwhRateSnapshot,
                 required double profitBaseSnapshot,
@@ -4581,6 +4662,7 @@ class $$CalculationsTableTableManager
                 printerNameSnapshot: printerNameSnapshot,
                 printerWattsSnapshot: printerWattsSnapshot,
                 totalHours: totalHours,
+                printMinutes: printMinutes,
                 discountPercentage: discountPercentage,
                 kwhRateSnapshot: kwhRateSnapshot,
                 profitBaseSnapshot: profitBaseSnapshot,

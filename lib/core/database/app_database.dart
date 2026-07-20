@@ -37,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -62,6 +62,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(calculations, calculations.failureRateSnapshot);
             await m.addColumn(calculations, calculations.minimumChargeSnapshot);
             await m.addColumn(calculations, calculations.markupOnMaterialsSnapshot);
+          }
+          if (from <= 3) {
+            // v3→v4: persistir minutos del tiempo de impresion por separado.
+            // Antes solo se guardaba `totalHours` como decimal, perdiendo el
+            // split h+m. Para registros viejos, minutos=0 (default) y el
+            // notifier los deriva del decimal al recargar (best-effort).
+            await m.addColumn(calculations, calculations.printMinutes);
           }
         },
       );

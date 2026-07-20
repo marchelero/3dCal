@@ -328,13 +328,25 @@ class CalculatorState {
     return missing;
   }
 
-  /// Horas totales como Decimal (printHours + printMinutes/60).
-  /// Retorna null si printHours no es parseable.
+  /// Total hours como Decimal (printHours + printMinutes/60).
+  /// Minutos se convierten a fraccion de hora (33 min = 0.55h).
+  ///
+  /// Comportamiento:
+  /// - Si AMBOS campos (horas y minutos) estan vacios o en 0, retorna null.
+  /// - Si solo minutos tienen valor (horas vacio), trata horas como 0.
+  /// - Si solo horas tienen valor, retorna ese valor directamente.
+  /// - Si ambos tienen valor, retorna la suma.
+  ///
+  /// Esto es importante porque el usuario puede legitimamente querer cotizar
+  /// una pieza que imprime en 45 min sin escribir "0" en horas. El form ya
+  /// valida via [isValid] que al menos uno sea > 0, asi que aqui el
+  /// resultado sera > 0 cuando [isValid] es true.
   Decimal? get totalHoursDecimal {
-    final h = parseDecimal(printHours);
-    final m = parseDecimal(printMinutes);
-    if (h == null) return null;
-    if (m == null || m <= Decimal.zero) return h;
+    final h = parseDecimal(printHours) ?? Decimal.zero;
+    final m = parseDecimal(printMinutes) ?? Decimal.zero;
+    if (h <= Decimal.zero && m <= Decimal.zero) return null;
+    if (m <= Decimal.zero) return h;
+    if (h <= Decimal.zero) return (m / Decimal.fromInt(60)).toDecimal();
     return h + (m / Decimal.fromInt(60)).toDecimal();
   }
 

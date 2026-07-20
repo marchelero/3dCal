@@ -32,8 +32,19 @@ class Calculations extends Table {
   /// Snapshot de watts de la impresora al guardar.
   RealColumn get printerWattsSnapshot => real().withDefault(const Constant(0))();
 
-  /// Tiempo total en horas.
+  /// Tiempo total en horas (decimal, ej: 1.55 = 1h 33min).
   RealColumn get totalHours => real()();
+
+  /// Parte de minutos del tiempo de impresion (0-59).
+  ///
+  /// **Por que existe**: el form tiene 2 inputs separados (Horas, Minutos) por
+  /// UX. Persistir solo `totalHours` como decimal perdia el split: al recargar
+  /// con "Reusar", el campo Minutos quedaba vacio. Esta columna preserva la
+  /// entrada original del usuario.
+  ///
+  /// Para registros pre-migracion v4 el valor es 0 (default). El notifier
+  /// deriva los minutos del decimal en ese caso (best-effort).
+  IntColumn get printMinutes => integer().withDefault(const Constant(0))();
 
   /// Descuento aplicado en % (0-50).
   RealColumn get discountPercentage => real()();
