@@ -18,10 +18,10 @@ import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
 import '../../../calculation/domain/monthly_totals.dart';
+import '../providers/dashboard_entitlement_provider.dart';
 import '../widgets/monthly_trend_chart.dart';
 import '../widgets/profit_bar_chart.dart';
 
-/// Pagina `/dashboard` con stats agregadas + bar chart.
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
@@ -30,6 +30,7 @@ class DashboardPage extends ConsumerWidget {
     ref.watch(localeProvider);
     final asyncStats = ref.watch(dashboardStatsProvider);
     final currency = ref.watch(selectedCurrencyProvider);
+    final isPro = ref.watch(dashboardIsProProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(EsBO.dashboardTitle),
@@ -56,7 +57,11 @@ class DashboardPage extends ConsumerWidget {
             return RefreshIndicator(
               onRefresh: () =>
                   ref.refresh(dashboardStatsProvider.future),
-              child: _DashboardBody(stats: stats, currency: currency),
+              child: _DashboardBody(
+                stats: stats,
+                currency: currency,
+                isPro: isPro,
+              ),
             );
           },
         ),
@@ -66,10 +71,15 @@ class DashboardPage extends ConsumerWidget {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody({required this.stats, required this.currency});
+  const _DashboardBody({
+    required this.stats,
+    required this.currency,
+    required this.isPro,
+  });
 
   final DashboardStats stats;
   final WorldCurrency currency;
+  final bool isPro;
 
   @override
   Widget build(BuildContext context) {
@@ -84,139 +94,178 @@ class _DashboardBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Stats row
-          Row(
-            children: [
-              Expanded(
-                child: StatTile(
-                  label: EsBO.dashboardStatQuotations,
-                  value: '${stats.countAll}',
-                  icon: Icons.receipt_long_rounded,
-                  color: color.primary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: StatTile(
-                  label: EsBO.dashboardStatSold,
-                  value: '${stats.countSold}',
-                  icon: Icons.check_circle_rounded,
-                  color: color.tertiary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: StatTile(
-                  label: EsBO.dashboardStatConversion,
-                  value: '${stats.conversionPct.toStringAsFixed(0)}%',
-                  icon: Icons.trending_up_rounded,
-                  color: color.secondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Monetary totals
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                children: [
-                  MoneyRow(
-                    label: EsBO.dashboardTotalQuoted,
-                    value: formatCurrency(stats.totalQuoted, currency),
-                    valueColor: color.onSurface,
+            Row(
+              children: [
+                Expanded(
+                  child: StatTile(
+                    label: EsBO.dashboardStatQuotations,
+                    value: '${stats.countAll}',
+                    icon: Icons.receipt_long_rounded,
+                    color: color.primary,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  MoneyRow(
-                    label: EsBO.dashboardTotalSold,
-                    value: formatCurrency(stats.totalSold, currency),
-                    valueColor: color.tertiary,
-                    isBold: true,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: StatTile(
+                    label: EsBO.dashboardStatSold,
+                    value: '${stats.countSold}',
+                    icon: Icons.check_circle_rounded,
+                    color: color.tertiary,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: StatTile(
+                    label: EsBO.dashboardStatConversion,
+                    value: '${stats.conversionPct.toStringAsFixed(0)}%',
+                    icon: Icons.trending_up_rounded,
+                    color: color.secondary,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.md),
 
-          // Chart section — totals bar
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SectionHeader(
-                    icon: Icons.bar_chart_rounded,
-                    title: EsBO.dashboardChartTitle,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  ProfitBarChart(
-                    totalQuoted: stats.totalQuoted,
-                    totalSold: stats.totalSold,
-                    currency: currency,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Monthly trend chart
-          if (stats.monthlyTotals.length >= 2)
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader(
-                      icon: Icons.trending_up_rounded,
-                      title: 'Tendencia mensual',
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    SizedBox(
-                      height: 30,
-                      child: Row(
-                        children: [
-                          _LegendDot(color: color.primary, label: EsBO.dashboardChartQuoted),
-                          const SizedBox(width: AppSpacing.lg),
-                          _LegendDot(
-                              color: color.tertiary, label: EsBO.dashboardChartSold),
-                        ],
-                      ),
+                    MoneyRow(
+                      label: EsBO.dashboardTotalQuoted,
+                      value: formatCurrency(stats.totalQuoted, currency),
+                      valueColor: color.onSurface,
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    MonthlyTrendChart(data: stats.monthlyTotals),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Top materials
-          if (stats.topMaterials.isNotEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      icon: Icons.inventory_2_rounded,
-                      title: 'Materiales mas usados',
+                    MoneyRow(
+                      label: EsBO.dashboardTotalSold,
+                      value: formatCurrency(stats.totalSold, currency),
+                      valueColor: color.tertiary,
+                      isBold: true,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    ...stats.topMaterials.map((m) => _MaterialRow(m: m)),
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: AppSpacing.xl),
 
-          const SizedBox(height: AppSpacing.xxl),
-        ],
+            if (isPro) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        icon: Icons.bar_chart_rounded,
+                        title: EsBO.dashboardChartTitle,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      ProfitBarChart(
+                        totalQuoted: stats.totalQuoted,
+                        totalSold: stats.totalSold,
+                        currency: currency,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              if (stats.monthlyTotals.length >= 2)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SectionHeader(
+                          icon: Icons.trending_up_rounded,
+                          title: 'Tendencia mensual',
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(
+                          height: 30,
+                          child: Row(
+                            children: [
+                              _LegendDot(color: color.primary, label: EsBO.dashboardChartQuoted),
+                              const SizedBox(width: AppSpacing.lg),
+                              _LegendDot(
+                                  color: color.tertiary, label: EsBO.dashboardChartSold),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        MonthlyTrendChart(data: stats.monthlyTotals),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+
+              if (stats.topMaterials.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SectionHeader(
+                          icon: Icons.inventory_2_rounded,
+                          title: 'Materiales mas usados',
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        ...stats.topMaterials.map((m) => _MaterialRow(m: m)),
+                      ],
+                    ),
+                  ),
+                ),
+            ] else
+              const _ProAnalyticsTeaser(),
+
+            const SizedBox(height: AppSpacing.xxl),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProAnalyticsTeaser extends StatelessWidget {
+  const _ProAnalyticsTeaser();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              icon: Icons.workspace_premium_rounded,
+              title: EsBO.dashboardProTeaserTitle,
+              accentColor: color.tertiary,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              EsBO.dashboardProTeaserBody,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: () => context.push('/paywall'),
+                icon: const Icon(Icons.arrow_forward_rounded),
+                label: Text(EsBO.dashboardGoProAction),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -284,9 +333,3 @@ class _MaterialRow extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-

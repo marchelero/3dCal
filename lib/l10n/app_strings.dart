@@ -71,6 +71,28 @@ abstract class AppStrings {
   String get settingsCompanyLogoRemove;
   String get settingsCompanyLogoError;
 
+  // === Branding gate (T12 — ver docs/plans/2026-07-22_1100-free-pro-monetization) ===
+  /// Body del SnackBar que se muestra cuando un usuario Free intenta
+  /// editar el nombre o logo de empresa. Acompana al [settingsGoProAction].
+  String get settingsBrandingLockedBody;
+
+  /// Label del action del SnackBar del gate de branding. Al tap, navega
+  /// a `/paywall`.
+  String get settingsGoProAction;
+
+  /// Texto del badge "Pro" que aparece en la seccion Empresa para usuarios
+  /// Free. Senal visual de que esa seccion esta gateada.
+  String get settingsProBadge;
+
+  /// Label del boton "Restaurar compras" en settings.
+  String get settingsRestorePurchases;
+
+  /// Mensaje de exito tras un restore que encontro compras previas.
+  String get settingsRestoreSuccess;
+
+  /// Mensaje tras un restore que no encontro compras previas o dio error.
+  String get settingsRestoreEmpty;
+
   // === Dashboard ===
   String get dashboardTitle;
   String get dashboardErrorLoad;
@@ -84,6 +106,10 @@ abstract class AppStrings {
   String get dashboardChartTitle;
   String get dashboardChartQuoted;
   String get dashboardChartSold;
+  // T17
+  String get dashboardProTeaserTitle;
+  String get dashboardProTeaserBody;
+  String get dashboardGoProAction;
 
   // === Home / Quick actions ===
   String get homeActionNewCalc;
@@ -249,6 +275,16 @@ abstract class AppStrings {
   String get historyErrorLoad;
   String get historyEmpty;
 
+  // === CSV export gate (T16 — ver docs/plans/2026-07-22_1100-free-pro-monetization) ===
+  /// Body del SnackBar que se muestra cuando un usuario Free intenta
+  /// exportar a CSV. Acompana al [csvGoProAction] en el action del SnackBar.
+  String get csvExportLockedBody;
+
+  /// Label del action del SnackBar del gate CSV. Al tap, navega a
+  /// `/paywall` (no es required: las Apple/Google guidelines piden restore
+  /// visible, no necesariamente un upsell — pero ayuda a la conversion).
+  String get csvGoProAction;
+
   // === Locale ===
   String get localeLabel;
   String get localeEs;
@@ -272,4 +308,44 @@ abstract class AppStrings {
   String get configLanguage;
   String get configCurrency;
   String get configContinue;
+
+  // === Feature gates (T14 — multi-material calculator gate) ===
+  /// Body del SnackBar que se muestra cuando un Free user intenta
+  /// cambiar a CalculatorMode.advanced.
+  String get calculatorAdvancedLockedBody;
+  /// Label de la accion del SnackBar — al tap, navega a /paywall.
+  String get calculatorGoProAction;
+
+  // === History cap gate (T15) ===
+  /// Body del SnackBar cuando un Free user intenta guardar la cotizacion
+  /// #11 (kFreeHistoryCap + 1). Accion navega a /paywall.
+  String get historyCapReachedBody;
+
+  // === Paywall (T10) ===
+  /// Titulo del paywall. Hero del modal.
+  String get paywallTitle;
+  /// Subtitulo del paywall. Aparece debajo del titulo.
+  String get paywallSubtitle;
+  /// Precio displayed (ej: "\$4.99"). String estatico, no formateado por locale.
+  String get paywallPrice;
+  /// Lista de features Pro que muestra el paywall.
+  List<String> get paywallFeatures;
+  /// Label del CTA principal. [price] ya viene formateado.
+  String paywallUnlockButton(String price);
+  /// Label del CTA secundario. Abre el flow de restore.
+  String get paywallRestoreButton;
+  /// Mensaje de error generico si la compra falla.
+  String get paywallErrorGeneric;
+  /// Mensaje que ve un user Pro cuando abre el paywall.
+  String get paywallAlreadyPro;
+  /// Tooltip del icono de cerrar (AppBar action).
+  String get paywallClose;
+
+  // === Store compliance links (T22) ===
+  /// Label del link a Privacy Policy en paywall y settings.
+  String get paywallPrivacyPolicy;
+  /// Label del link a Terms of Service en paywall y settings.
+  String get paywallTermsOfService;
+  /// Titulo de la seccion legal en settings page.
+  String get settingsLegal;
 }

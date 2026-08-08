@@ -3450,6 +3450,548 @@ class SettingsTableCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $EntitlementsTable extends Entitlements
+    with TableInfo<$EntitlementsTable, Entitlement> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EntitlementsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _purchasedAtMeta = const VerificationMeta(
+    'purchasedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> purchasedAt = GeneratedColumn<DateTime>(
+    'purchased_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _validatedAtMeta = const VerificationMeta(
+    'validatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> validatedAt = GeneratedColumn<DateTime>(
+    'validated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _receiptDataMeta = const VerificationMeta(
+    'receiptData',
+  );
+  @override
+  late final GeneratedColumn<String> receiptData = GeneratedColumn<String>(
+    'receipt_data',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    source,
+    productId,
+    purchasedAt,
+    validatedAt,
+    expiresAt,
+    receiptData,
+    isActive,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'entitlements';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Entitlement> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('purchased_at')) {
+      context.handle(
+        _purchasedAtMeta,
+        purchasedAt.isAcceptableOrUnknown(
+          data['purchased_at']!,
+          _purchasedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_purchasedAtMeta);
+    }
+    if (data.containsKey('validated_at')) {
+      context.handle(
+        _validatedAtMeta,
+        validatedAt.isAcceptableOrUnknown(
+          data['validated_at']!,
+          _validatedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    }
+    if (data.containsKey('receipt_data')) {
+      context.handle(
+        _receiptDataMeta,
+        receiptData.isAcceptableOrUnknown(
+          data['receipt_data']!,
+          _receiptDataMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Entitlement map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Entitlement(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      )!,
+      purchasedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}purchased_at'],
+      )!,
+      validatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}validated_at'],
+      ),
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      ),
+      receiptData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}receipt_data'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+    );
+  }
+
+  @override
+  $EntitlementsTable createAlias(String alias) {
+    return $EntitlementsTable(attachedDatabase, alias);
+  }
+}
+
+class Entitlement extends DataClass implements Insertable<Entitlement> {
+  /// PK auto-increment. Identificador interno de la fila.
+  final int id;
+
+  /// Origen de la compra. Valores esperados: 'play_store' (hoy),
+  /// 'appstore' o 'license_key' (futuro). CHECK constraint en
+  /// repository si hace falta (T3).
+  final String source;
+
+  /// Producto comprado. Ej: 'tresdcal_pro_lifetime'.
+  final String productId;
+
+  /// Fecha de la compra (UTC). Sale del receipt, no del cliente.
+  final DateTime purchasedAt;
+
+  /// Ultima vez que RevenueCat valido el receipt (UTC). Nullable si
+  /// nunca se valido (ej: compra offline). Se actualiza en revalidates.
+  final DateTime? validatedAt;
+
+  /// Fecha de expiracion (UTC). **NULL = lifetime (one-time unlock)**.
+  /// El modelo soporta suscripciones futuras cambiando este campo, sin
+  /// tocar la tabla.
+  final DateTime? expiresAt;
+
+  /// Receipt original en base64 o JSON. Nullable. Sirve para auditoria
+  /// offline y revalidacion. Tamano puede ser grande (KBs).
+  final String? receiptData;
+
+  /// Si la fila representa el entitlement activo. Default `true` para
+  /// que la primera fila insertada sea la activa sin tocar el repository.
+  /// Solo 1 fila activa a la vez (enforcement en repository).
+  final bool isActive;
+  const Entitlement({
+    required this.id,
+    required this.source,
+    required this.productId,
+    required this.purchasedAt,
+    this.validatedAt,
+    this.expiresAt,
+    this.receiptData,
+    required this.isActive,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['source'] = Variable<String>(source);
+    map['product_id'] = Variable<String>(productId);
+    map['purchased_at'] = Variable<DateTime>(purchasedAt);
+    if (!nullToAbsent || validatedAt != null) {
+      map['validated_at'] = Variable<DateTime>(validatedAt);
+    }
+    if (!nullToAbsent || expiresAt != null) {
+      map['expires_at'] = Variable<DateTime>(expiresAt);
+    }
+    if (!nullToAbsent || receiptData != null) {
+      map['receipt_data'] = Variable<String>(receiptData);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    return map;
+  }
+
+  EntitlementsCompanion toCompanion(bool nullToAbsent) {
+    return EntitlementsCompanion(
+      id: Value(id),
+      source: Value(source),
+      productId: Value(productId),
+      purchasedAt: Value(purchasedAt),
+      validatedAt: validatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(validatedAt),
+      expiresAt: expiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAt),
+      receiptData: receiptData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(receiptData),
+      isActive: Value(isActive),
+    );
+  }
+
+  factory Entitlement.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Entitlement(
+      id: serializer.fromJson<int>(json['id']),
+      source: serializer.fromJson<String>(json['source']),
+      productId: serializer.fromJson<String>(json['productId']),
+      purchasedAt: serializer.fromJson<DateTime>(json['purchasedAt']),
+      validatedAt: serializer.fromJson<DateTime?>(json['validatedAt']),
+      expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
+      receiptData: serializer.fromJson<String?>(json['receiptData']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'source': serializer.toJson<String>(source),
+      'productId': serializer.toJson<String>(productId),
+      'purchasedAt': serializer.toJson<DateTime>(purchasedAt),
+      'validatedAt': serializer.toJson<DateTime?>(validatedAt),
+      'expiresAt': serializer.toJson<DateTime?>(expiresAt),
+      'receiptData': serializer.toJson<String?>(receiptData),
+      'isActive': serializer.toJson<bool>(isActive),
+    };
+  }
+
+  Entitlement copyWith({
+    int? id,
+    String? source,
+    String? productId,
+    DateTime? purchasedAt,
+    Value<DateTime?> validatedAt = const Value.absent(),
+    Value<DateTime?> expiresAt = const Value.absent(),
+    Value<String?> receiptData = const Value.absent(),
+    bool? isActive,
+  }) => Entitlement(
+    id: id ?? this.id,
+    source: source ?? this.source,
+    productId: productId ?? this.productId,
+    purchasedAt: purchasedAt ?? this.purchasedAt,
+    validatedAt: validatedAt.present ? validatedAt.value : this.validatedAt,
+    expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
+    receiptData: receiptData.present ? receiptData.value : this.receiptData,
+    isActive: isActive ?? this.isActive,
+  );
+  Entitlement copyWithCompanion(EntitlementsCompanion data) {
+    return Entitlement(
+      id: data.id.present ? data.id.value : this.id,
+      source: data.source.present ? data.source.value : this.source,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      purchasedAt: data.purchasedAt.present
+          ? data.purchasedAt.value
+          : this.purchasedAt,
+      validatedAt: data.validatedAt.present
+          ? data.validatedAt.value
+          : this.validatedAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      receiptData: data.receiptData.present
+          ? data.receiptData.value
+          : this.receiptData,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Entitlement(')
+          ..write('id: $id, ')
+          ..write('source: $source, ')
+          ..write('productId: $productId, ')
+          ..write('purchasedAt: $purchasedAt, ')
+          ..write('validatedAt: $validatedAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('receiptData: $receiptData, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    source,
+    productId,
+    purchasedAt,
+    validatedAt,
+    expiresAt,
+    receiptData,
+    isActive,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Entitlement &&
+          other.id == this.id &&
+          other.source == this.source &&
+          other.productId == this.productId &&
+          other.purchasedAt == this.purchasedAt &&
+          other.validatedAt == this.validatedAt &&
+          other.expiresAt == this.expiresAt &&
+          other.receiptData == this.receiptData &&
+          other.isActive == this.isActive);
+}
+
+class EntitlementsCompanion extends UpdateCompanion<Entitlement> {
+  final Value<int> id;
+  final Value<String> source;
+  final Value<String> productId;
+  final Value<DateTime> purchasedAt;
+  final Value<DateTime?> validatedAt;
+  final Value<DateTime?> expiresAt;
+  final Value<String?> receiptData;
+  final Value<bool> isActive;
+  const EntitlementsCompanion({
+    this.id = const Value.absent(),
+    this.source = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.purchasedAt = const Value.absent(),
+    this.validatedAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.receiptData = const Value.absent(),
+    this.isActive = const Value.absent(),
+  });
+  EntitlementsCompanion.insert({
+    this.id = const Value.absent(),
+    required String source,
+    required String productId,
+    required DateTime purchasedAt,
+    this.validatedAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.receiptData = const Value.absent(),
+    this.isActive = const Value.absent(),
+  }) : source = Value(source),
+       productId = Value(productId),
+       purchasedAt = Value(purchasedAt);
+  static Insertable<Entitlement> custom({
+    Expression<int>? id,
+    Expression<String>? source,
+    Expression<String>? productId,
+    Expression<DateTime>? purchasedAt,
+    Expression<DateTime>? validatedAt,
+    Expression<DateTime>? expiresAt,
+    Expression<String>? receiptData,
+    Expression<bool>? isActive,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (source != null) 'source': source,
+      if (productId != null) 'product_id': productId,
+      if (purchasedAt != null) 'purchased_at': purchasedAt,
+      if (validatedAt != null) 'validated_at': validatedAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (receiptData != null) 'receipt_data': receiptData,
+      if (isActive != null) 'is_active': isActive,
+    });
+  }
+
+  EntitlementsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? source,
+    Value<String>? productId,
+    Value<DateTime>? purchasedAt,
+    Value<DateTime?>? validatedAt,
+    Value<DateTime?>? expiresAt,
+    Value<String?>? receiptData,
+    Value<bool>? isActive,
+  }) {
+    return EntitlementsCompanion(
+      id: id ?? this.id,
+      source: source ?? this.source,
+      productId: productId ?? this.productId,
+      purchasedAt: purchasedAt ?? this.purchasedAt,
+      validatedAt: validatedAt ?? this.validatedAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      receiptData: receiptData ?? this.receiptData,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (purchasedAt.present) {
+      map['purchased_at'] = Variable<DateTime>(purchasedAt.value);
+    }
+    if (validatedAt.present) {
+      map['validated_at'] = Variable<DateTime>(validatedAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (receiptData.present) {
+      map['receipt_data'] = Variable<String>(receiptData.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EntitlementsCompanion(')
+          ..write('id: $id, ')
+          ..write('source: $source, ')
+          ..write('productId: $productId, ')
+          ..write('purchasedAt: $purchasedAt, ')
+          ..write('validatedAt: $validatedAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('receiptData: $receiptData, ')
+          ..write('isActive: $isActive')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3459,6 +4001,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CalculationMaterialsTable calculationMaterials =
       $CalculationMaterialsTable(this);
   late final $SettingsTableTable settingsTable = $SettingsTableTable(this);
+  late final $EntitlementsTable entitlements = $EntitlementsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3469,6 +4012,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     calculations,
     calculationMaterials,
     settingsTable,
+    entitlements,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5284,6 +5828,263 @@ typedef $$SettingsTableTableProcessedTableManager =
       Setting,
       PrefetchHooks Function()
     >;
+typedef $$EntitlementsTableCreateCompanionBuilder =
+    EntitlementsCompanion Function({
+      Value<int> id,
+      required String source,
+      required String productId,
+      required DateTime purchasedAt,
+      Value<DateTime?> validatedAt,
+      Value<DateTime?> expiresAt,
+      Value<String?> receiptData,
+      Value<bool> isActive,
+    });
+typedef $$EntitlementsTableUpdateCompanionBuilder =
+    EntitlementsCompanion Function({
+      Value<int> id,
+      Value<String> source,
+      Value<String> productId,
+      Value<DateTime> purchasedAt,
+      Value<DateTime?> validatedAt,
+      Value<DateTime?> expiresAt,
+      Value<String?> receiptData,
+      Value<bool> isActive,
+    });
+
+class $$EntitlementsTableFilterComposer
+    extends Composer<_$AppDatabase, $EntitlementsTable> {
+  $$EntitlementsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get purchasedAt => $composableBuilder(
+    column: $table.purchasedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get validatedAt => $composableBuilder(
+    column: $table.validatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get receiptData => $composableBuilder(
+    column: $table.receiptData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EntitlementsTableOrderingComposer
+    extends Composer<_$AppDatabase, $EntitlementsTable> {
+  $$EntitlementsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get purchasedAt => $composableBuilder(
+    column: $table.purchasedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get validatedAt => $composableBuilder(
+    column: $table.validatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get receiptData => $composableBuilder(
+    column: $table.receiptData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EntitlementsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EntitlementsTable> {
+  $$EntitlementsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get purchasedAt => $composableBuilder(
+    column: $table.purchasedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get validatedAt => $composableBuilder(
+    column: $table.validatedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<String> get receiptData => $composableBuilder(
+    column: $table.receiptData,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+}
+
+class $$EntitlementsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EntitlementsTable,
+          Entitlement,
+          $$EntitlementsTableFilterComposer,
+          $$EntitlementsTableOrderingComposer,
+          $$EntitlementsTableAnnotationComposer,
+          $$EntitlementsTableCreateCompanionBuilder,
+          $$EntitlementsTableUpdateCompanionBuilder,
+          (
+            Entitlement,
+            BaseReferences<_$AppDatabase, $EntitlementsTable, Entitlement>,
+          ),
+          Entitlement,
+          PrefetchHooks Function()
+        > {
+  $$EntitlementsTableTableManager(_$AppDatabase db, $EntitlementsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EntitlementsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EntitlementsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EntitlementsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String> productId = const Value.absent(),
+                Value<DateTime> purchasedAt = const Value.absent(),
+                Value<DateTime?> validatedAt = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<String?> receiptData = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+              }) => EntitlementsCompanion(
+                id: id,
+                source: source,
+                productId: productId,
+                purchasedAt: purchasedAt,
+                validatedAt: validatedAt,
+                expiresAt: expiresAt,
+                receiptData: receiptData,
+                isActive: isActive,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String source,
+                required String productId,
+                required DateTime purchasedAt,
+                Value<DateTime?> validatedAt = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<String?> receiptData = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+              }) => EntitlementsCompanion.insert(
+                id: id,
+                source: source,
+                productId: productId,
+                purchasedAt: purchasedAt,
+                validatedAt: validatedAt,
+                expiresAt: expiresAt,
+                receiptData: receiptData,
+                isActive: isActive,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EntitlementsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EntitlementsTable,
+      Entitlement,
+      $$EntitlementsTableFilterComposer,
+      $$EntitlementsTableOrderingComposer,
+      $$EntitlementsTableAnnotationComposer,
+      $$EntitlementsTableCreateCompanionBuilder,
+      $$EntitlementsTableUpdateCompanionBuilder,
+      (
+        Entitlement,
+        BaseReferences<_$AppDatabase, $EntitlementsTable, Entitlement>,
+      ),
+      Entitlement,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5298,4 +6099,6 @@ class $AppDatabaseManager {
       $$CalculationMaterialsTableTableManager(_db, _db.calculationMaterials);
   $$SettingsTableTableTableManager get settingsTable =>
       $$SettingsTableTableTableManager(_db, _db.settingsTable);
+  $$EntitlementsTableTableManager get entitlements =>
+      $$EntitlementsTableTableManager(_db, _db.entitlements);
 }

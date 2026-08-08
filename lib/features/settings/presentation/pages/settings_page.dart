@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -20,6 +22,8 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../entitlement/data/payment_service.dart';
+import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
 
@@ -167,6 +171,15 @@ class _SettingsBody extends ConsumerWidget {
                   title: EsBO.settingsCompany,
                   accentColor: color.tertiary,
                   children: [
+                    // T12 gate: badge "Pro" visible cuando isPro=false.
+                    if (!ref.watch(isProProvider))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _ProBadge(
+                          label: EsBO.settingsProBadge,
+                          accentColor: color.tertiary,
+                        ),
+                      ),
                     _CompanyNameField(
                       initialValue: settings.companyName,
                       onSave: (value) {
@@ -223,6 +236,17 @@ class _SettingsBody extends ConsumerWidget {
                         onTap: () => context.push('/settings/printers'),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // ── Restaurar compras (T11) ──
+                _SettingsSection(
+                  icon: Icons.restore_rounded,
+                  title: 'RESTAURAR COMPRAS',
+                  accentColor: color.primary,
+                  children: [
+                    _RestoreButton(),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -289,6 +313,43 @@ class _SettingsBody extends ConsumerWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // ── Legal (T22) ──
+                _SettingsSection(
+                  icon: Icons.gavel_rounded,
+                  title: EsBO.settingsLegal.toUpperCase(),
+                  accentColor: color.tertiary,
+                  children: [
+                    GestureDetector(
+                      onTap: () => launchUrl(
+                        Uri.parse(kPrivacyPolicyUrl),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      child: Text(
+                        EsBO.paywallPrivacyPolicy,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    GestureDetector(
+                      onTap: () => launchUrl(
+                        Uri.parse(kTermsOfServiceUrl),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      child: Text(
+                        EsBO.paywallTermsOfService,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -624,7 +685,12 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
 // ──────────────────────────────────────────────
 
 /// TextField para el nombre de la empresa con auto-save on blur.
-class _CompanyNameField extends StatefulWidget {
+///
+/// **T12 gate**: si `isPro=false`, el field es `readOnly` y al tap
+/// dispara un SnackBar con [EsBO.settingsBrandingLockedBody] +
+/// accion [EsBO.settingsGoProAction] que navega a `/paywall`. El valor
+/// visible sigue siendo el persistido (no se borra al upgradear a Pro).
+class _CompanyNameField extends ConsumerStatefulWidget {
   const _CompanyNameField({
     required this.initialValue,
     required this.onSave,
@@ -634,10 +700,10 @@ class _CompanyNameField extends StatefulWidget {
   final ValueChanged<String> onSave;
 
   @override
-  State<_CompanyNameField> createState() => _CompanyNameFieldState();
+  ConsumerState<_CompanyNameField> createState() => _CompanyNameFieldState();
 }
 
-class _CompanyNameFieldState extends State<_CompanyNameField> {
+class _CompanyNameFieldState extends ConsumerState<_CompanyNameField> {
   late final TextEditingController _ctrl;
 
   @override
@@ -666,9 +732,26 @@ class _CompanyNameFieldState extends State<_CompanyNameField> {
     widget.onSave(trimmed);
   }
 
+  /// SnackBar del gate. Llamado en el `onTap` cuando isPro=false.
+  void _showLockedSnack() {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(EsBO.settingsBrandingLockedBody),
+          action: SnackBarAction(
+            label: EsBO.settingsGoProAction,
+            onPressed: () => GoRouter.of(context).push('/paywall'),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isPro = ref.watch(isProProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -681,6 +764,7 @@ class _CompanyNameFieldState extends State<_CompanyNameField> {
         const SizedBox(height: AppSpacing.sm),
         TextField(
           controller: _ctrl,
+          readOnly: !isPro,
           decoration: InputDecoration(
             helperText: EsBO.settingsCompanyNameHelper,
             helperMaxLines: 2,
@@ -690,10 +774,13 @@ class _CompanyNameFieldState extends State<_CompanyNameField> {
               vertical: AppSpacing.md,
             ),
           ),
-          onTapOutside: (_) {
-            final value = _ctrl.text;
-            if (value.trim().isNotEmpty) _handleBlur(value);
-          },
+          onTap: isPro ? null : _showLockedSnack,
+          onTapOutside: isPro
+              ? (_) {
+                  final value = _ctrl.text;
+                  if (value.trim().isNotEmpty) _handleBlur(value);
+                }
+              : null,
         ),
       ],
     );
@@ -701,6 +788,12 @@ class _CompanyNameFieldState extends State<_CompanyNameField> {
 }
 
 /// Logo picker: muestra logo actual + botones pick/remove.
+///
+/// **T12 gate**: si `isPro=false`, los botones de pick/remove disparan
+/// un SnackBar con [EsBO.settingsBrandingLockedBody] + accion
+/// [EsBO.settingsGoProAction] que navega a `/paywall`. El usuario
+/// puede ver el logo (si lo tiene de un periodo Pro previo) pero no
+/// modificarlo.
 class _LogoPicker extends ConsumerWidget {
   const _LogoPicker({required this.currentLogoBase64});
 
@@ -739,10 +832,28 @@ class _LogoPicker extends ConsumerWidget {
       ..showSnackBar(AppSnackBar.success(EsBO.settingsSaved));
   }
 
+  /// SnackBar del gate. Llamado en los botones de pick/remove cuando
+  /// isPro=false.
+  void _showLockedSnack(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(EsBO.settingsBrandingLockedBody),
+          action: SnackBarAction(
+            label: EsBO.settingsGoProAction,
+            onPressed: () => GoRouter.of(context).push('/paywall'),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final isPro = ref.watch(isProProvider);
     final hasLogo = currentLogoBase64 != null &&
         currentLogoBase64!.isNotEmpty;
 
@@ -795,7 +906,9 @@ class _LogoPicker extends ConsumerWidget {
                 TextButton.icon(
                   icon: const Icon(Icons.image_rounded, size: 18),
                   label: Text(EsBO.settingsCompanyLogoPick),
-                  onPressed: () => _pickLogo(context, ref),
+                  onPressed: isPro
+                      ? () => _pickLogo(context, ref)
+                      : () => _showLockedSnack(context),
                 ),
                 if (hasLogo)
                   TextButton.icon(
@@ -805,7 +918,9 @@ class _LogoPicker extends ConsumerWidget {
                       EsBO.settingsCompanyLogoRemove,
                       style: TextStyle(color: color.error),
                     ),
-                    onPressed: () => _removeLogo(context, ref),
+                    onPressed: isPro
+                        ? () => _removeLogo(context, ref)
+                        : () => _showLockedSnack(context),
                   ),
               ],
             ),
@@ -1070,6 +1185,126 @@ class _LocalePicker extends ConsumerWidget {
           showSelectedIcon: false,
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────
+// _ProBadge — badge "Pro" para indicar secciones gateadas (T12)
+// ─────────────────────────────────────────────────
+
+/// Badge compacto "Pro" con icono de candado, usado para senalar
+/// visualmente que una seccion esta gateada para usuarios Free.
+/// Patron consistente con el resto del settings page.
+class _ProBadge extends StatelessWidget {
+  const _ProBadge({required this.label, required this.accentColor});
+
+  final String label;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.lock_rounded, size: 14, color: accentColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: accentColor,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────
+// Restore purchases button (T11)
+// ─────────────────────────────────────────────────
+
+class _RestoreButton extends ConsumerStatefulWidget {
+  const _RestoreButton();
+
+  @override
+  ConsumerState<_RestoreButton> createState() => _RestoreButtonState();
+}
+
+class _RestoreButtonState extends ConsumerState<_RestoreButton> {
+  bool _isRestoring = false;
+
+  Future<void> _handleRestore() async {
+    if (_isRestoring) return;
+    setState(() => _isRestoring = true);
+
+    try {
+      final result =
+          await ref.read(entitlementNotifierProvider.notifier).restore();
+      if (!context.mounted) return;
+      switch (result) {
+        case RestoreActive _:
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(AppSnackBar.success(EsBO.settingsRestoreSuccess));
+        case RestoreEmpty _:
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(AppSnackBar.info(
+              context,
+              EsBO.settingsRestoreEmpty,
+            ));
+        case RestoreError _:
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(AppSnackBar.info(
+              context,
+              EsBO.settingsRestoreEmpty,
+            ));
+      }
+    } finally {
+      if (mounted) setState(() => _isRestoring = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        icon: _isRestoring
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              )
+            : const Icon(Icons.restore_rounded, size: 18),
+        label: Text(
+          EsBO.settingsRestorePurchases,
+        ),
+        onPressed: _isRestoring ? null : _handleRestore,
+      ),
     );
   }
 }

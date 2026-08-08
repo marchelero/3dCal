@@ -22,6 +22,7 @@ import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 
 import '../../../../shared/widgets/skeleton_widget.dart';
+import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../notifiers/calculations_notifier.dart';
 
 /// Historial de cotizaciones guardadas con search + filtros.
@@ -178,6 +179,27 @@ class _CalculationsListPageState
   }
 
   Future<void> _exportCsv(CalculationsNotifier notifier) async {
+    // T16 (plan de monetizacion): CSV export es Pro. En Free, gate con
+    // SnackBar que ofrece "Go Pro" → context.push('/paywall'). En Pro,
+    // se procede con el export normal.
+    final isPro = ref.read(isProProvider);
+    if (!isPro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(EsBO.csvExportLockedBody),
+          action: SnackBarAction(
+            label: EsBO.csvGoProAction,
+            onPressed: () {
+              if (!mounted) return;
+              context.push('/paywall');
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
     final async = ref.read(calculationsNotifierProvider);
     final calcs = async.valueOrNull;
     if (calcs == null || calcs.isEmpty) {

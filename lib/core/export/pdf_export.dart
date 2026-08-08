@@ -17,11 +17,48 @@ import '../../features/calculation/domain/entities/calculation_output.dart';
 import '../../features/calculation/presentation/state/calculator_state.dart';
 import '../money/currency_formatter.dart';
 
+/// Branding forzado para usuarios Free.
+///
+/// El footer "Generado con 3dCalc" sigue diciendo "3dCalc" para Free y Pro
+/// (es atribucion de la app, no branding del user).
+const String kFreeDefaultCompanyName = '3dCalc';
+
 /// Shorthand: formatea un Decimal con simbolo Bs para PDF.
 String _fmt(Decimal v) => formatBob(v);
 
+/// Resuelve el branding efectivo del PDF segun el estado Pro del user.
+///
+/// - **Pro** ([isPro] == true): usa el [companyName] y [companyLogoBase64]
+///   del caller. Si el user no configuro nombre, cae a [kFreeDefaultCompanyName]
+///   (mismo fallback que el resto de la app).
+/// - **Free** ([isPro] == false): IGNORA el companyName del user y fuerza
+///   el nombre generico de la app + sin logo. La razon es que el branding
+///   profesional (logo + nombre de empresa) es un feature Pro (ver plan
+///   T13, gates SC1).
+///
+/// Retorna un record con `name` (no-null, listo para `pw.Text`) y `logo`
+/// (null si no hay logo que renderizar).
+({String name, String? logo}) resolveBranding({
+  required bool isPro,
+  String? companyName,
+  String? companyLogoBase64,
+}) {
+  if (!isPro) {
+    return (name: kFreeDefaultCompanyName, logo: null);
+  }
+  return (
+    name: (companyName == null || companyName.isEmpty)
+        ? kFreeDefaultCompanyName
+        : companyName,
+    logo: (companyLogoBase64 == null || companyLogoBase64.isEmpty)
+        ? null
+        : companyLogoBase64,
+  );
+}
+
 /// Genera un PDF con el resumen de cotizacion y lo comparte via share sheet.
 Future<void> shareQuotePdf({
+  required bool isPro,
   required CalculationOutput output,
   required List<MaterialCostBreakdown> materials,
   required Decimal totalHours,
@@ -29,8 +66,11 @@ Future<void> shareQuotePdf({
   String? companyName,
   String? companyLogoBase64,
   String? pieceName,
+  pw.Font? regularFont,
+  pw.Font? boldFont,
 }) async {
   final pdfBytes = await buildQuotePdfBytes(
+    isPro: isPro,
     output: output,
     materials: materials,
     totalHours: totalHours,
@@ -38,6 +78,8 @@ Future<void> shareQuotePdf({
     companyName: companyName,
     companyLogoBase64: companyLogoBase64,
     pieceName: pieceName,
+    regularFont: regularFont,
+    boldFont: boldFont,
   );
 
   // XFile.fromData sin escribir a disco para compat mobile + web + desktop.
@@ -50,7 +92,13 @@ Future<void> shareQuotePdf({
 /// Genera los bytes del PDF de cotizacion.
 ///
 /// Reutilizable para share, print, preview.
+///
+/// - [isPro] gatea el branding: si false, el PDF usa "3dCalc" + sin logo
+///   (ignora [companyName] y [companyLogoBase64]).
+/// - [regularFont] / [boldFont] son inyectables para tests (evitan
+///   `rootBundle.load`); en runtime se cargan desde `assets/fonts/`.
 Future<Uint8List> buildQuotePdfBytes({
+  required bool isPro,
   required CalculationOutput output,
   required List<MaterialCostBreakdown> materials,
   required Decimal totalHours,
@@ -58,11 +106,19 @@ Future<Uint8List> buildQuotePdfBytes({
   String? companyName,
   String? companyLogoBase64,
   String? pieceName,
+  pw.Font? regularFont,
+  pw.Font? boldFont,
 }) async {
-  final regular = pw.Font.ttf(
+  final branding = resolveBranding(
+    isPro: isPro,
+    companyName: companyName,
+    companyLogoBase64: companyLogoBase64,
+  );
+
+  final regular = regularFont ?? pw.Font.ttf(
     await rootBundle.load('assets/fonts/Roboto-Regular.ttf'),
   );
-  final bold = pw.Font.ttf(
+  final bold = boldFont ?? pw.Font.ttf(
     await rootBundle.load('assets/fonts/Roboto-Bold.ttf'),
   );
   final doc = pw.Document(
@@ -84,20 +140,20 @@ Future<Uint8List> buildQuotePdfBytes({
             pw.Row(
               crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
-                if (companyLogoBase64 != null && companyLogoBase64.isNotEmpty)
+                if (branding.logo != null)
                   pw.Container(
                     width: 40,
                     height: 40,
                     margin: const pw.EdgeInsets.only(right: 12),
                     child: pw.Image(
-                      pw.MemoryImage(base64Decode(companyLogoBase64)),
+                      pw.MemoryImage(base64Decode(branding.logo!)),
                       fit: pw.BoxFit.contain,
                     ),
                   ),
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(companyName ?? '3dCalc',
+                    pw.Text(branding.name,
                         style: pw.TextStyle(
                             fontSize: 22,
                             fontWeight: pw.FontWeight.bold,

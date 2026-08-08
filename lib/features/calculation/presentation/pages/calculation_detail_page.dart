@@ -7,14 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/export/pdf_export.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/providers.dart';
-import 'package:printing/printing.dart';
-
-import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -23,6 +22,7 @@ import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/settings.dart';
 import '../../../settings/presentation/notifiers/settings_notifier.dart';
 import '../../domain/entities/calculation_output.dart';
@@ -150,6 +150,7 @@ class _DetailState extends ConsumerState<_Detail> {
       final result = _recomputeOutput(calc, materials, settings, printer);
       if (result == null) return;
       await shareQuotePdf(
+        isPro: ref.read(isProProvider),
         output: result.output,
         materials: result.breakdown,
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
@@ -181,6 +182,7 @@ class _DetailState extends ConsumerState<_Detail> {
       final result = _recomputeOutput(calc, materials, settings, printer);
       if (result == null) return;
       final pdfBytes = await buildQuotePdfBytes(
+        isPro: ref.read(isProProvider),
         output: result.output,
         materials: result.breakdown,
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),

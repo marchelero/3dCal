@@ -97,3 +97,41 @@ class SettingsKeys {
   /// Onboarding completado (bool). False = mostrar onboarding al inicio.
   static const String onboardingDone = 'onboarding_done';
 }
+
+// === Pro tier / monetization (see docs/prds/2026-07-22_0943-free-pro-monetization.prd.md) ===
+
+/// Clave SharedPreferences: usuario es Pro (bool).
+const String kIsProKey = 'is_pro';
+
+/// Clave SharedPreferences: origen del entitlement (string).
+/// Valores: 'lifetime_purchase' | 'web_force' | 'none'.
+const String kEntitlementSourceKey = 'entitlement_source';
+
+/// Valor de [kEntitlementSourceKey] para compras one-time via Google Play
+/// (unico path soportado en Android, sin iOS ni web). Single source of
+/// truth para que no haya typos al persistir/leer.
+const String kSourceLifetimePurchase = 'lifetime_purchase';
+
+/// Clave SharedPreferences: timestamp ISO 8601 de la ultima validacion
+/// de entitlement contra la store (string). Null si nunca se valido.
+const String kEntitlementValidatedAtKey = 'entitlement_validated_at';
+
+/// Cap de cotizaciones en historial para usuarios free.
+/// Pro = ilimitado. Al guardar la cotizacion #11 en free, dispara upsell.
+const int kFreeHistoryCap = 10;
+
+/// Product ID del IAP one-time unlock (Google Play Billing).
+/// Configurar el mismo ID en RevenueCat + Google Play Console.
+const String kProProductId = 'tresdcal_pro_lifetime';
+
+/// Precio displayed del unlock one-time (USD).
+/// Solo referencial para UI; el precio real lo define la store.
+const double kProPriceUsd = 4.99;
+
+/// URL de Privacy Policy. Requerido por Play Store para apps con IAP.
+/// Reemplazar con la URL real antes de publicar.
+const String kPrivacyPolicyUrl = 'https://u3dcal.bo/privacy';
+
+/// URL de Terms of Service. Requerido por Play Store para apps con IAP.
+/// Reemplazar con la URL real antes de publicar.
+const String kTermsOfServiceUrl = 'https://u3dcal.bo/terms';

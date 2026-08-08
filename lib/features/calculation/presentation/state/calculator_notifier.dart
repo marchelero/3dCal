@@ -3,17 +3,49 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart' as storage;
 import '../../../../features/settings/domain/settings.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
+import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../data/calculation_repository.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_input.dart';
 import '../../domain/entities/material_input.dart';
 import '../notifiers/calculations_notifier.dart';
 import 'calculator_state.dart';
+
+/// Thrown por [CalculatorNotifier.save] cuando un usuario free intenta
+/// guardar la cotizacion #N+1 (N = [kFreeHistoryCap]).
+///
+/// El cap es el gate de T15 (plan de monetizacion): free users pueden
+/// guardar hasta [kFreeHistoryCap] cotizaciones, despues de eso el save
+/// se bloquea con esta excepcion. La UI la distingue de errores
+/// genericos para mostrar un SnackBar con CTA "Go Pro" → /paywall.
+///
+/// **Por que typed exception en vez de sealed result**: la firma
+/// `Future<int?>` de `save()` se mantiene backwards-compat (null = form
+/// invalido, int = id). Throwing es no-breaking y permite al caller
+/// tipar el catch y dar UX especifica.
+class HistoryCapReachedException implements Exception {
+  const HistoryCapReachedException({
+    required this.cap,
+    required this.currentCount,
+  });
+
+  /// Limite aplicable al user free (kFreeHistoryCap).
+  final int cap;
+
+  /// Conteo de cotizaciones existentes al momento de intentar el save.
+  final int currentCount;
+
+  @override
+  String toString() =>
+      'HistoryCapReachedException: $currentCount/$cap cotizaciones. '
+      'Upgrade a Pro para historial ilimitado.';
+}
 
 /// Notifier reactivo para el formulario de cotizacion.
 ///
@@ -270,8 +302,25 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   }
 
   /// Guarda la cotizacion actual en la DB.
+  ///
+  /// **Cap gate (T15)**: si el user no es Pro y la DB ya tiene
+  /// [kFreeHistoryCap] cotizaciones, lanza [HistoryCapReachedException]
+  /// y NO inserta nada. Los items existentes quedan intactos.
+  /// Pro users: sin cap.
   Future<int?> save({String? pieceName, String? clientName}) async {
     if (!state.isValid || state.output == null) return null;
+    final repo = ref.read(calculationRepositoryProvider);
+    // T15: cap check ANTES de delegar al repo. Solo aplica a free.
+    // Pro user (isPro=true): skip el check, save sin limite.
+    if (!ref.read(isProProvider)) {
+      final currentCount = await repo.countAll();
+      if (currentCount >= kFreeHistoryCap) {
+        throw HistoryCapReachedException(
+          cap: kFreeHistoryCap,
+          currentCount: currentCount,
+        );
+      }
+    }
     final input = _buildInput(state);
     final draft = CalculationDraft(
       materials: input.materials,
@@ -289,7 +338,6 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           ? null
           : clientName.trim(),
     );
-    final repo = ref.read(calculationRepositoryProvider);
     final id = await repo.create(draft);
     ref.invalidate(calculationsNotifierProvider);
     return id;

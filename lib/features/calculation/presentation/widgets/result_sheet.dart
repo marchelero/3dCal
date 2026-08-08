@@ -5,20 +5,21 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/export/pdf_export.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
-import '../../../../core/export/pdf_export.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../features/entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
-import 'quote_image_template.dart';
 import 'calc_meta.dart';
+import 'quote_image_template.dart';
 
 /// Sticky bar que aparece en la parte inferior de CalculatorPage.
 ///
@@ -215,8 +216,10 @@ Future<void> showResultSheet({
         final asyncSettings = ref.watch(settingsNotifierProvider);
         final settings = asyncSettings.valueOrNull;
         final currency = ref.watch(selectedCurrencyProvider);
+        final isPro = ref.watch(isProProvider);
         return ResultSheetContent(
           state: liveState,
+          isPro: isPro,
           companyName: settings?.companyName,
           companyLogoBase64: settings?.companyLogoBase64,
           currency: currency,
@@ -239,6 +242,7 @@ Future<void> showResultSheet({
 class ResultSheetContent extends StatefulWidget {
   const ResultSheetContent({
     required this.state,
+    required this.isPro,
     this.companyName,
     this.companyLogoBase64,
     required this.currency,
@@ -249,6 +253,7 @@ class ResultSheetContent extends StatefulWidget {
   });
 
   final CalculatorState state;
+  final bool isPro;
   final String? companyName;
   final String? companyLogoBase64;
   final WorldCurrency currency;
@@ -274,6 +279,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     setState(() => _isBusy = true);
     try {
       await shareQuotePdf(
+        isPro: widget.isPro,
         output: output,
         materials: state.detailMaterialBreakdown,
         totalHours: state.totalHoursDecimal ?? Decimal.zero,

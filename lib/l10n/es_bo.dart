@@ -96,6 +96,19 @@ class EsBO {
   static String get settingsCompanyLogoError =>
       _impl.settingsCompanyLogoError;
 
+  // === Branding gate (T12) ===
+  static String get settingsBrandingLockedBody =>
+      _impl.settingsBrandingLockedBody;
+  static String get settingsGoProAction => _impl.settingsGoProAction;
+  static String get settingsProBadge => _impl.settingsProBadge;
+
+  static String get settingsRestorePurchases =>
+      _impl.settingsRestorePurchases;
+  static String get settingsRestoreSuccess =>
+      _impl.settingsRestoreSuccess;
+  static String get settingsRestoreEmpty =>
+      _impl.settingsRestoreEmpty;
+
   // === Dashboard ===
   static String get dashboardTitle => _impl.dashboardTitle;
   static String get dashboardErrorLoad => _impl.dashboardErrorLoad;
@@ -109,6 +122,10 @@ class EsBO {
   static String get dashboardChartTitle => _impl.dashboardChartTitle;
   static String get dashboardChartQuoted => _impl.dashboardChartQuoted;
   static String get dashboardChartSold => _impl.dashboardChartSold;
+  // T17
+  static String get dashboardProTeaserTitle => _impl.dashboardProTeaserTitle;
+  static String get dashboardProTeaserBody => _impl.dashboardProTeaserBody;
+  static String get dashboardGoProAction => _impl.dashboardGoProAction;
 
   // === Home ===
   static String get homeActionNewCalc => _impl.homeActionNewCalc;
@@ -277,6 +294,10 @@ class EsBO {
   static String get historyErrorLoad => _impl.historyErrorLoad;
   static String get historyEmpty => _impl.historyEmpty;
 
+  // === CSV export gate (T16) ===
+  static String get csvExportLockedBody => _impl.csvExportLockedBody;
+  static String get csvGoProAction => _impl.csvGoProAction;
+
   // === Locale ===
   static String get localeLabel => _impl.localeLabel;
   static String get localeEs => _impl.localeEs;
@@ -300,6 +321,31 @@ class EsBO {
   static String get configLanguage => _impl.configLanguage;
   static String get configCurrency => _impl.configCurrency;
   static String get configContinue => _impl.configContinue;
+
+  // === Feature gates (T14) ===
+  static String get calculatorAdvancedLockedBody =>
+      _impl.calculatorAdvancedLockedBody;
+  static String get calculatorGoProAction => _impl.calculatorGoProAction;
+
+  // === History cap gate (T15) ===
+  static String get historyCapReachedBody => _impl.historyCapReachedBody;
+
+  // === Paywall (T10) ===
+  static String get paywallTitle => _impl.paywallTitle;
+  static String get paywallSubtitle => _impl.paywallSubtitle;
+  static String get paywallPrice => _impl.paywallPrice;
+  static List<String> get paywallFeatures => _impl.paywallFeatures;
+  static String paywallUnlockButton(String price) =>
+      _impl.paywallUnlockButton(price);
+  static String get paywallRestoreButton => _impl.paywallRestoreButton;
+  static String get paywallErrorGeneric => _impl.paywallErrorGeneric;
+  static String get paywallAlreadyPro => _impl.paywallAlreadyPro;
+  static String get paywallClose => _impl.paywallClose;
+
+  // T22 — Store compliance
+  static String get paywallPrivacyPolicy => _impl.paywallPrivacyPolicy;
+  static String get paywallTermsOfService => _impl.paywallTermsOfService;
+  static String get settingsLegal => _impl.settingsLegal;
 }
 
 // ─── Implementacion espanol ─────────────────────
@@ -438,6 +484,24 @@ class EsImpl implements AppStrings {
       'Error al cargar la imagen';
 
   @override
+  String get settingsBrandingLockedBody =>
+      'Desbloquea Pro para personalizar tu marca';
+  @override
+  String get settingsGoProAction => 'Ir a Pro';
+  @override
+  String get settingsProBadge => 'Pro';
+
+  @override
+  String get settingsRestorePurchases =>
+      'Restaurar compras';
+  @override
+  String get settingsRestoreSuccess =>
+      'Compras restauradas correctamente!';
+  @override
+  String get settingsRestoreEmpty =>
+      'No se encontraron compras previas';
+
+  @override
   String get dashboardTitle => 'Dashboard';
   @override
   String get dashboardErrorLoad =>
@@ -462,6 +526,13 @@ class EsImpl implements AppStrings {
   String get dashboardChartQuoted => 'Cotizado';
   @override
   String get dashboardChartSold => 'Ganado';
+  @override
+  String get dashboardProTeaserTitle => 'Desbloquea Pro Analytics';
+  @override
+  String get dashboardProTeaserBody =>
+      'Obtene el dashboard completo con tendencias de costos, desglose de materiales y mas.';
+  @override
+  String get dashboardGoProAction => 'Hazte Pro';
 
   @override
   String get homeActionNewCalc => 'Nueva cotizacion';
@@ -782,15 +853,22 @@ class EsImpl implements AppStrings {
   @override
   String get calcDetailMarkPending =>
       'Marcar pendiente';
-
   @override
-  String get historyTitle => 'Cotizaciones';
+  String get historyTitle =>
+      'Cotizaciones';
   @override
   String get historyErrorLoad =>
       'Error cargando cotizaciones';
   @override
   String get historyEmpty =>
       'Sin cotizaciones guardadas';
+
+  @override
+  String get csvExportLockedBody =>
+      'Exportar CSV es una funcion Pro';
+  @override
+  String get csvGoProAction =>
+      'Hazte Pro';
 
   @override
   String get localeLabel => 'Idioma';
@@ -828,4 +906,53 @@ class EsImpl implements AppStrings {
   String get configCurrency => 'Moneda';
   @override
   String get configContinue => 'Continuar';
+
+  // === Feature gates (T14) ===
+  @override
+  String get calculatorAdvancedLockedBody =>
+      'Desbloquea Pro para cotizaciones multi-material';
+  @override
+  String get calculatorGoProAction => 'Ir a Pro';
+
+  // === History cap gate (T15) ===
+  @override
+  String get historyCapReachedBody =>
+      'Llegaste al limite del historial gratuito. Mejora a Pro para historial ilimitado.';
+
+  // === Paywall (T10) ===
+  @override
+  String get paywallTitle => 'Desbloquear 3dCalc Pro';
+  @override
+  String get paywallSubtitle =>
+      'Saca el maximo provecho de tu calculadora de costos de impresion 3D';
+  @override
+  String get paywallPrice => '\$4,99';
+  @override
+  List<String> get paywallFeatures => const [
+        'Elimina la marca de los PDF',
+        'Cotizaciones multi-material',
+        'Historial ilimitado',
+        'Exportar a CSV',
+        'Dashboard avanzado con analiticas',
+      ];
+  @override
+  String paywallUnlockButton(String price) =>
+      'Desbloquear por $price';
+  @override
+  String get paywallRestoreButton => 'Restaurar compra';
+  @override
+  String get paywallErrorGeneric =>
+      'No se pudo completar la compra. Intenta de nuevo.';
+  @override
+  String get paywallAlreadyPro => 'Ya tienes Pro. Gracias!';
+  @override
+  String get paywallClose => 'Cerrar';
+
+  // T22 — Store compliance
+  @override
+  String get paywallPrivacyPolicy => 'Politica de Privacidad';
+  @override
+  String get paywallTermsOfService => 'Terminos del Servicio';
+  @override
+  String get settingsLegal => 'Legal';
 }

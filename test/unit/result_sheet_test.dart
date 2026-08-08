@@ -121,6 +121,7 @@ void main() {
         _wrap(
           ResultSheetContent(
             state: state,
+            isPro: false,
             onSave: () {},
             onReset: () {},
             onToggleDetail: () {},
@@ -146,6 +147,7 @@ void main() {
         _wrap(
           ResultSheetContent(
             state: state,
+            isPro: false,
             onSave: () {},
             onReset: () {},
             onToggleDetail: () {},
@@ -211,6 +213,7 @@ void main() {
         _wrap(
           ResultSheetContent(
             state: state,
+            isPro: false,
             onSave: () {},
             onReset: () {},
             onToggleDetail: () {},

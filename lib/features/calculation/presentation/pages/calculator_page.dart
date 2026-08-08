@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency.dart';
@@ -342,6 +343,25 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
       ScaffoldMessenger.of(context).showSnackBar(
         AppSnackBar.success('Cotizacion #$id guardada.'),
       );
+    } on HistoryCapReachedException catch (_) {
+      // T15: free user intento guardar la #11. SnackBar dedicado con CTA
+      // "Go Pro" (reusamos calculatorGoProAction — mismo destino /paywall
+      // que T14). No se persiste nada; los 10 items existentes intactos.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(EsBO.historyCapReachedBody),
+            action: SnackBarAction(
+              label: EsBO.calculatorGoProAction,
+              onPressed: () {
+                GoRouter.of(context).push('/paywall');
+              },
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(

@@ -5,6 +5,7 @@ import '../../features/calculation/data/tables/calculation_materials_table.dart'
 import '../../features/calculation/data/tables/calculations_table.dart';
 import '../../features/catalog/filaments/data/filaments_table.dart';
 import '../../features/catalog/printers/data/printers_table.dart';
+import '../../features/entitlement/data/entitlements_table.dart';
 import '../../features/settings/data/settings_table.dart';
 
 part 'app_database.g.dart';
@@ -25,6 +26,7 @@ part 'app_database.g.dart';
     Calculations,
     CalculationMaterials,
     SettingsTable,
+    Entitlements,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -37,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -69,6 +71,12 @@ class AppDatabase extends _$AppDatabase {
             // split h+m. Para registros viejos, minutos=0 (default) y el
             // notifier los deriva del decimal al recargar (best-effort).
             await m.addColumn(calculations, calculations.printMinutes);
+          }
+          if (from <= 4) {
+            // v4→v5: agregar tabla entitlements (T1 del plan de monetizacion).
+            // Una sola fila activa a la vez (enforcement en
+            // EntitlementRepository, no DB constraint).
+            await m.createTable(entitlements);
           }
         },
       );

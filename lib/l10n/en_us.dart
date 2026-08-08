@@ -139,6 +139,24 @@ class EnImpl implements AppStrings {
       'Error loading image';
 
   @override
+  String get settingsBrandingLockedBody =>
+      'Unlock Pro to customize your brand';
+  @override
+  String get settingsGoProAction => 'Go Pro';
+  @override
+  String get settingsProBadge => 'Pro';
+
+  @override
+  String get settingsRestorePurchases =>
+      'Restore purchases';
+  @override
+  String get settingsRestoreSuccess =>
+      'Purchases restored successfully!';
+  @override
+  String get settingsRestoreEmpty =>
+      'No previous purchases found';
+
+  @override
   String get dashboardTitle => 'Dashboard';
   @override
   String get dashboardErrorLoad =>
@@ -169,6 +187,13 @@ class EnImpl implements AppStrings {
   String get dashboardChartQuoted => 'Quoted';
   @override
   String get dashboardChartSold => 'Earned';
+  @override
+  String get dashboardProTeaserTitle => 'Unlock Pro Analytics';
+  @override
+  String get dashboardProTeaserBody =>
+      'Get the complete dashboard with cost trends, material breakdowns, and more.';
+  @override
+  String get dashboardGoProAction => 'Go Pro';
 
   @override
   String get homeActionNewCalc =>
@@ -536,6 +561,13 @@ class EnImpl implements AppStrings {
       'No saved quotations';
 
   @override
+  String get csvExportLockedBody =>
+      'CSV export is a Pro feature';
+  @override
+  String get csvGoProAction =>
+      'Go Pro';
+
+  @override
   String get localeLabel => 'Language';
   @override
   String get localeEs => 'Spanish';
@@ -571,4 +603,53 @@ class EnImpl implements AppStrings {
   String get configCurrency => 'Currency';
   @override
   String get configContinue => 'Continue';
+
+  // === Feature gates (T14) ===
+  @override
+  String get calculatorAdvancedLockedBody =>
+      'Unlock Pro for multi-material calculations';
+  @override
+  String get calculatorGoProAction => 'Go Pro';
+
+  // === History cap gate (T15) ===
+  @override
+  String get historyCapReachedBody =>
+      "You've reached the free history limit. Upgrade to Pro for unlimited history.";
+
+  // === Paywall (T10) ===
+  @override
+  String get paywallTitle => 'Unlock 3dCalc Pro';
+  @override
+  String get paywallSubtitle =>
+      'Get the most out of your 3D print cost calculator';
+  @override
+  String get paywallPrice => '\$4.99';
+  @override
+  List<String> get paywallFeatures => const [
+        'Remove branding from PDF quotes',
+        'Multi-material cost breakdown',
+        'Unlimited history',
+        'Export to CSV',
+        'Advanced analytics dashboard',
+      ];
+  @override
+  String paywallUnlockButton(String price) => 'Unlock for $price';
+  @override
+  String get paywallRestoreButton => 'Restore purchase';
+  @override
+  String get paywallErrorGeneric =>
+      'Could not complete purchase. Try again.';
+  @override
+  String get paywallAlreadyPro => 'You already have Pro. Thank you!';
+  @override
+  String get paywallClose => 'Close';
+
+  @override
+  String get paywallPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get paywallTermsOfService => 'Terms of Service';
+
+  @override
+  String get settingsLegal => 'Legal';
 }

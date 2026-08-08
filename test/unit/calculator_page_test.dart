@@ -1,12 +1,18 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tresdcal/core/constants/app_constants.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
+import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
+import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
+import 'package:tresdcal/l10n/es_bo.dart';
 
 /// Helper: monta [CalculatorPage] dentro de un [ProviderScope] y retorna
 /// el [WidgetTester] para que el caller interactue.
