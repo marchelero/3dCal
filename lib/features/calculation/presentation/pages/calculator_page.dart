@@ -18,13 +18,14 @@ import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
-import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
+import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/result_sheet.dart';
@@ -244,6 +245,34 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
   }
 
   void _switchMode(CalculatorMode mode) {
+    if (mode == CalculatorMode.advanced) {
+      // El gate lee el estado real del entitlement (no `isProProvider` solo):
+      // durante el boot async (SP+DB) el notifier esta loading y isPro=false,
+      // lo que daria un falso "locked" a un Pro real en cold start. Si sigue
+      // loading, swallow (no gatear ni cambiar de modo); solo gateamos cuando
+      // el estado esta resuelto.
+      final ent = ref.read(entitlementNotifierProvider);
+      if (ent.isLoading) return;
+      if (!ref.read(isProProvider)) {
+        // T14: free user intento cambiar a modo advanced. SnackBar dedicado
+        // con CTA "Go Pro" (mismo destino /paywall que el history cap).
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(EsBO.calculatorAdvancedLockedBody),
+              action: SnackBarAction(
+                label: EsBO.calculatorGoProAction,
+                onPressed: () {
+                  GoRouter.of(context).push('/paywall');
+                },
+              ),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        return;
+      }
+    }
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     if (mode == CalculatorMode.advanced && _materialCtrls.isEmpty) {
       notifier.addMaterial();

@@ -1,6 +1,5 @@
 # Ultima sesion
 
-**2026-07-17**: F1-F2-F3 completos (mano de obra, export PDF/CSV, dashboard v2).
-130/130 tests. Continuar con F4 en proxima sesion.
+**2026-08-09**: F1+F2 del plan playstore-prep completos. Build APK verde (gal), 3 wiring restaurados (RevenueCat configure, ruta /paywall, dashboard) + gate advanced mode implementado. Suite 289/290 (1 flake pre-existente en quote_save_flow_test). Siguiente: F3 (RevenueCat/Play Console, user tasks) + F4 hardening + decisiones Q-Web/Q-Signing/Q-Permisos/Q-Version.
 
-Ver: [2026-07-17-F1-F2-F3-complete.md](2026-07-17-F1-F2-F3-complete.md)
+Ver: [2026-08-09_0240-free-pro-playstore-prep.md](2026-08-09_0240-free-pro-playstore-prep.md)

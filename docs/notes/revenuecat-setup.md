@@ -122,7 +122,7 @@ Left menu → **Offerings** → **+ New**:
 - `lib/core/constants/revenuecat_keys.dart` (nuevo, T9 lo crea):
   ```dart
   class RevenueCatKeys {
-    static const android = String.fromEnvironment('REVENUECAT_ANDROID_SDK_KEY');
+    static const android = String.fromEnvironment('REVENUECAT_GOOGLE_KEY');
   }
   ```
 - `lib/main.dart` (T9 modifica), despues de `ensureInitialized`:
@@ -131,7 +131,7 @@ Left menu → **Offerings** → **+ New**:
     PurchasesConfiguration(RevenueCatKeys.android),
   );
   ```
-- Build: `flutter build apk --debug --dart-define=REVENUECAT_ANDROID_SDK_KEY=goog_XXX`
+- Build: `flutter build apk --debug --dart-define=REVENUECAT_GOOGLE_KEY=goog_XXX`
   o pasar via `--dart-define-from-file=secrets.json` (NO commitear el
   secrets.json).
 

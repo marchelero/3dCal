@@ -12,9 +12,10 @@ import '../../features/catalog/filaments/presentation/pages/filaments_page.dart'
 import '../../features/catalog/printers/presentation/pages/printer_form_page.dart';
 import '../../features/catalog/printers/presentation/pages/printers_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
-import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/entitlement/presentation/pages/paywall_page.dart';
 import '../../features/onboarding/presentation/pages/initial_config_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../database/app_database.dart';
@@ -116,6 +117,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/calculator',
       pageBuilder: (context, state) => _slideRight(const CalculatorPage()),
+    ),
+    GoRoute(
+      path: '/paywall',
+      pageBuilder: (context, state) => _slideRight(const PaywallPage()),
     ),
     GoRoute(
       path: '/calculator/prefill',

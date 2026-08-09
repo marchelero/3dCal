@@ -3,9 +3,6 @@
 /// Single source of truth para valores que se usan en multiples lugares.
 library;
 
-/// Organizacion del paquete (declarada en pubspec.yaml `name`).
-const String kPackageName = 'bo.3dcal.tresdcal';
-
 /// Codigo de moneda por defecto. USD default.
 const String kCurrencyCode = 'USD';
 

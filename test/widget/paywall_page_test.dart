@@ -337,6 +337,85 @@ void main() {
     );
   });
 
+  group('PaywallPage — Accion con resultado', () {
+    testWidgets(
+      'PaymentError al tap Unlock → SnackBar de error visible (no-op del state)',
+      (tester) async {
+        _useTallViewport(tester);
+        final result = await _pumpPaywall(tester);
+        result.payment.seedPurchase(const PaymentError('network'));
+
+        await tester.tap(find.widgetWithText(
+          FilledButton,
+          EsBO.paywallUnlockButton(_formatPrice()),
+        ));
+        await tester.pumpAndSettle();
+
+        // El caller (paywall) debe surfcear el error — no solo el notifier.
+        expect(find.text(EsBO.paywallErrorGeneric), findsOneWidget,
+            reason: 'PaymentError debe mostrar SnackBar de error en paywall.');
+        // Sigue en free (el boton Unlock persiste: no hubo unlock).
+        expect(
+          find.widgetWithText(
+            FilledButton,
+            EsBO.paywallUnlockButton(_formatPrice()),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('PaymentCancelled al tap Unlock → no-op (sin SnackBar)',
+        (tester) async {
+      _useTallViewport(tester);
+      final result = await _pumpPaywall(tester);
+      result.payment.seedPurchase(const PaymentCancelled());
+
+      await tester.tap(find.widgetWithText(
+        FilledButton,
+        EsBO.paywallUnlockButton(_formatPrice()),
+      ));
+      await tester.pumpAndSettle();
+
+      // Cancel es intencional del user: no feedback de error.
+      expect(find.byType(SnackBar), findsNothing,
+          reason: 'PaymentCancelled no debe mostrar SnackBar.');
+      expect(find.text(EsBO.paywallErrorGeneric), findsNothing);
+    });
+
+    testWidgets('RestoreError al tap Restore → SnackBar de error visible',
+        (tester) async {
+      _useTallViewport(tester);
+      final result = await _pumpPaywall(tester);
+      result.payment.seedRestore(const RestoreError('network'));
+
+      await tester.tap(find.widgetWithText(
+        TextButton,
+        EsBO.paywallRestoreButton,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text(EsBO.commonErrorGeneric), findsOneWidget,
+          reason: 'RestoreError debe mostrar SnackBar de error en paywall.');
+    });
+
+    testWidgets('RestoreEmpty al tap Restore → SnackBar informativo',
+        (tester) async {
+      _useTallViewport(tester);
+      final result = await _pumpPaywall(tester);
+      result.payment.seedRestore(const RestoreEmpty());
+
+      await tester.tap(find.widgetWithText(
+        TextButton,
+        EsBO.paywallRestoreButton,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text(EsBO.settingsRestoreEmpty), findsOneWidget,
+          reason: 'RestoreEmpty debe informar que no hay compras previas.');
+    });
+  });
+
   group('PaywallPage — Error state', () {
     testWidgets(
       'muestra SnackBar con error message cuando AsyncValue tiene error',
@@ -389,7 +468,7 @@ void main() {
   group('PaywallPage — Close button (T20 coverage)', () {
     /// Pump helper con GoRouter y una ruta previa "/home" para que el
     /// paywall pueda hacer `context.pop()`.
-    Future<GoRouter> _pumpPaywallWithStack(WidgetTester tester) async {
+    Future<GoRouter> pumpPaywallWithStack(WidgetTester tester) async {
       _useTallViewport(tester);
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -427,7 +506,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       // Push paywall encima de home.
-      router.push('/paywall');
+      unawaited(router.push('/paywall'));
       await tester.pumpAndSettle();
       // Sanity: paywall visible, no estamos en home.
       expect(find.byType(PaywallPage), findsOneWidget);
@@ -436,7 +515,7 @@ void main() {
 
     testWidgets('X en AppBar dispara context.pop() y vuelve a /home',
         (tester) async {
-      final router = await _pumpPaywallWithStack(tester);
+      final router = await pumpPaywallWithStack(tester);
 
       // El X es el IconButton con tooltip "Close" (paywallClose).
       final closeIcon = find.byTooltip(EsBO.paywallClose);
@@ -500,7 +579,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      router.push('/paywall');
+      unawaited(router.push('/paywall'));
       await tester.pumpAndSettle();
 
       // Estamos en Already Pro view: el FilledButton con label "Close".

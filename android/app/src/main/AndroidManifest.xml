@@ -1,10 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Permisos para guardar en galeria (image_gallery_saver) -->
+    <!-- Permisos para guardar en galeria (gal): solo API <= 29 necesita
+         WRITE_EXTERNAL_STORAGE; requestLegacyExternalStorage ya esta activo. -->
     <!-- Android < 10 necesita WRITE_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- Red requerida por purchases_flutter (RevenueCat) en release -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="3dCalc"
         android:name="${applicationName}"

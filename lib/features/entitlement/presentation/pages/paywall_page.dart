@@ -8,6 +8,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
+import '../../data/payment_service.dart';
 import '../notifiers/entitlement_notifier.dart';
 import '../providers/entitlement_providers.dart';
 
@@ -200,9 +201,24 @@ class _FreeBodyState extends ConsumerState<_FreeBody> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await ref
+      final result = await ref
           .read(entitlementNotifierProvider.notifier)
           .purchase(productId: kProProductId);
+      if (!mounted) return;
+      switch (result) {
+        // Success: el notifier ya activo Pro → la UI pasa a "Already Pro".
+        case PaymentSuccess():
+          break;
+        // Cancel: el user se arrepintio en el sheet de Play. No-op.
+        case PaymentCancelled():
+          break;
+        // Error: feedback explicito (el AsyncValue no transiciona a error,
+        // asi que el ref.listen del paywall no cubre este caso).
+        case PaymentError():
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(AppSnackBar.error(EsBO.paywallErrorGeneric));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -212,7 +228,25 @@ class _FreeBodyState extends ConsumerState<_FreeBody> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await ref.read(entitlementNotifierProvider.notifier).restore();
+      final result = await ref
+          .read(entitlementNotifierProvider.notifier)
+          .restore();
+      if (!mounted) return;
+      switch (result) {
+        // Active: el notifier ya activo Pro → la UI pasa a "Already Pro".
+        case RestoreActive():
+          break;
+        // Empty: no hay compras previas en la cuenta — feedback informativo.
+        case RestoreEmpty():
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(AppSnackBar.info(context, EsBO.settingsRestoreEmpty));
+        // Error: feedback explicito (no se cambio el state).
+        case RestoreError():
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(AppSnackBar.error(EsBO.commonErrorGeneric));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

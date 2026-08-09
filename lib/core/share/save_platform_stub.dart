@@ -2,8 +2,8 @@
 
 import 'dart:typed_data';
 
-/// Stub por defecto. En mobile se usa [image_gallery_saver] directamente
-/// desde [quote_share.dart]. Esta funcion solo se usa en web via conditional
+/// Stub por defecto. En mobile se usa [gal] directamente desde
+/// [quote_share.dart]. Esta funcion solo se usa en web via conditional
 /// import (save_platform_web.dart).
 Future<void> downloadImage(Uint8List imageBytes, String filename) async {
   throw UnsupportedError('downloadImage no implementado en esta plataforma');

@@ -113,7 +113,11 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
   /// **Success** → [activate] (persiste DB + cache + state).
   /// **Cancel** → no-op. El user tap "Atras" en el sheet de Play.
   /// **Error** → no-op + log. El state queda como estaba.
-  Future<void> purchase({required String productId}) async {
+  ///
+  /// Retorna el [PaymentResult] para que el caller (paywall) pueda dar
+  /// feedback segun el caso (contrato de `payment_service.dart`: "el
+  /// caller debe mostrar feedback segun el caso").
+  Future<PaymentResult> purchase({required String productId}) async {
     final result = await ref.read(paymentServiceProvider).purchase(
           productId: productId,
         );
@@ -127,6 +131,7 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
         debugPrint('[Entitlement] purchase error: $message');
       // No tocar state.
     }
+    return result;
   }
 
   /// Restaura purchases via [PaymentService].

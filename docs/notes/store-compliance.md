@@ -47,7 +47,7 @@ Checklist para cumplimiento de Google Play Store (apps con IAP).
 - [x] App ID: `bo.u3dcal.tresdcal` (namespace en build.gradle.kts)
 - [x] Sin datos de usuario recolectados (100% local, sin backend)
 - [x] Sin analiticas de terceros excepto RevenueCat (datos de transacciones, sin PII)
-- [x] `purchases_flutter` SDK configurado via `--dart-define=REVENUECAT_API_KEY=...`
+- [x] `purchases_flutter` SDK configurado via `--dart-define=REVENUECAT_GOOGLE_KEY=...`
 - [ ] **USER TASK**: Agregar Privacy Policy + Terms URLs en el listing de Play Console
 - [ ] **USER TASK**: Configurar test accounts/license testers en Play Console para sandbox
 

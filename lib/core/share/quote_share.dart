@@ -5,8 +5,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter/widgets.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../l10n/es_bo.dart';
@@ -75,16 +76,23 @@ Future<void> shareQuoteImage(Uint8List imageBytes) async {
 /// Guarda la imagen de la cotizacion en la galeria del dispositivo o la
 /// descarga via browser en web.
 ///
-/// En **mobile** usa [image_gallery_saver] internamente. Requiere permisos de
-/// almacenamiento en Android < 10 (WRITE_EXTERNAL_STORAGE) y
-/// NSPhotoLibraryAddUsageDescription en iOS.
+/// En **mobile** usa [gal] (via [GallerySaver]) internamente. En Android el
+/// permiso WRITE_EXTERNAL_STORAGE es requerido solo para API <= 29
+/// (declarado en el manifest main junto con `requestLegacyExternalStorage`);
+/// desde API 30 el guardado va por MediaStore sin permiso. En iOS requiere
+/// NSPhotoLibraryAddUsageDescription.
 ///
 /// En **web** usa conditional import para descargar via Blob + AnchorElement
 /// (download attribute del navegador).
 ///
-/// El plugin mobile guarda como JPG internamente, asi que el name se pasa sin
-/// extension para evitar doble extension en Android < 10.
-Future<void> saveQuoteImage(Uint8List imageBytes) async {
+/// Los bytes se guardan como PNG (el name se pasa sin extension). El plugin
+/// [gal] no devuelve un resultado de exito: los fallos se propagan como
+/// [GalException] (que envuelve la [PlatformException] nativa) y se mapean a
+/// [ShareQuoteException] con el mensaje de error del plugin.
+Future<void> saveQuoteImage(
+  Uint8List imageBytes, {
+  GallerySaver gallerySaver = const GallerySaver(),
+}) async {
   final timestamp = DateTime.now().millisecondsSinceEpoch;
 
   if (kIsWeb) {
@@ -92,20 +100,42 @@ Future<void> saveQuoteImage(Uint8List imageBytes) async {
     return;
   }
 
-  final result = await ImageGallerySaver.saveImage(
-    imageBytes,
-    quality: 100,
-    name: 'cotizacion_3dcalc_$timestamp',
-  );
-  // El plugin retorna Map<String, dynamic>? con las keys:
-  //   isSuccess: bool, filePath: String?, errorMessage: String?
-  if (result is! Map || result['isSuccess'] != true) {
-    final errorMsg = result is Map ? result['errorMessage'] : null;
-    throw ShareQuoteException(
-      errorMsg is String
-          ? 'No se pudo guardar la imagen: $errorMsg'
-          : 'No se pudo guardar la imagen en la galeria.',
+  try {
+    await gallerySaver.saveImage(
+      imageBytes,
+      name: 'cotizacion_3dcalc_$timestamp',
     );
+  } on GalException catch (e) {
+    throw ShareQuoteException(_saveErrorMessage(e.platformException.message));
+  } on PlatformException catch (e) {
+    throw ShareQuoteException(_saveErrorMessage(e.message));
+  } catch (_) {
+    throw const ShareQuoteException(
+      'No se pudo guardar la imagen en la galeria.',
+    );
+  }
+}
+
+String _saveErrorMessage(Object? pluginMessage) {
+  if (pluginMessage is String && pluginMessage.isNotEmpty) {
+    return 'No se pudo guardar la imagen: $pluginMessage';
+  }
+  return 'No se pudo guardar la imagen en la galeria.';
+}
+
+/// Seam para guardar bytes de imagen en la galeria del dispositivo.
+///
+/// La implementacion por defecto usa el plugin [gal]. Es extensible por
+/// override en tests para cubrir el mapeo de errores sin platform channels.
+class GallerySaver {
+  const GallerySaver();
+
+  /// Guarda [imageBytes] en la galeria con el nombre [name].
+  ///
+  /// El plugin [gal] no devuelve un resultado de exito: los fallos se
+  /// propagan como [GalException] (envuelve la [PlatformException] nativa).
+  Future<void> saveImage(Uint8List imageBytes, {required String name}) {
+    return Gal.putImageBytes(imageBytes, name: name);
   }
 }
 
