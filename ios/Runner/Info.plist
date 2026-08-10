@@ -29,7 +29,9 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>3dCalc necesita acceso a la galería para guardar las imágenes de cotización.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>3dCalc necesita acceso a la galería para seleccionar el logo de la empresa.</string>
+	<string>3dCalc necesita acceso a la galería para seleccionar imágenes y adjuntarlas a la cotización.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>3dCalc necesita acceso a la cámara para adjuntar fotos a la cotización.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

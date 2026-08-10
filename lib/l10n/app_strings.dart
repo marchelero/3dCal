@@ -220,6 +220,31 @@ abstract class AppStrings {
   String get calcShareText;
   String get calcSheetActionsLabel;
 
+  // === Quote image (foto de la pieza) ===
+  /// "Agregar imagen" / "Add image".
+  String get quoteImageAdd;
+
+  /// "Galería" / "Gallery".
+  String get quoteImageGallery;
+
+  /// "Cámara" / "Camera".
+  String get quoteImageCamera;
+
+  /// "Cambiar" / "Change".
+  String get quoteImageChange;
+
+  /// "Quitar" / "Remove".
+  String get quoteImageRemove;
+
+  /// Imagen > 5 MB y no se adjuntó.
+  String get quoteImageTooLarge;
+
+  /// Formato no decodificable (solo JPEG/PNG/WebP).
+  String get quoteImageInvalidFormat;
+
+  /// Error genérico al obtener la imagen.
+  String get quoteImageError;
+
   // === Filaments / Printers forms ===
   String get filamentTitle;
   String get filamentNew;
@@ -228,10 +253,13 @@ abstract class AppStrings {
   String get filamentNameHelper;
   String get filamentBrand;
   String get filamentBrandHelper;
+
   /// "Otro..." — opcion del selector de marca que activa el ingreso manual.
   String get brandSelectorOther;
+
   /// Hint del selector de marca cuando aun no hay valor.
   String get brandSelectorHint;
+
   /// Helper del campo manual de marca (modo "Otro...").
   String get brandSelectorManualHelper;
   String filamentPrice(String symbol);
@@ -318,6 +346,7 @@ abstract class AppStrings {
   /// Body del SnackBar que se muestra cuando un Free user intenta
   /// cambiar a CalculatorMode.advanced.
   String get calculatorAdvancedLockedBody;
+
   /// Label de la accion del SnackBar — al tap, navega a /paywall.
   String get calculatorGoProAction;
 
@@ -346,77 +375,108 @@ abstract class AppStrings {
   // === Paywall (T10) ===
   /// Titulo del paywall. Hero del modal.
   String get paywallTitle;
+
   /// Subtitulo del paywall. Aparece debajo del titulo.
   String get paywallSubtitle;
+
   /// Precio displayed (ej: "\$4.99"). String estatico, no formateado por locale.
   String get paywallPrice;
+
   /// Lista de features Pro que muestra el paywall.
   List<String> get paywallFeatures;
+
   /// Label del CTA principal. [price] ya viene formateado.
   String paywallUnlockButton(String price);
+
   /// Label del CTA secundario. Abre el flow de restore.
   String get paywallRestoreButton;
+
   /// Mensaje de error generico si la compra falla.
   String get paywallErrorGeneric;
+
   /// Mensaje que ve un user Pro cuando abre el paywall.
   String get paywallAlreadyPro;
+
   /// Tooltip del icono de cerrar (AppBar action).
   String get paywallClose;
 
   // === Store compliance links (T22) ===
   /// Label del link a Privacy Policy en paywall y settings.
   String get paywallPrivacyPolicy;
+
   /// Label del link a Terms of Service en paywall y settings.
   String get paywallTermsOfService;
+
   /// Titulo de la seccion legal en settings page.
   String get settingsLegal;
 
   // === i18n consistency (hardcoded → l10n) ===
   /// Generic "Error" label (ej: "Error: <detalle>").
   String get commonError;
+
   /// "Sin resultados" / "No results" para busquedas.
   String get commonNoResults;
+
   /// "Predeterminado" / "Default".
   String get commonDefault;
+
   /// "Deshacer" / "Undo".
   String get commonUndo;
+
   /// "Guardar imagen" / "Save image".
   String get commonSaveImage;
+
   /// "Exportar PDF" / "Export PDF".
   String get commonExportPdf;
+
   /// "Compartir PDF" / "Share PDF".
   String get commonSharePdf;
+
   /// "Imprimir" / "Print".
   String get commonPrint;
+
   /// "Imagen descargada" / "Image downloaded".
   String get commonImageDownloaded;
+
   /// "Imagen guardada en galería" / "Image saved to gallery".
   String get commonImageSavedGallery;
+
   /// "Error al exportar PDF" / "Error exporting PDF" (sin ": <e>").
   String get commonPdfExportError;
+
   /// "Error al imprimir" / "Error printing" (sin ": <e>").
   String get commonPrintError;
+
   /// " (default)" / " (default)" — sufijo de items default.
   String get commonDefaultSuffix;
 
   /// "Exportar CSV" / "Export CSV" — tooltip del export en Historial.
   String get historyExportCsv;
+
   /// CTA del empty state de Historial (invita a crear desde la calculadora).
   String get historyEmptyCta;
+
   /// "Otros" / "Others" — seccion colapsable de la calculadora.
   String get calcSectionOthers;
+
   /// "Rango: 0-1000" / "Range: 0-1000" — validacion de ganancia base.
   String get settingsProfitBaseRange;
+
   /// "Rango: 0.10-5.00" / "Range: 0.10-5.00" — validacion de tarifa kWh.
   String get settingsKwhRateRange;
+
   /// Share: el resumen aun no se renderizo.
   String get shareErrorNotRendered;
+
   /// Share: no se encontro la region capturable del resumen.
   String get shareErrorNoRegion;
+
   /// Share: no se pudo codificar la imagen PNG.
   String get shareErrorEncode;
+
   /// Share: no se pudo guardar la imagen en la galeria.
   String get shareErrorSaveGallery;
+
   /// Share: no se pudo guardar la imagen (con mensaje del plugin).
   String shareErrorSaveWithMessage(String msg);
 
@@ -425,101 +485,136 @@ abstract class AppStrings {
 
   /// Warning al intentar guardar con el form incompleto.
   String get calcFormIncompleteWarning;
+
   /// Error al guardar la cotizacion.
   String get calcSaveFailed;
+
   /// Confirmacion de guardado con id: "Cotización #$id guardada."
   String calcSavedWithId(int id);
+
   /// "Agregar material" / "Add material".
   String get calcAddMaterial;
+
   /// Prefijo de la Semantics label de la impresora activa.
   String get calcPrinterPrefix;
+
   /// "Cambiar impresora" / "Change printer".
   String get calcChangePrinter;
+
   /// "Buscar impresora..." / "Search printer...".
   String get calcSearchPrinter;
+
   /// "Seleccionar filamento" / "Select filament".
   String get calcSelectFilament;
+
   /// "Buscar filamento..." / "Search filament...".
   String get calcSearchFilament;
 
   /// "Desglose" / "Breakdown".
   String get detailBreakdown;
+
   /// "Descuento ($pct%)" / "Discount ($pct%)".
   String detailDiscountPct(int pct);
+
   /// "Vista previa" / "Preview".
   String get detailPreview;
 
   /// "Sin descuento" / "No discount".
   String get quoteNoDiscount;
+
   /// "Descuento $pct%" / "Discount $pct%".
   String quoteDiscountPct(int pct);
+
   /// "Detalle" / "Details" (bloque de la quote image).
   String get quoteDetail;
+
   /// "Generado con 3dCalc" / "Generated with 3dCalc".
   String get quoteGeneratedWith;
 
   /// Nombre de archivo del PDF exportado.
   String get pdfFileName;
+
   /// Subject al compartir el PDF.
   String get pdfShareSubject;
+
   /// "Fecha: " / "Date: ".
   String get pdfDatePrefix;
+
   /// "Costo materiales" / "Material costs".
   String get pdfMaterialCosts;
+
   /// "Electricidad" / "Electricity".
   String get pdfElectricity;
+
   /// "TOTAL" / "TOTAL".
   String get pdfTotalUpper;
+
   /// "Horas: " / "Hours: ".
   String get pdfHoursPrefix;
+
   /// "Descuento: $pct%" / "Discount: $pct%".
   String pdfDiscountPct(int pct);
 
   /// Empty state del dashboard (subtitulo).
   String get dashboardEmptySubtitle;
+
   /// "Tendencia mensual" / "Monthly trend".
   String get dashboardMonthlyTrend;
+
   /// "Materiales más usados" / "Most used materials".
   String get dashboardTopMaterials;
 
   /// Hint de busqueda del historial.
   String get historySearchHint;
+
   /// Filtro "Todas" / "All".
   String get historyFilterAll;
+
   /// Filtro "Vendidas" / "Sold".
   String get historyFilterSold;
+
   /// Filtro "Pendientes" / "Pending".
   String get historyFilterPending;
+
   /// Snackbar "No hay cotizaciones para exportar".
   String get historyNoQuotesToExport;
 
   /// "Sin datos mensuales" / "No monthly data".
   String get chartNoMonthlyData;
+
   /// Abreviaturas de mes cortas (12).
   List<String> get chartShortMonths;
 
   /// "Buscar filamentos..." / "Search filaments...".
   String get filamentSearchHint;
+
   /// '"$name" eliminado' / '"$name" deleted'.
   String filamentDeleted(String name);
+
   /// "Buscar impresoras..." / "Search printers...".
   String get printerSearchHint;
+
   /// '"$name" eliminada' / '"$name" deleted'.
   String printerDeleted(String name);
+
   /// "Error guardando" / "Error saving" (impresora).
   String get printerErrorSave;
 
   /// "Error cargando ajustes" / "Error loading settings".
   String get settingsErrorLoad;
+
   /// Hint de busqueda de moneda.
   String get settingsCurrencySearchHint;
+
   /// "Sin resultados para \"$query\"" / "No results for \"$query\"".
   String settingsCurrencyNoResults(String query);
+
   /// "Símbolo: " / "Symbol: ".
   String get settingsCurrencySymbolPrefix;
 
   /// "Página no encontrada" / "Page not found".
   String get routeNotFound;
+
   /// "Volver a Inicio" / "Back to Home".
   String get routeBackHome;
 
@@ -530,29 +625,37 @@ abstract class AppStrings {
 
   /// Semantics label del logo de splash.
   String get splashLogo;
+
   /// "Página $page de $total" / "Page $page of $total".
   String onboardingPageCounter(int page, int total);
 
   /// "Sin resultados para \"$query\"" / "No results for \"$query\"" (búsquedas).
   String commonNoResultsFor(String query);
+
   /// "Prueba con otro término." / "Try another term.".
   String get historyEmptySearchHint;
 
   /// Catálogo de filamentos: errores, estados vacíos y confirmaciones.
   String get filamentErrorLoad;
+
   /// "Ningún filamento coincide con \"$query\"" / "No filaments match \"$query\"".
   String filamentNoResults(String query);
+
   /// "Sin filamentos. Toca + para crear el primero." / "No filaments. Tap + to create the first one.".
   String get filamentEmptyList;
+
   /// "¿Eliminar \"$name\"?" / "Delete \"$name\"?".
   String filamentDeleteConfirm(String name);
 
   /// Catálogo de impresoras: errores, estados vacíos y confirmaciones.
   String get printerErrorLoad;
+
   /// "Ninguna impresora coincide con \"$query\"" / "No printers match \"$query\"".
   String printerNoResults(String query);
+
   /// "Sin impresoras. Toca + para registrar la primera." / "No printers. Tap + to register the first one.".
   String get printerEmptyList;
+
   /// "¿Eliminar \"$name\"?" / "Delete \"$name\"?".
   String printerDeleteConfirm(String name);
 }

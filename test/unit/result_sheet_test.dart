@@ -1,14 +1,44 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:tresdcal/core/money/currency.dart';
+import 'package:tresdcal/core/share/quote_share.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
-import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
-import 'package:tresdcal/core/money/currency.dart';
-import 'package:tresdcal/features/calculation/presentation/widgets/result_sheet.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/calc_meta.dart';
+import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
+import 'package:tresdcal/features/calculation/presentation/widgets/result_sheet.dart';
+import 'package:tresdcal/l10n/es_bo.dart';
+
+/// Fake del platform interface de image_picker: retorna [_image] en
+/// `getImage` y controla el soporte de camara.
+class _FakePickerPlatform extends ImagePickerPlatform {
+  _FakePickerPlatform(this._image, {this.cameraSupported = true});
+
+  final XFile? _image;
+  final bool cameraSupported;
+
+  @override
+  Future<XFile?> getImage({
+    required ImageSource source,
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
+    CameraDevice preferredCameraDevice = CameraDevice.rear,
+  }) async {
+    return _image;
+  }
+
+  @override
+  bool supportsImageSource(ImageSource source) =>
+      source == ImageSource.camera ? cameraSupported : true;
+}
 
 /// Notifier que devuelve un estado fijo para tests.
 class _FixedStateNotifier extends CalculatorNotifier {
@@ -20,8 +50,7 @@ class _FixedStateNotifier extends CalculatorNotifier {
 }
 
 /// Helpers de rendering para que cada test sea declarativo.
-Widget _wrap(Widget child) =>
-    MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 CalculatorState _validState() {
   final out = CalculationOutput.simple(
@@ -65,16 +94,15 @@ void main() {
       );
 
       expect(find.text('FALTA COMPLETAR'), findsOneWidget);
-      expect(
-        find.textContaining('Completa peso'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Completa peso'), findsOneWidget);
       // No muestra chevron up ni "Ver cotizacion" en estado empty.
       expect(find.text('VER COTIZACIÓN'), findsNothing);
       expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsNothing);
     });
 
-    testWidgets('muestra total + chevron cuando onTap provisto', (tester) async {
+    testWidgets('muestra total + chevron cuando onTap provisto', (
+      tester,
+    ) async {
       var tapped = 0;
       await tester.pumpWidget(
         _wrap(
@@ -97,7 +125,9 @@ void main() {
       expect(tapped, 1);
     });
 
-    testWidgets('muestra badge descuento cuando hasDiscount=true', (tester) async {
+    testWidgets('muestra badge descuento cuando hasDiscount=true', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ResultBottomBar(
@@ -115,7 +145,9 @@ void main() {
   });
 
   group('ResultSheetContent', () {
-    testWidgets('renderiza QuoteImageTemplate con output del state', (tester) async {
+    testWidgets('renderiza QuoteImageTemplate con output del state', (
+      tester,
+    ) async {
       final state = _validState();
       await tester.pumpWidget(
         _wrap(
@@ -140,8 +172,7 @@ void main() {
       expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('muestra 4 botones de accion icon-only',
-        (tester) async {
+    testWidgets('muestra 4 botones de accion icon-only', (tester) async {
       final state = _validState();
       await tester.pumpWidget(
         _wrap(
@@ -237,6 +268,188 @@ void main() {
     });
   });
 
+  group('ResultSheetContent — foto de pieza (T9)', () {
+    const heroKey = Key('quote-piece-image');
+    // 1x1 PNG transparente valido (mismo asset de pdf_export_test).
+    const tinyPngBase64 =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=';
+
+    Uint8List tinyPng() => base64Decode(tinyPngBase64);
+    XFile fileFromBytes(Uint8List bytes) =>
+        XFile.fromData(bytes, name: 'img.png', mimeType: 'image/png');
+
+    Future<void> pumpSheet(WidgetTester tester) async {
+      final state = _validState();
+      await tester.pumpWidget(
+        _wrap(
+          ResultSheetContent(
+            state: state,
+            isPro: false,
+            onSave: () {},
+            onReset: () {},
+            onToggleDetail: () {},
+            currency: WorldCurrency.usd,
+          ),
+        ),
+      );
+    }
+
+    /// Adjunta una imagen via el path real del widget: abre el dialogo y
+    /// toca "Galería". Requiere runAsync porque el widget decodifica la
+    /// imagen con el engine real (instantiateImageCodec).
+    Future<void> attachFromGallery(WidgetTester tester) async {
+      await tester.runAsync(() async {
+        await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(EsBO.quoteImageAdd));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(EsBO.quoteImageGallery));
+        await tester.pumpAndSettle();
+      });
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'SC1: control "Agregar imagen" abre sheet con Galería + Cámara',
+      (tester) async {
+        ImagePickerPlatform.instance = _FakePickerPlatform(
+          fileFromBytes(tinyPng()),
+        );
+        await pumpSheet(tester);
+
+        await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(EsBO.quoteImageAdd));
+        await tester.pumpAndSettle();
+
+        expect(find.text(EsBO.quoteImageGallery), findsOneWidget);
+        expect(find.text(EsBO.quoteImageCamera), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'SC1: Cámara oculta cuando supportsImageSource(camera)=false',
+      (tester) async {
+        ImagePickerPlatform.instance = _FakePickerPlatform(
+          fileFromBytes(tinyPng()),
+          cameraSupported: false,
+        );
+        await pumpSheet(tester);
+
+        await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(EsBO.quoteImageAdd));
+        await tester.pumpAndSettle();
+
+        expect(find.text(EsBO.quoteImageGallery), findsOneWidget);
+        expect(find.text(EsBO.quoteImageCamera), findsNothing);
+      },
+    );
+
+    testWidgets('SC2: adjuntar desde Galería muestra preview en el template', (
+      tester,
+    ) async {
+      ImagePickerPlatform.instance = _FakePickerPlatform(
+        fileFromBytes(tinyPng()),
+      );
+      await pumpSheet(tester);
+
+      await attachFromGallery(tester);
+
+      expect(find.byKey(heroKey), findsOneWidget);
+      // El control muta a Cambiar/Quitar (RF5).
+      expect(find.text(EsBO.quoteImageChange), findsOneWidget);
+      expect(find.text(EsBO.quoteImageRemove), findsOneWidget);
+      expect(find.text(EsBO.quoteImageAdd), findsNothing);
+    });
+
+    testWidgets('SC5: Quitar remueve preview y restaura "Agregar imagen"', (
+      tester,
+    ) async {
+      ImagePickerPlatform.instance = _FakePickerPlatform(
+        fileFromBytes(tinyPng()),
+      );
+      await pumpSheet(tester);
+      await attachFromGallery(tester);
+      expect(find.byKey(heroKey), findsOneWidget);
+
+      await tester.ensureVisible(find.text(EsBO.quoteImageRemove));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.quoteImageRemove));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(heroKey), findsNothing);
+      expect(find.text(EsBO.quoteImageAdd), findsOneWidget);
+    });
+
+    testWidgets(
+      'SC6: imagen no decodificable → snackbar error y sin preview',
+      (tester) async {
+        // Garbage (< 5 MB): el decoder real de instantiateImageCodec falla.
+        final garbage = Uint8List.fromList(List.filled(64, 0x42));
+        ImagePickerPlatform.instance = _FakePickerPlatform(
+          fileFromBytes(garbage),
+        );
+        await pumpSheet(tester);
+
+        await attachFromGallery(tester);
+
+        expect(find.byKey(heroKey), findsNothing);
+        expect(find.text(EsBO.quoteImageInvalidFormat), findsOneWidget);
+      },
+    );
+
+    testWidgets('SC4: PNG capturado con foto difiere del sin foto', (
+      tester,
+    ) async {
+      final captureKey = GlobalKey();
+      final state = _validState();
+      final meta = computeMeta(state);
+
+      Widget template(Uint8List? bytes) => RepaintBoundary(
+        key: captureKey,
+        child: QuoteImageTemplate(
+          output: state.output!,
+          label: state.label,
+          discountPct:
+              state.detailDiscountPct?.toStringAsFixed(0) ?? state.discountPct,
+          showDetail: state.showDetail,
+          detailMaterialBreakdown: state.detailMaterialBreakdown,
+          detailElectricCost: state.detailElectricCost,
+          detailLaborCost: state.detailLaborCost,
+          detailPostProcessCost: state.detailPostProcessCost,
+          detailBaseCost: state.detailBaseCost,
+          detailFailureCost: state.detailFailureCost,
+          detailMarkupCost: state.detailMarkupCost,
+          detailProfitAmount: state.detailProfitAmount,
+          detailTotalFinal: state.detailTotalFinal,
+          metaGrams: meta.grams,
+          metaTime: meta.time,
+          companyName: null,
+          currency: WorldCurrency.usd,
+          pieceImageBytes: bytes,
+        ),
+      );
+
+      // El template (400px fijos) + hero supera el viewport default del
+      // test (800x600): agrandar la superficie para evitar overflow.
+      await tester.binding.setSurfaceSize(const Size(500, 1100));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      // toImage real requiere runAsync; el hero con imagen cambia el PNG.
+      await tester.runAsync(() async {
+        await tester.pumpWidget(_wrap(template(null)));
+        final withoutImage = await captureQuoteImageBytes(captureKey);
+
+        await tester.pumpWidget(_wrap(template(tinyPng())));
+        await tester.pumpAndSettle();
+        final withImage = await captureQuoteImageBytes(captureKey);
+
+        expect(withImage, isNot(equals(withoutImage)));
+      });
+    });
+  });
+
   group('computeMeta', () {
     test('express: retorna gramos + tiempo formateados', () {
       final state = CalculatorState(
@@ -276,8 +489,18 @@ void main() {
         discountPct: '0',
         label: '',
         materials: const [
-          MaterialRow(label: 'a', weight: '50', pricePerBobbin: '100', gramsPerBobbin: '1000'),
-          MaterialRow(label: 'b', weight: '75', pricePerBobbin: '100', gramsPerBobbin: '1000'),
+          MaterialRow(
+            label: 'a',
+            weight: '50',
+            pricePerBobbin: '100',
+            gramsPerBobbin: '1000',
+          ),
+          MaterialRow(
+            label: 'b',
+            weight: '75',
+            pricePerBobbin: '100',
+            gramsPerBobbin: '1000',
+          ),
         ],
         output: null,
         showDetail: false,

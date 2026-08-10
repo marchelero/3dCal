@@ -46,6 +46,7 @@ class QuoteImageTemplate extends StatelessWidget {
     required this.companyName,
     this.companyLogoBase64,
     required this.currency,
+    this.pieceImageBytes,
     super.key,
   });
 
@@ -74,6 +75,9 @@ class QuoteImageTemplate extends StatelessWidget {
   /// Configuracion monetaria activa para formateo.
   final WorldCurrency currency;
 
+  /// Foto de la pieza (efimera, solo en el envio). Si es null, no hay hero.
+  final Uint8List? pieceImageBytes;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -101,6 +105,36 @@ class QuoteImageTemplate extends StatelessWidget {
           // Separator
           _divider(color),
           const SizedBox(height: AppSpacing.lg),
+
+          // ── Foto de la pieza: compacta centrada bajo el membrete ──
+          // (feedback usuario 2026-08-10: "más pequeña, que no ocupe todo").
+          if (pieceImageBytes != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 224, // ~56% del template 400px: no hero
+                    maxHeight: 132,
+                  ),
+                  child: Image.memory(
+                    pieceImageBytes!,
+                    // Target para tests (SC2/SC4/SC5).
+                    key: const Key('quote-piece-image'),
+                    fit: BoxFit.contain, // foto completa visible, sin crop
+                    errorBuilder: (_, __, ___) => ColoredBox(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      child: const Icon(Icons.broken_image_rounded),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
 
           // ── Label (optional) ──
           if (hasLabel) ...[
@@ -155,9 +189,7 @@ class QuoteImageTemplate extends StatelessWidget {
           // Subtitle
           Center(
             child: Text(
-              hasDiscount
-                  ? EsBO.calcTotalWithDiscount
-                  : EsBO.calcTotalFinal,
+              hasDiscount ? EsBO.calcTotalWithDiscount : EsBO.calcTotalFinal,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: color.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
@@ -170,10 +202,7 @@ class QuoteImageTemplate extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Center(
               child: Text(
-                [
-                  ?metaGrams,
-                  ?metaTime,
-                ].join(EsBO.calcMetaSeparator),
+                [?metaGrams, ?metaTime].join(EsBO.calcMetaSeparator),
                 style: AppTheme.num(
                   theme.textTheme.bodySmall ?? const TextStyle(),
                   color: color.onSurfaceVariant,
@@ -200,7 +229,10 @@ class QuoteImageTemplate extends StatelessWidget {
                 children: [
                   _discountRow(
                     EsBO.quoteNoDiscount,
-                    formatCurrency(output.totalPrice + output.discountAmount, currency),
+                    formatCurrency(
+                      output.totalPrice + output.discountAmount,
+                      currency,
+                    ),
                     theme,
                     color.onSurface,
                   ),
@@ -414,14 +446,15 @@ Widget _discountRow(
       ),
       Text(
         value,
-        style: AppTheme.num(
-          theme.textTheme.bodyMedium ?? const TextStyle(),
-          color: color,
-          fontWeight: bold ? FontWeight.bold : FontWeight.w600,
-        ).copyWith(
-          decoration: strikeThrough ? TextDecoration.lineThrough : null,
-          decorationColor: color,
-        ),
+        style:
+            AppTheme.num(
+              theme.textTheme.bodyMedium ?? const TextStyle(),
+              color: color,
+              fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+            ).copyWith(
+              decoration: strikeThrough ? TextDecoration.lineThrough : null,
+              decorationColor: color,
+            ),
       ),
     ],
   );

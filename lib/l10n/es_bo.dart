@@ -44,10 +44,8 @@ class EsBO {
   static String get settingsTitle => _impl.settingsTitle;
   static String get settingsGlobalParams => _impl.settingsGlobalParams;
   static String get settingsProfitBase => _impl.settingsProfitBase;
-  static String get settingsProfitBaseHelper =>
-      _impl.settingsProfitBaseHelper;
-  static String settingsKwhRate(String symbol) =>
-      _impl.settingsKwhRate(symbol);
+  static String get settingsProfitBaseHelper => _impl.settingsProfitBaseHelper;
+  static String settingsKwhRate(String symbol) => _impl.settingsKwhRate(symbol);
   static String get settingsKwhRateHelper => _impl.settingsKwhRateHelper;
   static String get settingsCatalogos => _impl.settingsCatalogos;
   static String get settingsFilamentos => _impl.settingsFilamentos;
@@ -93,20 +91,16 @@ class EsBO {
   static String get settingsCompanyLogoPick => _impl.settingsCompanyLogoPick;
   static String get settingsCompanyLogoRemove =>
       _impl.settingsCompanyLogoRemove;
-  static String get settingsCompanyLogoError =>
-      _impl.settingsCompanyLogoError;
+  static String get settingsCompanyLogoError => _impl.settingsCompanyLogoError;
 
   // === Branding gate (T12) ===
   static String get settingsBrandingLockedBody =>
       _impl.settingsBrandingLockedBody;
   static String get settingsGoProAction => _impl.settingsGoProAction;
 
-  static String get settingsRestorePurchases =>
-      _impl.settingsRestorePurchases;
-  static String get settingsRestoreSuccess =>
-      _impl.settingsRestoreSuccess;
-  static String get settingsRestoreEmpty =>
-      _impl.settingsRestoreEmpty;
+  static String get settingsRestorePurchases => _impl.settingsRestorePurchases;
+  static String get settingsRestoreSuccess => _impl.settingsRestoreSuccess;
+  static String get settingsRestoreEmpty => _impl.settingsRestoreEmpty;
 
   // === Dashboard ===
   static String get dashboardTitle => _impl.dashboardTitle;
@@ -186,7 +180,8 @@ class EsBO {
 
   // === Material row (Advanced / Express calculator) ===
   static String calcMaterialTitle(int index) => _impl.calcMaterialTitle(index);
-  static String calcMaterialRemove(int index) => _impl.calcMaterialRemove(index);
+  static String calcMaterialRemove(int index) =>
+      _impl.calcMaterialRemove(index);
   static String get calcMaterialCatalog => _impl.calcMaterialCatalog;
   static String calcMaterialUse(String filamentName) =>
       _impl.calcMaterialUse(filamentName);
@@ -241,6 +236,16 @@ class EsBO {
   static String get calcShareText => _impl.calcShareText;
   static String get calcSheetActionsLabel => _impl.calcSheetActionsLabel;
 
+  // === Quote image (foto de la pieza) ===
+  static String get quoteImageAdd => _impl.quoteImageAdd;
+  static String get quoteImageGallery => _impl.quoteImageGallery;
+  static String get quoteImageCamera => _impl.quoteImageCamera;
+  static String get quoteImageChange => _impl.quoteImageChange;
+  static String get quoteImageRemove => _impl.quoteImageRemove;
+  static String get quoteImageTooLarge => _impl.quoteImageTooLarge;
+  static String get quoteImageInvalidFormat => _impl.quoteImageInvalidFormat;
+  static String get quoteImageError => _impl.quoteImageError;
+
   // === Filaments / Printers ===
   static String get filamentTitle => _impl.filamentTitle;
   static String get filamentNew => _impl.filamentNew;
@@ -251,7 +256,8 @@ class EsBO {
   static String get filamentBrandHelper => _impl.filamentBrandHelper;
   static String get brandSelectorOther => _impl.brandSelectorOther;
   static String get brandSelectorHint => _impl.brandSelectorHint;
-  static String get brandSelectorManualHelper => _impl.brandSelectorManualHelper;
+  static String get brandSelectorManualHelper =>
+      _impl.brandSelectorManualHelper;
   static String filamentPrice(String symbol) => _impl.filamentPrice(symbol);
   static String get filamentPriceHelper => _impl.filamentPriceHelper;
   static String get filamentGrams => _impl.filamentGrams;
@@ -276,8 +282,7 @@ class EsBO {
   static String get printerDefaultSubtitle => _impl.printerDefaultSubtitle;
   static String get printerNewTooltip => _impl.printerNewTooltip;
   static String get printerDeleteTitle => _impl.printerDeleteTitle;
-  static String get printerMustBeNonNegative =>
-      _impl.printerMustBeNonNegative;
+  static String get printerMustBeNonNegative => _impl.printerMustBeNonNegative;
 
   // === Calculator output ===
   static String get calcNotifFilament => _impl.calcNotifFilament;
@@ -369,8 +374,7 @@ class EsBO {
   static String get commonSharePdf => _impl.commonSharePdf;
   static String get commonPrint => _impl.commonPrint;
   static String get commonImageDownloaded => _impl.commonImageDownloaded;
-  static String get commonImageSavedGallery =>
-      _impl.commonImageSavedGallery;
+  static String get commonImageSavedGallery => _impl.commonImageSavedGallery;
   static String get commonPdfExportError => _impl.commonPdfExportError;
   static String get commonPrintError => _impl.commonPrintError;
   static String get commonDefaultSuffix => _impl.commonDefaultSuffix;
@@ -400,8 +404,7 @@ class EsBO {
   static String get calcSearchFilament => _impl.calcSearchFilament;
 
   static String get detailBreakdown => _impl.detailBreakdown;
-  static String detailDiscountPct(int pct) =>
-      _impl.detailDiscountPct(pct);
+  static String detailDiscountPct(int pct) => _impl.detailDiscountPct(pct);
   static String get detailPreview => _impl.detailPreview;
 
   static String get quoteNoDiscount => _impl.quoteNoDiscount;
@@ -426,15 +429,13 @@ class EsBO {
   static String get historyFilterAll => _impl.historyFilterAll;
   static String get historyFilterSold => _impl.historyFilterSold;
   static String get historyFilterPending => _impl.historyFilterPending;
-  static String get historyNoQuotesToExport =>
-      _impl.historyNoQuotesToExport;
+  static String get historyNoQuotesToExport => _impl.historyNoQuotesToExport;
 
   static String get chartNoMonthlyData => _impl.chartNoMonthlyData;
   static List<String> get chartShortMonths => _impl.chartShortMonths;
 
   static String get filamentSearchHint => _impl.filamentSearchHint;
-  static String filamentDeleted(String name) =>
-      _impl.filamentDeleted(name);
+  static String filamentDeleted(String name) => _impl.filamentDeleted(name);
   static String get printerSearchHint => _impl.printerSearchHint;
   static String printerDeleted(String name) => _impl.printerDeleted(name);
   static String get printerErrorSave => _impl.printerErrorSave;
@@ -469,8 +470,7 @@ class EsBO {
       _impl.filamentDeleteConfirm(name);
 
   static String get printerErrorLoad => _impl.printerErrorLoad;
-  static String printerNoResults(String query) =>
-      _impl.printerNoResults(query);
+  static String printerNoResults(String query) => _impl.printerNoResults(query);
   static String get printerEmptyList => _impl.printerEmptyList;
   static String printerDeleteConfirm(String name) =>
       _impl.printerDeleteConfirm(name);
@@ -503,8 +503,7 @@ class EsImpl implements AppStrings {
   @override
   String get commonLoading => 'Cargando...';
   @override
-  String get commonErrorGeneric =>
-      'Algo salió mal. Inténtalo de nuevo.';
+  String get commonErrorGeneric => 'Algo salió mal. Inténtalo de nuevo.';
 
   @override
   String get navHome => 'Inicio';
@@ -522,14 +521,11 @@ class EsImpl implements AppStrings {
   @override
   String get settingsProfitBase => 'Ganancia base (%)';
   @override
-  String get settingsProfitBaseHelper =>
-      'Margen sobre costo base. 0-1000';
+  String get settingsProfitBaseHelper => 'Margen sobre costo base. 0-1000';
   @override
-  String settingsKwhRate(String symbol) =>
-      'Tarifa electrica ($symbol/kWh)';
+  String settingsKwhRate(String symbol) => 'Tarifa electrica ($symbol/kWh)';
   @override
-  String get settingsKwhRateHelper =>
-      'Rango residencial Bolivia: 0.10-5.00';
+  String get settingsKwhRateHelper => 'Rango residencial Bolivia: 0.10-5.00';
   @override
   String get settingsCatalogos => 'Catálogos';
   @override
@@ -539,8 +535,7 @@ class EsImpl implements AppStrings {
   @override
   String get settingsAbout => 'Acerca de';
   @override
-  String get settingsPrivacy =>
-      'Privacidad: 100% local, sin telemetria';
+  String get settingsPrivacy => 'Privacidad: 100% local, sin telemetria';
   @override
   String get settingsSaved => 'Guardado';
   @override
@@ -548,18 +543,14 @@ class EsImpl implements AppStrings {
   @override
   String get settingsTheme => 'Tema';
   @override
-  String get settingsManageFilaments =>
-      'Gestiona tus filamentos';
+  String get settingsManageFilaments => 'Gestiona tus filamentos';
   @override
-  String get settingsManagePrinters =>
-      'Registra tus impresoras';
+  String get settingsManagePrinters => 'Registra tus impresoras';
 
   @override
-  String get settingsLaborPost =>
-      'Mano de obra y post-procesado';
+  String get settingsLaborPost => 'Mano de obra y post-procesado';
   @override
-  String settingsLaborRate(String symbol) =>
-      'Mano de obra ($symbol/hora)';
+  String settingsLaborRate(String symbol) => 'Mano de obra ($symbol/hora)';
   @override
   String get settingsLaborRateHelper =>
       'Costo operador/tecnico por hora de impresion. 0 = desactivado';
@@ -574,14 +565,12 @@ class EsImpl implements AppStrings {
   String get settingsFailureRateHelper =>
       '% del costo base para cubrir impresiones fallidas. 0 = desactivado';
   @override
-  String settingsMinimumCharge(String symbol) =>
-      'Cargo minimo ($symbol)';
+  String settingsMinimumCharge(String symbol) => 'Cargo minimo ($symbol)';
   @override
   String get settingsMinimumChargeHelper =>
       'Cotizaciones por debajo de este monto se ajustan automaticamente';
   @override
-  String get settingsMarkupOnMaterials =>
-      'Margen por desperdicio (%)';
+  String get settingsMarkupOnMaterials => 'Margen por desperdicio (%)';
   @override
   String get settingsMarkupOnMaterialsHelper =>
       '% extra sobre costo de materiales por desperdicio/desgaste';
@@ -602,14 +591,11 @@ class EsImpl implements AppStrings {
   @override
   String get settingsCompanyLogo => 'Logo';
   @override
-  String get settingsCompanyLogoPick =>
-      'Seleccionar imagen';
+  String get settingsCompanyLogoPick => 'Seleccionar imagen';
   @override
-  String get settingsCompanyLogoRemove =>
-      'Eliminar logo';
+  String get settingsCompanyLogoRemove => 'Eliminar logo';
   @override
-  String get settingsCompanyLogoError =>
-      'Error al cargar la imagen';
+  String get settingsCompanyLogoError => 'Error al cargar la imagen';
 
   @override
   String get settingsBrandingLockedBody =>
@@ -618,20 +604,16 @@ class EsImpl implements AppStrings {
   String get settingsGoProAction => 'Ir a Pro';
 
   @override
-  String get settingsRestorePurchases =>
-      'Restaurar compras';
+  String get settingsRestorePurchases => 'Restaurar compras';
   @override
-  String get settingsRestoreSuccess =>
-      'Compras restauradas correctamente!';
+  String get settingsRestoreSuccess => 'Compras restauradas correctamente!';
   @override
-  String get settingsRestoreEmpty =>
-      'No se encontraron compras previas';
+  String get settingsRestoreEmpty => 'No se encontraron compras previas';
 
   @override
   String get dashboardTitle => 'Dashboard';
   @override
-  String get dashboardErrorLoad =>
-      'Error al cargar el dashboard';
+  String get dashboardErrorLoad => 'Error al cargar el dashboard';
   @override
   String get dashboardEmpty => 'Aun no cotizaste nada';
   @override
@@ -663,26 +645,21 @@ class EsImpl implements AppStrings {
   @override
   String get homeActionNewCalc => 'Nueva cotización';
   @override
-  String get homeActionNewCalcSub =>
-      'Calcula precio de impresion';
+  String get homeActionNewCalcSub => 'Calcula precio de impresion';
   @override
   String get homeActionHistory => 'Historial';
   @override
-  String get homeActionHistorySub =>
-      'Cotizaciones guardadas';
+  String get homeActionHistorySub => 'Cotizaciones guardadas';
   @override
   String get homeActionDashboard => 'Dashboard';
   @override
-  String get homeActionDashboardSub =>
-      'Estadisticas y graficos';
+  String get homeActionDashboardSub => 'Estadisticas y graficos';
   @override
   String get homeQuickAccess => 'Acceso rápido';
   @override
-  String get homeErrorLoadStats =>
-      'Error cargando stats';
+  String get homeErrorLoadStats => 'Error cargando stats';
   @override
-  String get homeEmptyQuotations =>
-      'Todavia no hay cotizaciones';
+  String get homeEmptyQuotations => 'Todavia no hay cotizaciones';
   @override
   String get homeSummary => 'Resumen';
   @override
@@ -701,13 +678,11 @@ class EsImpl implements AppStrings {
   @override
   String get calcLabelOptional => 'Etiqueta (opcional)';
   @override
-  String get calcLabelOptionalHelper =>
-      'Ej: Soporte pared, Engranaje PETG';
+  String get calcLabelOptionalHelper => 'Ej: Soporte pared, Engranaje PETG';
   @override
   String get calcLabelWeight => 'Peso de la pieza';
   @override
-  String get calcLabelWeightHelper =>
-      'Gramos del modelo';
+  String get calcLabelWeightHelper => 'Gramos del modelo';
   @override
   String get calcLabelHours => 'Horas';
   @override
@@ -719,8 +694,7 @@ class EsImpl implements AppStrings {
   @override
   String get calcLabelDiscount => 'Descuento';
   @override
-  String get calcLabelDiscountHelper =>
-      'Porcentaje sobre el total final';
+  String get calcLabelDiscountHelper => 'Porcentaje sobre el total final';
   @override
   String get calcBtnSave => 'Guardar cotización';
   @override
@@ -730,8 +704,7 @@ class EsImpl implements AppStrings {
   @override
   String get calcToggleHideDetail => 'Ocultar detalle';
   @override
-  String get calcTotalWithDiscount =>
-      'Total con descuento';
+  String get calcTotalWithDiscount => 'Total con descuento';
   @override
   String get calcTotalFinal => 'Total';
   @override
@@ -741,20 +714,17 @@ class EsImpl implements AppStrings {
   @override
   String get calcDetailLabor => 'Mano de obra';
   @override
-  String get calcDetailPostProcess =>
-      'Post-procesado';
+  String get calcDetailPostProcess => 'Post-procesado';
   @override
   String get calcDetailBase => 'Costo base';
   @override
   String get calcDetailFailure => 'Tasa de falla';
   @override
-  String get calcDetailMarkup =>
-      'Margen por desperdicio';
+  String get calcDetailMarkup => 'Margen por desperdicio';
   @override
   String get calcDetailProfit => 'Ganancia';
   @override
-  String get calcDetailMinimumCharge =>
-      'Cargo minimo';
+  String get calcDetailMinimumCharge => 'Cargo minimo';
   @override
   String get calcDetailTotal => 'Total';
   @override
@@ -775,8 +745,7 @@ class EsImpl implements AppStrings {
   String get calcNoMaterials => 'Sin materiales.';
 
   @override
-  String get calcKeyWeightHint =>
-      'Clave: sin este dato no se puede cotizar';
+  String get calcKeyWeightHint => 'Clave: sin este dato no se puede cotizar';
   @override
   String get calcKeyHoursHint =>
       'Clave: define el costo de mano de obra y energia';
@@ -838,20 +807,15 @@ class EsImpl implements AppStrings {
   @override
   String get calcEmptyHintPrefix => 'Completa';
   @override
-  String get calcEmptyHintSuffix =>
-      'para ver la cotización';
+  String get calcEmptyHintSuffix => 'para ver la cotización';
   @override
-  String get calcFieldWeightShort =>
-      'peso de la pieza';
+  String get calcFieldWeightShort => 'peso de la pieza';
   @override
-  String get calcFieldPriceShort =>
-      'precio del filamento';
+  String get calcFieldPriceShort => 'precio del filamento';
   @override
-  String get calcFieldTimeShort =>
-      'tiempo de impresion';
+  String get calcFieldTimeShort => 'tiempo de impresion';
   @override
-  String get calcFieldMaterialShort =>
-      'al menos un material';
+  String get calcFieldMaterialShort => 'al menos un material';
 
   @override
   String get calcMetaSeparator => ' · ';
@@ -859,25 +823,40 @@ class EsImpl implements AppStrings {
   @override
   String get calcResultBarTapHint => 'Ver cotización';
   @override
-  String get calcResultBarEmptyHint =>
-      'Falta completar';
+  String get calcResultBarEmptyHint => 'Falta completar';
   @override
   String get calcSheetTitle => 'Cotización';
   @override
   String get calcBtnShare => 'Compartir imagen';
   @override
-  String get calcBtnShareTooltip =>
-      'Genera una imagen lista para enviar';
+  String get calcBtnShareTooltip => 'Genera una imagen lista para enviar';
   @override
-  String get calcShareError =>
-      'No se pudo generar la imagen';
+  String get calcShareError => 'No se pudo generar la imagen';
   @override
   String get calcShareSubject => 'Cotización 3D';
   @override
-  String get calcShareText =>
-      'Cotización generada en 3dCalc';
+  String get calcShareText => 'Cotización generada en 3dCalc';
   @override
   String get calcSheetActionsLabel => 'Acciones';
+
+  // === Quote image (foto de la pieza) ===
+  @override
+  String get quoteImageAdd => 'Agregar imagen';
+  @override
+  String get quoteImageGallery => 'Galería';
+  @override
+  String get quoteImageCamera => 'Cámara';
+  @override
+  String get quoteImageChange => 'Cambiar';
+  @override
+  String get quoteImageRemove => 'Quitar';
+  @override
+  String get quoteImageTooLarge => 'La imagen supera los 5 MB y no se adjuntó.';
+  @override
+  String get quoteImageInvalidFormat =>
+      'Formato de imagen no válido (se admiten JPEG, PNG o WebP).';
+  @override
+  String get quoteImageError => 'No se pudo obtener la imagen';
 
   @override
   String get filamentTitle => 'Filamentos';
@@ -896,42 +875,35 @@ class EsImpl implements AppStrings {
   @override
   String get brandSelectorOther => 'Otro...';
   @override
-  String get brandSelectorHint => 'Elegí una marca o seleccioná Otro para escribirla';
+  String get brandSelectorHint =>
+      'Elegí una marca o seleccioná Otro para escribirla';
   @override
   String get brandSelectorManualHelper => 'Escribí el nombre de la marca';
   @override
-  String filamentPrice(String symbol) =>
-      'Precio filamento ($symbol)';
+  String filamentPrice(String symbol) => 'Precio filamento ($symbol)';
   @override
-  String get filamentPriceHelper =>
-      'Costo del rollo completo';
+  String get filamentPriceHelper => 'Costo del rollo completo';
   @override
   String get filamentGrams => 'Gramos por rollo';
   @override
-  String get filamentGramsHelper =>
-      'Tipico 1000';
+  String get filamentGramsHelper => 'Tipico 1000';
   @override
-  String get filamentDefaultToggle =>
-      'Marcar como default';
+  String get filamentDefaultToggle => 'Marcar como default';
   @override
   String get filamentDefaultSubtitle =>
       'Se usará en nuevas cotizaciones. Solo un filamento puede ser predeterminado.';
   @override
   String get filamentNewTooltip => 'Nuevo filamento';
   @override
-  String get filamentDeleteTitle =>
-      'Eliminar filamento';
+  String get filamentDeleteTitle => 'Eliminar filamento';
   @override
   String get filamentErrorSave => 'Error guardando';
   @override
-  String get filamentMustBePositive =>
-      'Debe ser > 0';
+  String get filamentMustBePositive => 'Debe ser > 0';
   @override
-  String get filamentMustBeInteger =>
-      'Debe ser entero';
+  String get filamentMustBeInteger => 'Debe ser entero';
   @override
-  String get filamentMax100 =>
-      'Maximo 100 caracteres';
+  String get filamentMax100 => 'Maximo 100 caracteres';
 
   @override
   String get printerTitle => 'Impresoras';
@@ -944,26 +916,20 @@ class EsImpl implements AppStrings {
   @override
   String get printerModelHelper => 'Ej: Ender 3 V2';
   @override
-  String get printerBrandHelper =>
-      'Ej: Creality, Anycubic';
+  String get printerBrandHelper => 'Ej: Creality, Anycubic';
   @override
-  String get printerWatts =>
-      'Consumo promedio (W)';
+  String get printerWatts => 'Consumo promedio (W)';
   @override
-  String get printerWattsHelper =>
-      'Tipico 100-300 W';
+  String get printerWattsHelper => 'Tipico 100-300 W';
   @override
   String get printerDefaultSubtitle =>
       'Se usará en nuevas cotizaciones. Solo una impresora puede ser predeterminada.';
   @override
-  String get printerNewTooltip =>
-      'Nueva impresora';
+  String get printerNewTooltip => 'Nueva impresora';
   @override
-  String get printerDeleteTitle =>
-      'Eliminar impresora';
+  String get printerDeleteTitle => 'Eliminar impresora';
   @override
-  String get printerMustBeNonNegative =>
-      'Debe ser >= 0';
+  String get printerMustBeNonNegative => 'Debe ser >= 0';
 
   @override
   String get calcNotifFilament => 'Filamento';
@@ -971,16 +937,13 @@ class EsImpl implements AppStrings {
   String get calcNotifMaterial => 'Material';
 
   @override
-  String get calcDetailTitle =>
-      'Detalle de cotización';
+  String get calcDetailTitle => 'Detalle de cotización';
   @override
   String get calcDetailDelete => 'Eliminar';
   @override
-  String get calcDetailDeleteTitle =>
-      'Eliminar cotización';
+  String get calcDetailDeleteTitle => 'Eliminar cotización';
   @override
-  String get calcDetailDeleteConfirm =>
-      '¿Eliminar definitivamente?';
+  String get calcDetailDeleteConfirm => '¿Eliminar definitivamente?';
   @override
   String get calcDetailNoName => 'Sin nombre';
   @override
@@ -988,27 +951,20 @@ class EsImpl implements AppStrings {
   @override
   String get calcDetailReuse => 'Reusar';
   @override
-  String get calcDetailMarkSold =>
-      'Marcar vendida';
+  String get calcDetailMarkSold => 'Marcar vendida';
   @override
-  String get calcDetailMarkPending =>
-      'Marcar pendiente';
+  String get calcDetailMarkPending => 'Marcar pendiente';
   @override
-  String get historyTitle =>
-      'Cotizaciones';
+  String get historyTitle => 'Cotizaciones';
   @override
-  String get historyErrorLoad =>
-      'Error cargando cotizaciones';
+  String get historyErrorLoad => 'Error cargando cotizaciones';
   @override
-  String get historyEmpty =>
-      'Sin cotizaciones guardadas';
+  String get historyEmpty => 'Sin cotizaciones guardadas';
 
   @override
-  String get csvExportLockedBody =>
-      'Exportar CSV es una función Pro';
+  String get csvExportLockedBody => 'Exportar CSV es una función Pro';
   @override
-  String get csvGoProAction =>
-      'Hazte Pro';
+  String get csvGoProAction => 'Hazte Pro';
 
   @override
   String get localeLabel => 'Idioma';
@@ -1019,19 +975,23 @@ class EsImpl implements AppStrings {
   @override
   String get onboardingTitle1 => 'Bienvenido a 3dCalc';
   @override
-  String get onboardingDesc1 => 'Calcula el precio de impresiones 3D al instante.\nMateriales, electricidad, mano de obra y mas.';
+  String get onboardingDesc1 =>
+      'Calcula el precio de impresiones 3D al instante.\nMateriales, electricidad, mano de obra y mas.';
   @override
   String get onboardingTitle2 => 'Dos modos de calculo';
   @override
-  String get onboardingDesc2 => 'Express: cálculo rápido con un solo material.\nAvanzado: múltiples materiales, descuento y más parámetros.';
+  String get onboardingDesc2 =>
+      'Express: cálculo rápido con un solo material.\nAvanzado: múltiples materiales, descuento y más parámetros.';
   @override
   String get onboardingTitle3 => 'Catálogo integrado';
   @override
-  String get onboardingDesc3 => 'Guarda tus filamentos e impresoras favoritos.\nSeleccionalos al instante desde el catalogo.';
+  String get onboardingDesc3 =>
+      'Guarda tus filamentos e impresoras favoritos.\nSeleccionalos al instante desde el catalogo.';
   @override
   String get onboardingTitle4 => 'Dashboard & mas';
   @override
-  String get onboardingDesc4 => 'Seguimiento de cotizaciones, tendencias mensuales,\nexportación a PDF e historial con búsqueda.';
+  String get onboardingDesc4 =>
+      'Seguimiento de cotizaciones, tendencias mensuales,\nexportación a PDF e historial con búsqueda.';
   @override
   String get onboardingNext => 'Siguiente';
   @override
@@ -1080,15 +1040,14 @@ class EsImpl implements AppStrings {
   String get paywallPrice => '\$4,99';
   @override
   List<String> get paywallFeatures => const [
-        'Elimina la marca de los PDF',
-        'Cotizaciones multi-material',
-        'Historial ilimitado',
-        'Exportar a CSV',
-        'Dashboard avanzado con analiticas',
-      ];
+    'Elimina la marca de los PDF',
+    'Cotizaciones multi-material',
+    'Historial ilimitado',
+    'Exportar a CSV',
+    'Dashboard avanzado con analiticas',
+  ];
   @override
-  String paywallUnlockButton(String price) =>
-      'Desbloquear por $price';
+  String paywallUnlockButton(String price) => 'Desbloquear por $price';
   @override
   String get paywallRestoreButton => 'Restaurar compras';
   @override
@@ -1137,8 +1096,7 @@ class EsImpl implements AppStrings {
   @override
   String get historyExportCsv => 'Exportar CSV';
   @override
-  String get historyEmptyCta =>
-      'Crea una desde la calculadora y toca Guardar.';
+  String get historyEmptyCta => 'Crea una desde la calculadora y toca Guardar.';
   @override
   String get calcSectionOthers => 'Otros';
   @override
@@ -1226,8 +1184,7 @@ class EsImpl implements AppStrings {
   String get dashboardTopMaterials => 'Materiales más usados';
 
   @override
-  String get historySearchHint =>
-      'Buscar por nombre o cliente...';
+  String get historySearchHint => 'Buscar por nombre o cliente...';
   @override
   String get historyFilterAll => 'Todas';
   @override
@@ -1235,16 +1192,25 @@ class EsImpl implements AppStrings {
   @override
   String get historyFilterPending => 'Pendientes';
   @override
-  String get historyNoQuotesToExport =>
-      'No hay cotizaciones para exportar';
+  String get historyNoQuotesToExport => 'No hay cotizaciones para exportar';
 
   @override
   String get chartNoMonthlyData => 'Sin datos mensuales';
   @override
   List<String> get chartShortMonths => const [
-        'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-        'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
-      ];
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
+  ];
 
   @override
   String get filamentSearchHint => 'Buscar filamentos...';
@@ -1283,11 +1249,9 @@ class EsImpl implements AppStrings {
   @override
   String get splashLogo => '3dCalc logo';
   @override
-  String onboardingPageCounter(int page, int total) =>
-      'Página $page de $total';
+  String onboardingPageCounter(int page, int total) => 'Página $page de $total';
   @override
-  String commonNoResultsFor(String query) =>
-      'Sin resultados para "$query"';
+  String commonNoResultsFor(String query) => 'Sin resultados para "$query"';
   @override
   String get historyEmptySearchHint => 'Prueba con otro término.';
 

@@ -28,8 +28,7 @@ class EnImpl implements AppStrings {
   @override
   String get commonLoading => 'Loading...';
   @override
-  String get commonErrorGeneric =>
-      'Something went wrong. Please try again.';
+  String get commonErrorGeneric => 'Something went wrong. Please try again.';
 
   @override
   String get navHome => 'Home';
@@ -47,14 +46,11 @@ class EnImpl implements AppStrings {
   @override
   String get settingsProfitBase => 'Base profit (%)';
   @override
-  String get settingsProfitBaseHelper =>
-      'Margin over base cost. 0-1000';
+  String get settingsProfitBaseHelper => 'Margin over base cost. 0-1000';
   @override
-  String settingsKwhRate(String symbol) =>
-      'Electricity rate ($symbol/kWh)';
+  String settingsKwhRate(String symbol) => 'Electricity rate ($symbol/kWh)';
   @override
-  String get settingsKwhRateHelper =>
-      'Residential range Bolivia: 0.10-5.00';
+  String get settingsKwhRateHelper => 'Residential range Bolivia: 0.10-5.00';
   @override
   String get settingsCatalogos => 'Catalogs';
   @override
@@ -64,8 +60,7 @@ class EnImpl implements AppStrings {
   @override
   String get settingsAbout => 'About';
   @override
-  String get settingsPrivacy =>
-      'Privacy: 100% local, no telemetry';
+  String get settingsPrivacy => 'Privacy: 100% local, no telemetry';
   @override
   String get settingsSaved => 'Saved';
   @override
@@ -73,42 +68,34 @@ class EnImpl implements AppStrings {
   @override
   String get settingsTheme => 'Theme';
   @override
-  String get settingsManageFilaments =>
-      'Manage your filaments';
+  String get settingsManageFilaments => 'Manage your filaments';
   @override
-  String get settingsManagePrinters =>
-      'Register your printers';
+  String get settingsManagePrinters => 'Register your printers';
 
   @override
-  String get settingsLaborPost =>
-      'Labor and post-processing';
+  String get settingsLaborPost => 'Labor and post-processing';
   @override
-  String settingsLaborRate(String symbol) =>
-      'Labor rate ($symbol/hour)';
+  String settingsLaborRate(String symbol) => 'Labor rate ($symbol/hour)';
   @override
   String get settingsLaborRateHelper =>
       'Operator/technician cost per print hour. 0 = disabled';
   @override
-  String get settingsPostProcessRate =>
-      'Post-process (%)';
+  String get settingsPostProcessRate => 'Post-process (%)';
   @override
   String get settingsPostProcessRateHelper =>
       '% of material cost. E.g. 10 = +10% finishing/sanding/painting';
   @override
-  String get settingsFailureRate =>
-      'Failure rate (%)';
+  String get settingsFailureRate => 'Failure rate (%)';
   @override
   String get settingsFailureRateHelper =>
       '% of base cost to cover failed prints. 0 = disabled';
   @override
-  String settingsMinimumCharge(String symbol) =>
-      'Minimum charge ($symbol)';
+  String settingsMinimumCharge(String symbol) => 'Minimum charge ($symbol)';
   @override
   String get settingsMinimumChargeHelper =>
       'Quotes below this amount are automatically adjusted';
   @override
-  String get settingsMarkupOnMaterials =>
-      'Waste markup (%)';
+  String get settingsMarkupOnMaterials => 'Waste markup (%)';
   @override
   String get settingsMarkupOnMaterialsHelper =>
       '% extra on material cost for waste/wear';
@@ -129,58 +116,44 @@ class EnImpl implements AppStrings {
   @override
   String get settingsCompanyLogo => 'Logo';
   @override
-  String get settingsCompanyLogoPick =>
-      'Pick image';
+  String get settingsCompanyLogoPick => 'Pick image';
   @override
-  String get settingsCompanyLogoRemove =>
-      'Remove logo';
+  String get settingsCompanyLogoRemove => 'Remove logo';
   @override
-  String get settingsCompanyLogoError =>
-      'Error loading image';
+  String get settingsCompanyLogoError => 'Error loading image';
 
   @override
-  String get settingsBrandingLockedBody =>
-      'Unlock Pro to customize your brand';
+  String get settingsBrandingLockedBody => 'Unlock Pro to customize your brand';
   @override
   String get settingsGoProAction => 'Go Pro';
 
   @override
-  String get settingsRestorePurchases =>
-      'Restore purchases';
+  String get settingsRestorePurchases => 'Restore purchases';
   @override
-  String get settingsRestoreSuccess =>
-      'Purchases restored successfully!';
+  String get settingsRestoreSuccess => 'Purchases restored successfully!';
   @override
-  String get settingsRestoreEmpty =>
-      'No previous purchases found';
+  String get settingsRestoreEmpty => 'No previous purchases found';
 
   @override
   String get dashboardTitle => 'Dashboard';
   @override
-  String get dashboardErrorLoad =>
-      'Error loading dashboard';
+  String get dashboardErrorLoad => 'Error loading dashboard';
   @override
-  String get dashboardEmpty =>
-      'No quotes yet';
+  String get dashboardEmpty => 'No quotes yet';
   @override
   String get dashboardEmptyCta => 'Go to Home';
   @override
-  String get dashboardStatQuotations =>
-      'Quotations';
+  String get dashboardStatQuotations => 'Quotations';
   @override
   String get dashboardStatSold => 'Sold';
   @override
-  String get dashboardStatConversion =>
-      'Conversion';
+  String get dashboardStatConversion => 'Conversion';
   @override
-  String get dashboardTotalQuoted =>
-      'Total quoted';
+  String get dashboardTotalQuoted => 'Total quoted';
   @override
-  String get dashboardTotalSold =>
-      'Total sold';
+  String get dashboardTotalSold => 'Total sold';
   @override
-  String get dashboardChartTitle =>
-      'Quoted vs Earned';
+  String get dashboardChartTitle => 'Quoted vs Earned';
   @override
   String get dashboardChartQuoted => 'Quoted';
   @override
@@ -194,30 +167,23 @@ class EnImpl implements AppStrings {
   String get dashboardGoProAction => 'Go Pro';
 
   @override
-  String get homeActionNewCalc =>
-      'New quotation';
+  String get homeActionNewCalc => 'New quotation';
   @override
-  String get homeActionNewCalcSub =>
-      'Calculate print price';
+  String get homeActionNewCalcSub => 'Calculate print price';
   @override
   String get homeActionHistory => 'History';
   @override
-  String get homeActionHistorySub =>
-      'Saved quotations';
+  String get homeActionHistorySub => 'Saved quotations';
   @override
-  String get homeActionDashboard =>
-      'Dashboard';
+  String get homeActionDashboard => 'Dashboard';
   @override
-  String get homeActionDashboardSub =>
-      'Stats and charts';
+  String get homeActionDashboardSub => 'Stats and charts';
   @override
   String get homeQuickAccess => 'Quick access';
   @override
-  String get homeErrorLoadStats =>
-      'Error loading stats';
+  String get homeErrorLoadStats => 'Error loading stats';
   @override
-  String get homeEmptyQuotations =>
-      'No quotations yet';
+  String get homeEmptyQuotations => 'No quotations yet';
   @override
   String get homeSummary => 'Summary';
   @override
@@ -230,86 +196,61 @@ class EnImpl implements AppStrings {
   @override
   String get calcSectionFilament => 'Filament';
   @override
-  String get calcSectionTime =>
-      'Print time';
+  String get calcSectionTime => 'Print time';
   @override
-  String get calcSectionDiscount =>
-      'Discount';
+  String get calcSectionDiscount => 'Discount';
   @override
-  String get calcLabelOptional =>
-      'Label (optional)';
+  String get calcLabelOptional => 'Label (optional)';
   @override
-  String get calcLabelOptionalHelper =>
-      'E.g.: Wall bracket, PETG Gear';
+  String get calcLabelOptionalHelper => 'E.g.: Wall bracket, PETG Gear';
   @override
-  String get calcLabelWeight =>
-      'Piece weight';
+  String get calcLabelWeight => 'Piece weight';
   @override
-  String get calcLabelWeightHelper =>
-      'Grams of the model';
+  String get calcLabelWeightHelper => 'Grams of the model';
   @override
   String get calcLabelHours => 'Hours';
   @override
-  String get calcLabelHoursHelper =>
-      '0-24';
+  String get calcLabelHoursHelper => '0-24';
   @override
   String get calcLabelMinutes => 'Minutes';
   @override
-  String get calcLabelMinutesHelper =>
-      '0-59';
+  String get calcLabelMinutesHelper => '0-59';
   @override
-  String get calcLabelDiscount =>
-      'Discount';
+  String get calcLabelDiscount => 'Discount';
   @override
-  String get calcLabelDiscountHelper =>
-      'Percentage off the final total';
+  String get calcLabelDiscountHelper => 'Percentage off the final total';
   @override
-  String get calcBtnSave =>
-      'Save quotation';
+  String get calcBtnSave => 'Save quotation';
   @override
-  String get calcBtnReset =>
-      'Reset values';
+  String get calcBtnReset => 'Reset values';
   @override
-  String get calcToggleShowDetail =>
-      'Show detail';
+  String get calcToggleShowDetail => 'Show detail';
   @override
-  String get calcToggleHideDetail =>
-      'Hide detail';
+  String get calcToggleHideDetail => 'Hide detail';
   @override
-  String get calcTotalWithDiscount =>
-      'Total with discount';
+  String get calcTotalWithDiscount => 'Total with discount';
   @override
-  String get calcTotalFinal =>
-      'Total';
+  String get calcTotalFinal => 'Total';
   @override
-  String get calcDetailMaterial =>
-      'Material cost';
+  String get calcDetailMaterial => 'Material cost';
   @override
-  String get calcDetailEnergy =>
-      'Energy cost';
+  String get calcDetailEnergy => 'Energy cost';
   @override
-  String get calcDetailLabor =>
-      'Labor';
+  String get calcDetailLabor => 'Labor';
   @override
-  String get calcDetailPostProcess =>
-      'Post-process';
+  String get calcDetailPostProcess => 'Post-process';
   @override
-  String get calcDetailBase =>
-      'Base cost';
+  String get calcDetailBase => 'Base cost';
   @override
-  String get calcDetailFailure =>
-      'Failure rate';
+  String get calcDetailFailure => 'Failure rate';
   @override
-  String get calcDetailMarkup =>
-      'Waste markup';
+  String get calcDetailMarkup => 'Waste markup';
   @override
   String get calcDetailProfit => 'Profit';
   @override
-  String get calcDetailMinimumCharge =>
-      'Minimum charge';
+  String get calcDetailMinimumCharge => 'Minimum charge';
   @override
-  String get calcDetailTotal =>
-      'Total';
+  String get calcDetailTotal => 'Total';
   @override
   String get calcEmptyHint =>
       'Fill in weight, filament and time to see the price';
@@ -328,14 +269,11 @@ class EnImpl implements AppStrings {
   String get calcNoMaterials => 'No materials.';
 
   @override
-  String get calcKeyWeightHint =>
-      'Key: required to calculate the quotation';
+  String get calcKeyWeightHint => 'Key: required to calculate the quotation';
   @override
-  String get calcKeyHoursHint =>
-      'Key: drives labor and energy costs';
+  String get calcKeyHoursHint => 'Key: drives labor and energy costs';
   @override
-  String get calcKeyMinutesHint =>
-      'Key: enter the actual print time';
+  String get calcKeyMinutesHint => 'Key: enter the actual print time';
 
   @override
   String calcMaterialTitle(int index) => 'Material $index';
@@ -391,51 +329,56 @@ class EnImpl implements AppStrings {
   @override
   String get calcEmptyHintPrefix => 'Fill in';
   @override
-  String get calcEmptyHintSuffix =>
-      'to see the quotation';
+  String get calcEmptyHintSuffix => 'to see the quotation';
   @override
-  String get calcFieldWeightShort =>
-      'piece weight';
+  String get calcFieldWeightShort => 'piece weight';
   @override
-  String get calcFieldPriceShort =>
-      'filament price';
+  String get calcFieldPriceShort => 'filament price';
   @override
-  String get calcFieldTimeShort =>
-      'print time';
+  String get calcFieldTimeShort => 'print time';
   @override
-  String get calcFieldMaterialShort =>
-      'at least one material';
+  String get calcFieldMaterialShort => 'at least one material';
 
   @override
   String get calcMetaSeparator => ' · ';
 
   @override
-  String get calcResultBarTapHint =>
-      'View quotation';
+  String get calcResultBarTapHint => 'View quotation';
   @override
-  String get calcResultBarEmptyHint =>
-      'Incomplete';
+  String get calcResultBarEmptyHint => 'Incomplete';
   @override
-  String get calcSheetTitle =>
-      'Quotation';
+  String get calcSheetTitle => 'Quotation';
   @override
-  String get calcBtnShare =>
-      'Share image';
+  String get calcBtnShare => 'Share image';
   @override
-  String get calcBtnShareTooltip =>
-      'Generates a ready-to-share image';
+  String get calcBtnShareTooltip => 'Generates a ready-to-share image';
   @override
-  String get calcShareError =>
-      'Could not generate the image';
+  String get calcShareError => 'Could not generate the image';
   @override
-  String get calcShareSubject =>
-      '3D Quotation';
+  String get calcShareSubject => '3D Quotation';
   @override
-  String get calcShareText =>
-      'Quotation generated in 3dCalc';
+  String get calcShareText => 'Quotation generated in 3dCalc';
   @override
-  String get calcSheetActionsLabel =>
-      'Actions';
+  String get calcSheetActionsLabel => 'Actions';
+
+  // === Quote image (part photo) ===
+  @override
+  String get quoteImageAdd => 'Add image';
+  @override
+  String get quoteImageGallery => 'Gallery';
+  @override
+  String get quoteImageCamera => 'Camera';
+  @override
+  String get quoteImageChange => 'Change';
+  @override
+  String get quoteImageRemove => 'Remove';
+  @override
+  String get quoteImageTooLarge => 'Image exceeds 5 MB and was not attached.';
+  @override
+  String get quoteImageInvalidFormat =>
+      'Invalid image format (JPEG, PNG or WebP only).';
+  @override
+  String get quoteImageError => 'Could not get the image';
 
   @override
   String get filamentTitle => 'Filaments';
@@ -446,56 +389,42 @@ class EnImpl implements AppStrings {
   @override
   String get filamentName => 'Name';
   @override
-  String get filamentNameHelper =>
-      'E.g.: PLA Black';
+  String get filamentNameHelper => 'E.g.: PLA Black';
   @override
   String get filamentBrand => 'Brand';
   @override
-  String get filamentBrandHelper =>
-      'Optional';
+  String get filamentBrandHelper => 'Optional';
   @override
   String get brandSelectorOther => 'Other...';
   @override
-  String get brandSelectorHint =>
-      'Choose a brand or select Other to type it';
+  String get brandSelectorHint => 'Choose a brand or select Other to type it';
   @override
   String get brandSelectorManualHelper => 'Type the brand name';
   @override
-  String filamentPrice(String symbol) =>
-      'Filament price ($symbol)';
+  String filamentPrice(String symbol) => 'Filament price ($symbol)';
   @override
-  String get filamentPriceHelper =>
-      'Full spool cost';
+  String get filamentPriceHelper => 'Full spool cost';
   @override
-  String get filamentGrams =>
-      'Grams per spool';
+  String get filamentGrams => 'Grams per spool';
   @override
-  String get filamentGramsHelper =>
-      'Typically 1000';
+  String get filamentGramsHelper => 'Typically 1000';
   @override
-  String get filamentDefaultToggle =>
-      'Set as default';
+  String get filamentDefaultToggle => 'Set as default';
   @override
   String get filamentDefaultSubtitle =>
       'Will be used in new quotations. Only one filament can be default.';
   @override
-  String get filamentNewTooltip =>
-      'New filament';
+  String get filamentNewTooltip => 'New filament';
   @override
-  String get filamentDeleteTitle =>
-      'Delete filament';
+  String get filamentDeleteTitle => 'Delete filament';
   @override
-  String get filamentErrorSave =>
-      'Error saving';
+  String get filamentErrorSave => 'Error saving';
   @override
-  String get filamentMustBePositive =>
-      'Must be > 0';
+  String get filamentMustBePositive => 'Must be > 0';
   @override
-  String get filamentMustBeInteger =>
-      'Must be integer';
+  String get filamentMustBeInteger => 'Must be integer';
   @override
-  String get filamentMax100 =>
-      'Max 100 characters';
+  String get filamentMax100 => 'Max 100 characters';
 
   @override
   String get printerTitle => 'Printers';
@@ -506,78 +435,58 @@ class EnImpl implements AppStrings {
   @override
   String get printerModel => 'Model';
   @override
-  String get printerModelHelper =>
-      'E.g.: Ender 3 V2';
+  String get printerModelHelper => 'E.g.: Ender 3 V2';
   @override
-  String get printerBrandHelper =>
-      'E.g.: Creality, Anycubic';
+  String get printerBrandHelper => 'E.g.: Creality, Anycubic';
   @override
-  String get printerWatts =>
-      'Average consumption (W)';
+  String get printerWatts => 'Average consumption (W)';
   @override
-  String get printerWattsHelper =>
-      'Typically 100-300 W';
+  String get printerWattsHelper => 'Typically 100-300 W';
   @override
   String get printerDefaultSubtitle =>
       'Will be used in new quotations. Only one printer can be default.';
   @override
-  String get printerNewTooltip =>
-      'New printer';
+  String get printerNewTooltip => 'New printer';
   @override
-  String get printerDeleteTitle =>
-      'Delete printer';
+  String get printerDeleteTitle => 'Delete printer';
   @override
-  String get printerMustBeNonNegative =>
-      'Must be >= 0';
+  String get printerMustBeNonNegative => 'Must be >= 0';
 
   @override
-  String get calcNotifFilament =>
-      'Filament';
+  String get calcNotifFilament => 'Filament';
   @override
-  String get calcNotifMaterial =>
-      'Material';
+  String get calcNotifMaterial => 'Material';
 
   @override
-  String get calcDetailTitle =>
-      'Quotation detail';
+  String get calcDetailTitle => 'Quotation detail';
   @override
   String get calcDetailDelete => 'Delete';
   @override
-  String get calcDetailDeleteTitle =>
-      'Delete quotation';
+  String get calcDetailDeleteTitle => 'Delete quotation';
   @override
-  String get calcDetailDeleteConfirm =>
-      'Delete permanently?';
+  String get calcDetailDeleteConfirm => 'Delete permanently?';
   @override
-  String get calcDetailNoName =>
-      'Unnamed';
+  String get calcDetailNoName => 'Unnamed';
   @override
   String get calcDetailSold => 'Sold';
   @override
   String get calcDetailReuse => 'Reuse';
   @override
-  String get calcDetailMarkSold =>
-      'Mark as sold';
+  String get calcDetailMarkSold => 'Mark as sold';
   @override
-  String get calcDetailMarkPending =>
-      'Mark as pending';
+  String get calcDetailMarkPending => 'Mark as pending';
 
   @override
-  String get historyTitle =>
-      'Quotations';
+  String get historyTitle => 'Quotations';
   @override
-  String get historyErrorLoad =>
-      'Error loading quotations';
+  String get historyErrorLoad => 'Error loading quotations';
   @override
-  String get historyEmpty =>
-      'No saved quotations';
+  String get historyEmpty => 'No saved quotations';
 
   @override
-  String get csvExportLockedBody =>
-      'CSV export is a Pro feature';
+  String get csvExportLockedBody => 'CSV export is a Pro feature';
   @override
-  String get csvGoProAction =>
-      'Go Pro';
+  String get csvGoProAction => 'Go Pro';
 
   @override
   String get localeLabel => 'Language';
@@ -588,19 +497,23 @@ class EnImpl implements AppStrings {
   @override
   String get onboardingTitle1 => 'Welcome to 3dCalc';
   @override
-  String get onboardingDesc1 => 'Calculate 3D print pricing instantly.\nMaterials, electricity, labor and more.';
+  String get onboardingDesc1 =>
+      'Calculate 3D print pricing instantly.\nMaterials, electricity, labor and more.';
   @override
   String get onboardingTitle2 => 'Two calculation modes';
   @override
-  String get onboardingDesc2 => 'Express: quick calculation with one material.\nAdvanced: multiple materials, discount and more.';
+  String get onboardingDesc2 =>
+      'Express: quick calculation with one material.\nAdvanced: multiple materials, discount and more.';
   @override
   String get onboardingTitle3 => 'Built-in catalog';
   @override
-  String get onboardingDesc3 => 'Save your favorite filaments and printers.\nPick them instantly from the catalog.';
+  String get onboardingDesc3 =>
+      'Save your favorite filaments and printers.\nPick them instantly from the catalog.';
   @override
   String get onboardingTitle4 => 'Dashboard & more';
   @override
-  String get onboardingDesc4 => 'Track quotations, monthly trends,\nPDF export and search history.';
+  String get onboardingDesc4 =>
+      'Track quotations, monthly trends,\nPDF export and search history.';
   @override
   String get onboardingNext => 'Next';
   @override
@@ -649,19 +562,18 @@ class EnImpl implements AppStrings {
   String get paywallPrice => '\$4.99';
   @override
   List<String> get paywallFeatures => const [
-        'Remove branding from PDF quotes',
-        'Multi-material cost breakdown',
-        'Unlimited history',
-        'Export to CSV',
-        'Advanced analytics dashboard',
-      ];
+    'Remove branding from PDF quotes',
+    'Multi-material cost breakdown',
+    'Unlimited history',
+    'Export to CSV',
+    'Advanced analytics dashboard',
+  ];
   @override
   String paywallUnlockButton(String price) => 'Unlock for $price';
   @override
   String get paywallRestoreButton => 'Restore purchase';
   @override
-  String get paywallErrorGeneric =>
-      'Could not complete purchase. Try again.';
+  String get paywallErrorGeneric => 'Could not complete purchase. Try again.';
   @override
   String get paywallAlreadyPro => 'You already have Pro. Thank you!';
   @override
@@ -706,8 +618,7 @@ class EnImpl implements AppStrings {
   @override
   String get historyExportCsv => 'Export CSV';
   @override
-  String get historyEmptyCta =>
-      'Create one from the calculator and tap Save.';
+  String get historyEmptyCta => 'Create one from the calculator and tap Save.';
   @override
   String get calcSectionOthers => 'Others';
   @override
@@ -733,8 +644,7 @@ class EnImpl implements AppStrings {
   String get homeHeroTagline => '3D Quotes · Fast · Accurate · Offline';
 
   @override
-  String get calcFormIncompleteWarning =>
-      'Complete the form before saving.';
+  String get calcFormIncompleteWarning => 'Complete the form before saving.';
   @override
   String get calcSaveFailed => 'Could not save.';
   @override
@@ -794,8 +704,7 @@ class EnImpl implements AppStrings {
   String get dashboardTopMaterials => 'Most used materials';
 
   @override
-  String get historySearchHint =>
-      'Search by name or customer...';
+  String get historySearchHint => 'Search by name or customer...';
   @override
   String get historyFilterAll => 'All';
   @override
@@ -809,9 +718,19 @@ class EnImpl implements AppStrings {
   String get chartNoMonthlyData => 'No monthly data';
   @override
   List<String> get chartShortMonths => const [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-      ];
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   @override
   String get filamentSearchHint => 'Search filaments...';
@@ -827,11 +746,9 @@ class EnImpl implements AppStrings {
   @override
   String get settingsErrorLoad => 'Error loading settings';
   @override
-  String get settingsCurrencySearchHint =>
-      'Search currency by code or name...';
+  String get settingsCurrencySearchHint => 'Search currency by code or name...';
   @override
-  String settingsCurrencyNoResults(String query) =>
-      'No results for "$query"';
+  String settingsCurrencyNoResults(String query) => 'No results for "$query"';
   @override
   String get settingsCurrencySymbolPrefix => 'Symbol: ';
 
@@ -850,11 +767,9 @@ class EnImpl implements AppStrings {
   @override
   String get splashLogo => '3dCalc logo';
   @override
-  String onboardingPageCounter(int page, int total) =>
-      'Page $page of $total';
+  String onboardingPageCounter(int page, int total) => 'Page $page of $total';
   @override
-  String commonNoResultsFor(String query) =>
-      'No results for "$query"';
+  String commonNoResultsFor(String query) => 'No results for "$query"';
   @override
   String get historyEmptySearchHint => 'Try another term.';
 

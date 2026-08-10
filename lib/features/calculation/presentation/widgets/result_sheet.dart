@@ -1,14 +1,18 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/export/pdf_export.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
+import '../../../../core/share/quote_image_picker.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -349,6 +353,64 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
 
+  /// Foto de la pieza adjuntada (efimera: solo vive en este sheet, no se
+  /// persiste). Se renderiza en el template (PNG) y viaja al PDF.
+  Uint8List? _pieceImageBytes;
+
+  Future<void> _handlePickFromDialog() async {
+    if (_isBusy) return;
+    // Soporte de camara se evalua al abrir (no en build): en web desktop
+    // devuelve false y ocultamos la opcion.
+    final hasCamera = ImagePicker().supportsImageSource(ImageSource.camera);
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: Text(EsBO.quoteImageGallery),
+              onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
+            ),
+            if (hasCamera)
+              ListTile(
+                leading: const Icon(Icons.photo_camera_rounded),
+                title: Text(EsBO.quoteImageCamera),
+                onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    await _handlePickImage(source);
+  }
+
+  Future<void> _handlePickImage(ImageSource source) async {
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
+    try {
+      final bytes = await pickPieceImage(source: source);
+      if (bytes == null) return; // cancelacion, sin feedback.
+      setState(() => _pieceImageBytes = bytes);
+    } on PieceImageException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.quoteImageError}: $e'));
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  void _handleRemoveImage() {
+    setState(() => _pieceImageBytes = null);
+  }
+
   Future<void> _handleSharePdf() async {
     if (_isBusy) return;
     final state = widget.state;
@@ -366,6 +428,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         companyName: widget.companyName,
         companyLogoBase64: widget.companyLogoBase64,
         pieceName: state.label.isNotEmpty ? state.label : null,
+        pieceImageBytes: _pieceImageBytes,
       );
     } catch (e) {
       if (!mounted) return;
@@ -515,7 +578,45 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   companyName: widget.companyName,
                   companyLogoBase64: widget.companyLogoBase64,
                   currency: widget.currency,
+                  pieceImageBytes: _pieceImageBytes,
                 ),
+              ),
+
+              // ── Foto de pieza: control (FUERA del RepaintBoundary, no sale
+              // en el PNG). Agregar/Cambiar/Quitar — reversible, no bloquea.
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                child: _pieceImageBytes == null
+                    ? TextButton.icon(
+                        icon: const Icon(Icons.add_a_photo_rounded, size: 18),
+                        label: Text(EsBO.quoteImageAdd),
+                        onPressed: _isBusy ? null : _handlePickFromDialog,
+                      )
+                    : Wrap(
+                        spacing: AppSpacing.sm,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          TextButton.icon(
+                            icon: const Icon(
+                              Icons.swap_horiz_rounded,
+                              size: 18,
+                            ),
+                            label: Text(EsBO.quoteImageChange),
+                            onPressed: _isBusy ? null : _handlePickFromDialog,
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                            ),
+                            label: Text(EsBO.quoteImageRemove),
+                            style: TextButton.styleFrom(
+                              foregroundColor: theme.colorScheme.error,
+                            ),
+                            onPressed: _isBusy ? null : _handleRemoveImage,
+                          ),
+                        ],
+                      ),
               ),
 
               // Toggle detail (fuera del RepaintBoundary para no salir en img)
