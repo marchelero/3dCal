@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
@@ -75,7 +76,7 @@ class HomePage extends ConsumerWidget {
     String? companyLogoBase64,
   }) {
     final hasCompanyConfig = companyName != null &&
-        companyName != '3dCalc' &&
+        companyName != kDefaultCompanyName &&
         companyName.isNotEmpty;
     final hasLogo = companyLogoBase64 != null && companyLogoBase64.isNotEmpty;
 
@@ -84,7 +85,7 @@ class HomePage extends ConsumerWidget {
 
     // Modo empresa: muestra logo + nombre empresa grande, app name pequeno
     if (hasCompanyConfig || hasLogo) {
-      final displayName = hasCompanyConfig ? companyName : '3dCalc';
+      final displayName = hasCompanyConfig ? companyName : EsBO.appName;
       semanticsLabel = '$displayName — Cotizaciones 3D';
       content = Row(
         children: [
@@ -120,7 +121,7 @@ class HomePage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(AppRadii.sm),
                       ),
                       child: Text(
-                        '3dCalc',
+                        EsBO.appName,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: color.onPrimaryContainer,
                           fontWeight: FontWeight.w600,
@@ -147,7 +148,7 @@ class HomePage extends ConsumerWidget {
       );
     } else {
       // Modo default: solo app name
-      semanticsLabel = '3dCalc — Cotizaciones 3D';
+      semanticsLabel = '${EsBO.appName} — Cotizaciones 3D';
       content = Row(
         children: [
           // Sello de plano con logo
@@ -162,7 +163,7 @@ class HomePage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '3dCalc',
+                  EsBO.appName,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: color.onSurface,

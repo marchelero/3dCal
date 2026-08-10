@@ -140,6 +140,7 @@ class QuoteImageTemplate extends StatelessWidget {
                   formatCurrency(output.totalPrice, currency),
                   style: AppTheme.num(
                     theme.textTheme.displayMedium ??
+                        theme.textTheme.headlineMedium ??
                         const TextStyle(fontSize: 28),
                     color: color.primary,
                     fontWeight: FontWeight.bold,

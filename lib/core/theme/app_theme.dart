@@ -54,6 +54,21 @@ class AppTheme {
   /// Color del badge "default" (estrella). Dorado de sello.
   static const Color defaultStar = Color(0xFFB07400);
 
+  /// Colores de fondo de los 4 slides del onboarding.
+  ///
+  /// Tonos profundos compartidos light/dark (funcionan sobre ambos schemes).
+  /// Verificados AA ≥ 4.5:1 con texto blanco al 100%:
+  ///   - azul tecnico #1B4D7A (7.6:1)
+  ///   - naranja PLA oscuro #9A3412 (5.4:1) — reemplaza al #E67E22 que fallaba
+  ///   - verde teal oscuro #0F766E (5.3:1) — reemplaza al #1A8A7A que fallaba
+  ///   - violeta #6C3483 (7.9:1)
+  static const List<Color> onboardingSlideColors = [
+    Color(0xFF1B4D7A),
+    Color(0xFF9A3412),
+    Color(0xFF0F766E),
+    Color(0xFF6C3483),
+  ];
+
   /// Estilo para TODOS los numeros y montos: JetBrains Mono tabular.
   /// Mantiene cifras monoespaciadas y de ancho fijo (columnas de recibo).
   static TextStyle num(

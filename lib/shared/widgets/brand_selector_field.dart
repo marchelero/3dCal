@@ -126,7 +126,6 @@ class _BrandSelectorFieldState extends ConsumerState<BrandSelectorField> {
         decoration: InputDecoration(
           labelText: label,
           helperText: widget.helperText ?? EsBO.brandSelectorManualHelper,
-          border: OutlineInputBorder(),
         ),
         textInputAction: TextInputAction.next,
         validator: widget.validator,
@@ -139,7 +138,6 @@ class _BrandSelectorFieldState extends ConsumerState<BrandSelectorField> {
       decoration: InputDecoration(
         labelText: label,
         helperText: widget.helperText,
-        border: OutlineInputBorder(),
       ),
       hint: Text(EsBO.brandSelectorHint),
       items: [

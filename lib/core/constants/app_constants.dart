@@ -9,6 +9,16 @@ const String kCurrencyCode = 'USD';
 /// Simbolo visible: "$" segun convencion.
 const String kCurrencySymbol = r'$';
 
+/// Version de la app mostrada en UI (Ajustes).
+/// Mantener en sync con `version` de pubspec.yaml (ej: 0.1.0+1 → '0.1.0').
+const String kAppVersion = '0.1.0';
+
+/// Nombre de empresa por defecto (branding free).
+/// Se muestra cuando el usuario no configuro su negocio. Mismo valor en
+/// settings/domain, settings_repository y pdf_export (single source of truth
+/// para comparaciones y fallbacks).
+const String kDefaultCompanyName = '3dCalc';
+
 /// Separador de miles: "." (formato es_BO).
 const String kThousandsSeparator = '.';
 

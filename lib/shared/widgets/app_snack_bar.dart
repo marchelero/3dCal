@@ -35,6 +35,7 @@ class AppSnackBar extends SnackBar {
     required Color backgroundColor,
     required Color foregroundColor,
     required super.duration,
+    SnackBarAction? action,
   }) : super(
           content: Row(
             children: [
@@ -49,42 +50,76 @@ class AppSnackBar extends SnackBar {
             ],
           ),
           backgroundColor: backgroundColor,
-          behavior: SnackBarBehavior.floating,
+          // El `behavior` lo define el theme (snackBarTheme: floating).
+          // No forzar aqui: en tests sin AppTheme quedaria floating y el
+          // action no recibe taps durante la animacion de entrada.
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.md),
           ),
+          action: action == null
+              ? null
+              : SnackBarAction(
+                  label: action.label,
+                  onPressed: action.onPressed,
+                  textColor: foregroundColor,
+                ),
         );
 
+  /// Arma la [SnackBarAction] opcional de los factories. Si falta el label
+  /// o el callback, no hay accion (null) y el SnackBar queda solo texto.
+  static SnackBarAction? _buildAction(
+    String? actionLabel,
+    VoidCallback? onAction,
+  ) {
+    if (actionLabel == null || onAction == null) return null;
+    return SnackBarAction(label: actionLabel, onPressed: onAction);
+  }
+
   /// Feedback positivo (accion exitosa). Verde + check, 2s.
-  factory AppSnackBar.success(String message) {
+  factory AppSnackBar.success(
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     return AppSnackBar._(
       message: message,
       icon: Icons.check_circle,
       backgroundColor: AppTheme.greenSuccess,
       foregroundColor: Colors.white,
       duration: const Duration(seconds: 2),
+      action: _buildAction(actionLabel, onAction),
     );
   }
 
   /// Feedback de error. Rojo + icono error, 4s (mas tiempo para leer).
-  factory AppSnackBar.error(String message) {
+  factory AppSnackBar.error(
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     return AppSnackBar._(
       message: message,
       icon: Icons.error,
       backgroundColor: AppTheme.redError,
       foregroundColor: Colors.white,
       duration: const Duration(seconds: 4),
+      action: _buildAction(actionLabel, onAction),
     );
   }
 
   /// Feedback de advertencia (estado borderline). Amarillo + warning, 3s.
-  factory AppSnackBar.warning(String message) {
+  factory AppSnackBar.warning(
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     return AppSnackBar._(
       message: message,
       icon: Icons.warning_amber,
       backgroundColor: AppTheme.defaultStar,
       foregroundColor: Colors.black,
       duration: const Duration(seconds: 3),
+      action: _buildAction(actionLabel, onAction),
     );
   }
 
@@ -92,7 +127,12 @@ class AppSnackBar extends SnackBar {
   ///
   /// Requiere [context] para resolver `colorScheme.primary` /
   /// `colorScheme.onPrimary` (no son parte de la paleta fija del theme).
-  factory AppSnackBar.info(BuildContext context, String message) {
+  factory AppSnackBar.info(
+    BuildContext context,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     return AppSnackBar._(
       message: message,
@@ -100,6 +140,7 @@ class AppSnackBar extends SnackBar {
       backgroundColor: scheme.primary,
       foregroundColor: scheme.onPrimary,
       duration: const Duration(seconds: 2),
+      action: _buildAction(actionLabel, onAction),
     );
   }
 }

@@ -17,6 +17,7 @@ import '../../../../core/providers.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
@@ -107,9 +108,9 @@ class _DetailState extends ConsumerState<_Detail> {
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.calcShareError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.calcShareError}: $e'));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -131,9 +132,9 @@ class _DetailState extends ConsumerState<_Detail> {
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.calcShareError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.calcShareError}: $e'));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -163,9 +164,9 @@ class _DetailState extends ConsumerState<_Detail> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.commonPdfExportError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.commonPdfExportError}: $e'));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -193,14 +194,12 @@ class _DetailState extends ConsumerState<_Detail> {
         companyLogoBase64: settings.companyLogoBase64,
         pieceName: calc.pieceName,
       );
-      await Printing.layoutPdf(
-        onLayout: (format) async => pdfBytes,
-      );
+      await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.commonPrintError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.commonPrintError}: $e'));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -228,400 +227,449 @@ class _DetailState extends ConsumerState<_Detail> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         shrinkWrap: true,
         children: [
-        // === Header card (hero) ===
-        Hero(
-          tag: 'calc-hero-${calc.id}',
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.primaryContainer,
-                  color.primaryContainer.withValues(alpha: 0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // === Header card (hero) ===
+          Hero(
+            tag: 'calc-hero-${calc.id}',
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    color.primaryContainer,
+                    color.primaryContainer.withValues(alpha: 0.6),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(AppRadii.xxxl),
               ),
-              borderRadius: BorderRadius.circular(AppRadii.xxxl),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          calc.pieceName ?? EsBO.calcDetailNoName,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: color.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                      if (calc.isSold)
+                        Chip(
+                          label: Text(EsBO.calcDetailSold),
+                          backgroundColor: color.tertiaryContainer,
+                          labelStyle: TextStyle(
+                            color: color.onTertiaryContainer,
+                          ),
+                          avatar: Icon(
+                            Icons.check_circle_rounded,
+                            color: color.tertiary,
+                            size: 16,
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                    ],
+                  ),
+                  if (calc.clientName != null && calc.clientName!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline_rounded,
+                            size: 14,
+                            color: color.onPrimaryContainer,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${EsBO.calcDialogClient}: ${calc.clientName}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: color.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 14,
+                        color: color.onPrimaryContainer.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        DateFormat(
+                          'dd MMM yyyy · HH:mm',
+                        ).format(calc.createdAt.toLocal()),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: color.onPrimaryContainer.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
+                      if (calc.totalHours > 0) ...[
+                        const SizedBox(width: AppSpacing.lg),
+                        Icon(
+                          Icons.timer_outlined,
+                          size: 14,
+                          color: color.onPrimaryContainer.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${calc.totalHours.toStringAsFixed(1)} h',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.onPrimaryContainer.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // === Materiales ===
+          Text(
+            EsBO.calcSectionMaterials,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          materialsAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => Text('${EsBO.commonError}: $e'),
+            data: (ms) {
+              if (ms.isEmpty) {
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Text(
-                      calc.pieceName ?? EsBO.calcDetailNoName,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: color.onPrimaryContainer,
+                      EsBO.calcNoMaterials,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: color.onSurfaceVariant,
                       ),
                     ),
                   ),
-                  if (calc.isSold)
-                    Chip(
-                      label: Text(EsBO.calcDetailSold),
-                      backgroundColor: color.tertiaryContainer,
-                      labelStyle: TextStyle(color: color.onTertiaryContainer),
-                      avatar: Icon(
-                        Icons.check_circle_rounded,
-                        color: color.tertiary,
-                        size: 16,
-                      ),
-                      padding: EdgeInsets.zero,
-                    ),
-                ],
-              ),
-              if (calc.clientName != null && calc.clientName!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    children: [
-                      Icon(Icons.person_outline_rounded,
-                          size: 14, color: color.onPrimaryContainer),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${EsBO.calcDialogClient}: ${calc.clientName}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: color.onPrimaryContainer,
+                );
+              }
+              return Card(
+                child: Column(
+                  children: [
+                    for (var i = 0; i < ms.length; i++) ...[
+                      if (i > 0)
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: color.primaryContainer,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.sm,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${i + 1}',
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: color.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    ms[i].label,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xxs),
+                                  Text(
+                                    '${ms[i].weightGrams.toStringAsFixed(0)} g · '
+                                    'BOB ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
+                                    '${ms[i].gramsPerBobbinSnapshot.toStringAsFixed(0)} g',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: color.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              formatCurrency(
+                                Decimal.parse(
+                                  (ms[i].weightGrams *
+                                          ms[i].pricePerBobbinSnapshot /
+                                          ms[i].gramsPerBobbinSnapshot)
+                                      .toStringAsFixed(2),
+                                ),
+                                currency,
+                              ),
+                              style: GoogleFonts.jetBrainsMono(
+                                textStyle: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Icon(Icons.calendar_today_rounded,
-                      size: 14, color: color.onPrimaryContainer.withValues(alpha: 0.7)),
-                  const SizedBox(width: 6),
-                  Text(
-                    DateFormat('dd MMM yyyy · HH:mm')
-                        .format(calc.createdAt.toLocal()),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onPrimaryContainer.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  if (calc.totalHours > 0) ...[
-                    const SizedBox(width: AppSpacing.lg),
-                    Icon(Icons.timer_outlined,
-                        size: 14, color: color.onPrimaryContainer.withValues(alpha: 0.7)),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${calc.totalHours.toStringAsFixed(1)} h',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: color.onPrimaryContainer.withValues(alpha: 0.7),
-                      ),
-                    ),
                   ],
-                ],
-              ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-
-        // === Materiales ===
-        Text(EsBO.calcSectionMaterials,
-            style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600)),
-        const SizedBox(height: AppSpacing.sm),
-        materialsAsync.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.all(AppSpacing.lg),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          error: (e, _) => Text('${EsBO.commonError}: $e'),
-          data: (ms) {
-            if (ms.isEmpty) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Text(EsBO.calcNoMaterials,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                          color: color.onSurfaceVariant)),
                 ),
               );
-            }
-            return Card(
+            },
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // === Desglose ===
+          Text(
+            EsBO.detailBreakdown,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: [
-                  for (var i = 0; i < ms.length; i++) ...[
-                    if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                  _Row(
+                    label: EsBO.calcDetailMaterial,
+                    value: formatCurrency(
+                      Decimal.parse(
+                        calc.materialCostSnapshot.toStringAsFixed(2),
+                      ),
+                      currency,
+                    ),
+                  ),
+                  if (calc.discountPercentage > 0) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: color.errorContainer.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                      ),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: color.primaryContainer,
-                              borderRadius: BorderRadius.circular(AppRadii.sm),
+                          Text(
+                            EsBO.detailDiscountPct(
+                              calc.discountPercentage.round(),
                             ),
-                            child: Center(
-                              child: Text(
-                                '${i + 1}',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: color.onPrimaryContainer,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(ms[i].label,
-                                    style: theme.textTheme.bodyMedium
-                                        ?.copyWith(fontWeight: FontWeight.w500)),
-                                const SizedBox(height: AppSpacing.xxs),
-                                Text(
-                                  '${ms[i].weightGrams.toStringAsFixed(0)} g · '
-                                  'BOB ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
-                                  '${ms[i].gramsPerBobbinSnapshot.toStringAsFixed(0)} g',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                      color: color.onSurfaceVariant),
-                                ),
-                              ],
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: color.onErrorContainer,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text(
-                            formatCurrency(Decimal.parse(
-                              (ms[i].weightGrams *
-                                      ms[i].pricePerBobbinSnapshot /
-                                      ms[i].gramsPerBobbinSnapshot)
-                                  .toStringAsFixed(2),
-                            ), currency),
-                            style: GoogleFonts.jetBrainsMono(
-                              textStyle: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures()
-                                ],
-                              ),
+                            '-${formatCurrency(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)), currency)}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: color.onErrorContainer,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ],
-                ],
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: AppSpacing.lg),
-
-        // === Desglose ===
-        Text(EsBO.detailBreakdown,
-            style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600)),
-        const SizedBox(height: AppSpacing.sm),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              children: [
-                _Row(
-                  label: EsBO.calcDetailMaterial,
-                  value: formatCurrency(
-                    Decimal.parse(
-                      calc.materialCostSnapshot.toStringAsFixed(2),
-                    ),
-                    currency,
-                  ),
-                ),
-                if (calc.discountPercentage > 0) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: color.errorContainer.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          EsBO.detailDiscountPct(
-                              calc.discountPercentage.round()),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: color.onErrorContainer,
-                            fontWeight: FontWeight.w500,
-                          ),
+                  const SizedBox(height: AppSpacing.md),
+                  const Divider(height: 1),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        EsBO.calcDetailTotal,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                        Text(
-                          '-${formatCurrency(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)), currency)}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: color.onErrorContainer,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.md),
-                const Divider(height: 1),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      EsBO.calcDetailTotal,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        formatCurrency(
-                          Decimal.parse(
-                            calc.totalPriceSnapshot.toStringAsFixed(2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          formatCurrency(
+                            Decimal.parse(
+                              calc.totalPriceSnapshot.toStringAsFixed(2),
+                            ),
+                            currency,
                           ),
-                          currency,
-                        ),
-                        style: GoogleFonts.jetBrainsMono(
-                          textStyle: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                          style: GoogleFonts.jetBrainsMono(
+                            textStyle: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-
-        // === Quote image preview (capturable) ===
-        if (result != null) ...[
-          Text(EsBO.detailPreview,
-              style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: AppSpacing.sm),
-          Center(
-            child: RepaintBoundary(
-              key: _captureKey,
-              child: QuoteImageTemplate(
-                output: result.output,
-                label: calc.pieceName ?? '',
-                discountPct: calc.discountPercentage.toStringAsFixed(0),
-                showDetail: _showDetail,
-                detailMaterialBreakdown: result.breakdown,
-                detailElectricCost: result.electricCost,
-                detailLaborCost: result.laborCost,
-                detailPostProcessCost: result.postProcessCost,
-                detailBaseCost: result.baseCost,
-                detailFailureCost: result.failureCost,
-                detailMarkupCost: result.markupCost,
-                detailProfitAmount: result.profitAmount,
-                detailTotalFinal: result.totalFinal,
-                metaGrams: result.metaGrams,
-                metaTime: result.metaTime,
-                companyName: settings.companyName,
-                companyLogoBase64: settings.companyLogoBase64,
-                currency: currency,
+                    ],
+                  ),
+                ],
               ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-
-          // Toggle detail (outside RepaintBoundary)
-          Align(
-            child: TextButton.icon(
-              icon: Icon(
-                _showDetail
-                    ? Icons.visibility_rounded
-                    : Icons.visibility_off_rounded,
-                size: 18,
-              ),
-              label: Text(
-                _showDetail
-                    ? EsBO.calcToggleHideDetail
-                    : EsBO.calcToggleShowDetail,
-              ),
-              onPressed: () => setState(() => _showDetail = !_showDetail),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-
-          // Share / Save actions
-          Center(
-            child: Wrap(
-              spacing: AppSpacing.lg,
-              runSpacing: AppSpacing.sm,
-              alignment: WrapAlignment.center,
-              children: [
-                _DetailActionIcon(
-                  icon: Icons.share_rounded,
-                  tooltip: EsBO.calcBtnShare,
-                  color: color.primary,
-                  isBusy: _isBusy,
-                  onPressed: _isBusy ? null : _handleShare,
-                ),
-                _DetailActionIcon(
-                  icon: Icons.download_rounded,
-                  tooltip: EsBO.commonSaveImage,
-                  color: color.primary,
-                  isBusy: _isBusy,
-                  onPressed: _isBusy ? null : _handleSave,
-                ),
-                _DetailActionIcon(
-                  icon: Icons.picture_as_pdf_rounded,
-                  tooltip: EsBO.commonExportPdf,
-                  color: Colors.red,
-                  isBusy: _isBusy,
-                  onPressed: _isBusy ? null : _handleSharePdf,
-                ),
-                _DetailActionIcon(
-                  icon: Icons.print_rounded,
-                  tooltip: EsBO.commonPrint,
-                  color: Colors.green,
-                  isBusy: _isBusy,
-                  onPressed: _isBusy ? null : _handlePrint,
-                ),
-              ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-        ],
 
-        // === Acciones ===
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.tonalIcon(
-                icon: Icon(
-                  calc.isSold
-                      ? Icons.undo_rounded
-                      : Icons.check_circle_outline_rounded,
-                ),
-                label: Text(calc.isSold ? EsBO.calcDetailMarkPending : EsBO.calcDetailMarkSold),
-                onPressed: () async {
-                  await ref
-                      .read(calculationsNotifierProvider.notifier)
-                      .toggleSold(calc.id, !calc.isSold);
-                },
+          // === Quote image preview (capturable) ===
+          if (result != null) ...[
+            Text(
+              EsBO.detailPreview,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            Center(
+              child: RepaintBoundary(
+                key: _captureKey,
+                child: QuoteImageTemplate(
+                  output: result.output,
+                  label: calc.pieceName ?? '',
+                  discountPct: calc.discountPercentage.toStringAsFixed(0),
+                  showDetail: _showDetail,
+                  detailMaterialBreakdown: result.breakdown,
+                  detailElectricCost: result.electricCost,
+                  detailLaborCost: result.laborCost,
+                  detailPostProcessCost: result.postProcessCost,
+                  detailBaseCost: result.baseCost,
+                  detailFailureCost: result.failureCost,
+                  detailMarkupCost: result.markupCost,
+                  detailProfitAmount: result.profitAmount,
+                  detailTotalFinal: result.totalFinal,
+                  metaGrams: result.metaGrams,
+                  metaTime: result.metaTime,
+                  companyName: settings.companyName,
+                  companyLogoBase64: settings.companyLogoBase64,
+                  currency: currency,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            // Toggle detail (outside RepaintBoundary)
+            Align(
+              child: TextButton.icon(
+                icon: Icon(
+                  _showDetail
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                  size: 18,
+                ),
+                label: Text(
+                  _showDetail
+                      ? EsBO.calcToggleHideDetail
+                      : EsBO.calcToggleShowDetail,
+                ),
+                onPressed: () => setState(() => _showDetail = !_showDetail),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            // Share / Save actions
+            Center(
+              child: Wrap(
+                spacing: AppSpacing.lg,
+                runSpacing: AppSpacing.sm,
+                alignment: WrapAlignment.center,
+                children: [
+                  _DetailActionIcon(
+                    icon: Icons.share_rounded,
+                    tooltip: EsBO.calcBtnShare,
+                    color: color.primary,
+                    isBusy: _isBusy,
+                    onPressed: _isBusy ? null : _handleShare,
+                  ),
+                  _DetailActionIcon(
+                    icon: Icons.download_rounded,
+                    tooltip: EsBO.commonSaveImage,
+                    color: color.primary,
+                    isBusy: _isBusy,
+                    onPressed: _isBusy ? null : _handleSave,
+                  ),
+                  _DetailActionIcon(
+                    icon: Icons.picture_as_pdf_rounded,
+                    tooltip: EsBO.commonExportPdf,
+                    color: color.error,
+                    isBusy: _isBusy,
+                    onPressed: _isBusy ? null : _handleSharePdf,
+                  ),
+                  _DetailActionIcon(
+                    icon: Icons.print_rounded,
+                    tooltip: EsBO.commonPrint,
+                    color: AppTheme.greenSuccess,
+                    isBusy: _isBusy,
+                    onPressed: _isBusy ? null : _handlePrint,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
           ],
-        ),
-        // Padding bottom para FAB + bottom inset.
-        SizedBox(height: 80 + MediaQuery.of(context).padding.bottom),
-      ],
-    ),
+
+          // === Acciones ===
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  icon: Icon(
+                    calc.isSold
+                        ? Icons.undo_rounded
+                        : Icons.check_circle_outline_rounded,
+                  ),
+                  label: Text(
+                    calc.isSold
+                        ? EsBO.calcDetailMarkPending
+                        : EsBO.calcDetailMarkSold,
+                  ),
+                  onPressed: () async {
+                    await ref
+                        .read(calculationsNotifierProvider.notifier)
+                        .toggleSold(calc.id, !calc.isSold);
+                  },
+                ),
+              ),
+            ],
+          ),
+          // Padding bottom para FAB + bottom inset.
+          SizedBox(height: 80 + MediaQuery.of(context).padding.bottom),
+        ],
+      ),
     );
   }
 }
@@ -633,11 +681,20 @@ class _DetailState extends ConsumerState<_Detail> {
 /// [CalculatorNotifier._recompute] y [PrefilledCalculatorPage].
 ///
 /// Retorna null si materials aun no cargaron.
-({CalculationOutput output, List<MaterialCostBreakdown> breakdown,
-  Decimal electricCost, Decimal laborCost, Decimal postProcessCost,
-  Decimal baseCost, Decimal failureCost, Decimal markupCost,
-  Decimal profitAmount, Decimal totalFinal,
-  String? metaGrams, String? metaTime})?
+({
+  CalculationOutput output,
+  List<MaterialCostBreakdown> breakdown,
+  Decimal electricCost,
+  Decimal laborCost,
+  Decimal postProcessCost,
+  Decimal baseCost,
+  Decimal failureCost,
+  Decimal markupCost,
+  Decimal profitAmount,
+  Decimal totalFinal,
+  String? metaGrams,
+  String? metaTime,
+})?
 _recomputeOutput(
   Calculation calc,
   List<CalculationMaterial> materials,
@@ -646,8 +703,9 @@ _recomputeOutput(
 ) {
   if (materials.isEmpty && calc.materialCostSnapshot <= 0) return null;
 
-  final materialCost =
-      Decimal.parse(calc.materialCostSnapshot.toStringAsFixed(2));
+  final materialCost = Decimal.parse(
+    calc.materialCostSnapshot.toStringAsFixed(2),
+  );
   final hours = Decimal.parse(calc.totalHours.toStringAsFixed(2));
   final discountPct = calc.discountPercentage > 0
       ? Decimal.parse(calc.discountPercentage.toStringAsFixed(2))
@@ -658,12 +716,10 @@ _recomputeOutput(
   var totalGrams = Decimal.zero;
   for (final m in materials) {
     final weight = Decimal.parse(m.weightGrams.toStringAsFixed(2));
-    final price =
-        Decimal.parse(m.pricePerBobbinSnapshot.toStringAsFixed(2));
-    final grams =
-        Decimal.parse(m.gramsPerBobbinSnapshot.toStringAsFixed(2));
+    final price = Decimal.parse(m.pricePerBobbinSnapshot.toStringAsFixed(2));
+    final grams = Decimal.parse(m.gramsPerBobbinSnapshot.toStringAsFixed(2));
     final cost = grams > Decimal.zero
-        ? (weight * price / grams).toDecimal()
+        ? (weight * price / grams).toDecimal(scaleOnInfinitePrecision: 12)
         : Decimal.zero;
     breakdown.add(MaterialCostBreakdown(label: m.label, cost: cost));
     totalGrams += weight;
@@ -672,13 +728,16 @@ _recomputeOutput(
   // F1 formula with current settings + snapshots
   final watts = printer?.averageWatts ?? 0;
   final electricCost = hours > Decimal.zero && watts > 0
-      ? (Decimal.fromInt(watts) * hours * settings.kwhRate /
-              Decimal.fromInt(1000))
-          .toDecimal()
+      ? (Decimal.fromInt(watts) *
+                hours *
+                settings.kwhRate /
+                Decimal.fromInt(1000))
+            .toDecimal()
       : Decimal.zero;
   final laborCost = hours * settings.laborRate;
   final postProcessCost = settings.postProcessRate > Decimal.zero
-      ? (materialCost * settings.postProcessRate / Decimal.fromInt(100)).toDecimal()
+      ? (materialCost * settings.postProcessRate / Decimal.fromInt(100))
+            .toDecimal()
       : Decimal.zero;
   final baseCost = materialCost + electricCost + laborCost + postProcessCost;
   final failureCost = settings.failureRate > Decimal.zero
@@ -686,11 +745,13 @@ _recomputeOutput(
       : Decimal.zero;
   final costWithFailure = baseCost + failureCost;
   final markupCost = settings.markupOnMaterials > Decimal.zero
-      ? (materialCost * settings.markupOnMaterials / Decimal.fromInt(100)).toDecimal()
+      ? (materialCost * settings.markupOnMaterials / Decimal.fromInt(100))
+            .toDecimal()
       : Decimal.zero;
   final totalBeforeProfit = costWithFailure + markupCost;
   final profitAmount = settings.profitBase > Decimal.zero
-      ? (totalBeforeProfit * settings.profitBase / Decimal.fromInt(100)).toDecimal()
+      ? (totalBeforeProfit * settings.profitBase / Decimal.fromInt(100))
+            .toDecimal()
       : Decimal.zero;
   final totalFinal = totalBeforeProfit + profitAmount;
 
@@ -770,16 +831,14 @@ class _DetailActionIcon extends StatelessWidget {
         foregroundColor: color,
         backgroundColor: color.withValues(alpha: 0.12),
         shape: const CircleBorder(),
+        minimumSize: const Size(48, 48),
         padding: const EdgeInsets.all(AppSpacing.md),
       ),
       icon: isBusy
           ? SizedBox(
               width: 22,
               height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: color,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2.5, color: color),
             )
           : Icon(icon, color: color, size: 22),
     );
@@ -815,8 +874,7 @@ class _Row extends StatelessWidget {
   }
 }
 
-final _calculationByIdProvider =
-    Provider.family<Calculation?, int>((ref, id) {
+final _calculationByIdProvider = Provider.family<Calculation?, int>((ref, id) {
   final list = ref.watch(calculationsNotifierProvider).valueOrNull;
   if (list == null) return null;
   for (final c in list) {
@@ -827,6 +885,6 @@ final _calculationByIdProvider =
 
 final _materialsOfProvider =
     FutureProvider.family<List<CalculationMaterial>, int>((ref, id) {
-  final repo = ref.watch(calculationRepositoryProvider);
-  return repo.materialsOf(id);
-});
+      final repo = ref.watch(calculationRepositoryProvider);
+      return repo.materialsOf(id);
+    });

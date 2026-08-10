@@ -130,7 +130,6 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                 decoration: InputDecoration(
                   labelText: EsBO.printerModel,
                   helperText: EsBO.printerModelHelper,
-                  border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: _requiredText,

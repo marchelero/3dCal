@@ -374,6 +374,17 @@ class EsBO {
   static String get commonPdfExportError => _impl.commonPdfExportError;
   static String get commonPrintError => _impl.commonPrintError;
   static String get commonDefaultSuffix => _impl.commonDefaultSuffix;
+  static String get historyExportCsv => _impl.historyExportCsv;
+  static String get historyEmptyCta => _impl.historyEmptyCta;
+  static String get calcSectionOthers => _impl.calcSectionOthers;
+  static String get settingsProfitBaseRange => _impl.settingsProfitBaseRange;
+  static String get settingsKwhRateRange => _impl.settingsKwhRateRange;
+  static String get shareErrorNotRendered => _impl.shareErrorNotRendered;
+  static String get shareErrorNoRegion => _impl.shareErrorNoRegion;
+  static String get shareErrorEncode => _impl.shareErrorEncode;
+  static String get shareErrorSaveGallery => _impl.shareErrorSaveGallery;
+  static String shareErrorSaveWithMessage(String msg) =>
+      _impl.shareErrorSaveWithMessage(msg);
 
   static String get homeHeroTagline => _impl.homeHeroTagline;
 
@@ -1123,6 +1134,31 @@ class EsImpl implements AppStrings {
   String get commonPrintError => 'Error al imprimir';
   @override
   String get commonDefaultSuffix => ' (default)';
+  @override
+  String get historyExportCsv => 'Exportar CSV';
+  @override
+  String get historyEmptyCta =>
+      'Crea una desde la calculadora y toca Guardar.';
+  @override
+  String get calcSectionOthers => 'Otros';
+  @override
+  String get settingsProfitBaseRange => 'Rango: 0-1000';
+  @override
+  String get settingsKwhRateRange => 'Rango: 0.10-5.00';
+  @override
+  String get shareErrorNotRendered =>
+      'El resumen aun no se renderizo. Intenta de nuevo en un momento.';
+  @override
+  String get shareErrorNoRegion =>
+      'No se encontro la region capturable del resumen.';
+  @override
+  String get shareErrorEncode => 'No se pudo codificar la imagen PNG.';
+  @override
+  String get shareErrorSaveGallery =>
+      'No se pudo guardar la imagen en la galeria.';
+  @override
+  String shareErrorSaveWithMessage(String msg) =>
+      'No se pudo guardar la imagen: $msg';
 
   @override
   String get homeHeroTagline =>

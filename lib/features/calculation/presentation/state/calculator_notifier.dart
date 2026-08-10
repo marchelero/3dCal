@@ -69,6 +69,14 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         state = _recompute(state);
       }
     });
+    // Idem para settings globales (kwhRate, profitBase, labor, etc.): si el
+    // usuario cambia un parametro en Ajustes, el total se recalcula al vuelo
+    // en vez de quedar con el valor anterior hasta tocar un campo.
+    ref.listen(settingsNotifierProvider, (_, __) {
+      if (state.isValid) {
+        state = _recompute(state);
+      }
+    });
     return CalculatorState.initial();
   }
 
@@ -173,15 +181,20 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     required String gramsPerBobbin,
   }) {
     if (state.mode == CalculatorMode.express) {
-      state = _recompute(state.copyWith(
-        filamentPrice: pricePerBobbin,
-        filamentGrams: gramsPerBobbin,
-      ));
+      state = _recompute(
+        state.copyWith(
+          filamentPrice: pricePerBobbin,
+          filamentGrams: gramsPerBobbin,
+        ),
+      );
       return;
     }
     if (state.materials.isEmpty) return;
-    updateMaterial(0,
-        pricePerBobbin: pricePerBobbin, gramsPerBobbin: gramsPerBobbin);
+    updateMaterial(
+      0,
+      pricePerBobbin: pricePerBobbin,
+      gramsPerBobbin: gramsPerBobbin,
+    );
   }
 
   /// Resetea el form a los defaults.
@@ -196,28 +209,33 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// (horas, descuento, etiqueta) y los express (peso, precio, gramos).
   /// En advanced, reconstruye las filas de materiales desde [MaterialDraft]s.
   void restoreFromDraft(storage.CalculationDraft draft) {
-    final mode =
-        draft.isAdvanced ? CalculatorMode.advanced : CalculatorMode.express;
-    state = _recompute(CalculatorState(
-      mode: mode,
-      printHours: draft.printHours,
-      printMinutes: draft.printMinutes,
-      discountPct: draft.discountPct,
-      label: draft.label,
-      filamentLabel: draft.filamentLabel,
-      weight: draft.weight,
-      filamentPrice: draft.filamentPrice,
-      filamentGrams: draft.filamentGrams,
-      materials: draft.materials
-          .map((m) => MaterialRow(
+    final mode = draft.isAdvanced
+        ? CalculatorMode.advanced
+        : CalculatorMode.express;
+    state = _recompute(
+      CalculatorState(
+        mode: mode,
+        printHours: draft.printHours,
+        printMinutes: draft.printMinutes,
+        discountPct: draft.discountPct,
+        label: draft.label,
+        filamentLabel: draft.filamentLabel,
+        weight: draft.weight,
+        filamentPrice: draft.filamentPrice,
+        filamentGrams: draft.filamentGrams,
+        materials: draft.materials
+            .map(
+              (m) => MaterialRow(
                 label: m.label,
                 weight: m.weight,
                 pricePerBobbin: m.pricePerBobbin,
                 gramsPerBobbin: m.gramsPerBobbin,
-              ))
-          .toList(),
-      output: null,
-    ));
+              ),
+            )
+            .toList(),
+        output: null,
+      ),
+    );
   }
 
   /// Alterna el detalle secreto (ojito) con desglose electrico/profit.
@@ -230,11 +248,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   Future<void> loadFromCalculation(Calculation calc) async {
     final repo = ref.read(calculationRepositoryProvider);
     final mats = await repo.materialsOf(calc.id);
-    final mode =
-        mats.length > 1 ? CalculatorMode.advanced : CalculatorMode.express;
-    final total = CalculatorState.parseDecimal(
-          calc.totalHours.toStringAsFixed(2),
-        ) ??
+    final mode = mats.length > 1
+        ? CalculatorMode.advanced
+        : CalculatorMode.express;
+    final total =
+        CalculatorState.parseDecimal(calc.totalHours.toStringAsFixed(2)) ??
         Decimal.zero;
 
     // Recuperar el split h/m.
@@ -243,8 +261,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     //   derivamos (best-effort: 1.55h -> 1h 33min).
     //
     // Estrategia: convertir total a minutos totales, separar.
-    final totalMinutesInt =
-        (total * Decimal.fromInt(60)).toBigInt().toInt();
+    final totalMinutesInt = (total * Decimal.fromInt(60)).toBigInt().toInt();
     int minutes;
     Decimal hours;
     if (calc.printMinutes > 0) {
@@ -258,7 +275,8 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       hours = Decimal.fromInt(totalMinutesInt ~/ 60);
     }
 
-    final discount = CalculatorState.parseDecimal(
+    final discount =
+        CalculatorState.parseDecimal(
           calc.discountPercentage.toStringAsFixed(2),
         ) ??
         Decimal.zero;
@@ -274,10 +292,12 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           label: calc.pieceName ?? '',
           filamentLabel: m == null ? '' : m.label,
           weight: m == null ? '' : m.weightGrams.toStringAsFixed(0),
-          filamentPrice:
-              m == null ? '' : m.pricePerBobbinSnapshot.toStringAsFixed(2),
-          filamentGrams:
-              m == null ? '' : m.gramsPerBobbinSnapshot.toStringAsFixed(0),
+          filamentPrice: m == null
+              ? ''
+              : m.pricePerBobbinSnapshot.toStringAsFixed(2),
+          filamentGrams: m == null
+              ? ''
+              : m.gramsPerBobbinSnapshot.toStringAsFixed(0),
           materials: const <MaterialRow>[],
           output: null,
         ),
@@ -335,15 +355,19 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final draft = CalculationDraft(
       materials: input.materials,
       totalHours: input.totalHours,
-      printMinutes: CalculatorState.parseDecimal(state.printMinutes)?.toBigInt().toInt() ?? 0,
+      printMinutes:
+          CalculatorState.parseDecimal(
+            state.printMinutes,
+          )?.toBigInt().toInt() ??
+          0,
       discountPercentage: input.discountPercentage,
       output: state.output!,
       filamentLabel: state.filamentLabel,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
           : (pieceName == null || pieceName.trim().isEmpty
-              ? null
-              : pieceName.trim()),
+                ? null
+                : pieceName.trim()),
       clientName: (clientName == null || clientName.trim().isEmpty)
           ? null
           : clientName.trim(),
@@ -372,10 +396,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
     // Desglose de costo por material
     final breakdown = input.materials
-        .map((m) => MaterialCostBreakdown(
-              label: m.label,
-              cost: m.cost,
-            ))
+        .map((m) => MaterialCostBreakdown(label: m.label, cost: m.cost))
         .toList();
 
     final discountPct =
@@ -403,31 +424,38 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// kwhRate, profitBase y los 5 nuevos parametros F1 al engine. Se usa la
   /// activa (no la default) para que el calculo coincida con la UI.
   CalculationInput _buildInput(CalculatorState s) {
-    final asyncSettings =
-        ref.read<AsyncValue<Settings>>(settingsNotifierProvider);
+    final asyncSettings = ref.read<AsyncValue<Settings>>(
+      settingsNotifierProvider,
+    );
     final settings = asyncSettings.valueOrNull ?? Settings.defaults;
     final printer = ref.read(activePrinterProvider);
 
     final materials = <MaterialInput>[];
     if (s.mode == CalculatorMode.express) {
-      final matLabel =
-          s.filamentLabel.isNotEmpty ? s.filamentLabel : 'Filamento';
-      materials.add(MaterialInput(
-        label: matLabel,
-        weightGrams: CalculatorState.parseDecimal(s.weight)!,
-        pricePerBobbin: CalculatorState.parseDecimal(s.filamentPrice)!,
-        gramsPerBobbin: CalculatorState.parseDecimal(s.filamentGrams) ??
-            Decimal.fromInt(1000),
-      ));
+      final matLabel = s.filamentLabel.isNotEmpty
+          ? s.filamentLabel
+          : 'Filamento';
+      materials.add(
+        MaterialInput(
+          label: matLabel,
+          weightGrams: CalculatorState.parseDecimal(s.weight)!,
+          pricePerBobbin: CalculatorState.parseDecimal(s.filamentPrice)!,
+          gramsPerBobbin:
+              CalculatorState.parseDecimal(s.filamentGrams) ??
+              Decimal.fromInt(1000),
+        ),
+      );
     } else {
       for (final row in s.materials) {
         if (!row.isValid) continue;
-        materials.add(MaterialInput(
-          label: row.label.isEmpty ? 'Material' : row.label,
-          weightGrams: CalculatorState.parseDecimal(row.weight)!,
-          pricePerBobbin: CalculatorState.parseDecimal(row.pricePerBobbin)!,
-          gramsPerBobbin: CalculatorState.parseDecimal(row.gramsPerBobbin)!,
-        ));
+        materials.add(
+          MaterialInput(
+            label: row.label.isEmpty ? 'Material' : row.label,
+            weightGrams: CalculatorState.parseDecimal(row.weight)!,
+            pricePerBobbin: CalculatorState.parseDecimal(row.pricePerBobbin)!,
+            gramsPerBobbin: CalculatorState.parseDecimal(row.gramsPerBobbin)!,
+          ),
+        );
       }
     }
 
@@ -444,7 +472,8 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           CalculatorState.parseDecimal(s.extraPostProcessRate) ?? Decimal.zero,
       failureRate:
           CalculatorState.parseDecimal(s.extraFailureRate) ?? Decimal.zero,
-      markupOnMaterials: CalculatorState.parseDecimal(s.extraMarkupOnMaterials) ??
+      markupOnMaterials:
+          CalculatorState.parseDecimal(s.extraMarkupOnMaterials) ??
           Decimal.zero,
     );
   }
@@ -453,5 +482,5 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 /// Provider del [CalculatorNotifier]. Standalone (no depende de DB).
 final calculatorNotifierProvider =
     NotifierProvider<CalculatorNotifier, CalculatorState>(
-  CalculatorNotifier.new,
-);
+      CalculatorNotifier.new,
+    );

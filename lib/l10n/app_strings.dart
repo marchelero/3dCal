@@ -399,6 +399,27 @@ abstract class AppStrings {
   /// " (default)" / " (default)" — sufijo de items default.
   String get commonDefaultSuffix;
 
+  /// "Exportar CSV" / "Export CSV" — tooltip del export en Historial.
+  String get historyExportCsv;
+  /// CTA del empty state de Historial (invita a crear desde la calculadora).
+  String get historyEmptyCta;
+  /// "Otros" / "Others" — seccion colapsable de la calculadora.
+  String get calcSectionOthers;
+  /// "Rango: 0-1000" / "Range: 0-1000" — validacion de ganancia base.
+  String get settingsProfitBaseRange;
+  /// "Rango: 0.10-5.00" / "Range: 0.10-5.00" — validacion de tarifa kWh.
+  String get settingsKwhRateRange;
+  /// Share: el resumen aun no se renderizo.
+  String get shareErrorNotRendered;
+  /// Share: no se encontro la region capturable del resumen.
+  String get shareErrorNoRegion;
+  /// Share: no se pudo codificar la imagen PNG.
+  String get shareErrorEncode;
+  /// Share: no se pudo guardar la imagen en la galeria.
+  String get shareErrorSaveGallery;
+  /// Share: no se pudo guardar la imagen (con mensaje del plugin).
+  String shareErrorSaveWithMessage(String msg);
+
   /// Hero tagline de la home.
   String get homeHeroTagline;
 

@@ -20,10 +20,7 @@ enum CalculatorMode {
 /// Usado en DetailSection para mostrar costo por material.
 @immutable
 class MaterialCostBreakdown {
-  const MaterialCostBreakdown({
-    required this.label,
-    required this.cost,
-  });
+  const MaterialCostBreakdown({required this.label, required this.cost});
 
   final String label;
   final Decimal cost;
@@ -60,8 +57,12 @@ class MaterialRow {
     final w = CalculatorState.parseDecimal(weight);
     final p = CalculatorState.parseDecimal(pricePerBobbin);
     final g = CalculatorState.parseDecimal(gramsPerBobbin);
-    return w != null && w > Decimal.zero && p != null && p > Decimal.zero &&
-        g != null && g > Decimal.zero;
+    return w != null &&
+        w > Decimal.zero &&
+        p != null &&
+        p > Decimal.zero &&
+        g != null &&
+        g > Decimal.zero;
   }
 
   MaterialRow copyWith({
@@ -69,13 +70,12 @@ class MaterialRow {
     String? weight,
     String? pricePerBobbin,
     String? gramsPerBobbin,
-  }) =>
-      MaterialRow(
-        label: label ?? this.label,
-        weight: weight ?? this.weight,
-        pricePerBobbin: pricePerBobbin ?? this.pricePerBobbin,
-        gramsPerBobbin: gramsPerBobbin ?? this.gramsPerBobbin,
-      );
+  }) => MaterialRow(
+    label: label ?? this.label,
+    weight: weight ?? this.weight,
+    pricePerBobbin: pricePerBobbin ?? this.pricePerBobbin,
+    gramsPerBobbin: gramsPerBobbin ?? this.gramsPerBobbin,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -138,17 +138,17 @@ class CalculatorState {
 
   /// Estado inicial (modo express, sin materiales).
   factory CalculatorState.initial() => const CalculatorState(
-        mode: CalculatorMode.express,
-        printHours: '',
-        printMinutes: '',
-        discountPct: '0',
-        weight: '',
-        filamentPrice: '',
-        filamentGrams: '',
-        label: '',
-        materials: <MaterialRow>[],
-        output: null,
-      );
+    mode: CalculatorMode.express,
+    printHours: '',
+    printMinutes: '',
+    discountPct: '0',
+    weight: '',
+    filamentPrice: '',
+    filamentGrams: '',
+    label: '',
+    materials: <MaterialRow>[],
+    output: null,
+  );
 
   final CalculatorMode mode;
 
@@ -201,10 +201,13 @@ class CalculatorState {
   // === OTROS (F1: campos extras por cotizacion) ===
   /// Tarifa de mano de obra (BOB/hora). String vacio = no usado.
   final String extraLaborRate;
+
   /// Tasa de post-procesado (% del costo de materiales).
   final String extraPostProcessRate;
+
   /// Tasa de falla (% del costo base).
   final String extraFailureRate;
+
   /// Markup por desperdicio (% del costo de materiales).
   final String extraMarkupOnMaterials;
 
@@ -242,58 +245,60 @@ class CalculatorState {
     String? extraFailureRate,
     String? extraMarkupOnMaterials,
     int? computeVersion,
-  }) =>
-      CalculatorState(
-        mode: mode ?? this.mode,
-        printHours: printHours ?? this.printHours,
-        printMinutes: printMinutes ?? this.printMinutes,
-        discountPct: discountPct ?? this.discountPct,
-        weight: weight ?? this.weight,
-        filamentPrice: filamentPrice ?? this.filamentPrice,
-        filamentGrams: filamentGrams ?? this.filamentGrams,
-        label: label ?? this.label,
-        filamentLabel: filamentLabel ?? this.filamentLabel,
-        materials: materials ?? this.materials,
-        output: clearOutput ? null : (output ?? this.output),
-        detailMaterialBreakdown:
-            detailMaterialBreakdown ?? this.detailMaterialBreakdown,
-        showDetail: showDetail ?? this.showDetail,
-        detailElectricCost: clearDetail
-            ? null
-            : (detailElectricCost ?? this.detailElectricCost),
-        detailLaborCost: clearDetail
-            ? null
-            : (detailLaborCost ?? this.detailLaborCost),
-        detailPostProcessCost: clearDetail
-            ? null
-            : (detailPostProcessCost ?? this.detailPostProcessCost),
-        detailBaseCost:
-            clearDetail ? null : (detailBaseCost ?? this.detailBaseCost),
-        detailFailureCost: clearDetail
-            ? null
-            : (detailFailureCost ?? this.detailFailureCost),
-        detailMarkupCost: clearDetail
-            ? null
-            : (detailMarkupCost ?? this.detailMarkupCost),
-        detailProfitAmount:
-            clearDetail ? null : (detailProfitAmount ?? this.detailProfitAmount),
-        detailTotalFinal:
-            clearDetail ? null : (detailTotalFinal ?? this.detailTotalFinal),
-        detailDiscountPct:
-            clearDetail ? null : (detailDiscountPct ?? this.detailDiscountPct),
-        extraLaborRate: extraLaborRate ?? this.extraLaborRate,
-        extraPostProcessRate:
-            extraPostProcessRate ?? this.extraPostProcessRate,
-        extraFailureRate: extraFailureRate ?? this.extraFailureRate,
-        extraMarkupOnMaterials:
-            extraMarkupOnMaterials ?? this.extraMarkupOnMaterials,
-        computeVersion: computeVersion ?? this.computeVersion,
-      );
+  }) => CalculatorState(
+    mode: mode ?? this.mode,
+    printHours: printHours ?? this.printHours,
+    printMinutes: printMinutes ?? this.printMinutes,
+    discountPct: discountPct ?? this.discountPct,
+    weight: weight ?? this.weight,
+    filamentPrice: filamentPrice ?? this.filamentPrice,
+    filamentGrams: filamentGrams ?? this.filamentGrams,
+    label: label ?? this.label,
+    filamentLabel: filamentLabel ?? this.filamentLabel,
+    materials: materials ?? this.materials,
+    output: clearOutput ? null : (output ?? this.output),
+    detailMaterialBreakdown:
+        detailMaterialBreakdown ?? this.detailMaterialBreakdown,
+    showDetail: showDetail ?? this.showDetail,
+    detailElectricCost: clearDetail
+        ? null
+        : (detailElectricCost ?? this.detailElectricCost),
+    detailLaborCost: clearDetail
+        ? null
+        : (detailLaborCost ?? this.detailLaborCost),
+    detailPostProcessCost: clearDetail
+        ? null
+        : (detailPostProcessCost ?? this.detailPostProcessCost),
+    detailBaseCost: clearDetail
+        ? null
+        : (detailBaseCost ?? this.detailBaseCost),
+    detailFailureCost: clearDetail
+        ? null
+        : (detailFailureCost ?? this.detailFailureCost),
+    detailMarkupCost: clearDetail
+        ? null
+        : (detailMarkupCost ?? this.detailMarkupCost),
+    detailProfitAmount: clearDetail
+        ? null
+        : (detailProfitAmount ?? this.detailProfitAmount),
+    detailTotalFinal: clearDetail
+        ? null
+        : (detailTotalFinal ?? this.detailTotalFinal),
+    detailDiscountPct: clearDetail
+        ? null
+        : (detailDiscountPct ?? this.detailDiscountPct),
+    extraLaborRate: extraLaborRate ?? this.extraLaborRate,
+    extraPostProcessRate: extraPostProcessRate ?? this.extraPostProcessRate,
+    extraFailureRate: extraFailureRate ?? this.extraFailureRate,
+    extraMarkupOnMaterials:
+        extraMarkupOnMaterials ?? this.extraMarkupOnMaterials,
+    computeVersion: computeVersion ?? this.computeVersion,
+  );
 
   /// True si el form completo es valido y se puede calcular output.
   bool get isValid {
-    final hasTime = _parsePos(printHours) != null ||
-        _parsePos(printMinutes) != null;
+    final hasTime =
+        _parsePos(printHours) != null || _parsePos(printMinutes) != null;
     if (mode == CalculatorMode.express) {
       return _parsePos(weight) != null &&
           _parsePos(filamentPrice) != null &&
@@ -315,8 +320,8 @@ class CalculatorState {
   List<String> get missingRequiredFields {
     if (isValid) return const <String>[];
     final missing = <String>[];
-    final hasTime = _parsePos(printHours) != null ||
-        _parsePos(printMinutes) != null;
+    final hasTime =
+        _parsePos(printHours) != null || _parsePos(printMinutes) != null;
     if (mode == CalculatorMode.express) {
       if (_parsePos(weight) == null) missing.add('weight');
       if (_parsePos(filamentPrice) == null) missing.add('price');
@@ -346,8 +351,14 @@ class CalculatorState {
     final m = parseDecimal(printMinutes) ?? Decimal.zero;
     if (h <= Decimal.zero && m <= Decimal.zero) return null;
     if (m <= Decimal.zero) return h;
-    if (h <= Decimal.zero) return (m / Decimal.fromInt(60)).toDecimal();
-    return h + (m / Decimal.fromInt(60)).toDecimal();
+    // `scaleOnInfinitePrecision`: 59/60 = 0.9833... (precision infinita) y
+    // Rational.toDecimal() LANZA AssertionError sin este parametro (decimal
+    // ^3.x). Trunca a 12 decimales: 1 min = 1.67e-2h, 12dp sobra.
+    if (h <= Decimal.zero) {
+      return (m / Decimal.fromInt(60)).toDecimal(scaleOnInfinitePrecision: 12);
+    }
+    return h +
+        (m / Decimal.fromInt(60)).toDecimal(scaleOnInfinitePrecision: 12);
   }
 
   Decimal? _parsePos(String raw) {
@@ -410,7 +421,9 @@ class CalculatorState {
   }
 
   static bool _listEqBD(
-      List<MaterialCostBreakdown> a, List<MaterialCostBreakdown> b) {
+    List<MaterialCostBreakdown> a,
+    List<MaterialCostBreakdown> b,
+  ) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;
@@ -420,32 +433,32 @@ class CalculatorState {
 
   @override
   int get hashCode => Object.hashAll([
-        mode,
-        printHours,
-        printMinutes,
-        discountPct,
-        label,
-        filamentLabel,
-        weight,
-        filamentPrice,
-        filamentGrams,
-        Object.hashAll(materials),
-        output,
-        Object.hashAll(detailMaterialBreakdown),
-        showDetail,
-        detailElectricCost,
-        detailLaborCost,
-        detailPostProcessCost,
-        detailBaseCost,
-        detailFailureCost,
-        detailMarkupCost,
-        detailProfitAmount,
-        detailTotalFinal,
-        detailDiscountPct,
-        extraLaborRate,
-        extraPostProcessRate,
-        extraFailureRate,
-        extraMarkupOnMaterials,
-        computeVersion,
-      ]);
+    mode,
+    printHours,
+    printMinutes,
+    discountPct,
+    label,
+    filamentLabel,
+    weight,
+    filamentPrice,
+    filamentGrams,
+    Object.hashAll(materials),
+    output,
+    Object.hashAll(detailMaterialBreakdown),
+    showDetail,
+    detailElectricCost,
+    detailLaborCost,
+    detailPostProcessCost,
+    detailBaseCost,
+    detailFailureCost,
+    detailMarkupCost,
+    detailProfitAmount,
+    detailTotalFinal,
+    detailDiscountPct,
+    extraLaborRate,
+    extraPostProcessRate,
+    extraFailureRate,
+    extraMarkupOnMaterials,
+    computeVersion,
+  ]);
 }

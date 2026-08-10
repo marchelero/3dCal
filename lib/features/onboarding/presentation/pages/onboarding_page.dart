@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 
@@ -26,13 +27,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pageCtrl = PageController();
   int _currentPage = 0;
 
-  // Colores de fondo por pagina (degradados suaves).
-  static const _pageColors = <Color>[
-    Color(0xFF1B4D7A), // azul tecnico
-    Color(0xFFE67E22), // naranja PLA
-    Color(0xFF1A8A7A), // verde teal
-    Color(0xFF6C3483), // violeta
-  ];
+  // Colores de fondo por pagina (degradados suaves). Single source of truth
+  // en AppTheme.onboardingSlideColors (AA 4.5:1 con texto blanco).
+  static List<Color> get _pageColors => AppTheme.onboardingSlideColors;
 
   List<_OnboardingScreenData> get _screens => [
         _OnboardingScreenData(

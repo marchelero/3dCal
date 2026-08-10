@@ -34,15 +34,11 @@ class ShareQuoteException implements Exception {
 Future<Uint8List> captureQuoteImageBytes(GlobalKey captureKey) async {
   final ctx = captureKey.currentContext;
   if (ctx == null) {
-    throw const ShareQuoteException(
-      'El resumen aun no se renderizo. Intenta de nuevo en un momento.',
-    );
+    throw ShareQuoteException(EsBO.shareErrorNotRendered);
   }
   final renderObject = ctx.findRenderObject();
   if (renderObject is! RenderRepaintBoundary) {
-    throw const ShareQuoteException(
-      'No se encontro la region capturable del resumen.',
-    );
+    throw ShareQuoteException(EsBO.shareErrorNoRegion);
   }
   final boundary = renderObject;
 
@@ -50,7 +46,7 @@ Future<Uint8List> captureQuoteImageBytes(GlobalKey captureKey) async {
   try {
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) {
-      throw const ShareQuoteException('No se pudo codificar la imagen PNG.');
+      throw ShareQuoteException(EsBO.shareErrorEncode);
     }
     return byteData.buffer.asUint8List();
   } finally {
@@ -110,17 +106,15 @@ Future<void> saveQuoteImage(
   } on PlatformException catch (e) {
     throw ShareQuoteException(_saveErrorMessage(e.message));
   } catch (_) {
-    throw const ShareQuoteException(
-      'No se pudo guardar la imagen en la galeria.',
-    );
+    throw ShareQuoteException(EsBO.shareErrorSaveGallery);
   }
 }
 
 String _saveErrorMessage(Object? pluginMessage) {
   if (pluginMessage is String && pluginMessage.isNotEmpty) {
-    return 'No se pudo guardar la imagen: $pluginMessage';
+    return EsBO.shareErrorSaveWithMessage(pluginMessage);
   }
-  return 'No se pudo guardar la imagen en la galeria.';
+  return EsBO.shareErrorSaveGallery;
 }
 
 /// Seam para guardar bytes de imagen en la galeria del dispositivo.

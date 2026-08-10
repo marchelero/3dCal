@@ -106,7 +106,7 @@ class _SettingsBody extends ConsumerWidget {
                         if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
                         final n = int.tryParse(v.trim());
                         if (n == null) return EsBO.commonInvalidNumber;
-                        if (n < 0 || n > 1000) return 'Rango: 0-1000';
+                        if (n < 0 || n > 1000) return EsBO.settingsProfitBaseRange;
                         return null;
                       },
                       onSave: (v) {
@@ -129,7 +129,7 @@ class _SettingsBody extends ConsumerWidget {
                         if (n == null) return EsBO.commonInvalidNumber;
                         if (n < Decimal.parse('0.10') ||
                             n > Decimal.parse('5.00')) {
-                          return 'Rango: 0.10-5.00';
+                          return EsBO.settingsKwhRateRange;
                         }
                         return null;
                       },
@@ -299,7 +299,7 @@ class _SettingsBody extends ConsumerWidget {
                                 style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
-                            Text('v0.1.0',
+                            Text('v$kAppVersion',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                     color: color.onSurfaceVariant)),
                           ],
@@ -445,7 +445,7 @@ class _SettingsHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '3dCalc',
+                  EsBO.appName,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
@@ -454,7 +454,7 @@ class _SettingsHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'v0.1.0',
+                  'v$kAppVersion',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: color.onSurfaceVariant,
                   ),
@@ -745,13 +745,10 @@ class _CompanyNameFieldState extends ConsumerState<_CompanyNameField> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(EsBO.settingsBrandingLockedBody),
-          action: SnackBarAction(
-            label: EsBO.settingsGoProAction,
-            onPressed: () => GoRouter.of(context).push('/paywall'),
-          ),
-          duration: const Duration(seconds: 4),
+        AppSnackBar.warning(
+          EsBO.settingsBrandingLockedBody,
+          actionLabel: EsBO.settingsGoProAction,
+          onAction: () => GoRouter.of(context).push('/paywall'),
         ),
       );
   }
@@ -783,7 +780,6 @@ class _CompanyNameFieldState extends ConsumerState<_CompanyNameField> {
             decoration: InputDecoration(
               helperText: EsBO.settingsCompanyNameHelper,
               helperMaxLines: 2,
-              border: const OutlineInputBorder(),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.md,
@@ -854,13 +850,10 @@ class _LogoPicker extends ConsumerWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(EsBO.settingsBrandingLockedBody),
-          action: SnackBarAction(
-            label: EsBO.settingsGoProAction,
-            onPressed: () => GoRouter.of(context).push('/paywall'),
-          ),
-          duration: const Duration(seconds: 4),
+        AppSnackBar.warning(
+          EsBO.settingsBrandingLockedBody,
+          actionLabel: EsBO.settingsGoProAction,
+          onAction: () => GoRouter.of(context).push('/paywall'),
         ),
       );
   }
@@ -999,7 +992,6 @@ class _CurrencyPicker extends ConsumerWidget {
           onTap: () => _showCurrencySearch(context, ref, current),
           child: InputDecorator(
             decoration: const InputDecoration(
-              border: OutlineInputBorder(),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.md,

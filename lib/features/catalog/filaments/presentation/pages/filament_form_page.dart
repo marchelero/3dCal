@@ -159,7 +159,6 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                 decoration: InputDecoration(
                   labelText: EsBO.filamentName,
                   helperText: EsBO.filamentNameHelper,
-                  border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: _requiredText,

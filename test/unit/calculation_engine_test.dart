@@ -45,9 +45,7 @@ MaterialInput _material({
 void main() {
   group('CalculationEngine.compute', () {
     test('Express basico: 100g PLA @ 150/1000g, 0% descuento', () {
-      final out = CalculationEngine.compute(
-        _input(materials: [_material()]),
-      );
+      final out = CalculationEngine.compute(_input(materials: [_material()]));
 
       // materialCost = 100 * 150/1000 = 15.00
       expect(out.materialCost, DecimalParse.fromString('15'));
@@ -56,6 +54,28 @@ void main() {
       // totalPrice = 15
       expect(out.totalPrice, DecimalParse.fromString('15'));
     });
+
+    test(
+      'ratio price/grams no-terminante (100/300) no lanza (bug latente toDecimal)',
+      () {
+        // 100/300 = 0.3333... → Rational.toDecimal() sin
+        // scaleOnInfinitePrecision lanzaba AssertionError congelando el output.
+        final out = CalculationEngine.compute(
+          _input(
+            materials: [
+              _material(
+                weight: '300',
+                pricePerBobbin: '100',
+                gramsPerBobbin: '300',
+              ),
+            ],
+          ),
+        );
+        // materialCost = 300g * (100 BOB / 300g) = 100.00
+        expect(out.materialCost.toDouble(), closeTo(100.0, 0.001));
+        expect(out.totalPrice, out.materialCost);
+      },
+    );
 
     test('Multi-material: 2 filamentos suman costos', () {
       final out = CalculationEngine.compute(
@@ -77,10 +97,7 @@ void main() {
 
     test('Con descuento 10%: totalPrice = materialCost - discountAmount', () {
       final out = CalculationEngine.compute(
-        _input(
-          materials: [_material()],
-          discount: '10',
-        ),
+        _input(materials: [_material()], discount: '10'),
       );
 
       // materialCost = 15
@@ -159,7 +176,11 @@ void main() {
     });
 
     test('MaterialInput.cost = weight * pricePerGram', () {
-      final m = _material(weight: '200', pricePerBobbin: '150', gramsPerBobbin: '1000');
+      final m = _material(
+        weight: '200',
+        pricePerBobbin: '150',
+        gramsPerBobbin: '1000',
+      );
       // 200 * 0.15 = 30
       expect(m.cost, DecimalParse.fromString('30'));
     });
@@ -228,44 +249,63 @@ void main() {
       expect(kMaxDiscountPercentage, lessThanOrEqualTo(50));
     });
 
-    test('F1 labor rate: 1h + 2 Bs/h labor aumenta total en 2 (sin profit)', () {
-      final out = CalculationEngine.compute(CalculationInput(
-        materials: [_material(weight: '23', pricePerBobbin: '200', gramsPerBobbin: '1000')],
-        totalHours: Decimal.one,
-        discountPercentage: Decimal.zero,
-        printerWatts: 0,
-        kwhRate: Decimal.zero,
-        profitBase: Decimal.zero,
-        laborRate: DecimalParse.fromString('2'),
-        postProcessRate: Decimal.zero,
-        failureRate: Decimal.zero,
-        markupOnMaterials: Decimal.zero,
-      ));
-      // materialCost = 23 * 200/1000 = 4.60
-      expect(out.materialCost, DecimalParse.fromString('4.6'));
-      // laborCost = 1h * 2 Bs/h = 2.00
-      expect(out.laborCost, DecimalParse.fromString('2'));
-      // baseCost = 4.60 + 0 (electric) + 2.00 (labor) + 0 (post) = 6.60
-      expect(out.baseCost, DecimalParse.fromString('6.6'));
-      // profit = 0 → totalFinal = 6.60
-      expect(out.totalFinal, DecimalParse.fromString('6.6'));
-      // totalPrice = 6.60 - 0 descuento = 6.60
-      expect(out.totalPrice, DecimalParse.fromString('6.6'));
-    });
+    test(
+      'F1 labor rate: 1h + 2 Bs/h labor aumenta total en 2 (sin profit)',
+      () {
+        final out = CalculationEngine.compute(
+          CalculationInput(
+            materials: [
+              _material(
+                weight: '23',
+                pricePerBobbin: '200',
+                gramsPerBobbin: '1000',
+              ),
+            ],
+            totalHours: Decimal.one,
+            discountPercentage: Decimal.zero,
+            printerWatts: 0,
+            kwhRate: Decimal.zero,
+            profitBase: Decimal.zero,
+            laborRate: DecimalParse.fromString('2'),
+            postProcessRate: Decimal.zero,
+            failureRate: Decimal.zero,
+            markupOnMaterials: Decimal.zero,
+          ),
+        );
+        // materialCost = 23 * 200/1000 = 4.60
+        expect(out.materialCost, DecimalParse.fromString('4.6'));
+        // laborCost = 1h * 2 Bs/h = 2.00
+        expect(out.laborCost, DecimalParse.fromString('2'));
+        // baseCost = 4.60 + 0 (electric) + 2.00 (labor) + 0 (post) = 6.60
+        expect(out.baseCost, DecimalParse.fromString('6.6'));
+        // profit = 0 → totalFinal = 6.60
+        expect(out.totalFinal, DecimalParse.fromString('6.6'));
+        // totalPrice = 6.60 - 0 descuento = 6.60
+        expect(out.totalPrice, DecimalParse.fromString('6.6'));
+      },
+    );
 
     test('F1 labor rate: 1h + 2 Bs/h + 200% profit', () {
-      final out = CalculationEngine.compute(CalculationInput(
-        materials: [_material(weight: '23', pricePerBobbin: '200', gramsPerBobbin: '1000')],
-        totalHours: Decimal.one,
-        discountPercentage: Decimal.zero,
-        printerWatts: 0,
-        kwhRate: Decimal.zero,
-        profitBase: Decimal.fromInt(200),
-        laborRate: DecimalParse.fromString('2'),
-        postProcessRate: Decimal.zero,
-        failureRate: Decimal.zero,
-        markupOnMaterials: Decimal.zero,
-      ));
+      final out = CalculationEngine.compute(
+        CalculationInput(
+          materials: [
+            _material(
+              weight: '23',
+              pricePerBobbin: '200',
+              gramsPerBobbin: '1000',
+            ),
+          ],
+          totalHours: Decimal.one,
+          discountPercentage: Decimal.zero,
+          printerWatts: 0,
+          kwhRate: Decimal.zero,
+          profitBase: Decimal.fromInt(200),
+          laborRate: DecimalParse.fromString('2'),
+          postProcessRate: Decimal.zero,
+          failureRate: Decimal.zero,
+          markupOnMaterials: Decimal.zero,
+        ),
+      );
       // materialCost = 4.60, laborCost = 2.00, baseCost = 6.60
       // profit = 6.60 * 200/100 = 13.20
       expect(out.profitAmount, DecimalParse.fromString('13.2'));

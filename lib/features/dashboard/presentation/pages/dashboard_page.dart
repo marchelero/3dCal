@@ -291,7 +291,7 @@ class _LegendDot extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
       ],
     );
   }
@@ -318,13 +318,12 @@ class _MaterialRow extends StatelessWidget {
               m.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
           Text(
             '${m.count}x · $gramsStr',
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),

@@ -18,6 +18,7 @@ import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
@@ -92,7 +93,7 @@ class _CalculationsListPageState
             ),
             tooltip: csvLocked
                 ? EsBO.csvExportTooltipLocked
-                : 'Exportar CSV',
+                : EsBO.historyExportCsv,
             onPressed: () => _exportCsv(notifier),
           ),
         ],
@@ -120,9 +121,6 @@ class _CalculationsListPageState
                 isDense: true,
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
-                ),
               ),
               onChanged: (v) {
                 notifier.search(v);
@@ -178,7 +176,7 @@ class _CalculationsListPageState
                         : EsBO.historyEmpty,
                     subtitle: _searchCtrl.text.isNotEmpty
                         ? EsBO.historyEmptySearchHint
-                        : 'Crea una desde el calculator y toca Guardar.',
+                        : EsBO.historyEmptyCta,
                     ctaLabel: EsBO.homeActionNewCalc,
                     ctaIcon: Icons.add_rounded,
                     onCta: () => context.push('/calculator'),
@@ -212,7 +210,10 @@ class _CalculationsListPageState
   Widget _filterChip(String label, bool? filter) {
     final selected = _soldFilter == filter;
     return FilterChip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
+      label: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium,
+      ),
       selected: selected,
       onSelected: (_) {
         setState(() => _soldFilter = _soldFilter == filter ? null : filter);
@@ -241,15 +242,13 @@ class _CalculationsListPageState
     if (!isPro) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(EsBO.csvExportLockedBody),
-          action: SnackBarAction(
-            label: EsBO.csvGoProAction,
-            onPressed: () {
-              if (!mounted) return;
-              context.push('/paywall');
-            },
-          ),
+        AppSnackBar.warning(
+          EsBO.csvExportLockedBody,
+          actionLabel: EsBO.csvGoProAction,
+          onAction: () {
+            if (!mounted) return;
+            context.push('/paywall');
+          },
         ),
       );
       return;
@@ -260,7 +259,7 @@ class _CalculationsListPageState
     if (calcs == null || calcs.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(EsBO.historyNoQuotesToExport)),
+        AppSnackBar.info(context, EsBO.historyNoQuotesToExport),
       );
       return;
     }
@@ -475,7 +474,7 @@ class _PopupMenu extends StatelessWidget {
             ),
             title: Text(
                 calc.isSold ? EsBO.calcDetailMarkPending : EsBO.calcDetailMarkSold,
-                style: const TextStyle(fontSize: 14)),
+                style: Theme.of(context).textTheme.labelLarge),
             dense: true,
           ),
         ),
@@ -483,7 +482,8 @@ class _PopupMenu extends StatelessWidget {
           value: _TileAction.delete,
           child: ListTile(
             leading: Icon(Icons.delete_outline_rounded, size: 20),
-            title: Text(EsBO.commonDelete, style: TextStyle(fontSize: 14)),
+            title: Text(EsBO.commonDelete,
+                style: Theme.of(context).textTheme.labelLarge),
             dense: true,
           ),
         ),
@@ -499,7 +499,7 @@ class _PopupMenu extends StatelessWidget {
         final confirm = await showConfirmDialog(
           context,
           title: EsBO.calcDetailDeleteTitle,
-          message: '¿Eliminar permanentemente?',
+          message: EsBO.calcDetailDeleteConfirm,
         );
         if (confirm) {
           await notifier.delete(calc.id);

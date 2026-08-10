@@ -8,6 +8,8 @@ import 'package:tresdcal/features/calculation/domain/entities/calculation_output
 import 'package:tresdcal/features/calculation/presentation/notifiers/calculations_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
+import 'package:tresdcal/features/settings/domain/settings.dart';
+import 'package:tresdcal/features/settings/presentation/notifiers/settings_notifier.dart';
 
 void main() {
   group('CalculatorState.initial', () {
@@ -23,9 +25,12 @@ void main() {
       expect(s.output, isNull);
     });
 
-    test('isValid es false en estado inicial (faltan weight/precio/gramos)', () {
-      expect(CalculatorState.initial().isValid, isFalse);
-    });
+    test(
+      'isValid es false en estado inicial (faltan weight/precio/gramos)',
+      () {
+        expect(CalculatorState.initial().isValid, isFalse);
+      },
+    );
   });
 
   group('CalculatorState.parseDecimal', () {
@@ -80,7 +85,13 @@ void main() {
       final s = CalculatorState.initial().copyWith(
         mode: CalculatorMode.advanced,
         printHours: '5',
-        materials: const [MaterialRow(weight: '100', pricePerBobbin: '120', gramsPerBobbin: '1000')],
+        materials: const [
+          MaterialRow(
+            weight: '100',
+            pricePerBobbin: '120',
+            gramsPerBobbin: '1000',
+          ),
+        ],
       );
       expect(s.isValid, isTrue);
     });
@@ -145,6 +156,19 @@ void main() {
       );
       expect(s.totalHoursDecimal, Decimal.fromInt(2));
     });
+
+    test(
+      '3h + 59min: no lanza y produce 3.9833...h (bug: minutos no cambiaban precio)',
+      () {
+        // 59/60 = 0.9833... (precision infinita). Rational.toDecimal() lanzaba
+        // AssertionError sin scaleOnInfinitePrecision (decimal ^3.x).
+        final s = CalculatorState.initial().copyWith(
+          printHours: '3',
+          printMinutes: '59',
+        );
+        expect(s.totalHoursDecimal!.toDouble(), closeTo(3.983333, 1e-6));
+      },
+    );
   });
 
   group('CalculatorNotifier', () {
@@ -153,9 +177,9 @@ void main() {
 
     setUp(() {
       db = AppDatabase.forTesting(NativeDatabase.memory());
-      container = ProviderContainer(overrides: [
-        appDatabaseProvider.overrideWithValue(db),
-      ]);
+      container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
     });
 
     tearDown(() async {
@@ -164,7 +188,10 @@ void main() {
     });
 
     test('estado inicial == CalculatorState.initial()', () {
-      expect(container.read(calculatorNotifierProvider), CalculatorState.initial());
+      expect(
+        container.read(calculatorNotifierProvider),
+        CalculatorState.initial(),
+      );
     });
 
     test('setWeight actualiza el string en state', () {
@@ -260,8 +287,7 @@ void main() {
       expect(output.totalPrice, Decimal.fromInt(24));
     });
 
-    test('regression: solo minutos (horas vacias) calcula correctamente',
-        () {
+    test('regression: solo minutos (horas vacias) calcula correctamente', () {
       // Bug original: con printHours='' y printMinutes='33', el calculo
       // usaba 0 horas en vez de 0.55. Ahora debe usar 0.55.
       // Para hacer el test observable, agregamos labor rate (que depende
@@ -302,6 +328,64 @@ void main() {
       expect(output!.materialCost, Decimal.fromInt(10));
       expect(output.totalPrice, Decimal.fromInt(30));
     });
+
+    test(
+      'regression (bug usuario): 3h + 59min SI cambia el precio con tiempo costeable',
+      () {
+        // Repro real: 3h daba el mismo precio que 3h59m porque 59/60 tiene
+        // precision infinita y toDecimal() lanzaba AssertionError, congelando
+        // el output anterior (los tests previos usaban 33min = 0.55 exacto).
+        final notifier = container.read(calculatorNotifierProvider.notifier);
+        notifier.setWeight('100');
+        notifier.setFilamentPrice('100');
+        notifier.setFilamentGrams('1000');
+        notifier.setExtraLaborRate('10'); // hace el tiempo relevante
+        notifier.setPrintHours('3');
+        final base = container.read(calculatorNotifierProvider).output!;
+        // 3h: labor = 3 * 10 = 30 → totalPrice = (10 + 30) * 3 = 120
+        expect(base.laborCost, Decimal.fromInt(30));
+
+        notifier.setPrintMinutes('59');
+        final out = container.read(calculatorNotifierProvider).output!;
+        expect(out, isNotNull);
+        // 3.98333h: labor = 39.8333 → totalPrice > 120
+        expect(out.laborCost.toDouble(), closeTo(39.8333, 0.001));
+        expect(out.totalPrice, greaterThan(base.totalPrice));
+      },
+    );
+
+    test(
+      'regression: cambiar settings (profitBase) recalcula el total al vuelo',
+      () async {
+        // El output dependia de ref.read(settings) sin listen: cambiar un
+        // parametro en Ajustes dejaba el total congelado hasta tocar un campo.
+        final container = ProviderContainer(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            settingsNotifierProvider.overrideWith(_FakeSettingsNotifier.new),
+          ],
+        );
+        addTearDown(container.dispose);
+        await container.read(settingsNotifierProvider.future);
+
+        final notifier = container.read(calculatorNotifierProvider.notifier);
+        notifier.setWeight('100');
+        notifier.setFilamentPrice('100');
+        notifier.setFilamentGrams('1000');
+        notifier.setPrintHours('3');
+        final base = container.read(calculatorNotifierProvider).output!;
+        // material 10 + profit 200% = 30
+        expect(base.totalPrice, Decimal.fromInt(30));
+
+        (container.read(settingsNotifierProvider.notifier)
+                as _FakeSettingsNotifier)
+            .setForTest(
+                Settings.defaults.copyWith(profitBase: Decimal.zero));
+
+        final out = container.read(calculatorNotifierProvider).output!;
+        expect(out.totalPrice, Decimal.fromInt(10)); // sin profit
+      },
+    );
   });
 
   group('CalculatorState equality', () {
@@ -326,9 +410,9 @@ void main() {
 
     setUp(() {
       db = AppDatabase.forTesting(NativeDatabase.memory());
-      container = ProviderContainer(overrides: [
-        appDatabaseProvider.overrideWithValue(db),
-      ]);
+      container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
     });
 
     tearDown(() async {
@@ -379,27 +463,29 @@ void main() {
       expect(c.clientName, isNull);
     });
 
-    test('save invalida calculationsNotifierProvider para refrescar historial',
-        () async {
-      // Inicializa el calculations notifier (estado vacio).
-      final initial = await container
-          .read(calculationsNotifierProvider.future);
-      expect(initial, isEmpty);
+    test(
+      'save invalida calculationsNotifierProvider para refrescar historial',
+      () async {
+        // Inicializa el calculations notifier (estado vacio).
+        final initial = await container.read(
+          calculationsNotifierProvider.future,
+        );
+        expect(initial, isEmpty);
 
-      // Llena el form y guarda via calculator notifier.
-      final n = container.read(calculatorNotifierProvider.notifier);
-      n.setWeight('100');
-      n.setPrintHours('5');
-      n.setFilamentPrice('120');
-      n.setFilamentGrams('1000');
-      await n.save(pieceName: 'Test');
+        // Llena el form y guarda via calculator notifier.
+        final n = container.read(calculatorNotifierProvider.notifier);
+        n.setWeight('100');
+        n.setPrintHours('5');
+        n.setFilamentPrice('120');
+        n.setFilamentGrams('1000');
+        await n.save(pieceName: 'Test');
 
-      // Al releer el notifier (despues del invalidate), ve la nueva cotizacion.
-      final after = await container
-          .read(calculationsNotifierProvider.future);
-      expect(after, hasLength(1));
-      expect(after.first.pieceName, 'Test');
-    });
+        // Al releer el notifier (despues del invalidate), ve la nueva cotizacion.
+        final after = await container.read(calculationsNotifierProvider.future);
+        expect(after, hasLength(1));
+        expect(after.first.pieceName, 'Test');
+      },
+    );
 
     test('save persiste printMinutes (schema v4)', () async {
       final n = container.read(calculatorNotifierProvider.notifier);
@@ -427,9 +513,7 @@ void main() {
       expect(c.printMinutes, 0);
     });
 
-    test(
-        'loadFromCalculation preserva el split h+m (regression v4)',
-        () async {
+    test('loadFromCalculation preserva el split h+m (regression v4)', () async {
       // Setup: guardar cotizacion con 1h 33min
       final n = container.read(calculatorNotifierProvider.notifier);
       n.setWeight('100');
@@ -443,8 +527,9 @@ void main() {
       n.reset();
 
       // Carga la cotizacion guardada ("Reusar" en historial).
-      final calculations = await container
-          .read(calculationsNotifierProvider.future);
+      final calculations = await container.read(
+        calculationsNotifierProvider.future,
+      );
       final calc = calculations.first;
       await container
           .read(calculatorNotifierProvider.notifier)
@@ -456,48 +541,58 @@ void main() {
       expect(state.printMinutes, '33');
     });
 
-    test('loadFromCalculation backfill: row v3 sin printMinutes (0) deriva split del decimal',
-        () async {
-      // Simula una row v3 (legacy) construida directamente con printMinutes=0.
-      // loadFromCalculation recibe la entidad, no necesita estar en DB para
-      // el split.
-      final legacyCalc = Calculation(
-        id: 1,
-        createdAt: DateTime.now(),
-        pieceName: 'Legacy v3',
-        printerWattsSnapshot: 0,
-        totalHours: 1.55,
-        printMinutes: 0, // v3: siempre 0
-        discountPercentage: 0,
-        kwhRateSnapshot: 0.6,
-        profitBaseSnapshot: 200,
-        isSold: false,
-        materialCostSnapshot: 12,
-        electricCostSnapshot: 0,
-        laborCostSnapshot: 0,
-        postProcessCostSnapshot: 0,
-        baseCostSnapshot: 0,
-        failureCostSnapshot: 0,
-        markupCostSnapshot: 0,
-        profitAmountSnapshot: 24,
-        minimumChargeAppliedSnapshot: 0,
-        effectiveTotalSnapshot: 36,
-        totalPriceSnapshot: 36,
-        laborRateSnapshot: 50,
-        postProcessRateSnapshot: 0,
-        failureRateSnapshot: 0,
-        minimumChargeSnapshot: 0,
-        markupOnMaterialsSnapshot: 0,
-      );
+    test(
+      'loadFromCalculation backfill: row v3 sin printMinutes (0) deriva split del decimal',
+      () async {
+        // Simula una row v3 (legacy) construida directamente con printMinutes=0.
+        // loadFromCalculation recibe la entidad, no necesita estar en DB para
+        // el split.
+        final legacyCalc = Calculation(
+          id: 1,
+          createdAt: DateTime.now(),
+          pieceName: 'Legacy v3',
+          printerWattsSnapshot: 0,
+          totalHours: 1.55,
+          printMinutes: 0, // v3: siempre 0
+          discountPercentage: 0,
+          kwhRateSnapshot: 0.6,
+          profitBaseSnapshot: 200,
+          isSold: false,
+          materialCostSnapshot: 12,
+          electricCostSnapshot: 0,
+          laborCostSnapshot: 0,
+          postProcessCostSnapshot: 0,
+          baseCostSnapshot: 0,
+          failureCostSnapshot: 0,
+          markupCostSnapshot: 0,
+          profitAmountSnapshot: 24,
+          minimumChargeAppliedSnapshot: 0,
+          effectiveTotalSnapshot: 36,
+          totalPriceSnapshot: 36,
+          laborRateSnapshot: 50,
+          postProcessRateSnapshot: 0,
+          failureRateSnapshot: 0,
+          minimumChargeSnapshot: 0,
+          markupOnMaterialsSnapshot: 0,
+        );
 
-      await container
-          .read(calculatorNotifierProvider.notifier)
-          .loadFromCalculation(legacyCalc);
+        await container
+            .read(calculatorNotifierProvider.notifier)
+            .loadFromCalculation(legacyCalc);
 
-      // Backfill: 1.55h = 93min = 1h 33min.
-      final state = container.read(calculatorNotifierProvider);
-      expect(state.printHours, '1');
-      expect(state.printMinutes, '33');
-    });
+        // Backfill: 1.55h = 93min = 1h 33min.
+        final state = container.read(calculatorNotifierProvider);
+        expect(state.printHours, '1');
+        expect(state.printMinutes, '33');
+      },
+    );
   });
+}
+
+/// Fake de [SettingsNotifier] para mutar settings sin DB ni prefs.
+class _FakeSettingsNotifier extends SettingsNotifier {
+  @override
+  Future<Settings> build() async => Settings.defaults;
+
+  void setForTest(Settings s) => state = AsyncValue.data(s);
 }

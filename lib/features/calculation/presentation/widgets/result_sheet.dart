@@ -67,195 +67,197 @@ class ResultBottomBar extends StatelessWidget {
           children: [
             // Borde de arranque perforado: la hoja se desprende aqui.
             const Perforation(),
-            InkWell(
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.md,
-                ),
-                child: Row(
-                  children: [
-                    // Icono cuadrado con tinta de plano (empty ↔ total)
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadii.sm),
-                        border: Border.all(
-                          color: isEmpty
-                              ? color.outlineVariant
-                              : color.primary,
-                          width: 1.5,
+            Semantics(
+              button: true,
+              label: isEmpty ? emptyHint! : totalText,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      // Icono cuadrado con tinta de plano (empty ↔ total)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppRadii.sm),
+                          border: Border.all(
+                            color: isEmpty
+                                ? color.outlineVariant
+                                : color.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, animation) =>
+                              ScaleTransition(scale: animation, child: child),
+                          child: Icon(
+                            key: ValueKey(isEmpty),
+                            isEmpty
+                                ? Icons.info_outline_rounded
+                                : Icons.receipt_long_rounded,
+                            color: isEmpty
+                                ? color.onSurfaceVariant
+                                : color.primary,
+                            size: 22,
+                          ),
                         ),
                       ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        transitionBuilder: (child, animation) =>
-                            ScaleTransition(scale: animation, child: child),
-                        child: Icon(
-                          key: ValueKey(isEmpty),
-                          isEmpty
-                              ? Icons.info_outline_rounded
-                              : Icons.receipt_long_rounded,
-                          color: isEmpty
-                              ? color.onSurfaceVariant
-                              : color.primary,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: isEmpty
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  EsBO.calcResultBarEmptyHint.toUpperCase(),
-                                  style: AppTheme.num(
-                                    theme.textTheme.labelSmall?.copyWith(
-                                      letterSpacing: 1.2,
-                                    ) ??
-                                        const TextStyle(),
-                                    color: color.onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 10.5,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  emptyHint!,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: color.onSurface,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  EsBO.calcResultBarTapHint.toUpperCase(),
-                                  style: AppTheme.num(
-                                    theme.textTheme.labelSmall?.copyWith(
-                                      letterSpacing: 1.2,
-                                    ) ??
-                                        const TextStyle(),
-                                    color: color.onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 10.5,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                // Caja del total con doble regla: el momento
-                                // de la venta.
-                                Container(
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      top: BorderSide(
-                                        color: color.onSurface,
-                                        width: 2,
-                                      ),
-                                      bottom: BorderSide(
-                                        color: color.onSurface,
-                                        width: 2,
-                                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: isEmpty
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    EsBO.calcResultBarEmptyHint.toUpperCase(),
+                                    style: AppTheme.num(
+                                      theme.textTheme.labelSmall?.copyWith(
+                                            letterSpacing: 1.2,
+                                          ) ??
+                                          const TextStyle(),
+                                      color: color.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 2,
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    emptyHint!,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: color.onSurface,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  child: Container(
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    EsBO.calcResultBarTapHint.toUpperCase(),
+                                    style: AppTheme.num(
+                                      theme.textTheme.labelSmall?.copyWith(
+                                            letterSpacing: 1.2,
+                                          ) ??
+                                          const TextStyle(),
+                                      color: color.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  // Caja del total con doble regla: el momento
+                                  // de la venta.
+                                  Container(
                                     decoration: BoxDecoration(
                                       border: Border(
                                         top: BorderSide(
                                           color: color.onSurface,
-                                          width: 1,
+                                          width: 2,
                                         ),
                                         bottom: BorderSide(
                                           color: color.onSurface,
-                                          width: 1,
+                                          width: 2,
                                         ),
                                       ),
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 2,
                                     ),
-                                    child: AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 300),
-                                      transitionBuilder: (child, animation) =>
-                                          SlideTransition(
-                                            position: Tween<Offset>(
-                                              begin: const Offset(0, 0.3),
-                                              end: Offset.zero,
-                                            ).animate(
-                                              CurvedAnimation(
-                                                parent: animation,
-                                                curve: Curves.easeOut,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          top: BorderSide(
+                                            color: color.onSurface,
+                                            width: 1,
+                                          ),
+                                          bottom: BorderSide(
+                                            color: color.onSurface,
+                                            width: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 2,
+                                      ),
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        transitionBuilder: (child, animation) =>
+                                            SlideTransition(
+                                              position:
+                                                  Tween<Offset>(
+                                                    begin: const Offset(0, 0.3),
+                                                    end: Offset.zero,
+                                                  ).animate(
+                                                    CurvedAnimation(
+                                                      parent: animation,
+                                                      curve: Curves.easeOut,
+                                                    ),
+                                                  ),
+                                              child: FadeTransition(
+                                                opacity: animation,
+                                                child: child,
                                               ),
                                             ),
-                                            child: FadeTransition(
-                                              opacity: animation,
-                                              child: child,
-                                            ),
+                                        child: Text(
+                                          totalText,
+                                          key: ValueKey(totalText),
+                                          style: AppTheme.num(
+                                            theme.textTheme.titleLarge ??
+                                                const TextStyle(),
+                                            color: color.onSurface,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                      child: Text(
-                                        totalText,
-                                        key: ValueKey(totalText),
-                                        style: AppTheme.num(
-                                          theme.textTheme.titleLarge ??
-                                              const TextStyle(),
-                                          color: color.onSurface,
-                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                      ),
+                      if (!isEmpty && hasDiscount) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        // Sello de descuento: correccion en tinta roja.
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: color.error, width: 1.5),
+                            borderRadius: BorderRadius.circular(AppRadii.xs),
+                          ),
+                          child: Text(
+                            EsBO.calcToggleShowDetail,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: color.error,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
                             ),
-                    ),
-                    if (!isEmpty && hasDiscount) ...[
-                      const SizedBox(width: AppSpacing.sm),
-                      // Sello de descuento: correccion en tinta roja.
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: color.error,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadii.xs),
-                        ),
-                        child: Text(
-                          EsBO.calcToggleShowDetail,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: color.error,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
                           ),
                         ),
-                      ),
+                      ],
+                      if (!isEmpty) ...[
+                        const SizedBox(width: AppSpacing.xs),
+                        Icon(
+                          Icons.keyboard_arrow_up_rounded,
+                          color: color.onSurfaceVariant,
+                        ),
+                      ],
                     ],
-                    if (!isEmpty) ...[
-                      const SizedBox(width: AppSpacing.xs),
-                      Icon(
-                        Icons.keyboard_arrow_up_rounded,
-                        color: color.onSurfaceVariant,
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -367,9 +369,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.commonPdfExportError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.commonPdfExportError}: $e'));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -386,9 +388,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.calcShareError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.calcShareError}: $e'));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -404,17 +406,15 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       final msg = kIsWeb
           ? EsBO.commonImageDownloaded
           : EsBO.commonImageSavedGallery;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.success(msg),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.success(msg));
     } on ShareQuoteException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.calcShareError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.calcShareError}: $e'));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -480,93 +480,96 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      Container(height: 1, color: theme.colorScheme.outlineVariant),
+                      Container(
+                        height: 1,
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                     ],
                   ),
                 ),
               ),
 
-            // ── Quote Image Template (capturable ──
-            // Este widget se captura como PNG. NO tiene elementos interactivos.
-            // El toggle detail se renderiza fuera del RepaintBoundary.
-            RepaintBoundary(
-              key: _captureKey,
-              child: QuoteImageTemplate(
-                output: output,
-                label: state.label,
-                discountPct:
-                    state.detailDiscountPct?.toStringAsFixed(0) ??
-                    state.discountPct,
-                showDetail: state.showDetail,
-                detailMaterialBreakdown: state.detailMaterialBreakdown,
-                detailElectricCost: state.detailElectricCost,
-                detailLaborCost: state.detailLaborCost,
-                detailPostProcessCost: state.detailPostProcessCost,
-                detailBaseCost: state.detailBaseCost,
-                detailFailureCost: state.detailFailureCost,
-                detailMarkupCost: state.detailMarkupCost,
-                detailProfitAmount: state.detailProfitAmount,
-                detailTotalFinal: state.detailTotalFinal,
-                metaGrams: meta.grams,
-                metaTime: meta.time,
-                companyName: widget.companyName,
-                companyLogoBase64: widget.companyLogoBase64,
-                currency: widget.currency,
-              ),
-            ),
-
-            // Toggle detail (fuera del RepaintBoundary para no salir en img)
-            const SizedBox(height: AppSpacing.sm),
-            Align(
-              child: TextButton.icon(
-                icon: Icon(
-                  state.showDetail
-                      ? Icons.visibility_rounded
-                      : Icons.visibility_off_rounded,
-                  size: 18,
-                ),
-                label: Text(
-                  state.showDetail
-                      ? EsBO.calcToggleHideDetail
-                      : EsBO.calcToggleShowDetail,
-                ),
-                onPressed: widget.onToggleDetail,
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Acciones label
-            Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.xs),
-              child: Text(
-                EsBO.calcSheetActionsLabel.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  letterSpacing: 1.2,
+              // ── Quote Image Template (capturable ──
+              // Este widget se captura como PNG. NO tiene elementos interactivos.
+              // El toggle detail se renderiza fuera del RepaintBoundary.
+              RepaintBoundary(
+                key: _captureKey,
+                child: QuoteImageTemplate(
+                  output: output,
+                  label: state.label,
+                  discountPct:
+                      state.detailDiscountPct?.toStringAsFixed(0) ??
+                      state.discountPct,
+                  showDetail: state.showDetail,
+                  detailMaterialBreakdown: state.detailMaterialBreakdown,
+                  detailElectricCost: state.detailElectricCost,
+                  detailLaborCost: state.detailLaborCost,
+                  detailPostProcessCost: state.detailPostProcessCost,
+                  detailBaseCost: state.detailBaseCost,
+                  detailFailureCost: state.detailFailureCost,
+                  detailMarkupCost: state.detailMarkupCost,
+                  detailProfitAmount: state.detailProfitAmount,
+                  detailTotalFinal: state.detailTotalFinal,
+                  metaGrams: meta.grams,
+                  metaTime: meta.time,
+                  companyName: widget.companyName,
+                  companyLogoBase64: widget.companyLogoBase64,
+                  currency: widget.currency,
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
 
-            // Action row: Guardar cotización + Compartir + Guardar img + Reset.
-            _ActionIconRow(
-              isBusy: _isBusy,
-              onSaveDb: () {
-                Navigator.of(context).pop();
-                widget.onSave();
-              },
-              onShare: _handleShare,
-              onSharePdf: _handleSharePdf,
-              onSaveImage: _handleSave,
-              onReset: () {
-                Navigator.of(context).pop();
-                widget.onReset();
-              },
-            ),
-          ],
+              // Toggle detail (fuera del RepaintBoundary para no salir en img)
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                child: TextButton.icon(
+                  icon: Icon(
+                    state.showDetail
+                        ? Icons.visibility_rounded
+                        : Icons.visibility_off_rounded,
+                    size: 18,
+                  ),
+                  label: Text(
+                    state.showDetail
+                        ? EsBO.calcToggleHideDetail
+                        : EsBO.calcToggleShowDetail,
+                  ),
+                  onPressed: widget.onToggleDetail,
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // Acciones label
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xs),
+                child: Text(
+                  EsBO.calcSheetActionsLabel.toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+
+              // Action row: Guardar cotización + Compartir + Guardar img + Reset.
+              _ActionIconRow(
+                isBusy: _isBusy,
+                onSaveDb: () {
+                  Navigator.of(context).pop();
+                  widget.onSave();
+                },
+                onShare: _handleShare,
+                onSharePdf: _handleSharePdf,
+                onSaveImage: _handleSave,
+                onReset: () {
+                  Navigator.of(context).pop();
+                  widget.onReset();
+                },
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -608,7 +611,7 @@ class _ActionIconRow extends StatelessWidget {
         _ActionIcon(
           icon: Icons.picture_as_pdf_rounded,
           tooltip: EsBO.commonSharePdf,
-          color: Colors.red,
+          color: color.error,
           isBusy: isBusy,
           onPressed: isBusy ? null : onSharePdf,
         ),
@@ -666,17 +669,14 @@ class _ActionIcon extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.sm),
           side: BorderSide(color: color, width: 1.5),
         ),
-        minimumSize: const Size(44, 44),
+        minimumSize: const Size(48, 48),
         padding: const EdgeInsets.all(AppSpacing.sm),
       ),
       icon: isBusy
           ? SizedBox(
               width: 22,
               height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: color,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2.5, color: color),
             )
           : Icon(icon, color: color, size: 22),
     );

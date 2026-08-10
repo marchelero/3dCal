@@ -28,7 +28,8 @@ class MaterialInput {
   final Decimal gramsPerBobbin;
 
   /// Precio por gramo derivado (BOB/g).
-  Decimal get pricePerGram => (pricePerBobbin / gramsPerBobbin).toDecimal();
+  Decimal get pricePerGram =>
+      (pricePerBobbin / gramsPerBobbin).toDecimal(scaleOnInfinitePrecision: 12);
 
   /// Costo de este material (BOB) = weight * pricePerGram.
   Decimal get cost => weightGrams * pricePerGram;

@@ -703,6 +703,31 @@ class EnImpl implements AppStrings {
   String get commonPrintError => 'Error printing';
   @override
   String get commonDefaultSuffix => ' (default)';
+  @override
+  String get historyExportCsv => 'Export CSV';
+  @override
+  String get historyEmptyCta =>
+      'Create one from the calculator and tap Save.';
+  @override
+  String get calcSectionOthers => 'Others';
+  @override
+  String get settingsProfitBaseRange => 'Range: 0-1000';
+  @override
+  String get settingsKwhRateRange => 'Range: 0.10-5.00';
+  @override
+  String get shareErrorNotRendered =>
+      'The summary has not rendered yet. Try again in a moment.';
+  @override
+  String get shareErrorNoRegion =>
+      'The capturable region of the summary was not found.';
+  @override
+  String get shareErrorEncode => 'Could not encode the PNG image.';
+  @override
+  String get shareErrorSaveGallery =>
+      'Could not save the image to the gallery.';
+  @override
+  String shareErrorSaveWithMessage(String msg) =>
+      'Could not save the image: $msg';
 
   @override
   String get homeHeroTagline => '3D Quotes · Fast · Accurate · Offline';

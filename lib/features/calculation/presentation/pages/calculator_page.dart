@@ -289,15 +289,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            SnackBar(
-              content: Text(EsBO.calculatorAdvancedLockedBody),
-              action: SnackBarAction(
-                label: EsBO.calculatorGoProAction,
-                onPressed: () {
-                  GoRouter.of(context).push('/paywall');
-                },
-              ),
-              duration: const Duration(seconds: 5),
+            AppSnackBar.warning(
+              EsBO.calculatorAdvancedLockedBody,
+              actionLabel: EsBO.calculatorGoProAction,
+              onAction: () {
+                GoRouter.of(context).push('/paywall');
+              },
             ),
           );
         return;
@@ -410,15 +407,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            content: Text(EsBO.historyCapReachedBody),
-            action: SnackBarAction(
-              label: EsBO.calculatorGoProAction,
-              onPressed: () {
-                GoRouter.of(context).push('/paywall');
-              },
-            ),
-            duration: const Duration(seconds: 5),
+          AppSnackBar.warning(
+            EsBO.historyCapReachedBody,
+            actionLabel: EsBO.calculatorGoProAction,
+            onAction: () {
+              GoRouter.of(context).push('/paywall');
+            },
           ),
         );
     } catch (e) {
@@ -862,7 +856,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       children: [
         SectionHeader(
           icon: Icons.more_horiz_rounded,
-          title: 'Otros',
+          title: EsBO.calcSectionOthers,
           onTap: () => setState(() => _showOtros = !_showOtros),
           trailing: AnimatedRotation(
             turns: _showOtros ? 0.5 : 0.0,
@@ -1028,7 +1022,10 @@ class _ActionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return ActionChip(
       avatar: Icon(icon, size: 16),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
+      label: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium,
+      ),
       onPressed: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 4),
     );
@@ -1189,7 +1186,6 @@ class _PrinterIndicator extends ConsumerWidget {
                     decoration: InputDecoration(
                       hintText: EsBO.calcSearchPrinter,
                       prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
                       isDense: true,
                     ),
                     onChanged: (v) =>
@@ -1378,7 +1374,6 @@ class _MaterialRowTile extends ConsumerWidget {
                       theme.textTheme.labelMedium ?? const TextStyle(),
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w700,
-                      fontSize: 13,
                     ),
                   ),
                 ),
@@ -1526,7 +1521,6 @@ class _MaterialRowTile extends ConsumerWidget {
                     decoration: InputDecoration(
                       hintText: EsBO.calcSearchFilament,
                       prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
                       isDense: true,
                     ),
                     onChanged: (v) =>

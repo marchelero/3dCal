@@ -8,6 +8,7 @@ import '../../../../../core/theme/app_radii.dart';
 import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
+import '../../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../../shared/widgets/default_badge.dart';
 import '../../../../../shared/widgets/empty_view.dart';
@@ -61,9 +62,6 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
                 hintText: EsBO.printerSearchHint,
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.xl),
-                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -246,20 +244,18 @@ class _PrinterTile extends ConsumerWidget {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            SnackBar(
-              content: Text(EsBO.printerDeleted(name)),
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: EsBO.commonUndo,
-                onPressed: () {
-                  notifier.create(
-                    name: name,
-                    brand: brand,
-                    averageWatts: watts,
-                    asDefault: wasDefault,
-                  );
-                },
-              ),
+            AppSnackBar.info(
+              context,
+              EsBO.printerDeleted(name),
+              actionLabel: EsBO.commonUndo,
+              onAction: () {
+                notifier.create(
+                  name: name,
+                  brand: brand,
+                  averageWatts: watts,
+                  asDefault: wasDefault,
+                );
+              },
             ),
           );
     }

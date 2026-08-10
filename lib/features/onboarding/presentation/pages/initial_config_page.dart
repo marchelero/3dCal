@@ -148,7 +148,6 @@ class _CurrencyPicker extends ConsumerWidget {
           value: current,
           isExpanded: true,
           decoration: const InputDecoration(
-            border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,

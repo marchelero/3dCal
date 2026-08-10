@@ -8,8 +8,9 @@ import '../../../../l10n/es_bo.dart';
 
 /// Pantalla de carga inicial antes del home.
 ///
-/// Muestra loading_screen.png centrado con fade-in, y una barra de progreso
-/// en la parte inferior. Despues de ~2.5s navega a `/` via go_router.
+/// Muestra el logo centrado con fade-in y una barra de progreso en la parte
+/// inferior. Despues de ~2.5s navega a `/` (o `/initial-config` si falta el
+/// onboarding) via go_router.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -68,15 +69,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Gradiente y barra siguen el scheme (primaryContainer → surface): la
+    // splash responde a light/dark en vez de colores fijos fuera de paleta.
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
+      body: DecoratedBox(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1A2A3A), // azul profundo arriba
-              Color(0xFF0D0D0D), // negro abajo
+              cs.primaryContainer,
+              cs.surface,
             ],
           ),
         ),
@@ -127,19 +131,16 @@ class _SplashScreenState extends State<SplashScreen>
                           child: LinearProgressIndicator(
                             value: _loadingController.value,
                             backgroundColor:
-                                Colors.white.withValues(alpha: 0.12),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                                cs.primary.withValues(alpha: 0.12),
+                            valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
                             minHeight: 4,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           EsBO.commonLoading.toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 12,
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: cs.primary.withValues(alpha: 0.5),
                             fontWeight: FontWeight.w700,
                             letterSpacing: 4,
                           ),
