@@ -126,6 +126,7 @@ void main() {
               onSave: () {},
               onReset: () {},
               onToggleDetail: () {},
+              onDiscountChanged: (_) {},
               currency: WorldCurrency.usd,
             ),
           ),

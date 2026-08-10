@@ -64,7 +64,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
 
   Future<void> setAsDefault(int id) async {
     final repo = ref.read(printerRepositoryProvider);
-    final list = state.valueOrNull;
+    final list = state.value;
     if (list == null) {
       await refresh();
       return;

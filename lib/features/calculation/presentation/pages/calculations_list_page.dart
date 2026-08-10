@@ -65,7 +65,7 @@ class _CalculationsListPageState
     final ent = ref.watch(entitlementNotifierProvider);
     final isPro = ref.watch(isProProvider);
     final csvLocked = !ent.isLoading && !isPro;
-    final usedCount = async.valueOrNull?.length ?? 0;
+    final usedCount = async.value?.length ?? 0;
 
     // Contador "x/$kFreeHistoryCap": solo para free, y solo cuando la
     // lista muestra el set completo (sin busqueda ni filtro de venta —
@@ -255,7 +255,7 @@ class _CalculationsListPageState
     }
 
     final async = ref.read(calculationsNotifierProvider);
-    final calcs = async.valueOrNull;
+    final calcs = async.value;
     if (calcs == null || calcs.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

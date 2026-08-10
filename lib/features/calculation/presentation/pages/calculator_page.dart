@@ -42,7 +42,11 @@ import '../widgets/result_sheet.dart';
 /// 5. Descuento
 /// 6. Output (resumen con animacion "calculando...")
 class CalculatorPage extends ConsumerStatefulWidget {
-  const CalculatorPage({super.key});
+  const CalculatorPage({super.key, this.prefillCalc});
+
+  /// Cotizacion guardada para precargar ("Reusar"). Si es null, la pagina
+  /// restaura el draft de la sesion anterior (comportamiento normal).
+  final Calculation? prefillCalc;
 
   @override
   ConsumerState<CalculatorPage> createState() => _CalculatorPageState();
@@ -127,6 +131,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // Prefill ("Reusar"): cargar la cotizacion guardada y sincronizar los
+      // controllers. NO tocar reset/draft/defaults — el state precargado es
+      // la fuente de verdad. Un solo post-frame (esta pagina) evita la race
+      // que antes pisaba el prefill con reset()/draft.
+      if (widget.prefillCalc != null) {
+        final notifier = ref.read(calculatorNotifierProvider.notifier);
+        await notifier.loadFromCalculation(widget.prefillCalc!);
+        if (!mounted) return;
+        _syncControllersFromState(ref.read(calculatorNotifierProvider));
+        _rebuildAdvancedRows();
+        return;
+      }
       // Cargar el draft ANTES de resetear para no dejar la UI a medio
       // restaurar durante el gap async (evita el desync state <-> controllers
       // que hacia perder el auto-calc al tipear en el tile de filamento).
@@ -473,6 +489,16 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               onReset: _resetAll,
               onToggleDetail: () =>
                   ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
+              onDiscountChanged: (value) {
+                ref
+                    .read(calculatorNotifierProvider.notifier)
+                    .setDiscountPct(value);
+                // Sync el controller oculto del form para que el draft
+                // persista el descuento (el listener agenda el save).
+                if (_discountCtrl.text != value) {
+                  _discountCtrl.text = value;
+                }
+              },
             );
           } else {
             setState(() => _showValidationErrors = true);
@@ -1041,7 +1067,7 @@ class _PrinterIndicator extends ConsumerWidget {
     final theme = Theme.of(context);
     final activePrinter = ref.watch(activePrinterProvider);
     final printersAsync = ref.watch(printersListProvider);
-    final printers = printersAsync.valueOrNull ?? <PrinterProfile>[];
+    final printers = printersAsync.value ?? <PrinterProfile>[];
 
     return Semantics(
       button: true,
@@ -1329,7 +1355,7 @@ class _MaterialRowTile extends ConsumerWidget {
     if (pending) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final filamentsAsync = ref.watch(filamentsNotifierProvider);
-    final filaments = filamentsAsync.valueOrNull ?? <Filament>[];
+    final filaments = filamentsAsync.value ?? <Filament>[];
     final defaultFilament = ref.watch(defaultFilamentProvider);
     final currency = ref.watch(selectedCurrencyProvider);
 

@@ -132,7 +132,7 @@ class _CurrencyPicker extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final settings =
-        ref.watch(settingsNotifierProvider).valueOrNull ?? Settings.defaults;
+        ref.watch(settingsNotifierProvider).value ?? Settings.defaults;
     final current = WorldCurrency.fromCode(settings.currencyCode);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

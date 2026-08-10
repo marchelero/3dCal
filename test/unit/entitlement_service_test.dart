@@ -350,7 +350,7 @@ void main() {
       await waitForAsyncRefresh();
 
       // Tras el restore empty, el state debe haber bajado a Free.
-      final finalState = container.read(entitlementNotifierProvider).valueOrNull;
+      final finalState = container.read(entitlementNotifierProvider).value;
       expect(finalState, isA<EntitlementFree>(),
           reason: 'Restore empty + cache stale → downgrade a Free.');
 
@@ -369,7 +369,7 @@ void main() {
           .read(entitlementNotifierProvider.notifier)
           .activate(source: 'lifetime_purchase');
 
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementPro>());
       final pro = state as EntitlementPro;
       expect(pro.source, 'lifetime_purchase');
@@ -395,14 +395,14 @@ void main() {
           .read(entitlementNotifierProvider.notifier)
           .activate(source: 'lifetime_purchase');
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementPro>(),
       );
 
       // Desactivar.
       await container.read(entitlementNotifierProvider.notifier).deactivate();
 
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementFree>());
       expect(repo.clearCalls, 1);
       expect(prefs.getBool(kIsProKey), isNull);
@@ -415,7 +415,7 @@ void main() {
       await setupContainer();
       await container.read(entitlementNotifierProvider.future);
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementFree>(),
       );
 
@@ -435,7 +435,7 @@ void main() {
 
       await container.read(entitlementNotifierProvider.notifier).refresh();
 
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementPro>());
       expect(repo.getActiveCalls, callsBefore + 1,
           reason: 'refresh() debio consultar DB.');
@@ -453,7 +453,7 @@ void main() {
       });
       await container.read(entitlementNotifierProvider.future);
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementPro>(),
       );
 
@@ -462,7 +462,7 @@ void main() {
 
       await container.read(entitlementNotifierProvider.notifier).refresh();
 
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementFree>());
       expect(prefs.getBool(kIsProKey), isNull);
     });

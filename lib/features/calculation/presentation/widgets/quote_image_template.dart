@@ -48,15 +48,10 @@ class QuoteImageTemplate extends StatelessWidget {
     required this.currency,
     this.pieceImageBytes,
     this.quantity = 1,
-    this.commercialDiscountPct = 0,
     super.key,
   });
 
   final int quantity;
-
-  /// Descuento comercial (%) aplicado sobre el subtotal (unitPrice × qty).
-  /// Separado del descuento técnico del cálculo. Valor entero, ej: 10 = 10%.
-  final int commercialDiscountPct;
 
   final CalculationOutput output;
   final String label;
@@ -94,16 +89,15 @@ class QuoteImageTemplate extends StatelessWidget {
     final hasDiscount = output.discountAmount > Decimal.zero;
     final now = DateTime.now();
 
-    // ── Cálculo del total comercial (quantity + descuento comercial) ──
+    // ── Cálculo del total: unitPrice × quantity ──
+    // El descuento ya viene aplicado por el engine en output.totalPrice
+    // (state.discountPct → engine → output.discountAmount/output.totalPrice).
+    // El descuento se aplica sobre el TOTAL (unitario × cantidad): todas las
+    // filas del cuadro se multiplican por quantity para que recalcule al
+    // cambiar la cantidad.
     final unitPrice = output.totalPrice;
-    final subtotal = unitPrice * Decimal.fromInt(quantity);
-    final hasCommercialDiscount = commercialDiscountPct > 0;
-    final commercialDiscountAmount = hasCommercialDiscount
-        ? (subtotal * Decimal.fromInt(commercialDiscountPct) / Decimal.fromInt(100)).toDecimal()
-        : Decimal.zero;
-    final totalFinal = hasCommercialDiscount
-        ? subtotal - commercialDiscountAmount
-        : subtotal;
+    final qty = Decimal.fromInt(quantity);
+    final totalFinal = unitPrice * qty;
 
     return Container(
       width: 400, // ancho fijo para consistencia en la imagen
@@ -210,7 +204,7 @@ class QuoteImageTemplate extends StatelessWidget {
             child: Text(
               quantity > 1
                   ? '$quantity u. × ${formatCurrency(unitPrice, currency)}'
-                  : (hasCommercialDiscount || hasDiscount
+                  : (hasDiscount
                       ? EsBO.calcTotalWithDiscount
                       : EsBO.calcTotalFinal),
               style: theme.textTheme.bodySmall?.copyWith(
@@ -219,57 +213,6 @@ class QuoteImageTemplate extends StatelessWidget {
               ),
             ),
           ),
-
-          // ── Desglose descuento comercial (quantity + discount) ──
-          if (hasCommercialDiscount) ...[
-            const SizedBox(height: AppSpacing.lg),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              decoration: BoxDecoration(
-                color: color.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(color: color.error, width: 1),
-              ),
-              child: Column(
-                children: [
-                  _discountRow(
-                    quantity > 1
-                        ? '$quantity u. × ${formatCurrency(unitPrice, currency)}'
-                        : EsBO.quoteNoDiscount,
-                    formatCurrency(subtotal, currency),
-                    theme,
-                    color.onSurface,
-                  ),
-                  const SizedBox(height: 6),
-                  _discountRow(
-                    EsBO.quoteDiscountPct(commercialDiscountPct),
-                    '-${formatCurrency(commercialDiscountAmount, currency)}',
-                    theme,
-                    color.error,
-                    bold: true,
-                    strikeThrough: true,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Divider(
-                      height: 1,
-                      color: color.onSurface.withValues(alpha: 0.25),
-                    ),
-                  ),
-                  _discountRow(
-                    EsBO.calcTotalWithDiscount,
-                    formatCurrency(totalFinal, currency),
-                    theme,
-                    color.onSurface,
-                    bold: true,
-                  ),
-                ],
-              ),
-            ),
-          ],
 
           // ── Meta info (grams + time): linea mono, sin pildora ──
           if (metaGrams != null || metaTime != null) ...[
@@ -287,6 +230,8 @@ class QuoteImageTemplate extends StatelessWidget {
           ],
 
           // ── Discount breakdown: correccion de recibo ──
+          // El descuento se aplica sobre el total incluyendo la cantidad:
+          // unitario-sin-descuento × qty → descuento % → total con descuento.
           if (hasDiscount) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
@@ -304,7 +249,7 @@ class QuoteImageTemplate extends StatelessWidget {
                   _discountRow(
                     EsBO.quoteNoDiscount,
                     formatCurrency(
-                      output.totalPrice + output.discountAmount,
+                      (output.totalPrice + output.discountAmount) * qty,
                       currency,
                     ),
                     theme,
@@ -313,7 +258,7 @@ class QuoteImageTemplate extends StatelessWidget {
                   const SizedBox(height: 6),
                   _discountRow(
                     EsBO.quoteDiscountPct(int.parse(discountPct)),
-                    '-${formatCurrency(output.discountAmount, currency)}',
+                    '-${formatCurrency(output.discountAmount * qty, currency)}',
                     theme,
                     color.error,
                     bold: true,
@@ -328,7 +273,7 @@ class QuoteImageTemplate extends StatelessWidget {
                   ),
                   _discountRow(
                     EsBO.calcTotalWithDiscount,
-                    formatCurrency(output.totalPrice, currency),
+                    formatCurrency(totalFinal, currency),
                     theme,
                     color.onSurface,
                     bold: true,

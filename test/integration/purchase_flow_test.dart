@@ -256,7 +256,7 @@ void main() {
 
     // Tras el restore fire-and-forget, el state sigue Pro.
     final finalState =
-        container.read(entitlementNotifierProvider).valueOrNull;
+        container.read(entitlementNotifierProvider).value;
     expect(finalState, isA<EntitlementPro>());
 
     // Restore fue llamado al menos una vez.

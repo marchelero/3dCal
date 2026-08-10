@@ -6,7 +6,6 @@ import '../../features/calculation/presentation/pages/calculation_detail_page.da
 import '../../features/calculation/presentation/pages/calculations_list_page.dart';
 import '../../features/calculation/presentation/pages/calculator_page.dart';
 import '../../features/calculation/presentation/pages/home_page.dart';
-import '../../features/calculation/presentation/pages/prefill_cotizacion.dart';
 import '../../features/catalog/filaments/presentation/pages/filament_form_page.dart';
 import '../../features/catalog/filaments/presentation/pages/filaments_page.dart';
 import '../../features/catalog/printers/presentation/pages/printer_form_page.dart';
@@ -127,7 +126,7 @@ final appRouter = GoRouter(
       path: '/calculator/prefill',
       pageBuilder: (context, state) {
         final calc = state.extra as Calculation;
-        return _slideRight(PrefilledCalculatorPage(calc: calc));
+        return _slideRight(CalculatorPage(prefillCalc: calc));
       },
     ),
     GoRoute(

@@ -60,7 +60,7 @@ void main() {
   /// Construye un container Riverpod con db + prefs + override de isPro.
   /// Si [isPro] es null, NO se override (default = free via SP vacio).
   ProviderContainer _container({bool? isPro}) {
-    final overrides = <Override>[
+    final overrides = [
       appDatabaseProvider.overrideWithValue(db),
       sharedPreferencesProvider.overrideWithValue(prefs),
     ];

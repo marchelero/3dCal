@@ -84,7 +84,7 @@ class FilamentsNotifier extends AsyncNotifier<List<Filament>> {
   /// Marca el filamento [id] como default. Desmarca cualquier otro que lo sea.
   Future<void> setAsDefault(int id) async {
     final repo = ref.read(filamentRepositoryProvider);
-    final list = state.valueOrNull;
+    final list = state.value;
     if (list == null) {
       await refresh();
       return;

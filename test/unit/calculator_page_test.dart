@@ -1,18 +1,12 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tresdcal/core/constants/app_constants.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
-import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
-import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
-import 'package:tresdcal/l10n/es_bo.dart';
 
 /// Helper: monta [CalculatorPage] dentro de un [ProviderScope] y retorna
 /// el [WidgetTester] para que el caller interactue.
@@ -52,8 +46,9 @@ void main() {
       expect(find.text('Peso'), findsOneWidget);
       expect(find.text('Horas'), findsOneWidget);
       expect(find.text('Minutos'), findsOneWidget);
-      // 'Descuento' aparece 2 veces legitimas: titulo de seccion + label del field.
-      expect(find.text('Descuento'), findsAtLeastNWidgets(1));
+      // 'Descuento' ya NO vive en el form: el campo se movio al result
+      // sheet (Bug #1, commit que agrego imagen/PDF).
+      expect(find.text('Descuento'), findsNothing);
       expect(find.text('Precio bobina'), findsOneWidget);
       expect(find.text('Gramos / bobina'), findsOneWidget);
       // Printer indicator (SectionHeader renderiza el titulo en mayusculas)
@@ -136,19 +131,22 @@ void main() {
       // El total vive en el ResultBottomBar.
       expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
 
-      // Aplicar descuento 25%
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Descuento'), '25');
+      // El campo Descuento vive en el result sheet (ya no en el form).
+      await tester.tap(find.text(r'$ 36,00'));
       await tester.pumpAndSettle();
 
-      // Big number = finalPrice (totalFinal 36 - 25% = 27). Tambien en el bar.
+      // Aplicar descuento 25% en el field del sheet. Escribe en el notifier
+      // (engine) — unica fuente de verdad. Bug #1: antes habia una caja
+      // local del sheet (15%) + otra stale del engine (25%).
+      final discountField = find.byWidgetPredicate(
+        (w) => w is InputDecorator && (w.decoration.suffixText ?? '') == '%',
+      );
+      await tester.enterText(discountField, '25');
+      await tester.pumpAndSettle();
+
+      // Engine: totalFinal 36 - 25% = 27. Total del template + bar.
       expect(find.text(r'$ 27,00'), findsAtLeastNWidgets(1));
-
-      // El badge de descuento y el monto viven en el SummaryCard dentro
-      // del modal sheet. Hay que abrir el sheet para verlos.
-      await tester.tap(find.text(r'$ 27,00'));
-      await tester.pumpAndSettle();
-
+      // UNA sola caja de descuento con el monto correcto.
       expect(find.textContaining('Descuento 25%'), findsOneWidget);
       expect(find.textContaining(r'$ 9,00'), findsOneWidget);
     });

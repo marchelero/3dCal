@@ -125,7 +125,7 @@ class ProfitBarChart extends StatelessWidget {
                 reservedSize: 56,
                 getTitlesWidget: (value, meta) {
                   return SideTitleWidget(
-                    axisSide: meta.axisSide,
+                    meta: meta,
                     space: 4,
                     child: Text(
                       _formatYLabel(value, currency.symbol),
@@ -143,7 +143,7 @@ class ProfitBarChart extends StatelessWidget {
                   final label =
                       value == 0 ? EsBO.dashboardChartQuoted : EsBO.dashboardChartSold;
                   return SideTitleWidget(
-                    axisSide: meta.axisSide,
+                    meta: meta,
                     space: 4,
                     child: Text(label, style: theme.textTheme.bodyMedium),
                   );

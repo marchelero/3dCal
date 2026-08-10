@@ -1,6 +1,9 @@
 # tresdcal — strict analysis config
 include: package:flutter_lints/flutter.yaml
 
+plugins:
+  riverpod_lint: 3.1.8
+
 analyzer:
   exclude:
     - "**/*.g.dart"
@@ -12,8 +15,6 @@ analyzer:
     strict-raw-types: true
   errors:
     invalid_annotation_target: ignore
-  plugins:
-    - custom_lint
 
 linter:
   rules:

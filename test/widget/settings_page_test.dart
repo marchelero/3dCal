@@ -171,7 +171,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final notifier = container.read(settingsNotifierProvider);
-        expect(notifier.valueOrNull!.profitBase.toString(), '350');
+        expect(notifier.value!.profitBase.toString(), '350');
       },
     );
 
@@ -390,7 +390,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final notifier = container.read(settingsNotifierProvider);
-        expect(notifier.valueOrNull!.companyName, 'Acme 3D Studio',
+        expect(notifier.value!.companyName, 'Acme 3D Studio',
             reason: 'Pro: companyName nuevo debe persistir.');
       },
     );

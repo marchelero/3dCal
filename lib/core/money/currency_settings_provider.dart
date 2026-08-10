@@ -12,6 +12,6 @@ import 'currency.dart';
 /// leer settings directamente. Garantiza que el simbolo se actualiza
 /// al cambiar la moneda en settings.
 final selectedCurrencyProvider = Provider<WorldCurrency>((ref) {
-  final settings = ref.watch(settingsNotifierProvider).valueOrNull;
+  final settings = ref.watch(settingsNotifierProvider).value;
   return WorldCurrency.fromCode(settings?.currencyCode ?? '');
 });

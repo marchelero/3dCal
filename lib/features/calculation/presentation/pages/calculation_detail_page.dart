@@ -148,9 +148,9 @@ class _DetailState extends ConsumerState<_Detail> {
     try {
       final calc = widget.calc;
       final materialsAsync = ref.read(_materialsOfProvider(calc.id));
-      final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
+      final materials = materialsAsync.value ?? <CalculationMaterial>[];
       final settingsAsync = ref.read(settingsNotifierProvider);
-      final settings = settingsAsync.valueOrNull ?? Settings.defaults;
+      final settings = settingsAsync.value ?? Settings.defaults;
       final printer = ref.read(activePrinterProvider);
       final result = _recomputeOutput(calc, materials, settings, printer);
       if (result == null) return;
@@ -181,9 +181,9 @@ class _DetailState extends ConsumerState<_Detail> {
     try {
       final calc = widget.calc;
       final materialsAsync = ref.read(_materialsOfProvider(calc.id));
-      final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
+      final materials = materialsAsync.value ?? <CalculationMaterial>[];
       final settingsAsync = ref.read(settingsNotifierProvider);
-      final settings = settingsAsync.valueOrNull ?? Settings.defaults;
+      final settings = settingsAsync.value ?? Settings.defaults;
       final printer = ref.read(activePrinterProvider);
       final result = _recomputeOutput(calc, materials, settings, printer);
       if (result == null) return;
@@ -219,8 +219,8 @@ class _DetailState extends ConsumerState<_Detail> {
     final currency = ref.watch(selectedCurrencyProvider);
     final printer = ref.watch(activePrinterProvider);
 
-    final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
-    final settings = settingsAsync.valueOrNull ?? Settings.defaults;
+    final materials = materialsAsync.value ?? <CalculationMaterial>[];
+    final settings = settingsAsync.value ?? Settings.defaults;
 
     // Recompute output + detail values from stored data + current settings.
     final result = _recomputeOutput(calc, materials, settings, printer);
@@ -759,7 +759,7 @@ class _DetailState extends ConsumerState<_Detail> {
 /// guardados en DB + settings actuales.
 ///
 /// Usa current settings para electricidad/ganancia — mismo approach que
-/// [CalculatorNotifier._recompute] y [PrefilledCalculatorPage].
+/// [CalculatorNotifier._recompute] y el prefill de CalculatorPage.
 ///
 /// Retorna null si materials aun no cargaron.
 ({
@@ -956,7 +956,7 @@ class _Row extends StatelessWidget {
 }
 
 final _calculationByIdProvider = Provider.family<Calculation?, int>((ref, id) {
-  final list = ref.watch(calculationsNotifierProvider).valueOrNull;
+  final list = ref.watch(calculationsNotifierProvider).value;
   if (list == null) return null;
   for (final c in list) {
     if (c.id == id) return c;

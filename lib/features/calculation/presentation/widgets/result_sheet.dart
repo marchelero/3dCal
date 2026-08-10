@@ -286,6 +286,7 @@ Future<void> showResultSheet({
   required VoidCallback onSave,
   required VoidCallback onReset,
   required VoidCallback onToggleDetail,
+  required ValueChanged<String> onDiscountChanged,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -298,7 +299,7 @@ Future<void> showResultSheet({
         // (showDetail) funcione dentro del sheet.
         final liveState = ref.watch(calculatorNotifierProvider);
         final asyncSettings = ref.watch(settingsNotifierProvider);
-        final settings = asyncSettings.valueOrNull;
+        final settings = asyncSettings.value;
         final currency = ref.watch(selectedCurrencyProvider);
         final isPro = ref.watch(isProProvider);
         return ResultSheetContent(
@@ -310,6 +311,7 @@ Future<void> showResultSheet({
           onSave: onSave,
           onReset: onReset,
           onToggleDetail: onToggleDetail,
+          onDiscountChanged: onDiscountChanged,
         );
       },
     ),
@@ -333,6 +335,7 @@ class ResultSheetContent extends StatefulWidget {
     required this.onSave,
     required this.onReset,
     required this.onToggleDetail,
+    required this.onDiscountChanged,
     super.key,
   });
 
@@ -345,6 +348,10 @@ class ResultSheetContent extends StatefulWidget {
   final VoidCallback onReset;
   final VoidCallback onToggleDetail;
 
+  /// Escribe el descuento (%) en el notifier (fuente unica de verdad:
+  /// state.discountPct → engine → output.discountAmount/output.totalPrice).
+  final ValueChanged<String> onDiscountChanged;
+
   @override
   State<ResultSheetContent> createState() => _ResultSheetContentState();
 }
@@ -355,7 +362,6 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
   int _quantity = 1;
-  int _commercialDiscountPct = 0;
 
   /// Foto de la pieza adjuntada (efimera: solo vive en este sheet, no se
   /// persiste). Se renderiza en el template (PNG) y viaja al PDF.
@@ -585,7 +591,6 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   currency: widget.currency,
                   pieceImageBytes: _pieceImageBytes,
                   quantity: _quantity,
-                  commercialDiscountPct: _commercialDiscountPct,
                 ),
               ),
 
@@ -703,7 +708,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                 );
               }),
 
-              // ── Descuento Comercial (Debajo de Cantidad, disponible para todos) ──
+              // ── Descuento (Debajo de Cantidad, disponible para todos) ──
+              // Fuente unica de verdad: state.discountPct (engine). Escribir
+              // aqui actualiza el total, la imagen, el PDF, el draft y la DB.
               const SizedBox(height: AppSpacing.xs),
               Card(
                 margin: EdgeInsets.zero,
@@ -720,7 +727,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                             const Icon(Icons.local_offer_rounded, size: 18),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
-                              'Descuento (%)',
+                              EsBO.calcLabelDiscount,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -731,7 +738,11 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                       SizedBox(
                         width: 80,
                         child: TextFormField(
-                          initialValue: '$_commercialDiscountPct',
+                          initialValue: (double.tryParse(
+                                widget.state.discountPct,
+                              )?.round() ??
+                              0)
+                              .toString(),
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
                           decoration: const InputDecoration(
@@ -745,9 +756,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                           ),
                           onChanged: (val) {
                             final parsed = int.tryParse(val) ?? 0;
-                            setState(() {
-                              _commercialDiscountPct = parsed.clamp(0, 100);
-                            });
+                            widget.onDiscountChanged(
+                              parsed.clamp(0, 100).toString(),
+                            );
                           },
                         ),
                       ),

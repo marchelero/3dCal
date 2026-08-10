@@ -142,7 +142,7 @@ void main() {
       await setupContainer();
       await container.read(entitlementNotifierProvider.future);
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementFree>(),
       );
 
@@ -168,7 +168,7 @@ void main() {
       expect(repo.lastSaved!.productId.value, kProProductId);
 
       // State es Pro.
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementPro>());
 
       // Cache SP actualizado.
@@ -181,7 +181,7 @@ void main() {
       await setupContainer();
       await container.read(entitlementNotifierProvider.future);
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementFree>(),
       );
 
@@ -195,7 +195,7 @@ void main() {
       expect(repo.saveCalls, 0,
           reason: 'Cancel no debe escribir en DB.');
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementFree>(),
       );
       expect(prefs.getBool(kIsProKey), isNull);
@@ -215,7 +215,7 @@ void main() {
       expect(paymentService.purchaseCalls, 1);
       expect(repo.saveCalls, 0);
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementFree>(),
       );
       expect(prefs.getBool(kIsProKey), isNull);
@@ -262,7 +262,7 @@ void main() {
       expect(paymentService.restoreCalls, 1);
       expect(repo.saveCalls, 1);
       expect(repo.lastSaved!.source.value, kSourceLifetimePurchase);
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementPro>());
       expect(prefs.getBool(kIsProKey), isTrue);
     });
@@ -278,7 +278,7 @@ void main() {
 
       expect(paymentService.restoreCalls, 1);
       expect(repo.clearCalls, 1);
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementFree>());
       expect(prefs.getBool(kIsProKey), isNull);
       expect(prefs.getString(kEntitlementSourceKey), isNull);
@@ -306,7 +306,7 @@ void main() {
       ));
       await container.read(entitlementNotifierProvider.future);
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementPro>(),
       );
 
@@ -317,7 +317,7 @@ void main() {
 
       expect(paymentService.restoreCalls, 1);
       expect(repo.clearCalls, 1);
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementFree>());
       expect(prefs.getBool(kIsProKey), isNull);
     });
@@ -331,7 +331,7 @@ void main() {
       });
       await container.read(entitlementNotifierProvider.future);
       expect(
-        container.read(entitlementNotifierProvider).valueOrNull,
+        container.read(entitlementNotifierProvider).value,
         isA<EntitlementPro>(),
       );
 
@@ -343,7 +343,7 @@ void main() {
       expect(repo.saveCalls, 0);
       expect(repo.clearCalls, 0);
       // State sigue Pro.
-      final state = container.read(entitlementNotifierProvider).valueOrNull;
+      final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementPro>());
     });
   });
@@ -417,7 +417,7 @@ void main() {
 
       // Tras el restore, el state debe haber bajado a Free.
       final finalState =
-          container.read(entitlementNotifierProvider).valueOrNull;
+          container.read(entitlementNotifierProvider).value;
       expect(finalState, isA<EntitlementFree>(),
           reason: 'Restore empty + cache stale → downgrade a Free.');
 

@@ -32,7 +32,7 @@ class HomePage extends ConsumerWidget {
     ref.watch(localeProvider);
     final asyncStats = ref.watch(dashboardStatsProvider);
     final asyncSettings = ref.watch(settingsNotifierProvider);
-    final settings = asyncSettings.valueOrNull;
+    final settings = asyncSettings.value;
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../features/calculation/data/calculation_repository.dart';
 import '../../features/catalog/filaments/data/filament_repository.dart';
@@ -48,7 +49,7 @@ final calculationRepositoryProvider = Provider<CalculationRepository>((ref) {
 /// **Uso**: el calculator lo lee para auto-poblar `filamentPrice` y
 /// `filamentGrams` al iniciar una cotizacion.
 final defaultFilamentProvider = Provider<Filament?>((ref) {
-  final list = ref.watch(filamentsNotifierProvider).valueOrNull;
+  final list = ref.watch(filamentsNotifierProvider).value;
   if (list == null) return null;
   for (final f in list) {
     if (f.isDefault) return f;
@@ -58,7 +59,7 @@ final defaultFilamentProvider = Provider<Filament?>((ref) {
 
 /// Impresora marcada como default. `null` si no hay.
 final defaultPrinterProvider = Provider<PrinterProfile?>((ref) {
-  final list = ref.watch(printersNotifierProvider).valueOrNull;
+  final list = ref.watch(printersNotifierProvider).value;
   if (list == null) return null;
   for (final p in list) {
     if (p.isDefault) return p;
@@ -93,7 +94,7 @@ final activePrinterIdProvider = StateProvider<int?>((ref) {
 /// calculo de watts usa SIEMPRE la misma impresora que muestra la UI.
 final activePrinterProvider = Provider<PrinterProfile?>((ref) {
   final id = ref.watch(activePrinterIdProvider);
-  final list = ref.watch(printersNotifierProvider).valueOrNull;
+  final list = ref.watch(printersNotifierProvider).value;
   if (list == null || list.isEmpty) return null;
   if (id != null) {
     for (final p in list) {

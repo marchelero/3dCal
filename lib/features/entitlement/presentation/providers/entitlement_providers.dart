@@ -56,5 +56,5 @@ final entitlementNotifierProvider =
 /// el match contra [EntitlementPro] falla. Esto evita flicker "Pro"
 /// durante el cold start.
 final isProProvider = Provider<bool>((ref) {
-  return ref.watch(entitlementNotifierProvider).valueOrNull is EntitlementPro;
+  return ref.watch(entitlementNotifierProvider).value is EntitlementPro;
 });

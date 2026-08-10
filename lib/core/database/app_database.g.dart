@@ -4547,10 +4547,7 @@ final class $$CalculationsTableReferences
   _calculationMaterialsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.calculationMaterials,
-        aliasName: $_aliasNameGenerator(
-          db.calculations.id,
-          db.calculationMaterials.calculationId,
-        ),
+        aliasName: 'calculations__id__calculation_materials__calculation_id',
       );
 
   $$CalculationMaterialsTableProcessedTableManager
@@ -5322,13 +5319,9 @@ final class $$CalculationMaterialsTableReferences
     super.$_typedResult,
   );
 
-  static $CalculationsTable _calculationIdTable(_$AppDatabase db) =>
-      db.calculations.createAlias(
-        $_aliasNameGenerator(
-          db.calculationMaterials.calculationId,
-          db.calculations.id,
-        ),
-      );
+  static $CalculationsTable _calculationIdTable(_$AppDatabase db) => db
+      .calculations
+      .createAlias('calculation_materials__calculation_id__calculations__id');
 
   $$CalculationsTableProcessedTableManager get calculationId {
     final $_column = $_itemColumn<int>('calculation_id')!;

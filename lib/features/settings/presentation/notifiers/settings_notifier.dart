@@ -35,7 +35,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateProfitBase(Decimal value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setProfitBase(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(profitBase: value));
   }
 
@@ -43,7 +43,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateKwhRate(Decimal value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setKwhRate(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(kwhRate: value));
   }
 
@@ -51,7 +51,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateCompanyName(String value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setCompanyName(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(companyName: value));
   }
 
@@ -59,7 +59,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateCompanyLogo(String? base64) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setCompanyLogo(base64);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(
       companyLogoBase64: base64,
       clearLogo: base64 == null,
@@ -72,7 +72,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateLaborRate(Decimal value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setLaborRate(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(laborRate: value));
   }
 
@@ -80,7 +80,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updatePostProcessRate(Decimal value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setPostProcessRate(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(postProcessRate: value));
   }
 
@@ -88,7 +88,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateFailureRate(Decimal value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setFailureRate(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(failureRate: value));
   }
 
@@ -96,7 +96,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateMinimumCharge(Decimal value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setMinimumCharge(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(minimumCharge: value));
   }
 
@@ -104,7 +104,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateMarkupOnMaterials(Decimal value) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setMarkupOnMaterials(value);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(markupOnMaterials: value));
   }
 
@@ -114,7 +114,7 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
   Future<void> updateCurrency(String code) async {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setCurrencyCode(code);
-    final current = state.valueOrNull ?? Settings.defaults;
+    final current = state.value ?? Settings.defaults;
     state = AsyncValue.data(current.copyWith(currencyCode: code));
   }
 }

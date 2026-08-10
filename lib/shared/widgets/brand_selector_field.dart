@@ -86,8 +86,8 @@ class _BrandSelectorFieldState extends ConsumerState<BrandSelectorField> {
 
   /// Marcas registradas en la app (filamentos + impresoras), unicas.
   Set<String> _registeredBrands(WidgetRef ref) {
-    final filaments = ref.watch(filamentsNotifierProvider).valueOrNull;
-    final printers = ref.watch(printersNotifierProvider).valueOrNull;
+    final filaments = ref.watch(filamentsNotifierProvider).value;
+    final printers = ref.watch(printersNotifierProvider).value;
     final brands = <String>{};
     for (final f in filaments ?? const <Filament>[]) {
       final b = f.brand;

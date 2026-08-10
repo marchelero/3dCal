@@ -427,7 +427,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final asyncSettings = ref.read<AsyncValue<Settings>>(
       settingsNotifierProvider,
     );
-    final settings = asyncSettings.valueOrNull ?? Settings.defaults;
+    final settings = asyncSettings.value ?? Settings.defaults;
     final printer = ref.read(activePrinterProvider);
 
     final materials = <MaterialInput>[];
