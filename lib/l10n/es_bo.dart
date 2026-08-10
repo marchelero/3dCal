@@ -103,6 +103,29 @@ class EsBO {
   static String get settingsRestoreSuccess => _impl.settingsRestoreSuccess;
   static String get settingsRestoreEmpty => _impl.settingsRestoreEmpty;
 
+  // === Backup ===
+  static String get settingsBackupTitle => _impl.settingsBackupTitle;
+  static String get settingsBackupExport => _impl.settingsBackupExport;
+  static String get settingsBackupImport => _impl.settingsBackupImport;
+  static String get settingsBackupHelper => _impl.settingsBackupHelper;
+  static String get settingsBackupExportSuccess =>
+      _impl.settingsBackupExportSuccess;
+  static String get settingsBackupExportError =>
+      _impl.settingsBackupExportError;
+  static String settingsBackupImportSuccess(
+          int calcs, int filaments, int printers) =>
+      _impl.settingsBackupImportSuccess(calcs, filaments, printers);
+  static String get settingsBackupImportError =>
+      _impl.settingsBackupImportError;
+  static String get settingsBackupImportConfirmTitle =>
+      _impl.settingsBackupImportConfirmTitle;
+  static String settingsBackupImportConfirmBody(String summary) =>
+      _impl.settingsBackupImportConfirmBody(summary);
+  static String get settingsBackupImportConfirm =>
+      _impl.settingsBackupImportConfirm;
+  static String get settingsBackupImportCancel =>
+      _impl.settingsBackupImportCancel;
+
   // === Dashboard ===
   static String get dashboardTitle => _impl.dashboardTitle;
   static String get dashboardErrorLoad => _impl.dashboardErrorLoad;
@@ -643,6 +666,45 @@ class EsImpl implements AppStrings {
   String get settingsRestoreSuccess => 'Compras restauradas correctamente!';
   @override
   String get settingsRestoreEmpty => 'No se encontraron compras previas';
+
+  @override
+  String get settingsBackupTitle => 'Copia de seguridad';
+
+  @override
+  String get settingsBackupExport => 'Exportar backup';
+
+  @override
+  String get settingsBackupImport => 'Importar backup';
+
+  @override
+  String get settingsBackupHelper =>
+      'Guarda o restaura todos tus datos (filamentos, impresoras, cotizaciones). Se recomienda hacer backups periodicamente.';
+
+  @override
+  String get settingsBackupExportSuccess => 'Backup exportado correctamente';
+
+  @override
+  String get settingsBackupExportError => 'Error al exportar el backup';
+
+  @override
+  String settingsBackupImportSuccess(int calcs, int filaments, int printers) =>
+      'Backup restaurado: $calcs cotizaciones, $filaments filamentos, $printers impresoras';
+
+  @override
+  String get settingsBackupImportError => 'Error al importar el backup';
+
+  @override
+  String get settingsBackupImportConfirmTitle => '¿Restaurar backup?';
+
+  @override
+  String settingsBackupImportConfirmBody(String summary) =>
+      'Se reemplazaran TODOS los datos actuales con:\n$summary\n\nEsta accion no se puede deshacer.';
+
+  @override
+  String get settingsBackupImportConfirm => 'Restaurar';
+
+  @override
+  String get settingsBackupImportCancel => 'Cancelar';
 
   @override
   String get dashboardTitle => 'Dashboard';

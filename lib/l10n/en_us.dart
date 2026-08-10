@@ -136,6 +136,45 @@ class EnImpl implements AppStrings {
   String get settingsRestoreEmpty => 'No previous purchases found';
 
   @override
+  String get settingsBackupTitle => 'Backup';
+
+  @override
+  String get settingsBackupExport => 'Export backup';
+
+  @override
+  String get settingsBackupImport => 'Import backup';
+
+  @override
+  String get settingsBackupHelper =>
+      'Save or restore all your data (filaments, printers, quotes). It is recommended to make periodic backups.';
+
+  @override
+  String get settingsBackupExportSuccess => 'Backup exported successfully';
+
+  @override
+  String get settingsBackupExportError => 'Error exporting backup';
+
+  @override
+  String settingsBackupImportSuccess(int calcs, int filaments, int printers) =>
+      'Backup restored: $calcs quotes, $filaments filaments, $printers printers';
+
+  @override
+  String get settingsBackupImportError => 'Error importing backup';
+
+  @override
+  String get settingsBackupImportConfirmTitle => 'Restore backup?';
+
+  @override
+  String settingsBackupImportConfirmBody(String summary) =>
+      'ALL current data will be replaced with:\n$summary\n\nThis action cannot be undone.';
+
+  @override
+  String get settingsBackupImportConfirm => 'Restore';
+
+  @override
+  String get settingsBackupImportCancel => 'Cancel';
+
+  @override
   String get dashboardTitle => 'Dashboard';
   @override
   String get dashboardErrorLoad => 'Error loading dashboard';

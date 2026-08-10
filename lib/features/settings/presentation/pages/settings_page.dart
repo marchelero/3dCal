@@ -1,17 +1,22 @@
 // ignore_for_file: public_member_api_docs
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/backup/backup_models.dart';
+import '../../../../core/backup/backup_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme_mode_provider.dart';
@@ -256,6 +261,10 @@ class _SettingsBody extends ConsumerWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // ── Backup ──
+                const _BackupSection(),
                 const SizedBox(height: AppSpacing.xl),
 
                 // ── Restaurar compras (T11) ──
@@ -1227,6 +1236,194 @@ class _LocalePicker extends ConsumerWidget {
             ref.read(localeProvider.notifier).setLocale(s.first);
           },
           showSelectedIcon: false,
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────
+// BACKUP SECTION — export/import database
+// ─────────────────────────────────────────────────
+
+class _BackupSection extends ConsumerStatefulWidget {
+  const _BackupSection();
+
+  @override
+  ConsumerState<_BackupSection> createState() => _BackupSectionState();
+}
+
+class _BackupSectionState extends ConsumerState<_BackupSection> {
+  bool _isExporting = false;
+  bool _isImporting = false;
+
+  Future<void> _handleExport() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final service = BackupService(db);
+      await service.export();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.success(EsBO.settingsBackupExportSuccess));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          AppSnackBar.error('${EsBO.settingsBackupExportError}: $e'),
+        );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
+  Future<void> _handleImport() async {
+    if (_isImporting) return;
+
+    // First, preview what's in the backup
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: [kBackupExtension, 'json'],
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    // En web `path` es null: leer desde `bytes`. En movil/desktop por path.
+    final file = result.files.single;
+    final bytes = file.bytes;
+    final String content;
+    if (bytes != null) {
+      content = utf8.decode(bytes);
+    } else if (file.path != null) {
+      content = await File(file.path!).readAsString();
+    } else {
+      return;
+    }
+
+    // Read and validate
+    final parsed = jsonDecode(content) as Map<String, dynamic>;
+    final backup = BackupData.fromJson(parsed);
+    final error = backup.validate();
+    if (error != null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(error));
+      return;
+    }
+
+    // Show confirmation dialog
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      // Usar el context DEL DIALOGO (root navigator), no el de la pagina
+      // (nested navigator del StatefulShellRoute) — si no, el pop intenta
+      // sacar la ultima pagina del branch y go_router lanza assertion.
+      builder: (dialogContext) => AlertDialog(
+        title: Text(EsBO.settingsBackupImportConfirmTitle),
+        content: Text(
+          EsBO.settingsBackupImportConfirmBody(backup.summary.describe()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(EsBO.settingsBackupImportCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(EsBO.settingsBackupImportConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    // Perform import
+    setState(() => _isImporting = true);
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final service = BackupService(db);
+      final importResult = await service.restoreFromJson(content);
+      if (!mounted) return;
+      if (importResult == null) {
+        // Should not happen here (validation already done above)
+        return;
+      }
+      if (importResult.isEmpty) {
+        final summary = backup.summary;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(AppSnackBar.success(
+            EsBO.settingsBackupImportSuccess(
+              summary.calculationCount,
+              summary.filamentCount,
+              summary.printerCount,
+            ),
+          ));
+      } else {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(AppSnackBar.error(importResult));
+      }
+    } finally {
+      if (mounted) setState(() => _isImporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
+    return _SettingsSection(
+      icon: Icons.backup_rounded,
+      title: EsBO.settingsBackupTitle,
+      accentColor: color.primary,
+      children: [
+        Text(
+          EsBO.settingsBackupHelper,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            icon: _isExporting
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: color.onPrimary,
+                    ),
+                  )
+                : const Icon(Icons.upload_rounded, size: 18),
+            label: Text(EsBO.settingsBackupExport),
+            onPressed: _isExporting ? null : _handleExport,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            icon: _isImporting
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: color.primary,
+                    ),
+                  )
+                : const Icon(Icons.download_rounded, size: 18),
+            label: Text(EsBO.settingsBackupImport),
+            onPressed: _isImporting ? null : _handleImport,
+          ),
         ),
       ],
     );

@@ -90,6 +90,44 @@ abstract class AppStrings {
   /// Mensaje tras un restore que no encontro compras previas o dio error.
   String get settingsRestoreEmpty;
 
+  // === Backup / Restore (datos locales) ===
+
+  /// Titulo de la seccion de backup en settings.
+  String get settingsBackupTitle;
+
+  /// Boton para exportar un backup.
+  String get settingsBackupExport;
+
+  /// Boton para importar un backup.
+  String get settingsBackupImport;
+
+  /// Helper text de la seccion backup.
+  String get settingsBackupHelper;
+
+  /// Mensaje de exito al exportar backup.
+  String get settingsBackupExportSuccess;
+
+  /// Mensaje de error al exportar backup.
+  String get settingsBackupExportError;
+
+  /// Mensaje de exito al importar backup.
+  String settingsBackupImportSuccess(int calcs, int filaments, int printers);
+
+  /// Mensaje de error al importar backup.
+  String get settingsBackupImportError;
+
+  /// Titulo del dialog de confirmacion de import.
+  String get settingsBackupImportConfirmTitle;
+
+  /// Cuerpo del dialog de confirmacion de import.
+  String settingsBackupImportConfirmBody(String summary);
+
+  /// Accion de confirmar import (boton positivo).
+  String get settingsBackupImportConfirm;
+
+  /// Accion de cancelar import (boton negativo).
+  String get settingsBackupImportCancel;
+
   // === Dashboard ===
   String get dashboardTitle;
   String get dashboardErrorLoad;
