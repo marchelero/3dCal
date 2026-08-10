@@ -54,7 +54,7 @@ class CalculationDetailPage extends ConsumerWidget {
                     final confirm = await showConfirmDialog(
                       context,
                       title: EsBO.calcDetailDeleteTitle,
-                      message: '¿Eliminar definitivamente?',
+                      message: EsBO.calcDetailDeleteConfirm,
                     );
                     if (confirm && context.mounted) {
                       await ref
@@ -122,7 +122,9 @@ class _DetailState extends ConsumerState<_Detail> {
       final bytes = await captureQuoteImageBytes(_captureKey);
       await saveQuoteImage(bytes);
       if (!mounted) return;
-      final msg = kIsWeb ? 'Imagen descargada' : 'Imagen guardada en galería';
+      final msg = kIsWeb
+          ? EsBO.commonImageDownloaded
+          : EsBO.commonImageSavedGallery;
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.success(msg));
     } on ShareQuoteException catch (e) {
       if (!mounted) return;
@@ -162,7 +164,7 @@ class _DetailState extends ConsumerState<_Detail> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('Error al exportar PDF: $e'),
+        AppSnackBar.error('${EsBO.commonPdfExportError}: $e'),
       );
     } finally {
       if (mounted) setState(() => _isBusy = false);
@@ -197,7 +199,7 @@ class _DetailState extends ConsumerState<_Detail> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('Error al imprimir: $e'),
+        AppSnackBar.error('${EsBO.commonPrintError}: $e'),
       );
     } finally {
       if (mounted) setState(() => _isBusy = false);
@@ -281,7 +283,7 @@ class _DetailState extends ConsumerState<_Detail> {
                           size: 14, color: color.onPrimaryContainer),
                       const SizedBox(width: 6),
                       Text(
-                        'Cliente: ${calc.clientName}',
+                        '${EsBO.calcDialogClient}: ${calc.clientName}',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: color.onPrimaryContainer,
                         ),
@@ -332,7 +334,7 @@ class _DetailState extends ConsumerState<_Detail> {
             padding: EdgeInsets.all(AppSpacing.lg),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (e, _) => Text('Error: $e'),
+          error: (e, _) => Text('${EsBO.commonError}: $e'),
           data: (ms) {
             if (ms.isEmpty) {
               return Card(
@@ -418,7 +420,7 @@ class _DetailState extends ConsumerState<_Detail> {
         const SizedBox(height: AppSpacing.lg),
 
         // === Desglose ===
-        Text('Desglose',
+        Text(EsBO.detailBreakdown,
             style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: AppSpacing.sm),
@@ -428,7 +430,7 @@ class _DetailState extends ConsumerState<_Detail> {
             child: Column(
               children: [
                 _Row(
-                  label: 'Costo material',
+                  label: EsBO.calcDetailMaterial,
                   value: formatCurrency(
                     Decimal.parse(
                       calc.materialCostSnapshot.toStringAsFixed(2),
@@ -448,7 +450,8 @@ class _DetailState extends ConsumerState<_Detail> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Descuento (${calc.discountPercentage.toStringAsFixed(0)}%)',
+                          EsBO.detailDiscountPct(
+                              calc.discountPercentage.round()),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: color.onErrorContainer,
                             fontWeight: FontWeight.w500,
@@ -472,7 +475,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total',
+                      EsBO.calcDetailTotal,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -504,7 +507,7 @@ class _DetailState extends ConsumerState<_Detail> {
 
         // === Quote image preview (capturable) ===
         if (result != null) ...[
-          Text('Vista previa',
+          Text(EsBO.detailPreview,
               style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.sm),
@@ -563,28 +566,28 @@ class _DetailState extends ConsumerState<_Detail> {
               children: [
                 _DetailActionIcon(
                   icon: Icons.share_rounded,
-                  tooltip: 'Compartir imagen',
+                  tooltip: EsBO.calcBtnShare,
                   color: color.primary,
                   isBusy: _isBusy,
                   onPressed: _isBusy ? null : _handleShare,
                 ),
                 _DetailActionIcon(
                   icon: Icons.download_rounded,
-                  tooltip: 'Guardar imagen',
+                  tooltip: EsBO.commonSaveImage,
                   color: color.primary,
                   isBusy: _isBusy,
                   onPressed: _isBusy ? null : _handleSave,
                 ),
                 _DetailActionIcon(
                   icon: Icons.picture_as_pdf_rounded,
-                  tooltip: 'Exportar PDF',
+                  tooltip: EsBO.commonExportPdf,
                   color: Colors.red,
                   isBusy: _isBusy,
                   onPressed: _isBusy ? null : _handleSharePdf,
                 ),
                 _DetailActionIcon(
                   icon: Icons.print_rounded,
-                  tooltip: 'Imprimir',
+                  tooltip: EsBO.commonPrint,
                   color: Colors.green,
                   isBusy: _isBusy,
                   onPressed: _isBusy ? null : _handlePrint,

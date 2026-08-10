@@ -22,6 +22,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/pro_badge.dart';
 import '../../../entitlement/data/payment_service.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../domain/settings.dart';
@@ -42,7 +43,7 @@ class SettingsPage extends ConsumerWidget {
         child: asyncSettings.when(
           loading: () => const LoadingView(),
           error: (e, _) => ErrorView(
-            message: 'Error cargando ajustes',
+            message: EsBO.settingsErrorLoad,
             details: e.toString(),
             onRetry: () => ref.invalidate(settingsNotifierProvider),
           ),
@@ -67,6 +68,13 @@ class _SettingsBody extends ConsumerWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final currency = WorldCurrency.fromCode(settings.currencyCode);
+
+    // Patron de estado del gate visual (UX): "locked" solo cuando el
+    // entitlement esta resuelto y el user es free. Durante el boot async
+    // (loading) no se muestra badge ni dimming (evita falso "locked" en
+    // cold start para un Pro real).
+    final ent = ref.watch(entitlementNotifierProvider);
+    final locked = !ent.isLoading && !ref.watch(isProProvider);
 
     return MaxWidthScrollView(
       maxWidth: 960,
@@ -171,14 +179,14 @@ class _SettingsBody extends ConsumerWidget {
                   title: EsBO.settingsCompany,
                   accentColor: color.tertiary,
                   children: [
-                    // T12 gate: badge "Pro" visible cuando isPro=false.
-                    if (!ref.watch(isProProvider))
+                    // T12 gate: badge "PRO" visible cuando el tier es
+                    // free y el entitlement esta resuelto. ProBadge
+                    // compartido (lib/shared/widgets/pro_badge.dart),
+                    // color tertiary (mismo accent de la seccion Empresa).
+                    if (locked)
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: _ProBadge(
-                          label: EsBO.settingsProBadge,
-                          accentColor: color.tertiary,
-                        ),
+                        child: ProBadge(accentColor: color.tertiary),
                       ),
                     _CompanyNameField(
                       initialValue: settings.companyName,
@@ -243,7 +251,7 @@ class _SettingsBody extends ConsumerWidget {
                 // ── Restaurar compras (T11) ──
                 _SettingsSection(
                   icon: Icons.restore_rounded,
-                  title: 'RESTAURAR COMPRAS',
+                  title: EsBO.settingsRestorePurchases,
                   accentColor: color.primary,
                   children: [
                     _RestoreButton(),
@@ -751,7 +759,9 @@ class _CompanyNameFieldState extends ConsumerState<_CompanyNameField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ent = ref.watch(entitlementNotifierProvider);
     final isPro = ref.watch(isProProvider);
+    final locked = !ent.isLoading && !isPro;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -762,25 +772,31 @@ class _CompanyNameFieldState extends ConsumerState<_CompanyNameField> {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        TextField(
-          controller: _ctrl,
-          readOnly: !isPro,
-          decoration: InputDecoration(
-            helperText: EsBO.settingsCompanyNameHelper,
-            helperMaxLines: 2,
-            border: const OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
+        // Gate visual (UX): cuando el tier es free resuelto el field
+        // esta atenuado (kLockedOpacity) para reforzar que es Pro. El
+        // comportamiento (readOnly + SnackBar Go Pro) no cambia.
+        Opacity(
+          opacity: locked ? kLockedOpacity : 1.0,
+          child: TextField(
+            controller: _ctrl,
+            readOnly: !isPro,
+            decoration: InputDecoration(
+              helperText: EsBO.settingsCompanyNameHelper,
+              helperMaxLines: 2,
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
             ),
+            onTap: isPro ? null : _showLockedSnack,
+            onTapOutside: isPro
+                ? (_) {
+                    final value = _ctrl.text;
+                    if (value.trim().isNotEmpty) _handleBlur(value);
+                  }
+                : null,
           ),
-          onTap: isPro ? null : _showLockedSnack,
-          onTapOutside: isPro
-              ? (_) {
-                  final value = _ctrl.text;
-                  if (value.trim().isNotEmpty) _handleBlur(value);
-                }
-              : null,
         ),
       ],
     );
@@ -853,7 +869,9 @@ class _LogoPicker extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final ent = ref.watch(entitlementNotifierProvider);
     final isPro = ref.watch(isProProvider);
+    final locked = !ent.isLoading && !isPro;
     final hasLogo = currentLogoBase64 != null &&
         currentLogoBase64!.isNotEmpty;
 
@@ -899,30 +917,35 @@ class _LogoPicker extends ConsumerWidget {
                     ),
             ),
             const SizedBox(width: AppSpacing.md),
-            // Buttons
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.image_rounded, size: 18),
-                  label: Text(EsBO.settingsCompanyLogoPick),
-                  onPressed: isPro
-                      ? () => _pickLogo(context, ref)
-                      : () => _showLockedSnack(context),
-                ),
-                if (hasLogo)
+            // Buttons. Gate visual (UX): cuando el tier es free resuelto
+            // se atenuan (kLockedOpacity) para reforzar que son Pro. El
+            // comportamiento (SnackBar Go Pro en tap) no cambia.
+            Opacity(
+              opacity: locked ? kLockedOpacity : 1.0,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   TextButton.icon(
-                    icon: Icon(Icons.delete_outline_rounded,
-                        size: 18, color: color.error),
-                    label: Text(
-                      EsBO.settingsCompanyLogoRemove,
-                      style: TextStyle(color: color.error),
-                    ),
+                    icon: const Icon(Icons.image_rounded, size: 18),
+                    label: Text(EsBO.settingsCompanyLogoPick),
                     onPressed: isPro
-                        ? () => _removeLogo(context, ref)
+                        ? () => _pickLogo(context, ref)
                         : () => _showLockedSnack(context),
                   ),
-              ],
+                  if (hasLogo)
+                    TextButton.icon(
+                      icon: Icon(Icons.delete_outline_rounded,
+                          size: 18, color: color.error),
+                      label: Text(
+                        EsBO.settingsCompanyLogoRemove,
+                        style: TextStyle(color: color.error),
+                      ),
+                      onPressed: isPro
+                          ? () => _removeLogo(context, ref)
+                          : () => _showLockedSnack(context),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1068,7 +1091,7 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                       controller: _ctrl,
                       autofocus: true,
                       decoration: InputDecoration(
-                        hintText: 'Buscar moneda por codigo o nombre...',
+                        hintText: EsBO.settingsCurrencySearchHint,
                         border: InputBorder.none,
                         isDense: true,
                         suffixIcon: _query.isNotEmpty
@@ -1093,7 +1116,7 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
               child: filtered.isEmpty
                   ? Center(
                       child: Text(
-                        'Sin resultados para "$_query"',
+                        EsBO.settingsCurrencyNoResults(_query),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: color.onSurfaceVariant,
                         ),
@@ -1126,7 +1149,7 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                             ),
                           ),
                           subtitle: Text(
-                            'Simbolo: ${c.symbol}',
+                            '${EsBO.settingsCurrencySymbolPrefix}${c.symbol}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: color.onSurfaceVariant,
                             ),
@@ -1185,54 +1208,6 @@ class _LocalePicker extends ConsumerWidget {
           showSelectedIcon: false,
         ),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────
-// _ProBadge — badge "Pro" para indicar secciones gateadas (T12)
-// ─────────────────────────────────────────────────
-
-/// Badge compacto "Pro" con icono de candado, usado para senalar
-/// visualmente que una seccion esta gateada para usuarios Free.
-/// Patron consistente con el resto del settings page.
-class _ProBadge extends StatelessWidget {
-  const _ProBadge({required this.label, required this.accentColor});
-
-  final String label;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.lock_rounded, size: 14, color: accentColor),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: accentColor,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

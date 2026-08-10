@@ -282,9 +282,10 @@ void main() {
       (tester) async {
         await _pumpPageFree(tester);
         expect(
-          find.byTooltip('Exportar CSV'),
+          find.byTooltip(EsBO.csvExportTooltipLocked),
           findsOneWidget,
-          reason: 'El boton de export CSV debe estar visible en la AppBar.',
+          reason:
+              'Free: el boton de export CSV (tooltip locked) en la AppBar.',
         );
       },
     );
@@ -294,7 +295,7 @@ void main() {
       (tester) async {
         await _pumpPageFree(tester);
 
-        await tester.tap(find.byTooltip('Exportar CSV'));
+        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
         await tester.pump(); // Schedule SnackBar.
         await tester.pump(const Duration(milliseconds: 100)); // Anima SnackBar.
 
@@ -326,7 +327,7 @@ void main() {
         // entrar al gate (no al branch de lista vacia).
         await _pumpPageFree(tester);
 
-        await tester.tap(find.byTooltip('Exportar CSV'));
+        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
@@ -346,7 +347,7 @@ void main() {
       (tester) async {
         await _pumpPageFree(tester);
 
-        await tester.tap(find.byTooltip('Exportar CSV'));
+        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 

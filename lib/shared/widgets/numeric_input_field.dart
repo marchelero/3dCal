@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/app_radii.dart';
+import '../../l10n/es_bo.dart';
 
 // ignore_for_file: public_member_api_docs
 
@@ -158,13 +159,13 @@ class _NumericInputFieldState extends State<NumericInputField> {
   String? _internalValidator(String? value) {
     if (!_hasInteracted && !widget.showValidation) return null;
     final raw = (value ?? widget.controller.text).trim();
-    if (raw.isEmpty) return widget.showValidation ? 'Requerido' : null;
+    if (raw.isEmpty) return widget.showValidation ? EsBO.commonRequired : null;
     final cleaned = raw.replaceAll(',', '.');
     final n = num.tryParse(cleaned);
-    if (n == null) return 'Numero invalido';
+    if (n == null) return EsBO.commonInvalidNumber;
     if (!widget.allowDecimals) {
       if (cleaned.contains('.') || cleaned.contains(',')) {
-        return 'Numero invalido';
+        return EsBO.commonInvalidNumber;
       }
     }
     return null;

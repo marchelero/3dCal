@@ -148,7 +148,7 @@ void main() {
 
       await _pumpPage(tester);
       expect(find.text('3dCalc'), findsWidgets); // header + company name field default
-      expect(find.text('PARAMETROS GLOBALES'), findsOneWidget); // _SettingsSection usa toUpperCase
+      expect(find.text('PARÁMETROS GLOBALES'), findsOneWidget); // _SettingsSection usa toUpperCase
       expect(find.text('EMPRESA'), findsOneWidget); // _SettingsSection usa toUpperCase
       expect(find.text('Nombre de la empresa'), findsOneWidget);
       expect(find.text('Filamentos'), findsOneWidget);
@@ -243,15 +243,15 @@ void main() {
       expect(EsBO.settingsGoProAction, isNotEmpty);
     });
 
-    test('EsBO.settingsProBadge esta definido y no vacio', () {
-      expect(EsBO.settingsProBadge, isNotEmpty);
+    test('EsBO.proBadgeLabel esta definido y no vacio', () {
+      expect(EsBO.proBadgeLabel, isNotEmpty);
     });
 
     test('EnImpl expone las 3 keys del branding gate con texto no vacio', () {
       EsBO.setImpl(const EnImpl());
       expect(EsBO.settingsBrandingLockedBody, isNotEmpty);
       expect(EsBO.settingsGoProAction, isNotEmpty);
-      expect(EsBO.settingsProBadge, isNotEmpty);
+      expect(EsBO.proBadgeLabel, isNotEmpty);
     });
   });
 
@@ -335,10 +335,10 @@ void main() {
 
         await _pumpPageFree(tester);
 
-        // El badge "Pro" debe estar visible (en o cerca de la seccion
+        // El badge "PRO" debe estar visible (en o cerca de la seccion
         // Empresa). Buscamos por el texto.
-        expect(find.text(EsBO.settingsProBadge), findsAtLeast(1),
-            reason: 'Free: debe mostrarse el badge "Pro" en la UI.');
+        expect(find.text(EsBO.proBadgeLabel), findsAtLeast(1),
+            reason: 'Free: debe mostrarse el badge "PRO" en la UI.');
       },
     );
 

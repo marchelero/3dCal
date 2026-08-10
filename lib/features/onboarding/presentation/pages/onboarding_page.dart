@@ -182,8 +182,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   children: [
                     // Page indicator
                     Semantics(
-                      label:
-                          'Pagina ${_currentPage + 1} de ${_screens.length}',
+                      label: EsBO.onboardingPageCounter(
+                          _currentPage + 1, _screens.length),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(

@@ -58,9 +58,9 @@ void main() {
       (tester) async {
         await _pumpPage(tester, stats: emptyStats);
         expect(find.textContaining('Aun no cotizaste nada'), findsOneWidget);
-        expect(find.textContaining('Crea tu primera cotizacion desde el inicio'), findsOneWidget);
+        expect(find.textContaining('Crea tu primera cotización desde el inicio'), findsOneWidget);
         expect(
-          find.widgetWithText(FilledButton, 'Ir a Home'),
+          find.widgetWithText(FilledButton, 'Ir a Inicio'),
           findsOneWidget,
         );
         // No hay stat cards ni chart en empty state.
@@ -83,7 +83,7 @@ void main() {
         );
         expect(find.text('Cotizaciones'), findsOneWidget);
         expect(find.text('Vendidas'), findsOneWidget);
-        expect(find.text('Conversion'), findsOneWidget);
+        expect(find.text('Conversión'), findsOneWidget);
         expect(find.text('10'), findsOneWidget);
         expect(find.text('6'), findsOneWidget);
         expect(find.text('60%'), findsOneWidget);
@@ -188,7 +188,7 @@ void main() {
 
         expect(find.text('Cotizaciones'), findsOneWidget);
         expect(find.text('Vendidas'), findsOneWidget);
-        expect(find.text('Conversion'), findsOneWidget);
+        expect(find.text('Conversión'), findsOneWidget);
         expect(find.text(EsBO.dashboardTotalQuoted), findsOneWidget);
         expect(find.text(EsBO.dashboardTotalSold), findsOneWidget);
 
@@ -204,7 +204,7 @@ void main() {
             reason: 'Free: ProfitBarChart card oculto.');
         expect(find.text('Tendencia mensual'), findsNothing,
             reason: 'Free: MonthlyTrendChart card oculto.');
-        expect(find.text('Materiales mas usados'), findsNothing,
+        expect(find.text('Materiales más usados'), findsNothing,
             reason: 'Free: TopMaterials card oculto.');
 
         expect(find.byType(BarChart), findsNothing);
@@ -232,7 +232,7 @@ void main() {
             reason: 'Pro: MonthlyTrendChart card visible.');
         expect(find.byType(LineChart), findsOneWidget,
             reason: 'Pro: LineChart renderizado.');
-        expect(find.text('Materiales mas usados'), findsOneWidget,
+        expect(find.text('Materiales más usados'), findsOneWidget,
             reason: 'Pro: TopMaterials card visible.');
 
         expect(find.text(EsBO.dashboardProTeaserTitle), findsNothing);

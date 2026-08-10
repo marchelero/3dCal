@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
@@ -57,13 +58,41 @@ class _CalculationsListPageState
     final async = ref.watch(calculationsNotifierProvider);
     final notifier = ref.read(calculationsNotifierProvider.notifier);
 
+    // Patron de estado del gate visual (UX): "locked" solo cuando el
+    // entitlement esta resuelto y el user es free. Durante el boot async
+    // (loading) el boton se ve normal (evita falso "locked" en cold start).
+    final ent = ref.watch(entitlementNotifierProvider);
+    final isPro = ref.watch(isProProvider);
+    final csvLocked = !ent.isLoading && !isPro;
+    final usedCount = async.valueOrNull?.length ?? 0;
+
+    // Contador "x/$kFreeHistoryCap": solo para free, y solo cuando la
+    // lista muestra el set completo (sin busqueda ni filtro de venta —
+    // con filtros el count del state no representa el historial total).
+    // `async.hasValue` evita mostrar "0/10" durante loading/error.
+    final showHistoryCounter = csvLocked &&
+        async.hasValue &&
+        _searchCtrl.text.isEmpty &&
+        _soldFilter == null;
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(EsBO.historyTitle),
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_download_outlined, size: 20),
-            tooltip: 'Exportar CSV',
+            icon: Opacity(
+              opacity: csvLocked ? kLockedOpacity : 1.0,
+              child: Icon(
+                csvLocked
+                    ? Icons.lock_rounded
+                    : Icons.file_download_outlined,
+                size: 20,
+              ),
+            ),
+            tooltip: csvLocked
+                ? EsBO.csvExportTooltipLocked
+                : 'Exportar CSV',
             onPressed: () => _exportCsv(notifier),
           ),
         ],
@@ -76,7 +105,7 @@ class _CalculationsListPageState
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Buscar por nombre o cliente...',
+                hintText: EsBO.historySearchHint,
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
@@ -107,12 +136,30 @@ class _CalculationsListPageState
             child: Wrap(
               spacing: 8,
               children: [
-                _filterChip('Todas', null),
-                _filterChip('Vendidas', true),
-                _filterChip('Pendientes', false),
+                _filterChip(EsBO.historyFilterAll, null),
+                _filterChip(EsBO.historyFilterSold, true),
+                _filterChip(EsBO.historyFilterPending, false),
               ],
             ),
           ),
+          // History usage counter (free only)
+          if (showHistoryCounter)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      EsBO.historyUsageCounter(usedCount, kFreeHistoryCap),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // List
           Expanded(
             child: async.when(
@@ -127,10 +174,10 @@ class _CalculationsListPageState
                   return EmptyView(
                     icon: Icons.receipt_long_outlined,
                     message: _searchCtrl.text.isNotEmpty
-                        ? 'Sin resultados para "${_searchCtrl.text}"'
+                        ? EsBO.commonNoResultsFor(_searchCtrl.text)
                         : EsBO.historyEmpty,
                     subtitle: _searchCtrl.text.isNotEmpty
-                        ? 'Prueba con otro termino.'
+                        ? EsBO.historyEmptySearchHint
                         : 'Crea una desde el calculator y toca Guardar.',
                     ctaLabel: EsBO.homeActionNewCalc,
                     ctaIcon: Icons.add_rounded,
@@ -180,8 +227,16 @@ class _CalculationsListPageState
 
   Future<void> _exportCsv(CalculationsNotifier notifier) async {
     // T16 (plan de monetizacion): CSV export es Pro. En Free, gate con
-    // SnackBar que ofrece "Go Pro" → context.push('/paywall'). En Pro,
-    // se procede con el export normal.
+    // SnackBar que ofrece "Go Pro" y navega a /paywall. En Pro, se
+    // procede con el export normal.
+    //
+    // Mismo patron que `_switchMode` (calculator_page.dart): el gate
+    // lee el estado real del entitlement (no `isProProvider` solo).
+    // Durante el boot async el notifier esta loading e isPro=false, lo
+    // que daria un falso "locked" a un Pro real en cold start. Si sigue
+    // loading, swallow (no gatear); solo gateamos resuelto.
+    final ent = ref.read(entitlementNotifierProvider);
+    if (ent.isLoading) return;
     final isPro = ref.read(isProProvider);
     if (!isPro) {
       if (!mounted) return;
@@ -205,7 +260,7 @@ class _CalculationsListPageState
     if (calcs == null || calcs.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay cotizaciones para exportar')),
+        SnackBar(content: Text(EsBO.historyNoQuotesToExport)),
       );
       return;
     }
@@ -234,7 +289,7 @@ class _CalculationsListPageState
     final bytes = Uint8List.fromList(utf8.encode(buf.toString()));
     final xfile = XFile.fromData(bytes,
         name: 'cotizaciones_3dcalc.csv', mimeType: 'text/csv');
-    await Share.shareXFiles([xfile], text: 'Cotizaciones 3dCalc');
+    await Share.shareXFiles([xfile], text: EsBO.pdfShareSubject);
   }
 
   /// Formatea double sin separadores de miles (raw para CSV).
@@ -260,7 +315,9 @@ class _CalculationCard extends ConsumerWidget {
     final piece = calc.pieceName;
     if (piece != null && piece.isNotEmpty) return piece;
     final client = calc.clientName;
-    if (client != null && client.isNotEmpty) return 'Cotizacion · $client';
+    if (client != null && client.isNotEmpty) {
+      return '${EsBO.calcSheetTitle} · $client';
+    }
     return EsBO.calcDetailNoName;
   }
 

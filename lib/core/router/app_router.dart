@@ -19,6 +19,7 @@ import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../database/app_database.dart';
+import '../../l10n/es_bo.dart';
 import '../theme/app_spacing.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -185,7 +186,7 @@ class _RouterErrorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Error')),
+      appBar: AppBar(title: Text(EsBO.commonError)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xxl),
@@ -195,13 +196,13 @@ class _RouterErrorPage extends StatelessWidget {
               const Icon(Icons.error_outline, size: 96),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Pagina no encontrada',
+                EsBO.routeNotFound,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.xxl),
               FilledButton.icon(
                 icon: const Icon(Icons.home),
-                label: const Text('Volver a Inicio'),
+                label: Text(EsBO.routeBackHome),
                 onPressed: () => GoRouter.of(context).go('/'),
               ),
             ],

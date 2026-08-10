@@ -151,7 +151,7 @@ class HomePage extends ConsumerWidget {
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
-                          'Cotizaciones 3D · Rapido · Preciso · Sin internet',
+                          EsBO.homeHeroTagline,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: color.onSurfaceVariant,
                             height: 1.3,
@@ -244,7 +244,7 @@ class HomePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Cotizaciones 3D · Rapido · Preciso · Sin internet',
+                  EsBO.homeHeroTagline,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: color.onSurfaceVariant,
                     height: 1.3,

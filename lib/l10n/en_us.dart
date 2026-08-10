@@ -7,7 +7,7 @@ class EnImpl implements AppStrings {
   const EnImpl();
 
   @override
-  String get appName => '3dcalc';
+  String get appName => '3dCalc';
 
   @override
   String get commonSave => 'Save';
@@ -143,8 +143,6 @@ class EnImpl implements AppStrings {
       'Unlock Pro to customize your brand';
   @override
   String get settingsGoProAction => 'Go Pro';
-  @override
-  String get settingsProBadge => 'Pro';
 
   @override
   String get settingsRestorePurchases =>
@@ -616,6 +614,17 @@ class EnImpl implements AppStrings {
   String get historyCapReachedBody =>
       "You've reached the free history limit. Upgrade to Pro for unlimited history.";
 
+  // === Pro badge / locked visuals (UX) ===
+  @override
+  String get proBadgeLabel => 'PRO';
+  @override
+  String get proLockedTooltip => 'Pro feature';
+  @override
+  String get csvExportTooltipLocked => 'Export CSV (Pro)';
+  @override
+  String historyUsageCounter(int used, int cap) =>
+      used == 1 ? '1/$cap quote' : '$used/$cap quotes';
+
   // === Paywall (T10) ===
   @override
   String get paywallTitle => 'Unlock 3dCalc Pro';
@@ -652,4 +661,181 @@ class EnImpl implements AppStrings {
 
   @override
   String get settingsLegal => 'Legal';
+
+  // === i18n consistency (hardcoded → l10n) ===
+  @override
+  String get commonError => 'Error';
+  @override
+  String get commonNoResults => 'No results';
+  @override
+  String get commonDefault => 'Default';
+  @override
+  String get commonUndo => 'Undo';
+  @override
+  String get commonSaveImage => 'Save image';
+  @override
+  String get commonExportPdf => 'Export PDF';
+  @override
+  String get commonSharePdf => 'Share PDF';
+  @override
+  String get commonPrint => 'Print';
+  @override
+  String get commonImageDownloaded => 'Image downloaded';
+  @override
+  String get commonImageSavedGallery => 'Image saved to gallery';
+  @override
+  String get commonPdfExportError => 'Error exporting PDF';
+  @override
+  String get commonPrintError => 'Error printing';
+  @override
+  String get commonDefaultSuffix => ' (default)';
+
+  @override
+  String get homeHeroTagline => '3D Quotes · Fast · Accurate · Offline';
+
+  @override
+  String get calcFormIncompleteWarning =>
+      'Complete the form before saving.';
+  @override
+  String get calcSaveFailed => 'Could not save.';
+  @override
+  String calcSavedWithId(int id) => 'Quote #$id saved.';
+  @override
+  String get calcAddMaterial => 'Add material';
+  @override
+  String get calcPrinterPrefix => 'Printer: ';
+  @override
+  String get calcChangePrinter => 'Change printer';
+  @override
+  String get calcSearchPrinter => 'Search printer...';
+  @override
+  String get calcSelectFilament => 'Select filament';
+  @override
+  String get calcSearchFilament => 'Search filament...';
+
+  @override
+  String get detailBreakdown => 'Breakdown';
+  @override
+  String detailDiscountPct(int pct) => 'Discount ($pct%)';
+  @override
+  String get detailPreview => 'Preview';
+
+  @override
+  String get quoteNoDiscount => 'No discount';
+  @override
+  String quoteDiscountPct(int pct) => 'Discount $pct%';
+  @override
+  String get quoteDetail => 'Details';
+  @override
+  String get quoteGeneratedWith => 'Generated with 3dCalc';
+
+  @override
+  String get pdfFileName => 'quote_3dcalc.pdf';
+  @override
+  String get pdfShareSubject => '3dCalc quotation';
+  @override
+  String get pdfDatePrefix => 'Date: ';
+  @override
+  String get pdfMaterialCosts => 'Material costs';
+  @override
+  String get pdfElectricity => 'Electricity';
+  @override
+  String get pdfTotalUpper => 'TOTAL';
+  @override
+  String get pdfHoursPrefix => 'Hours: ';
+  @override
+  String pdfDiscountPct(int pct) => 'Discount: $pct%';
+
+  @override
+  String get dashboardEmptySubtitle =>
+      'Create your first quotation from scratch.';
+  @override
+  String get dashboardMonthlyTrend => 'Monthly trend';
+  @override
+  String get dashboardTopMaterials => 'Most used materials';
+
+  @override
+  String get historySearchHint =>
+      'Search by name or customer...';
+  @override
+  String get historyFilterAll => 'All';
+  @override
+  String get historyFilterSold => 'Sold';
+  @override
+  String get historyFilterPending => 'Pending';
+  @override
+  String get historyNoQuotesToExport => 'No quotes to export';
+
+  @override
+  String get chartNoMonthlyData => 'No monthly data';
+  @override
+  List<String> get chartShortMonths => const [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+
+  @override
+  String get filamentSearchHint => 'Search filaments...';
+  @override
+  String filamentDeleted(String name) => '"$name" deleted';
+  @override
+  String get printerSearchHint => 'Search printers...';
+  @override
+  String printerDeleted(String name) => '"$name" deleted';
+  @override
+  String get printerErrorSave => 'Error saving';
+
+  @override
+  String get settingsErrorLoad => 'Error loading settings';
+  @override
+  String get settingsCurrencySearchHint =>
+      'Search currency by code or name...';
+  @override
+  String settingsCurrencyNoResults(String query) =>
+      'No results for "$query"';
+  @override
+  String get settingsCurrencySymbolPrefix => 'Symbol: ';
+
+  @override
+  String get routeNotFound => 'Page not found';
+  @override
+  String get routeBackHome => 'Back to Home';
+
+  @override
+  String get themeModeSystem => 'System';
+  @override
+  String get themeModeLight => 'Light';
+  @override
+  String get themeModeDark => 'Dark';
+
+  @override
+  String get splashLogo => '3dCalc logo';
+  @override
+  String onboardingPageCounter(int page, int total) =>
+      'Page $page of $total';
+  @override
+  String commonNoResultsFor(String query) =>
+      'No results for "$query"';
+  @override
+  String get historyEmptySearchHint => 'Try another term.';
+
+  @override
+  String get filamentErrorLoad => 'Error loading filaments';
+  @override
+  String filamentNoResults(String query) => 'No filaments match "$query"';
+  @override
+  String get filamentEmptyList =>
+      'No filaments. Tap + to create the first one.';
+  @override
+  String filamentDeleteConfirm(String name) => 'Delete "$name"?';
+
+  @override
+  String get printerErrorLoad => 'Error loading printers';
+  @override
+  String printerNoResults(String query) => 'No printers match "$query"';
+  @override
+  String get printerEmptyList =>
+      'No printers. Tap + to register the first one.';
+  @override
+  String printerDeleteConfirm(String name) => 'Delete "$name"?';
 }

@@ -48,7 +48,7 @@ void main() {
     testWidgets('renderiza form con todos los labels', (tester) async {
       await _pumpPage(tester);
 
-      expect(find.text('Cotizacion'), findsOneWidget);
+      expect(find.text('Cotización'), findsOneWidget);
       expect(find.text('Peso'), findsOneWidget);
       expect(find.text('Horas'), findsOneWidget);
       expect(find.text('Minutos'), findsOneWidget);

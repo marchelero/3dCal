@@ -60,7 +60,7 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Buscar filamentos...',
+                hintText: EsBO.filamentSearchHint,
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
                 border: OutlineInputBorder(
@@ -85,7 +85,7 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
             child: async.when(
               loading: () => const ListPageSkeleton(),
               error: (e, _) => ErrorView(
-                message: 'Error cargando filamentos: $e',
+                message: '${EsBO.filamentErrorLoad}: $e',
                 onRetry: () => ref.invalidate(filamentsNotifierProvider),
               ),
               data: (filaments) {
@@ -101,13 +101,11 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
                   return _searchQuery.isNotEmpty
                       ? EmptyView(
                           icon: Icons.search_off,
-                          message:
-                              'Ningun filamento coincide con "$_searchQuery"',
+                          message: EsBO.filamentNoResults(_searchQuery),
                         )
-                      : const EmptyView(
+                      : EmptyView(
                           icon: Icons.inventory_2_outlined,
-                          message:
-                              'Sin filamentos. Toca + para crear el primero.',
+                          message: EsBO.filamentEmptyList,
                         );
                 }
                 return RefreshIndicator(
@@ -202,18 +200,18 @@ class _FilamentTile extends ConsumerWidget {
               PopupMenuButton<_TileAction>(
                 onSelected: (a) => _handleAction(context, ref, a),
                 itemBuilder: (_) => [
-                  const PopupMenuItem<_TileAction>(
+                  PopupMenuItem<_TileAction>(
                     value: _TileAction.setDefault,
                     child: ListTile(
-                      leading: Icon(Icons.star),
-                      title: Text('Predeterminado'),
+                      leading: const Icon(Icons.star),
+                      title: Text(EsBO.commonDefault),
                     ),
                   ),
-                  const PopupMenuItem<_TileAction>(
+                  PopupMenuItem<_TileAction>(
                     value: _TileAction.delete,
                     child: ListTile(
-                      leading: Icon(Icons.delete_outline),
-                      title: Text('Eliminar'),
+                      leading: const Icon(Icons.delete_outline),
+                      title: Text(EsBO.commonDelete),
                     ),
                   ),
                 ],
@@ -234,8 +232,8 @@ class _FilamentTile extends ConsumerWidget {
       case _TileAction.delete:
         final confirm = await showConfirmDialog(
           context,
-          title: 'Eliminar filamento',
-          message: '¿Eliminar "${filament.name}"?',
+          title: EsBO.filamentDeleteTitle,
+          message: EsBO.filamentDeleteConfirm(filament.name),
         );
         if (confirm != true || !context.mounted) return;
         // Capture data for undo
@@ -250,10 +248,10 @@ class _FilamentTile extends ConsumerWidget {
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-              content: Text('"$name" eliminado'),
+              content: Text(EsBO.filamentDeleted(name)),
               behavior: SnackBarBehavior.floating,
               action: SnackBarAction(
-                label: 'Deshacer',
+                label: EsBO.commonUndo,
                 onPressed: () {
                   notifier.create(
                     name: name,

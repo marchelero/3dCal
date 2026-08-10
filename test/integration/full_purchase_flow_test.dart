@@ -289,7 +289,7 @@ void main() {
         // ── Free: CSV gated ──
         appRouter.go('/history');
         await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('Exportar CSV'));
+        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
         expect(find.text(EsBO.csvExportLockedBody), findsOneWidget,
@@ -414,7 +414,7 @@ void main() {
       // CSV sigue gated (snackbar del gate persiste al tap).
       appRouter.go('/history');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Exportar CSV'));
+      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text(EsBO.csvExportLockedBody), findsOneWidget,

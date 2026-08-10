@@ -319,7 +319,7 @@ void main() {
         appRouter.go('/history');
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byTooltip('Exportar CSV'));
+        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
         // pumpAndSettle: deja que la snackbar termine de animar antes de
         // tocar su action (tap durante el slide es absorbido).
         await tester.pumpAndSettle();

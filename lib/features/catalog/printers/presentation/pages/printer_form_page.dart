@@ -100,7 +100,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          AppSnackBar.error('Error guardando: $e'),
+          AppSnackBar.error('${EsBO.printerErrorSave}: $e'),
         );
       }
     } finally {
@@ -156,10 +156,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
                 title: Text(EsBO.filamentDefaultToggle),
-                subtitle: const Text(
-                  'Se usara en nuevas cotizaciones. '
-                  'Solo una impresora puede ser default.',
-                ),
+                subtitle: Text(EsBO.printerDefaultSubtitle),
                 value: _isDefault,
                 onChanged: _saving ? null : _setDefault,
               ),

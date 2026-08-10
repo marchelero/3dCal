@@ -128,7 +128,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          AppSnackBar.error('Error guardando: $e'),
+          AppSnackBar.error('${EsBO.filamentErrorSave}: $e'),
         );
       }
     } finally {
@@ -197,10 +197,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
                 title: Text(EsBO.filamentDefaultToggle),
-                subtitle: const Text(
-                  'Se usara en nuevas cotizaciones. '
-                  'Solo un filamento puede ser default.',
-                ),
+                subtitle: Text(EsBO.filamentDefaultSubtitle),
                 value: _isDefault,
                 onChanged: _saving ? null : _setDefault,
               ),

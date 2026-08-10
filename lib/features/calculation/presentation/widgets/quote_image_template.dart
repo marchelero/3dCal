@@ -199,14 +199,14 @@ class QuoteImageTemplate extends StatelessWidget {
               child: Column(
                 children: [
                   _discountRow(
-                    'Sin descuento',
+                    EsBO.quoteNoDiscount,
                     formatCurrency(output.totalPrice + output.discountAmount, currency),
                     theme,
                     color.onErrorContainer,
                   ),
                   const SizedBox(height: 6),
                   _discountRow(
-                    'Descuento $discountPct%',
+                    EsBO.quoteDiscountPct(int.parse(discountPct)),
                     '-${formatCurrency(output.discountAmount, currency)}',
                     theme,
                     color.onErrorContainer,
@@ -219,7 +219,7 @@ class QuoteImageTemplate extends StatelessWidget {
                     ),
                   ),
                   _discountRow(
-                    'Total con descuento',
+                    EsBO.calcTotalWithDiscount,
               formatCurrency(output.totalPrice, currency),
                     theme,
                     color.onErrorContainer,
@@ -239,7 +239,7 @@ class QuoteImageTemplate extends StatelessWidget {
             // "Detalle" header
             Center(
               child: Text(
-                'Detalle',
+                EsBO.quoteDetail,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: color.onSurfaceVariant,
                   letterSpacing: 1.2,
@@ -280,7 +280,7 @@ class QuoteImageTemplate extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Generado con 3dCalc',
+                  EsBO.quoteGeneratedWith,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: color.onSurfaceVariant.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w500,

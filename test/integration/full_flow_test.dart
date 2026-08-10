@@ -73,7 +73,7 @@ void main() {
     expect(find.byType(HomePage), findsOneWidget);
     // Los labels aparecen tambien en la NavigationBar, asi que usamos
     // findsAtLeastNWidgets(1) en vez de findsOneWidget.
-    expect(find.text('Nueva cotizacion'), findsAtLeastNWidgets(1));
+    expect(find.text('Nueva cotización'), findsAtLeastNWidgets(1));
     expect(find.text('Historial'), findsAtLeastNWidgets(1));
     expect(find.text('Dashboard'), findsAtLeastNWidgets(1));
   });
@@ -92,7 +92,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Nueva cotizacion'));
+    await tester.tap(find.text('Nueva cotización'));
     await tester.pumpAndSettle();
 
     expect(find.byType(CalculatorPage), findsOneWidget);
@@ -116,7 +116,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Nueva cotizacion'));
+      await tester.tap(find.text('Nueva cotización'));
       await tester.pumpAndSettle();
 
       await tester.enterText(
@@ -210,6 +210,6 @@ void main() {
     // Empty state: el ProfitBarChart NO debe renderizar (no hay datos).
     expect(find.byType(ProfitBarChart), findsNothing);
     // CTA visible.
-    expect(find.text('Ir a Home'), findsOneWidget);
+    expect(find.text('Ir a Inicio'), findsOneWidget);
   });
 }

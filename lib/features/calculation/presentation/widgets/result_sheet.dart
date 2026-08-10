@@ -292,7 +292,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('Error al exportar PDF: $e'),
+        AppSnackBar.error('${EsBO.commonPdfExportError}: $e'),
       );
     } finally {
       if (mounted) setState(() => _isBusy = false);
@@ -325,7 +325,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       final bytes = await captureQuoteImageBytes(_captureKey);
       await saveQuoteImage(bytes);
       if (!mounted) return;
-      final msg = kIsWeb ? 'Imagen descargada' : 'Imagen guardada en galería';
+      final msg = kIsWeb
+          ? EsBO.commonImageDownloaded
+          : EsBO.commonImageSavedGallery;
       ScaffoldMessenger.of(context).showSnackBar(
         AppSnackBar.success(msg),
       );
@@ -495,34 +497,34 @@ class _ActionIconRow extends StatelessWidget {
       children: [
         _ActionIcon(
           icon: Icons.save_rounded,
-          tooltip: 'Guardar cotización',
+          tooltip: EsBO.calcBtnSave,
           color: color.primary,
           onPressed: isBusy ? null : onSaveDb,
         ),
         _ActionIcon(
           icon: Icons.picture_as_pdf_rounded,
-          tooltip: 'Compartir PDF',
+          tooltip: EsBO.commonSharePdf,
           color: Colors.red,
           isBusy: isBusy,
           onPressed: isBusy ? null : onSharePdf,
         ),
         _ActionIcon(
           icon: Icons.share_rounded,
-          tooltip: 'Compartir imagen',
+          tooltip: EsBO.calcBtnShare,
           color: color.primary,
           isBusy: isBusy,
           onPressed: isBusy ? null : onShare,
         ),
         _ActionIcon(
           icon: Icons.download_rounded,
-          tooltip: 'Guardar imagen',
+          tooltip: EsBO.commonSaveImage,
           color: color.primary,
           isBusy: isBusy,
           onPressed: isBusy ? null : onSaveImage,
         ),
         _ActionIcon(
           icon: Icons.refresh_rounded,
-          tooltip: 'Restablecer',
+          tooltip: EsBO.calcActionReset,
           color: color.onSurfaceVariant,
           onPressed: isBusy ? null : onReset,
         ),

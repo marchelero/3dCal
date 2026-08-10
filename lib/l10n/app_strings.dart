@@ -80,10 +80,6 @@ abstract class AppStrings {
   /// a `/paywall`.
   String get settingsGoProAction;
 
-  /// Texto del badge "Pro" que aparece en la seccion Empresa para usuarios
-  /// Free. Senal visual de que esa seccion esta gateada.
-  String get settingsProBadge;
-
   /// Label del boton "Restaurar compras" en settings.
   String get settingsRestorePurchases;
 
@@ -321,6 +317,23 @@ abstract class AppStrings {
   /// #11 (kFreeHistoryCap + 1). Accion navega a /paywall.
   String get historyCapReachedBody;
 
+  // === Pro badge / locked visuals (UX) ===
+  /// Label del badge "PRO" que marca controles gateados (modo advanced,
+  /// export CSV, branding). Mismo texto en ambos idiomas.
+  String get proBadgeLabel;
+
+  /// Tooltip / semantics del badge "PRO" (accesibilidad).
+  String get proLockedTooltip;
+
+  /// Tooltip del boton export CSV cuando esta locked (free): indica que
+  /// la accion es Pro en vez de describir la accion habilitada.
+  String get csvExportTooltipLocked;
+
+  /// Contador de uso del historial free: "$used/$cap cotizaciones".
+  /// Singular para used == 1. [used] = cantidad actual de cotizaciones,
+  /// [cap] = limite free ([kFreeHistoryCap]). Solo visible free.
+  String historyUsageCounter(int used, int cap);
+
   // === Paywall (T10) ===
   /// Titulo del paywall. Hero del modal.
   String get paywallTitle;
@@ -348,4 +361,168 @@ abstract class AppStrings {
   String get paywallTermsOfService;
   /// Titulo de la seccion legal en settings page.
   String get settingsLegal;
+
+  // === i18n consistency (hardcoded → l10n) ===
+  /// Generic "Error" label (ej: "Error: <detalle>").
+  String get commonError;
+  /// "Sin resultados" / "No results" para busquedas.
+  String get commonNoResults;
+  /// "Predeterminado" / "Default".
+  String get commonDefault;
+  /// "Deshacer" / "Undo".
+  String get commonUndo;
+  /// "Guardar imagen" / "Save image".
+  String get commonSaveImage;
+  /// "Exportar PDF" / "Export PDF".
+  String get commonExportPdf;
+  /// "Compartir PDF" / "Share PDF".
+  String get commonSharePdf;
+  /// "Imprimir" / "Print".
+  String get commonPrint;
+  /// "Imagen descargada" / "Image downloaded".
+  String get commonImageDownloaded;
+  /// "Imagen guardada en galería" / "Image saved to gallery".
+  String get commonImageSavedGallery;
+  /// "Error al exportar PDF" / "Error exporting PDF" (sin ": <e>").
+  String get commonPdfExportError;
+  /// "Error al imprimir" / "Error printing" (sin ": <e>").
+  String get commonPrintError;
+  /// " (default)" / " (default)" — sufijo de items default.
+  String get commonDefaultSuffix;
+
+  /// Hero tagline de la home.
+  String get homeHeroTagline;
+
+  /// Warning al intentar guardar con el form incompleto.
+  String get calcFormIncompleteWarning;
+  /// Error al guardar la cotizacion.
+  String get calcSaveFailed;
+  /// Confirmacion de guardado con id: "Cotización #$id guardada."
+  String calcSavedWithId(int id);
+  /// "Agregar material" / "Add material".
+  String get calcAddMaterial;
+  /// Prefijo de la Semantics label de la impresora activa.
+  String get calcPrinterPrefix;
+  /// "Cambiar impresora" / "Change printer".
+  String get calcChangePrinter;
+  /// "Buscar impresora..." / "Search printer...".
+  String get calcSearchPrinter;
+  /// "Seleccionar filamento" / "Select filament".
+  String get calcSelectFilament;
+  /// "Buscar filamento..." / "Search filament...".
+  String get calcSearchFilament;
+
+  /// "Desglose" / "Breakdown".
+  String get detailBreakdown;
+  /// "Descuento ($pct%)" / "Discount ($pct%)".
+  String detailDiscountPct(int pct);
+  /// "Vista previa" / "Preview".
+  String get detailPreview;
+
+  /// "Sin descuento" / "No discount".
+  String get quoteNoDiscount;
+  /// "Descuento $pct%" / "Discount $pct%".
+  String quoteDiscountPct(int pct);
+  /// "Detalle" / "Details" (bloque de la quote image).
+  String get quoteDetail;
+  /// "Generado con 3dCalc" / "Generated with 3dCalc".
+  String get quoteGeneratedWith;
+
+  /// Nombre de archivo del PDF exportado.
+  String get pdfFileName;
+  /// Subject al compartir el PDF.
+  String get pdfShareSubject;
+  /// "Fecha: " / "Date: ".
+  String get pdfDatePrefix;
+  /// "Costo materiales" / "Material costs".
+  String get pdfMaterialCosts;
+  /// "Electricidad" / "Electricity".
+  String get pdfElectricity;
+  /// "TOTAL" / "TOTAL".
+  String get pdfTotalUpper;
+  /// "Horas: " / "Hours: ".
+  String get pdfHoursPrefix;
+  /// "Descuento: $pct%" / "Discount: $pct%".
+  String pdfDiscountPct(int pct);
+
+  /// Empty state del dashboard (subtitulo).
+  String get dashboardEmptySubtitle;
+  /// "Tendencia mensual" / "Monthly trend".
+  String get dashboardMonthlyTrend;
+  /// "Materiales más usados" / "Most used materials".
+  String get dashboardTopMaterials;
+
+  /// Hint de busqueda del historial.
+  String get historySearchHint;
+  /// Filtro "Todas" / "All".
+  String get historyFilterAll;
+  /// Filtro "Vendidas" / "Sold".
+  String get historyFilterSold;
+  /// Filtro "Pendientes" / "Pending".
+  String get historyFilterPending;
+  /// Snackbar "No hay cotizaciones para exportar".
+  String get historyNoQuotesToExport;
+
+  /// "Sin datos mensuales" / "No monthly data".
+  String get chartNoMonthlyData;
+  /// Abreviaturas de mes cortas (12).
+  List<String> get chartShortMonths;
+
+  /// "Buscar filamentos..." / "Search filaments...".
+  String get filamentSearchHint;
+  /// '"$name" eliminado' / '"$name" deleted'.
+  String filamentDeleted(String name);
+  /// "Buscar impresoras..." / "Search printers...".
+  String get printerSearchHint;
+  /// '"$name" eliminada' / '"$name" deleted'.
+  String printerDeleted(String name);
+  /// "Error guardando" / "Error saving" (impresora).
+  String get printerErrorSave;
+
+  /// "Error cargando ajustes" / "Error loading settings".
+  String get settingsErrorLoad;
+  /// Hint de busqueda de moneda.
+  String get settingsCurrencySearchHint;
+  /// "Sin resultados para \"$query\"" / "No results for \"$query\"".
+  String settingsCurrencyNoResults(String query);
+  /// "Símbolo: " / "Symbol: ".
+  String get settingsCurrencySymbolPrefix;
+
+  /// "Página no encontrada" / "Page not found".
+  String get routeNotFound;
+  /// "Volver a Inicio" / "Back to Home".
+  String get routeBackHome;
+
+  /// Labels del selector de tema.
+  String get themeModeSystem;
+  String get themeModeLight;
+  String get themeModeDark;
+
+  /// Semantics label del logo de splash.
+  String get splashLogo;
+  /// "Página $page de $total" / "Page $page of $total".
+  String onboardingPageCounter(int page, int total);
+
+  /// "Sin resultados para \"$query\"" / "No results for \"$query\"" (búsquedas).
+  String commonNoResultsFor(String query);
+  /// "Prueba con otro término." / "Try another term.".
+  String get historyEmptySearchHint;
+
+  /// Catálogo de filamentos: errores, estados vacíos y confirmaciones.
+  String get filamentErrorLoad;
+  /// "Ningún filamento coincide con \"$query\"" / "No filaments match \"$query\"".
+  String filamentNoResults(String query);
+  /// "Sin filamentos. Toca + para crear el primero." / "No filaments. Tap + to create the first one.".
+  String get filamentEmptyList;
+  /// "¿Eliminar \"$name\"?" / "Delete \"$name\"?".
+  String filamentDeleteConfirm(String name);
+
+  /// Catálogo de impresoras: errores, estados vacíos y confirmaciones.
+  String get printerErrorLoad;
+  /// "Ninguna impresora coincide con \"$query\"" / "No printers match \"$query\"".
+  String printerNoResults(String query);
+  /// "Sin impresoras. Toca + para registrar la primera." / "No printers. Tap + to register the first one.".
+  String get printerEmptyList;
+  /// "¿Eliminar \"$name\"?" / "Delete \"$name\"?".
+  String printerDeleteConfirm(String name);
 }

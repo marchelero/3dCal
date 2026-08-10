@@ -45,11 +45,11 @@ void main() {
     // tap el boton por texto. FilledButton.icon retorna _FilledButtonWithIcon
     // (no subtipo de FilledButton para find.byType), asi que widgetWithText
     // falla. El tap sobre el Text bubblea al FilledButton.
-    await tester.tap(find.text('Nueva cotizacion'));
+    await tester.tap(find.text('Nueva cotización'));
     await tester.pumpAndSettle();
 
     expect(find.byType(CalculatorPage), findsOneWidget);
-    expect(find.text('Cotizacion'), findsOneWidget);
+    expect(find.text('Cotización'), findsOneWidget);
     expect(find.text('Peso'), findsOneWidget);
     expect(find.text('Horas'), findsOneWidget);
     expect(find.text('Precio bobina'), findsOneWidget);
@@ -84,7 +84,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // tap launcher → calculator
-      await tester.tap(find.text('Nueva cotizacion'));
+      await tester.tap(find.text('Nueva cotización'));
       await tester.pumpAndSettle();
 
       // Default: form vacio (peso/precio vacios) → hint visible

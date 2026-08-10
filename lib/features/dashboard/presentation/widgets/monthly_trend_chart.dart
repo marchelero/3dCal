@@ -26,7 +26,7 @@ class MonthlyTrendChart extends StatelessWidget {
         height: 200,
         child: Center(
           child: Text(
-            'Sin datos mensuales',
+            EsBO.chartNoMonthlyData,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: color.onSurfaceVariant,
             ),
@@ -136,10 +136,7 @@ class MonthlyTrendChart extends StatelessWidget {
   }
 
   String _monthAbbr(int m) {
-    const months = [
-      '', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
-    ];
-    return m >= 1 && m <= 12 ? months[m] : '?';
+    final months = EsBO.chartShortMonths;
+    return m >= 1 && m <= 12 ? months[m - 1] : '?';
   }
 }

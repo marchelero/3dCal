@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
@@ -22,6 +23,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
+import '../../../../shared/widgets/pro_badge.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
@@ -345,7 +347,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
     final state = ref.read(calculatorNotifierProvider);
     if (!state.isValid || state.output == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.warning('Completa el form antes de guardar.'),
+        AppSnackBar.warning(EsBO.calcFormIncompleteWarning),
       );
       return;
     }
@@ -366,11 +368,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
       if (id == null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(AppSnackBar.error('No se pudo guardar.'));
+        ).showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.success('Cotizacion #$id guardada.'),
+        AppSnackBar.success(EsBO.calcSavedWithId(id)),
       );
     } on HistoryCapReachedException catch (_) {
       // T15: free user intento guardar la #11. SnackBar dedicado con CTA
@@ -395,7 +397,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(AppSnackBar.error('Error: $e'));
+      ).showSnackBar(AppSnackBar.error('${EsBO.commonError}: $e'));
     }
   }
 
@@ -750,7 +752,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage>
                 OutlinedButton.icon(
                   onPressed: _addMaterial,
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Agregar material'),
+                  label: Text(EsBO.calcAddMaterial),
                 ),
               ],
             ),
@@ -983,7 +985,7 @@ class _PrinterIndicator extends ConsumerWidget {
     return Semantics(
       button: true,
       label: activePrinter != null
-          ? 'Impresora: ${activePrinter.name}'
+          ? '${EsBO.calcPrinterPrefix}${activePrinter.name}'
           : EsBO.calcNoPrinter,
       child: InkWell(
       borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -1081,15 +1083,15 @@ class _PrinterIndicator extends ConsumerWidget {
         }
         return StatefulBuilder(
           builder: (context, setInnerState) => AlertDialog(
-            title: const Text('Cambiar impresora'),
+            title: Text(EsBO.calcChangePrinter),
             content: SizedBox(
               width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Buscar impresora...',
+                    decoration: InputDecoration(
+                      hintText: EsBO.calcSearchPrinter,
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(),
                       isDense: true,
@@ -1101,9 +1103,9 @@ class _PrinterIndicator extends ConsumerWidget {
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxHeight: 400),
                     child: filtered.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Center(child: Text('Sin resultados')),
+                        ? Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(child: Text(EsBO.commonNoResults)),
                           )
                         : ListView.builder(
                             shrinkWrap: true,
@@ -1115,7 +1117,7 @@ class _PrinterIndicator extends ConsumerWidget {
                                 title: Text(p.name),
                                 subtitle: Text(
                                   '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
-                                  '${p.isDefault ? ' (default)' : ''}',
+                                  '${p.isDefault ? EsBO.commonDefaultSuffix : ''}',
                                 ),
                                 onTap: () {
                                   ref.read(activePrinterIdProvider.notifier).state = p.id;
@@ -1131,7 +1133,7 @@ class _PrinterIndicator extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancelar'),
+                child: Text(EsBO.commonCancel),
               ),
             ],
           ),
@@ -1399,15 +1401,15 @@ class _MaterialRowTile extends ConsumerWidget {
         }
         return StatefulBuilder(
           builder: (context, setInnerState) => AlertDialog(
-            title: const Text('Seleccionar filamento'),
+            title: Text(EsBO.calcSelectFilament),
             content: SizedBox(
               width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Buscar filamento...',
+                    decoration: InputDecoration(
+                      hintText: EsBO.calcSearchFilament,
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(),
                       isDense: true,
@@ -1419,9 +1421,9 @@ class _MaterialRowTile extends ConsumerWidget {
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxHeight: 400),
                     child: filtered.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Center(child: Text('Sin resultados')),
+                        ? Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(child: Text(EsBO.commonNoResults)),
                           )
                         : ListView.builder(
                             shrinkWrap: true,
@@ -1441,7 +1443,7 @@ class _MaterialRowTile extends ConsumerWidget {
                                 subtitle: Text(
                                   '${f.pricePerBobbin.toStringAsFixed(0)} $sym · '
                                   '${f.gramsPerBobbin.toStringAsFixed(0)} g'
-                                  '${f.isDefault ? ' (default)' : ''}',
+                                  '${f.isDefault ? EsBO.commonDefaultSuffix : ''}',
                                 ),
                                 onTap: () {
                                   Navigator.of(ctx).pop();
@@ -1457,7 +1459,7 @@ class _MaterialRowTile extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancelar'),
+                child: Text(EsBO.commonCancel),
               ),
             ],
           ),
@@ -1469,14 +1471,27 @@ class _MaterialRowTile extends ConsumerWidget {
 
 // === Mode Selector ===
 
-class _ModeSelector extends StatelessWidget {
+/// Selector de modo Express / Advanced.
+///
+/// **Gate visual (UX)**: cuando el user es free (estado de entitlement
+/// resuelto y `isPro=false`), el segmento "Advanced" se atenua
+/// ([kLockedOpacity]) y muestra un [ProBadge] para senalar NOTORIAMENTE
+/// que es Pro. Durante el boot async (loading) NO se muestra el badge
+/// (evita falso "locked" en cold start, mismo patron que `_switchMode`).
+/// El tap mantiene el gate actual (SnackBar + Go Pro) via `onChanged`.
+class _ModeSelector extends ConsumerWidget {
   const _ModeSelector({required this.mode, required this.onChanged});
 
   final CalculatorMode mode;
   final ValueChanged<CalculatorMode> onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Patron de estado obligatorio: no marcar "locked" mientras el
+    // entitlement sigue cargando (cold start).
+    final ent = ref.watch(entitlementNotifierProvider);
+    final locked = !ent.isLoading && !ref.watch(isProProvider);
+
     return Semantics(
       label: EsBO.calcSemanticMode(
         mode == CalculatorMode.express
@@ -1492,8 +1507,27 @@ class _ModeSelector extends StatelessWidget {
           ),
           ButtonSegment(
             value: CalculatorMode.advanced,
-            label: Text(EsBO.calcModeAdvanced),
-            icon: const Icon(Icons.layers_rounded),
+            label: locked
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // El badge se muestra a opacidad completa (leer +
+                      // distintivo); solo texto/icono se atenuan.
+                      Opacity(
+                        opacity: kLockedOpacity,
+                        child: Text(EsBO.calcModeAdvanced),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      const ProBadge(),
+                    ],
+                  )
+                : Text(EsBO.calcModeAdvanced),
+            icon: locked
+                ? Opacity(
+                    opacity: kLockedOpacity,
+                    child: const Icon(Icons.layers_rounded),
+                  )
+                : const Icon(Icons.layers_rounded),
           ),
         ],
         selected: {mode},
@@ -1534,7 +1568,7 @@ class _SaveDialogState extends State<_SaveDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Guardar cotizacion'),
+      title: Text(EsBO.calcBtnSave),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1555,7 +1589,7 @@ class _SaveDialogState extends State<_SaveDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Guardar')),
+        FilledButton(onPressed: _submit, child: Text(EsBO.commonSave)),
       ],
     );
   }

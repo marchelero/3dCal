@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../l10n/es_bo.dart';
 
 /// Pantalla de carga inicial antes del home.
 ///
@@ -86,14 +87,14 @@ class _SplashScreenState extends State<SplashScreen>
               child: FadeTransition(
                 opacity: _fadeController,
                 child: Semantics(
-                  label: '3dCalc logo',
+                  label: EsBO.splashLogo,
                   child: FractionallySizedBox(
                     widthFactor: 0.6,
                     child: Image.asset(
                       'assets/images/logo.png',
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => Semantics(
-                        label: '3dCalc',
+                        label: EsBO.appName,
                         child: Image.asset(
                           'assets/images/3dlogo.png',
                           width: 48,
@@ -113,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen>
               right: 40,
               bottom: MediaQuery.of(context).padding.bottom + 60,
               child: Semantics(
-                label: 'Cargando',
+                label: EsBO.commonLoading,
                 liveRegion: true,
                 child: AnimatedBuilder(
                   animation: _loadingController,
@@ -135,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'CARGANDO...',
+                          EsBO.commonLoading.toUpperCase(),
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 12,

@@ -15,6 +15,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../features/calculation/domain/entities/calculation_output.dart';
 import '../../features/calculation/presentation/state/calculator_state.dart';
+import '../../l10n/es_bo.dart';
 import '../money/currency_formatter.dart';
 
 /// Branding forzado para usuarios Free.
@@ -84,8 +85,8 @@ Future<void> shareQuotePdf({
 
   // XFile.fromData sin escribir a disco para compat mobile + web + desktop.
   await Share.shareXFiles(
-    [XFile.fromData(pdfBytes, name: 'cotizacion_3dcalc.pdf')],
-    subject: 'Cotización 3dCalc',
+    [XFile.fromData(pdfBytes, name: EsBO.pdfFileName)],
+    subject: EsBO.pdfShareSubject,
   );
 }
 
@@ -158,7 +159,7 @@ Future<Uint8List> buildQuotePdfBytes({
                             fontSize: 22,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.blue800)),
-                    pw.Text('Cotización',
+                    pw.Text(EsBO.calcSheetTitle,
                         style: pw.TextStyle(
                             fontSize: 14, color: PdfColors.grey600)),
                   ],
@@ -177,7 +178,7 @@ Future<Uint8List> buildQuotePdfBytes({
 
             // Date
             pw.Text(
-                'Fecha: ${DateTime.now().toLocal().toString().split('.')[0]}',
+                '${EsBO.pdfDatePrefix}${DateTime.now().toLocal().toString().split('.')[0]}',
                 style:
                     pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
             pw.SizedBox(height: 16),
@@ -194,7 +195,7 @@ Future<Uint8List> buildQuotePdfBytes({
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Total',
+                  pw.Text(EsBO.calcTotalFinal,
                       style: pw.TextStyle(
                           fontSize: 18,
                           fontWeight: pw.FontWeight.bold)),
@@ -209,34 +210,34 @@ Future<Uint8List> buildQuotePdfBytes({
             pw.SizedBox(height: 16),
 
             // Breakdown
-            pw.Text('Desglose',
+            pw.Text(EsBO.detailBreakdown,
                 style: pw.TextStyle(
                     fontSize: 14, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 8),
-            _row('Costo materiales', _fmt(output.materialCost)),
+            _row(EsBO.pdfMaterialCosts, _fmt(output.materialCost)),
             if (output.electricCost > Decimal.zero)
-              _row('Electricidad', _fmt(output.electricCost)),
+              _row(EsBO.pdfElectricity, _fmt(output.electricCost)),
             if (output.laborCost > Decimal.zero)
-              _row('Mano de obra', _fmt(output.laborCost)),
+              _row(EsBO.calcDetailLabor, _fmt(output.laborCost)),
             if (output.postProcessCost > Decimal.zero)
-              _row('Post-procesado', _fmt(output.postProcessCost)),
-            _row('Costo base', _fmt(output.baseCost), bold: true),
+              _row(EsBO.calcDetailPostProcess, _fmt(output.postProcessCost)),
+            _row(EsBO.calcDetailBase, _fmt(output.baseCost), bold: true),
             if (output.failureCost > Decimal.zero)
-              _row('Tasa de falla', _fmt(output.failureCost)),
+              _row(EsBO.calcDetailFailure, _fmt(output.failureCost)),
             if (output.markupCost > Decimal.zero)
-              _row('Desperdicio', _fmt(output.markupCost)),
+              _row(EsBO.calcFieldWaste, _fmt(output.markupCost)),
             if (output.profitAmount > Decimal.zero)
-              _row('Ganancia', _fmt(output.profitAmount)),
+              _row(EsBO.calcDetailProfit, _fmt(output.profitAmount)),
             if (output.discountAmount > Decimal.zero)
-              _row('Descuento', '-${_fmt(output.discountAmount)}'),
+              _row(EsBO.calcLabelDiscount, '-${_fmt(output.discountAmount)}'),
             pw.Divider(),
-            _row('TOTAL', _fmt(output.totalPrice), bold: true),
+            _row(EsBO.pdfTotalUpper, _fmt(output.totalPrice), bold: true),
 
             pw.SizedBox(height: 16),
 
             // Materials
             if (materials.isNotEmpty) ...[
-              pw.Text('Materiales',
+              pw.Text(EsBO.calcSectionMaterials,
                   style: pw.TextStyle(
                       fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 8),
@@ -254,10 +255,10 @@ Future<Uint8List> buildQuotePdfBytes({
 
             // Meta
             if (totalHours > Decimal.zero)
-              pw.Text('Horas: ${totalHours.toStringAsFixed(2)}h',
+              pw.Text('${EsBO.pdfHoursPrefix}${totalHours.toStringAsFixed(2)}h',
                   style: pw.TextStyle(fontSize: 10)),
             if (discountPct > Decimal.zero)
-              pw.Text('Descuento: ${discountPct.toStringAsFixed(0)}%',
+              pw.Text(EsBO.pdfDiscountPct(discountPct.toDouble().round()),
                   style: pw.TextStyle(fontSize: 10)),
 
             pw.SizedBox(height: 24),
@@ -265,7 +266,7 @@ Future<Uint8List> buildQuotePdfBytes({
             pw.SizedBox(height: 8),
 
             // Footer
-            pw.Text('Generado con 3dCalc',
+            pw.Text(EsBO.quoteGeneratedWith,
                 style: pw.TextStyle(
                     fontSize: 9, color: PdfColors.grey500)),
           ],

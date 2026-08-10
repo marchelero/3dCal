@@ -48,7 +48,7 @@ class DashboardPage extends ConsumerWidget {
               return EmptyView(
                 icon: Icons.bar_chart_rounded,
                 message: EsBO.dashboardEmpty,
-                subtitle: 'Crea tu primera cotizacion desde el inicio.',
+                subtitle: EsBO.dashboardEmptySubtitle,
                 ctaLabel: EsBO.dashboardEmptyCta,
                 ctaIcon: Icons.home_rounded,
                 onCta: () => context.go('/'),
@@ -179,9 +179,9 @@ class _DashboardBody extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SectionHeader(
+                        SectionHeader(
                           icon: Icons.trending_up_rounded,
-                          title: 'Tendencia mensual',
+                          title: EsBO.dashboardMonthlyTrend,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         SizedBox(
@@ -210,9 +210,9 @@ class _DashboardBody extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SectionHeader(
+                        SectionHeader(
                           icon: Icons.inventory_2_rounded,
-                          title: 'Materiales mas usados',
+                          title: EsBO.dashboardTopMaterials,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         ...stats.topMaterials.map((m) => _MaterialRow(m: m)),

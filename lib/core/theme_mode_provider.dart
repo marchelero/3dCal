@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/es_bo.dart';
 import 'storage/draft_storage_providers.dart';
 
 /// Key para SharedPreferences.
@@ -15,21 +16,25 @@ const _kThemeModeKey = 'theme_mode';
 /// Posibles modos de tema.
 enum AppThemeMode {
   /// Sigue la config del sistema.
-  system('Sistema', ThemeMode.system),
+  system(ThemeMode.system),
 
   /// Siempre claro.
-  light('Claro', ThemeMode.light),
+  light(ThemeMode.light),
 
   /// Siempre oscuro.
-  dark('Oscuro', ThemeMode.dark);
+  dark(ThemeMode.dark);
 
-  const AppThemeMode(this.label, this.themeMode);
-
-  /// Label visible en UI.
-  final String label;
+  const AppThemeMode(this.themeMode);
 
   /// [ThemeMode] de Flutter correspondiente.
   final ThemeMode themeMode;
+
+  /// Label visible en UI (localizado vía EsBO).
+  String get label => switch (this) {
+        AppThemeMode.system => EsBO.themeModeSystem,
+        AppThemeMode.light => EsBO.themeModeLight,
+        AppThemeMode.dark => EsBO.themeModeDark,
+      };
 }
 
 /// Notifier para cambiar y persistir el theme mode.

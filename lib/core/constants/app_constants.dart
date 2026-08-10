@@ -117,6 +117,12 @@ const String kEntitlementValidatedAtKey = 'entitlement_validated_at';
 /// Pro = ilimitado. Al guardar la cotizacion #11 en free, dispara upsell.
 const int kFreeHistoryCap = 10;
 
+/// Opacidad estandar para controles gateados (free tier).
+///
+/// Aplicar via `Opacity(opacity: kLockedOpacity, child: ...)` en cada
+/// call site de un control Pro-bloqueado para atenuarlo NOTORIAMENTE.
+const double kLockedOpacity = 0.6;
+
 /// Product ID del IAP one-time unlock (Google Play Billing).
 /// Configurar el mismo ID en RevenueCat + Google Play Console.
 const String kProProductId = 'tresdcal_pro_lifetime';

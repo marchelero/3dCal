@@ -70,7 +70,7 @@ void main() {
         findsOneWidget,
       );
       // No muestra chevron up ni "Ver cotizacion" en estado empty.
-      expect(find.text('Ver cotizacion'), findsNothing);
+      expect(find.text('Ver cotización'), findsNothing);
       expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsNothing);
     });
 
@@ -87,7 +87,7 @@ void main() {
       );
 
       expect(find.text(r'$ 36,00'), findsOneWidget);
-      expect(find.text('Ver cotizacion'), findsOneWidget);
+      expect(find.text('Ver cotización'), findsOneWidget);
       expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsOneWidget);
       // Empty hint no presente.
       expect(find.text('Falta completar'), findsNothing);
@@ -133,7 +133,7 @@ void main() {
       // Quote template visible.
       expect(find.byType(QuoteImageTemplate), findsOneWidget);
       // Titulo del sheet.
-      expect(find.text('Cotizacion'), findsWidgets);
+      expect(find.text('Cotización'), findsWidgets);
       // Label del state aparece en el card.
       expect(find.text('Pieza de prueba'), findsOneWidget);
       // Total formateado.
