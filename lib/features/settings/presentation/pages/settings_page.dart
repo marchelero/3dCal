@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -14,14 +15,14 @@ import '../../../../core/money/currency.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme_mode_provider.dart';
-import '../../../../l10n/es_bo.dart';
 import '../../../../l10n/app_locale.dart';
-import '../../../../shared/widgets/max_width_scroll_view.dart';
-import '../../../../shared/widgets/numeric_input_field.dart';
+import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../entitlement/data/payment_service.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
@@ -103,10 +104,14 @@ class _SettingsBody extends ConsumerWidget {
                       initialValue: settings.profitBase.toString(),
                       allowDecimals: false,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
+                        if (v == null || v.trim().isEmpty) {
+                          return EsBO.commonRequired;
+                        }
                         final n = int.tryParse(v.trim());
                         if (n == null) return EsBO.commonInvalidNumber;
-                        if (n < 0 || n > 1000) return EsBO.settingsProfitBaseRange;
+                        if (n < 0 || n > 1000) {
+                          return EsBO.settingsProfitBaseRange;
+                        }
                         return null;
                       },
                       onSave: (v) {
@@ -123,9 +128,12 @@ class _SettingsBody extends ConsumerWidget {
                       initialValue: settings.kwhRate.toString(),
                       allowDecimals: true,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
-                        final n =
-                            Decimal.tryParse(v.trim().replaceAll(',', '.'));
+                        if (v == null || v.trim().isEmpty) {
+                          return EsBO.commonRequired;
+                        }
+                        final n = Decimal.tryParse(
+                          v.trim().replaceAll(',', '.'),
+                        );
                         if (n == null) return EsBO.commonInvalidNumber;
                         if (n < Decimal.parse('0.10') ||
                             n > Decimal.parse('5.00')) {
@@ -198,9 +206,7 @@ class _SettingsBody extends ConsumerWidget {
                       },
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    _LogoPicker(
-                      currentLogoBase64: settings.companyLogoBase64,
-                    ),
+                    _LogoPicker(currentLogoBase64: settings.companyLogoBase64),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -222,8 +228,10 @@ class _SettingsBody extends ConsumerWidget {
                         ),
                         title: Text(EsBO.settingsFilamentos),
                         subtitle: Text(EsBO.settingsManageFilaments),
-                        trailing: Icon(Icons.chevron_right_rounded,
-                            color: color.onSurfaceVariant),
+                        trailing: Icon(
+                          Icons.chevron_right_rounded,
+                          color: color.onSurfaceVariant,
+                        ),
                         onTap: () => context.push('/settings/filaments'),
                       ),
                     ),
@@ -239,8 +247,10 @@ class _SettingsBody extends ConsumerWidget {
                         ),
                         title: Text(EsBO.settingsImpresoras),
                         subtitle: Text(EsBO.settingsManagePrinters),
-                        trailing: Icon(Icons.chevron_right_rounded,
-                            color: color.onSurfaceVariant),
+                        trailing: Icon(
+                          Icons.chevron_right_rounded,
+                          color: color.onSurfaceVariant,
+                        ),
                         onTap: () => context.push('/settings/printers'),
                       ),
                     ),
@@ -253,9 +263,7 @@ class _SettingsBody extends ConsumerWidget {
                   icon: Icons.restore_rounded,
                   title: EsBO.settingsRestorePurchases,
                   accentColor: color.primary,
-                  children: [
-                    _RestoreButton(),
-                  ],
+                  children: [_RestoreButton()],
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
@@ -288,20 +296,30 @@ class _SettingsBody extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          child: Image.asset('assets/images/3dlogo.png',
-                              width: 26, height: 26, fit: BoxFit.contain),
+                          child: Image.asset(
+                            'assets/images/3dlogo.png',
+                            width: 26,
+                            height: 26,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(EsBO.appName,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600)),
+                            Text(
+                              EsBO.appName,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text('v$kAppVersion',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                    color: color.onSurfaceVariant)),
+                            Text(
+                              'v$kAppVersion',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: color.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -309,8 +327,11 @@ class _SettingsBody extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
                     Row(
                       children: [
-                        Icon(Icons.lock_outline_rounded,
-                            size: 16, color: color.onSurfaceVariant),
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          size: 16,
+                          color: color.onSurfaceVariant,
+                        ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
@@ -419,10 +440,7 @@ class _SettingsHeader extends StatelessWidget {
             height: 64,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  color.primary,
-                  color.primary.withValues(alpha: 0.7),
-                ],
+                colors: [color.primary, color.primary.withValues(alpha: 0.7)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -435,8 +453,12 @@ class _SettingsHeader extends StatelessWidget {
                 ),
               ],
             ),
-            child: Image.asset('assets/images/3dlogo.png',
-                width: 34, height: 34, fit: BoxFit.contain),
+            child: Image.asset(
+              'assets/images/3dlogo.png',
+              width: 34,
+              height: 34,
+              fit: BoxFit.contain,
+            ),
           ),
           const SizedBox(width: AppSpacing.lg),
           // Texto
@@ -462,8 +484,11 @@ class _SettingsHeader extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Icon(Icons.lock_outline_rounded,
-                        size: 14, color: color.onSurfaceVariant),
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: 14,
+                      color: color.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -524,10 +549,7 @@ class _SettingsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── BARRA DE ACENTO IZQUIERDA (4dp) ──
-          Container(
-            width: 4,
-            color: accentColor,
-          ),
+          Container(width: 4, color: accentColor),
           // ── CONTENIDO ──
           Expanded(
             child: Column(
@@ -537,7 +559,10 @@ class _SettingsSection extends StatelessWidget {
                 // Header
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.md,
                   ),
                   child: Row(
                     children: [
@@ -556,7 +581,9 @@ class _SettingsSection extends StatelessWidget {
                 ),
                 // Divider
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: Divider(
                     height: 1,
                     color: color.outlineVariant.withValues(alpha: 0.4),
@@ -602,11 +629,7 @@ class _ThemeModeSelector extends ConsumerWidget {
           case AppThemeMode.dark:
             icon = Icons.dark_mode_rounded;
         }
-        return ButtonSegment(
-          value: m,
-          label: Text(m.label),
-          icon: Icon(icon),
-        );
+        return ButtonSegment(value: m, label: Text(m.label), icon: Icon(icon));
       }).toList(),
       selected: {current},
       onSelectionChanged: (selected) {
@@ -699,10 +722,7 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
 /// accion [EsBO.settingsGoProAction] que navega a `/paywall`. El valor
 /// visible sigue siendo el persistido (no se borra al upgradear a Pro).
 class _CompanyNameField extends ConsumerStatefulWidget {
-  const _CompanyNameField({
-    required this.initialValue,
-    required this.onSave,
-  });
+  const _CompanyNameField({required this.initialValue, required this.onSave});
 
   final String initialValue;
   final ValueChanged<String> onSave;
@@ -814,7 +834,7 @@ class _LogoPicker extends ConsumerWidget {
   Future<void> _pickLogo(BuildContext context, WidgetRef ref) async {
     try {
       final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
+      final image = await picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 512,
         maxHeight: 512,
@@ -823,18 +843,22 @@ class _LogoPicker extends ConsumerWidget {
       final bytes = await image.readAsBytes();
       final base64 = base64Encode(bytes);
       if (!context.mounted) return;
-      ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64);
+      unawaited(
+        ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64),
+      );
       _showSavedSnack(context);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.error('${EsBO.settingsCompanyLogoError}: $e'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error('${EsBO.settingsCompanyLogoError}: $e'));
     }
   }
 
   Future<void> _removeLogo(BuildContext context, WidgetRef ref) async {
-    ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(null);
+    unawaited(
+      ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(null),
+    );
     _showSavedSnack(context);
   }
 
@@ -865,8 +889,7 @@ class _LogoPicker extends ConsumerWidget {
     final ent = ref.watch(entitlementNotifierProvider);
     final isPro = ref.watch(isProProvider);
     final locked = !ent.isLoading && !isPro;
-    final hasLogo = currentLogoBase64 != null &&
-        currentLogoBase64!.isNotEmpty;
+    final hasLogo = currentLogoBase64 != null && currentLogoBase64!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -887,17 +910,14 @@ class _LogoPicker extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: color.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(
-                  color: color.outlineVariant,
-                  width: 1,
-                ),
+                border: Border.all(color: color.outlineVariant, width: 1),
               ),
               clipBehavior: Clip.antiAlias,
               child: hasLogo
                   ? Image.memory(
                       _base64ToBytes(currentLogoBase64!),
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(
+                      errorBuilder: (_, _, _) => Icon(
                         Icons.broken_image_rounded,
                         color: color.onSurfaceVariant,
                         size: 32,
@@ -927,8 +947,11 @@ class _LogoPicker extends ConsumerWidget {
                   ),
                   if (hasLogo)
                     TextButton.icon(
-                      icon: Icon(Icons.delete_outline_rounded,
-                          size: 18, color: color.error),
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: color.error,
+                      ),
                       label: Text(
                         EsBO.settingsCompanyLogoRemove,
                         style: TextStyle(color: color.error),
@@ -1019,7 +1042,11 @@ class _CurrencyPicker extends ConsumerWidget {
       builder: (_) => _CurrencySearchDialog(initial: current),
     );
     if (selected != null && context.mounted) {
-      ref.read(settingsNotifierProvider.notifier).updateCurrency(selected.code);
+      unawaited(
+        ref
+            .read(settingsNotifierProvider.notifier)
+            .updateCurrency(selected.code),
+      );
       _showSavedSnack(context);
     }
   }
@@ -1123,8 +1150,9 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                         final isSelected = c.code == widget.initial.code;
                         return ListTile(
                           selected: isSelected,
-                          selectedTileColor:
-                              color.primaryContainer.withValues(alpha: 0.4),
+                          selectedTileColor: color.primaryContainer.withValues(
+                            alpha: 0.4,
+                          ),
                           leading: Icon(
                             isSelected
                                 ? Icons.check_circle
@@ -1136,8 +1164,9 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                           title: Text(
                             '${c.code} — ${c.name}',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.normal,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                           subtitle: Text(
@@ -1223,28 +1252,19 @@ class _RestoreButtonState extends ConsumerState<_RestoreButton> {
     setState(() => _isRestoring = true);
 
     try {
-      final result =
-          await ref.read(entitlementNotifierProvider.notifier).restore();
-      if (!context.mounted) return;
-      switch (result) {
-        case RestoreActive _:
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(AppSnackBar.success(EsBO.settingsRestoreSuccess));
-        case RestoreEmpty _:
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(AppSnackBar.info(
-              context,
-              EsBO.settingsRestoreEmpty,
-            ));
-        case RestoreError _:
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(AppSnackBar.info(
-              context,
-              EsBO.settingsRestoreEmpty,
-            ));
+      final result = await ref
+          .read(entitlementNotifierProvider.notifier)
+          .restore();
+      if (!mounted) return;
+      if (result is RestoreActive) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(AppSnackBar.success(EsBO.settingsRestoreSuccess));
+      } else {
+        // RestoreEmpty y RestoreError comparten el mismo feedback.
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(AppSnackBar.info(context, EsBO.settingsRestoreEmpty));
       }
     } finally {
       if (mounted) setState(() => _isRestoring = false);
@@ -1267,9 +1287,7 @@ class _RestoreButtonState extends ConsumerState<_RestoreButton> {
                 ),
               )
             : const Icon(Icons.restore_rounded, size: 18),
-        label: Text(
-          EsBO.settingsRestorePurchases,
-        ),
+        label: Text(EsBO.settingsRestorePurchases),
         onPressed: _isRestoring ? null : _handleRestore,
       ),
     );

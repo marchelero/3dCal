@@ -111,7 +111,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         opacity: _fadeCtrl,
         child: widget.navigationShell,
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -169,7 +169,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         child: Row(
           children: [
             // ── NavigationRail con fondo y borde ──
-            Container(
+            DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,

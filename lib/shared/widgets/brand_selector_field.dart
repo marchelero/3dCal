@@ -7,59 +7,45 @@ import '../../../features/catalog/filaments/presentation/notifiers/filaments_not
 import '../../../features/catalog/printers/presentation/notifiers/printers_notifier.dart';
 import '../../../l10n/app_locale.dart';
 import '../../../l10n/es_bo.dart';
-
-/// Marcas conocidas del ecosistema 3D (impresoras y filamentos).
-///
-/// Base del selector de marca. Se unen con las marcas que el usuario ya
-/// registro en la app (filamentos + impresoras) y se ordenan.
-const List<String> kKnown3dBrands = [
-  'Anycubic',
-  'Artillery',
-  'Bambu Lab',
-  'Creality',
-  'Elegoo',
-  'Eryone',
-  'eSun',
-  'Flashforge',
-  'Geeetech',
-  'Hatchbox',
-  'Overture',
-  'Polymaker',
-  'Prusa',
-  'Prusament',
-  'Qidi',
-  'Raise3D',
-  'Sovol',
-  'Sunlu',
-  'Ultimaker',
-  'Voxelab',
-  'Voron',
-];
+import 'k3d_brands.dart';
 
 /// Valor sentinela del item "Otro..." del dropdown.
 const String _kOtherOption = '__brand_other__';
 
-/// Selector de marca con autocompletado: marcas conocidas del mundo 3D +
-/// las ya registradas en la app, con la opcion "Otro..." que activa un
-/// campo de texto para ingresar la marca manualmente.
+/// Selector de marca con autocompletado, parametrizado por [BrandDomain]:
+/// la lista base y el notifier observado dependen del dominio.
+///
+/// - [BrandDomain.filament] -> observa `filamentsNotifierProvider`,
+///   base = `kKnownFilamentBrands`.
+/// - [BrandDomain.printer] -> observa `printersNotifierProvider`,
+///   base = `kKnownPrinterBrands`.
+///
+/// En ambos casos se unen las marcas que el usuario ya registro en el
+/// dominio correspondiente (no cross-domain) y se ordenan. La opcion
+/// "Otro..." activa un campo de texto manual para marca custom.
 ///
 /// El valor SIEMPRE vive en [controller] (igual que un TextFormField)
 /// para no tocar la logica de guardado de los forms que lo usan.
 ///
 /// Reglas de modo:
-/// - Sin valor → dropdown con hint.
-/// - Valor que esta en las opciones → dropdown con esa marca seleccionada.
+/// - Sin valor -> dropdown con hint.
+/// - Valor que esta en las opciones -> dropdown con esa marca seleccionada.
 /// - Valor que NO esta en las opciones (ej. marca custom en edicion) o el
-///   usuario eligio "Otro..." → campo de texto manual.
+///   usuario eligio "Otro..." -> campo de texto manual.
 class BrandSelectorField extends ConsumerStatefulWidget {
   const BrandSelectorField({
     super.key,
+    required this.domain,
     required this.controller,
     this.validator,
     this.label,
     this.helperText,
     this.enabled = true,
   });
+
+  /// Dominio del selector (filamento o impresora). Determina la lista
+  /// base de marcas y que notifier se observa.
+  final BrandDomain domain;
 
   final TextEditingController controller;
 
@@ -76,36 +62,41 @@ class BrandSelectorField extends ConsumerStatefulWidget {
   final bool enabled;
 
   @override
-  ConsumerState<BrandSelectorField> createState() =>
-      _BrandSelectorFieldState();
+  ConsumerState<BrandSelectorField> createState() => _BrandSelectorFieldState();
 }
 
 class _BrandSelectorFieldState extends ConsumerState<BrandSelectorField> {
   /// true cuando el usuario eligio "Otro..." (ingreso manual explicito).
   bool _forceOther = false;
 
-  /// Marcas registradas en la app (filamentos + impresoras), unicas.
+  /// Marcas registradas en la app para ESTE dominio (no cross-domain).
   Set<String> _registeredBrands(WidgetRef ref) {
-    final filaments = ref.watch(filamentsNotifierProvider).value;
-    final printers = ref.watch(printersNotifierProvider).value;
     final brands = <String>{};
-    for (final f in filaments ?? const <Filament>[]) {
-      final b = f.brand;
-      if (b != null && b.trim().isNotEmpty) brands.add(b.trim());
-    }
-    for (final p in printers ?? const <PrinterProfile>[]) {
-      final b = p.brand;
-      if (b != null && b.trim().isNotEmpty) brands.add(b.trim());
+    switch (widget.domain) {
+      case BrandDomain.filament:
+        final filaments = ref.watch(filamentsNotifierProvider).value;
+        for (final f in filaments ?? const <Filament>[]) {
+          final b = f.brand;
+          if (b != null && b.trim().isNotEmpty) brands.add(b.trim());
+        }
+        break;
+      case BrandDomain.printer:
+        final printers = ref.watch(printersNotifierProvider).value;
+        for (final p in printers ?? const <PrinterProfile>[]) {
+          final b = p.brand;
+          if (b != null && b.trim().isNotEmpty) brands.add(b.trim());
+        }
+        break;
     }
     return brands;
   }
 
-  /// Opciones ordenadas: conocidas + registradas (sin duplicados).
+  /// Opciones ordenadas: conocidas del dominio + registradas del dominio.
   List<String> _options(WidgetRef ref) {
-    final all = <String>{
-      ...kKnown3dBrands,
-      ..._registeredBrands(ref),
-    };
+    final known = widget.domain == BrandDomain.filament
+        ? kKnownFilamentBrands
+        : kKnownPrinterBrands;
+    final all = <String>{...known, ..._registeredBrands(ref)};
     return all.toList()..sort();
   }
 
@@ -141,8 +132,7 @@ class _BrandSelectorFieldState extends ConsumerState<BrandSelectorField> {
       ),
       hint: Text(EsBO.brandSelectorHint),
       items: [
-        for (final b in options)
-          DropdownMenuItem(value: b, child: Text(b)),
+        for (final b in options) DropdownMenuItem(value: b, child: Text(b)),
         DropdownMenuItem(
           value: _kOtherOption,
           child: Row(

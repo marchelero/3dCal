@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 
 /// Resultado del calculo de cotizacion. Inmutable.
@@ -32,6 +33,30 @@ class CalculationOutput {
     required this.discountAmount,
     required this.totalPrice,
   });
+
+  /// Crea un output simplificado cuando no hay parametros de settings
+  /// (todos los extras en 0). Equivalente a la formula MVP.
+  factory CalculationOutput.simple({
+    required Decimal materialCost,
+    required Decimal discountAmount,
+    required Decimal totalPrice,
+  }) {
+    return CalculationOutput(
+      materialCost: materialCost,
+      electricCost: Decimal.zero,
+      laborCost: Decimal.zero,
+      postProcessCost: Decimal.zero,
+      baseCost: materialCost,
+      failureCost: Decimal.zero,
+      costWithFailure: materialCost,
+      markupCost: Decimal.zero,
+      totalBeforeProfit: materialCost,
+      profitAmount: Decimal.zero,
+      totalFinal: materialCost,
+      discountAmount: discountAmount,
+      totalPrice: totalPrice,
+    );
+  }
 
   /// Suma de costos de materiales (BOB).
   final Decimal materialCost;
@@ -72,30 +97,6 @@ class CalculationOutput {
   /// Precio total final (BOB) = totalFinal - discountAmount.
   final Decimal totalPrice;
 
-  /// Crea un output simplificado cuando no hay parametros de settings
-  /// (todos los extras en 0). Equivalente a la formula MVP.
-  factory CalculationOutput.simple({
-    required Decimal materialCost,
-    required Decimal discountAmount,
-    required Decimal totalPrice,
-  }) {
-    return CalculationOutput(
-      materialCost: materialCost,
-      electricCost: Decimal.zero,
-      laborCost: Decimal.zero,
-      postProcessCost: Decimal.zero,
-      baseCost: materialCost,
-      failureCost: Decimal.zero,
-      costWithFailure: materialCost,
-      markupCost: Decimal.zero,
-      totalBeforeProfit: materialCost,
-      profitAmount: Decimal.zero,
-      totalFinal: materialCost,
-      discountAmount: discountAmount,
-      totalPrice: totalPrice,
-    );
-  }
-
   @override
   bool operator ==(Object other) =>
       other is CalculationOutput &&
@@ -115,20 +116,20 @@ class CalculationOutput {
 
   @override
   int get hashCode => Object.hash(
-        materialCost,
-        electricCost,
-        laborCost,
-        postProcessCost,
-        baseCost,
-        failureCost,
-        costWithFailure,
-        markupCost,
-        totalBeforeProfit,
-        profitAmount,
-        totalFinal,
-        discountAmount,
-        totalPrice,
-      );
+    materialCost,
+    electricCost,
+    laborCost,
+    postProcessCost,
+    baseCost,
+    failureCost,
+    costWithFailure,
+    markupCost,
+    totalBeforeProfit,
+    profitAmount,
+    totalFinal,
+    discountAmount,
+    totalPrice,
+  );
 
   @override
   String toString() =>

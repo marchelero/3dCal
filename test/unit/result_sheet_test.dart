@@ -50,7 +50,9 @@ class _FixedStateNotifier extends CalculatorNotifier {
 }
 
 /// Helpers de rendering para que cada test sea declarativo.
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => ProviderScope(
+  child: MaterialApp(home: Scaffold(body: child)),
+);
 
 CalculatorState _validState() {
   final out = CalculationOutput.simple(
@@ -267,7 +269,7 @@ void main() {
         matching: find.byType(IconButton),
       );
       expect(finder, findsOneWidget);
-      final IconButton btn = tester.widget(finder);
+      final btn = tester.widget<IconButton>(finder);
       expect(btn.onPressed, isNotNull);
     });
   });
@@ -332,24 +334,23 @@ void main() {
       },
     );
 
-    testWidgets(
-      'SC1: Cámara oculta cuando supportsImageSource(camera)=false',
-      (tester) async {
-        ImagePickerPlatform.instance = _FakePickerPlatform(
-          fileFromBytes(tinyPng()),
-          cameraSupported: false,
-        );
-        await pumpSheet(tester);
+    testWidgets('SC1: Cámara oculta cuando supportsImageSource(camera)=false', (
+      tester,
+    ) async {
+      ImagePickerPlatform.instance = _FakePickerPlatform(
+        fileFromBytes(tinyPng()),
+        cameraSupported: false,
+      );
+      await pumpSheet(tester);
 
-        await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(EsBO.quoteImageAdd));
-        await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.quoteImageAdd));
+      await tester.pumpAndSettle();
 
-        expect(find.text(EsBO.quoteImageGallery), findsOneWidget);
-        expect(find.text(EsBO.quoteImageCamera), findsNothing);
-      },
-    );
+      expect(find.text(EsBO.quoteImageGallery), findsOneWidget);
+      expect(find.text(EsBO.quoteImageCamera), findsNothing);
+    });
 
     testWidgets('SC2: adjuntar desde Galería muestra preview en el template', (
       tester,
@@ -387,22 +388,21 @@ void main() {
       expect(find.text(EsBO.quoteImageAdd), findsOneWidget);
     });
 
-    testWidgets(
-      'SC6: imagen no decodificable → snackbar error y sin preview',
-      (tester) async {
-        // Garbage (< 5 MB): el decoder real de instantiateImageCodec falla.
-        final garbage = Uint8List.fromList(List.filled(64, 0x42));
-        ImagePickerPlatform.instance = _FakePickerPlatform(
-          fileFromBytes(garbage),
-        );
-        await pumpSheet(tester);
+    testWidgets('SC6: imagen no decodificable → snackbar error y sin preview', (
+      tester,
+    ) async {
+      // Garbage (< 5 MB): el decoder real de instantiateImageCodec falla.
+      final garbage = Uint8List.fromList(List.filled(64, 0x42));
+      ImagePickerPlatform.instance = _FakePickerPlatform(
+        fileFromBytes(garbage),
+      );
+      await pumpSheet(tester);
 
-        await attachFromGallery(tester);
+      await attachFromGallery(tester);
 
-        expect(find.byKey(heroKey), findsNothing);
-        expect(find.text(EsBO.quoteImageInvalidFormat), findsOneWidget);
-      },
-    );
+      expect(find.byKey(heroKey), findsNothing);
+      expect(find.text(EsBO.quoteImageInvalidFormat), findsOneWidget);
+    });
 
     testWidgets('SC4: PNG capturado con foto difiere del sin foto', (
       tester,

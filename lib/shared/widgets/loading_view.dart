@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Spinner centrado con texto opcional debajo.
 ///
 /// Usar en `AsyncValue.when(loading: ...)`.
@@ -37,9 +38,9 @@ class LoadingView extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Text(
               message!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: color.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: color.onSurfaceVariant),
             ),
           ],
         ],

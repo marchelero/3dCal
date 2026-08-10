@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Indicador visual de "es default" — estrella dorada.
 ///
 /// Usado en filamentos, impresoras y como leading icon en tiles del
@@ -12,11 +13,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
 class DefaultBadge extends StatelessWidget {
-  const DefaultBadge({
-    super.key,
-    this.isDefault = true,
-    this.size = 24,
-  });
+  const DefaultBadge({super.key, this.isDefault = true, this.size = 24});
 
   final bool isDefault;
   final double size;
@@ -24,10 +21,6 @@ class DefaultBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isDefault) return const SizedBox.shrink();
-    return Icon(
-      Icons.star_rounded,
-      color: AppTheme.defaultStar,
-      size: size,
-    );
+    return Icon(Icons.star_rounded, color: AppTheme.defaultStar, size: size);
   }
 }

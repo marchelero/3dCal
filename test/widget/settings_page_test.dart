@@ -450,15 +450,15 @@ void main() {
 
   group('T11 — Restore button', () {
     // Mocks minimos para que el notifier real funcione.
-    late _FakePaymentService _payment;
-    late _FakeRepo _repo;
+    late _FakePaymentService payment;
+    late _FakeRepo repo;
 
     setUp(() {
-      _payment = _FakePaymentService();
-      _repo = _FakeRepo();
+      payment = _FakePaymentService();
+      repo = _FakeRepo();
     });
 
-    Future<ProviderContainer> _pumpForRestore(WidgetTester tester) async {
+    Future<ProviderContainer> pumpForRestore(WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -468,8 +468,8 @@ void main() {
       final container = ProviderContainer(overrides: [
         appDatabaseProvider.overrideWithValue(db),
         sharedPreferencesProvider.overrideWithValue(prefs),
-        entitlementRepositoryProvider.overrideWithValue(_repo),
-        paymentServiceProvider.overrideWithValue(_payment),
+        entitlementRepositoryProvider.overrideWithValue(repo),
+        paymentServiceProvider.overrideWithValue(payment),
       ]);
       addTearDown(container.dispose);
 
@@ -488,7 +488,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      await _pumpForRestore(tester);
+      await pumpForRestore(tester);
 
       expect(
         find.byType(FilledButton),
@@ -504,12 +504,12 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
-        await _pumpForRestore(tester);
+        await pumpForRestore(tester);
 
         await tester.tap(find.byType(FilledButton));
         await tester.pumpAndSettle();
 
-        expect(_payment.restoreCalls, 1,
+        expect(payment.restoreCalls, 1,
             reason:
                 'Tap en boton Restaurar debe llamar PaymentService.restore().');
       },

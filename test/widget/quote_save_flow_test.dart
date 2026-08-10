@@ -118,16 +118,18 @@ void main() {
       final state = _validState();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ResultSheetContent(
-              state: state,
-              isPro: false,
-              onSave: () {},
-              onReset: () {},
-              onToggleDetail: () {},
-              onDiscountChanged: (_) {},
-              currency: WorldCurrency.usd,
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: ResultSheetContent(
+                state: state,
+                isPro: false,
+                onSave: () {},
+                onReset: () {},
+                onToggleDetail: () {},
+                onDiscountChanged: (_) {},
+                currency: WorldCurrency.usd,
+              ),
             ),
           ),
         ),

@@ -1,5 +1,6 @@
 /// Locale activo + provider.
 library;
+// ignore_for_file: public_member_api_docs
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,8 +18,9 @@ enum AppLocale { es, en }
 
 // ─── Provider (persistido) ───────────────────────
 
-final localeProvider =
-    NotifierProvider<LocaleNotifier, AppLocale>(LocaleNotifier.new);
+final localeProvider = NotifierProvider<LocaleNotifier, AppLocale>(
+  LocaleNotifier.new,
+);
 
 class LocaleNotifier extends Notifier<AppLocale> {
   static const _key = 'locale';

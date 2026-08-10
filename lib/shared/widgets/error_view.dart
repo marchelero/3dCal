@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Vista de error con icono + mensaje + boton "Reintentar" opcional.
 ///
 /// Usar en `AsyncValue.when(error: ...)` para que todas las paginas
@@ -54,18 +55,18 @@ class ErrorView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: color.onSurface,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: color.onSurface),
             ),
             if (details != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
                 details!,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: color.onSurfaceVariant,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: color.onSurfaceVariant),
               ),
             ],
             if (onRetry != null) ...[
@@ -82,10 +83,6 @@ class ErrorView extends StatelessWidget {
     );
 
     if (semanticLabel == null) return view;
-    return Semantics(
-      container: true,
-      label: semanticLabel,
-      child: view,
-    );
+    return Semantics(container: true, label: semanticLabel, child: view);
   }
 }

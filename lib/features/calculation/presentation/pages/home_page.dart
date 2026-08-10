@@ -16,9 +16,9 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
-import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../domain/dashboard_stats.dart';
@@ -44,9 +44,12 @@ class HomePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHeader(theme, color,
-                    companyName: settings?.companyName,
-                    companyLogoBase64: settings?.companyLogoBase64),
+                _buildHeader(
+                  theme,
+                  color,
+                  companyName: settings?.companyName,
+                  companyLogoBase64: settings?.companyLogoBase64,
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.lg,
@@ -58,7 +61,12 @@ class HomePage extends ConsumerWidget {
                       _buildQuickActions(context, color),
                       const SizedBox(height: AppSpacing.xxl),
                       _buildStatsSection(
-                          context, ref, asyncStats, theme, color),
+                        context,
+                        ref,
+                        asyncStats,
+                        theme,
+                        color,
+                      ),
                       const SizedBox(height: AppSpacing.xxl),
                     ],
                   ),
@@ -71,11 +79,14 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(ThemeData theme, ColorScheme color, {
+  Widget _buildHeader(
+    ThemeData theme,
+    ColorScheme color, {
     String? companyName,
     String? companyLogoBase64,
   }) {
-    final hasCompanyConfig = companyName != null &&
+    final hasCompanyConfig =
+        companyName != null &&
         companyName != kDefaultCompanyName &&
         companyName.isNotEmpty;
     final hasLogo = companyLogoBase64 != null && companyLogoBase64.isNotEmpty;
@@ -90,9 +101,10 @@ class HomePage extends ConsumerWidget {
       content = Row(
         children: [
           // Logo o icono default
-          hasLogo
-              ? _buildCompanyLogo(theme, companyLogoBase64)
-              : _defaultHeroIcon(color),
+          if (hasLogo)
+            _buildCompanyLogo(theme, companyLogoBase64)
+          else
+            _defaultHeroIcon(color),
           const SizedBox(width: AppSpacing.lg),
           // Texto
           Expanded(
@@ -152,10 +164,7 @@ class HomePage extends ConsumerWidget {
       content = Row(
         children: [
           // Sello de plano con logo
-          Semantics(
-            excludeSemantics: true,
-            child: _defaultHeroIcon(color),
-          ),
+          Semantics(excludeSemantics: true, child: _defaultHeroIcon(color)),
           const SizedBox(width: AppSpacing.lg),
           // Texto
           Expanded(
@@ -252,7 +261,7 @@ class HomePage extends ConsumerWidget {
         width: 56,
         height: 56,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => _defaultHeroIcon(theme.colorScheme),
+        errorBuilder: (_, _, _) => _defaultHeroIcon(theme.colorScheme),
       ),
     );
   }
@@ -301,9 +310,9 @@ class HomePage extends ConsumerWidget {
           label: EsBO.homeQuickAccess,
           child: Text(
             EsBO.homeQuickAccess,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: color.onSurface,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: color.onSurface),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -317,20 +326,25 @@ class HomePage extends ConsumerWidget {
               return Row(
                 children: [
                   for (final a in actions)
-                    Expanded(child: Padding(
-                      padding: EdgeInsets.only(
-                        left: actions.indexOf(a) > 0 ? AppSpacing.sm : 0,
-                        right: actions.indexOf(a) < actions.length - 1 ? AppSpacing.sm : 0,
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: actions.indexOf(a) > 0 ? AppSpacing.sm : 0,
+                          right: actions.indexOf(a) < actions.length - 1
+                              ? AppSpacing.sm
+                              : 0,
+                        ),
+                        child: _QuickActionCard(action: a),
                       ),
-                      child: _QuickActionCard(action: a),
-                    )),
+                    ),
                 ],
               );
             }
             return Column(
               children: [
                 for (final a in actions) ...[
-                  if (actions.indexOf(a) > 0) const SizedBox(height: AppSpacing.md),
+                  if (actions.indexOf(a) > 0)
+                    const SizedBox(height: AppSpacing.md),
                   _QuickActionCard(action: a),
                 ],
               ],
@@ -341,8 +355,13 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsSection(BuildContext context, WidgetRef ref,
-      AsyncValue<DashboardStats> asyncStats, ThemeData theme, ColorScheme color) {
+  Widget _buildStatsSection(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<DashboardStats> asyncStats,
+    ThemeData theme,
+    ColorScheme color,
+  ) {
     final currency = ref.watch(selectedCurrencyProvider);
     return asyncStats.when(
       loading: () => const HomePageSkeleton(),
@@ -374,7 +393,11 @@ class HomePage extends ConsumerWidget {
                 color: color.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(AppRadii.xxl),
               ),
-              child: Icon(Icons.receipt_long_outlined, color: color.onSurfaceVariant, size: 28),
+              child: Icon(
+                Icons.receipt_long_outlined,
+                color: color.onSurfaceVariant,
+                size: 28,
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -390,7 +413,12 @@ class HomePage extends ConsumerWidget {
   }
 
   Widget _buildStatsContent(
-      BuildContext context, DashboardStats stats, ThemeData theme, ColorScheme color, WorldCurrency currency) {
+    BuildContext context,
+    DashboardStats stats,
+    ThemeData theme,
+    ColorScheme color,
+    WorldCurrency currency,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -399,7 +427,9 @@ class HomePage extends ConsumerWidget {
           children: [
             Text(
               EsBO.homeSummary,
-              style: theme.textTheme.titleMedium?.copyWith(color: color.onSurface),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: color.onSurface,
+              ),
             ),
             TextButton.icon(
               icon: const Icon(Icons.open_in_new, size: 16),
@@ -503,52 +533,52 @@ class _QuickActionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.xxl),
           onTap: action.onTap,
           child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: action.bgColor,
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: action.bgColor,
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                  ),
+                  child: Icon(action.icon, color: action.color, size: 22),
                 ),
-                child: Icon(action.icon, color: action.color, size: 22),
-              ),
-              const SizedBox(width: AppSpacing.sm + 2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      action.label,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                const SizedBox(width: AppSpacing.sm + 2),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        action.label,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      action.subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        action.subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: theme.colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

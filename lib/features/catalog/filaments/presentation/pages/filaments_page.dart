@@ -168,10 +168,11 @@ class _FilamentTile extends ConsumerWidget {
           child: Row(
             children: [
               // Leading icon / badge
-              filament.isDefault
-                  ? const DefaultBadge()
-                  : Icon(Icons.label_outline,
-                      color: color.onSurfaceVariant, size: 24),
+              if (filament.isDefault)
+                const DefaultBadge()
+              else
+                Icon(Icons.label_outline,
+                    color: color.onSurfaceVariant, size: 24),
               const SizedBox(width: AppSpacing.md),
               // Name + details
               Expanded(

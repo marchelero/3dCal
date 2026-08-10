@@ -32,27 +32,27 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   static List<Color> get _pageColors => AppTheme.onboardingSlideColors;
 
   List<_OnboardingScreenData> get _screens => [
-        _OnboardingScreenData(
-          icon: Icons.calculate_rounded,
-          title: EsBO.onboardingTitle1,
-          description: EsBO.onboardingDesc1,
-        ),
-        _OnboardingScreenData(
-          icon: Icons.flash_on_rounded,
-          title: EsBO.onboardingTitle2,
-          description: EsBO.onboardingDesc2,
-        ),
-        _OnboardingScreenData(
-          icon: Icons.inventory_2_rounded,
-          title: EsBO.onboardingTitle3,
-          description: EsBO.onboardingDesc3,
-        ),
-        _OnboardingScreenData(
-          icon: Icons.bar_chart_rounded,
-          title: EsBO.onboardingTitle4,
-          description: EsBO.onboardingDesc4,
-        ),
-      ];
+    _OnboardingScreenData(
+      icon: Icons.calculate_rounded,
+      title: EsBO.onboardingTitle1,
+      description: EsBO.onboardingDesc1,
+    ),
+    _OnboardingScreenData(
+      icon: Icons.flash_on_rounded,
+      title: EsBO.onboardingTitle2,
+      description: EsBO.onboardingDesc2,
+    ),
+    _OnboardingScreenData(
+      icon: Icons.inventory_2_rounded,
+      title: EsBO.onboardingTitle3,
+      description: EsBO.onboardingDesc3,
+    ),
+    _OnboardingScreenData(
+      icon: Icons.bar_chart_rounded,
+      title: EsBO.onboardingTitle4,
+      description: EsBO.onboardingDesc4,
+    ),
+  ];
 
   @override
   void dispose() {
@@ -97,7 +97,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 alignment: Alignment.topRight,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    0,
+                  ),
                   child: TextButton(
                     onPressed: _markDone,
                     child: Text(
@@ -119,7 +123,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     final d = _screens[i];
                     return Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xxl),
+                        horizontal: AppSpacing.xxl,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -131,14 +136,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               height: 120,
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadii.xxxl),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.xxxl,
+                                ),
                               ),
                               child: Icon(
-                                  d.icon,
-                                  size: 56,
-                                  color: Colors.white,
-                                ),
+                                d.icon,
+                                size: 56,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.xxl),
@@ -180,7 +186,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     // Page indicator
                     Semantics(
                       label: EsBO.onboardingPageCounter(
-                          _currentPage + 1, _screens.length),
+                        _currentPage + 1,
+                        _screens.length,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
@@ -214,8 +222,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               ? _markDone
                               : () {
                                   _pageCtrl.nextPage(
-                                    duration:
-                                        const Duration(milliseconds: 300),
+                                    duration: const Duration(milliseconds: 300),
                                     curve: Curves.easeInOut,
                                   );
                                 },
@@ -227,9 +234,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                             ),
                           ),
                           child: Text(
-                            isLast
-                                ? EsBO.onboardingStart
-                                : EsBO.onboardingNext,
+                            isLast ? EsBO.onboardingStart : EsBO.onboardingNext,
                           ),
                         ),
                       ),

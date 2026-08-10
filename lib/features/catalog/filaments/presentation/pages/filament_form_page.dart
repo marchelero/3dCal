@@ -9,9 +9,10 @@ import '../../../../../core/money/currency_settings_provider.dart';
 import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
-import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../../shared/widgets/brand_selector_field.dart';
+import '../../../../../shared/widgets/k3d_brands.dart';
+import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/filaments_notifier.dart';
 
@@ -128,9 +129,9 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          AppSnackBar.error('${EsBO.filamentErrorSave}: $e'),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(AppSnackBar.error('${EsBO.filamentErrorSave}: $e'));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -154,62 +155,64 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               shrinkWrap: true,
               children: [
-              TextFormField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(
-                  labelText: EsBO.filamentName,
-                  helperText: EsBO.filamentNameHelper,
+                BrandSelectorField(
+                  domain: BrandDomain.filament,
+                  controller: _brandCtrl,
+                  label: EsBO.filamentBrand,
+                  helperText: EsBO.filamentBrandHelper,
+                  validator: _optionalText,
                 ),
-                textInputAction: TextInputAction.next,
-                validator: _requiredText,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              BrandSelectorField(
-                controller: _brandCtrl,
-                label: EsBO.filamentBrand,
-                helperText: EsBO.filamentBrandHelper,
-                validator: _optionalText,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              TextFormField(
-                controller: _priceCtrl,
-                decoration: InputDecoration(
-                  labelText: EsBO.filamentPrice(currency.symbol),
-                  helperText: EsBO.filamentPriceHelper,
+                const SizedBox(height: AppSpacing.lg),
+                TextFormField(
+                  controller: _nameCtrl,
+                  decoration: InputDecoration(
+                    labelText: EsBO.filamentName,
+                    helperText: EsBO.filamentNameHelper,
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: _requiredText,
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                textInputAction: TextInputAction.next,
-                validator: _requiredNumber,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              NumericInputField(
-                label: EsBO.filamentGrams,
-                controller: _gramsCtrl,
-                allowDecimals: false,
-                helperText: EsBO.filamentGramsHelper,
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SwitchListTile(
-                title: Text(EsBO.filamentDefaultToggle),
-                subtitle: Text(EsBO.filamentDefaultSubtitle),
-                value: _isDefault,
-                onChanged: _saving ? null : _setDefault,
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              FilledButton.icon(
-                icon: _saving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(EsBO.commonSave),
-                onPressed: _saving ? null : _save,
-              ),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                TextFormField(
+                  controller: _priceCtrl,
+                  decoration: InputDecoration(
+                    labelText: EsBO.filamentPrice(currency.symbol),
+                    helperText: EsBO.filamentPriceHelper,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: _requiredNumber,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                NumericInputField(
+                  label: EsBO.filamentGrams,
+                  controller: _gramsCtrl,
+                  allowDecimals: false,
+                  helperText: EsBO.filamentGramsHelper,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SwitchListTile(
+                  title: Text(EsBO.filamentDefaultToggle),
+                  subtitle: Text(EsBO.filamentDefaultSubtitle),
+                  value: _isDefault,
+                  onChanged: _saving ? null : _setDefault,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                FilledButton.icon(
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(EsBO.commonSave),
+                  onPressed: _saving ? null : _save,
+                ),
+              ],
             ),
           ),
         ),

@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
@@ -43,43 +44,46 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-        },
-        onUpgrade: (m, from, to) async {
-          if (from == 1) {
-            // v1→v2: agregar columna brand a printers
-            await m.addColumn(printers, printers.brand);
-          }
-          if (from <= 2) {
-            // v2→v3: agregar columnas F1 (mano de obra + post-procesado)
-            await m.addColumn(calculations, calculations.laborCostSnapshot);
-            await m.addColumn(calculations, calculations.postProcessCostSnapshot);
-            await m.addColumn(calculations, calculations.failureCostSnapshot);
-            await m.addColumn(calculations, calculations.markupCostSnapshot);
-            await m.addColumn(calculations, calculations.minimumChargeAppliedSnapshot);
-            await m.addColumn(calculations, calculations.effectiveTotalSnapshot);
-            await m.addColumn(calculations, calculations.laborRateSnapshot);
-            await m.addColumn(calculations, calculations.postProcessRateSnapshot);
-            await m.addColumn(calculations, calculations.failureRateSnapshot);
-            await m.addColumn(calculations, calculations.minimumChargeSnapshot);
-            await m.addColumn(calculations, calculations.markupOnMaterialsSnapshot);
-          }
-          if (from <= 3) {
-            // v3→v4: persistir minutos del tiempo de impresion por separado.
-            // Antes solo se guardaba `totalHours` como decimal, perdiendo el
-            // split h+m. Para registros viejos, minutos=0 (default) y el
-            // notifier los deriva del decimal al recargar (best-effort).
-            await m.addColumn(calculations, calculations.printMinutes);
-          }
-          if (from <= 4) {
-            // v4→v5: agregar tabla entitlements (T1 del plan de monetizacion).
-            // Una sola fila activa a la vez (enforcement en
-            // EntitlementRepository, no DB constraint).
-            await m.createTable(entitlements);
-          }
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from == 1) {
+        // v1→v2: agregar columna brand a printers
+        await m.addColumn(printers, printers.brand);
+      }
+      if (from <= 2) {
+        // v2→v3: agregar columnas F1 (mano de obra + post-procesado)
+        await m.addColumn(calculations, calculations.laborCostSnapshot);
+        await m.addColumn(calculations, calculations.postProcessCostSnapshot);
+        await m.addColumn(calculations, calculations.failureCostSnapshot);
+        await m.addColumn(calculations, calculations.markupCostSnapshot);
+        await m.addColumn(
+          calculations,
+          calculations.minimumChargeAppliedSnapshot,
+        );
+        await m.addColumn(calculations, calculations.effectiveTotalSnapshot);
+        await m.addColumn(calculations, calculations.laborRateSnapshot);
+        await m.addColumn(calculations, calculations.postProcessRateSnapshot);
+        await m.addColumn(calculations, calculations.failureRateSnapshot);
+        await m.addColumn(calculations, calculations.minimumChargeSnapshot);
+        await m.addColumn(calculations, calculations.markupOnMaterialsSnapshot);
+      }
+      if (from <= 3) {
+        // v3→v4: persistir minutos del tiempo de impresion por separado.
+        // Antes solo se guardaba `totalHours` como decimal, perdiendo el
+        // split h+m. Para registros viejos, minutos=0 (default) y el
+        // notifier los deriva del decimal al recargar (best-effort).
+        await m.addColumn(calculations, calculations.printMinutes);
+      }
+      if (from <= 4) {
+        // v4→v5: agregar tabla entitlements (T1 del plan de monetizacion).
+        // Una sola fila activa a la vez (enforcement en
+        // EntitlementRepository, no DB constraint).
+        await m.createTable(entitlements);
+      }
+    },
+  );
 }
 
 /// Abre la conexion a la base de datos. Cross-platform via [driftDatabase].
@@ -98,6 +102,3 @@ QueryExecutor _openConnection() {
     ),
   );
 }
-
-
-

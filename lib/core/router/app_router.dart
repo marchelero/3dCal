@@ -16,9 +16,9 @@ import '../../features/onboarding/presentation/pages/initial_config_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
+import '../../l10n/es_bo.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../database/app_database.dart';
-import '../../l10n/es_bo.dart';
 import '../theme/app_spacing.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -26,19 +26,20 @@ import '../theme/app_spacing.dart';
 // ─────────────────────────────────────────────────────────────
 
 Page<void> _slideRight(Widget child) => CustomTransitionPage<void>(
-      key: ValueKey(child.hashCode),
-      child: child,
-      transitionDuration: const Duration(milliseconds: 300),
-      reverseTransitionDuration: const Duration(milliseconds: 250),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.35, 0);
-        const end = Offset.zero;
-        final tween = Tween<Offset>(begin: begin, end: end).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-        );
-        return SlideTransition(position: tween, child: child);
-      },
-    );
+  key: ValueKey(child.hashCode),
+  child: child,
+  transitionDuration: const Duration(milliseconds: 300),
+  reverseTransitionDuration: const Duration(milliseconds: 250),
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    const begin = Offset(0.35, 0);
+    const end = Offset.zero;
+    final tween = Tween<Offset>(
+      begin: begin,
+      end: end,
+    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+    return SlideTransition(position: tween, child: child);
+  },
+);
 
 /// Router principal de la app (PRD §8.3, Sprint 7 — go_router migration).
 ///
@@ -59,10 +60,7 @@ final appRouter = GoRouter(
   errorBuilder: (context, state) => const _RouterErrorPage(),
   routes: [
     // === Splash screen (full-screen, sin shell) ===
-    GoRoute(
-      path: '/splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     GoRoute(
       path: '/initial-config',
       builder: (context, state) => const InitialConfigPage(),
@@ -80,10 +78,7 @@ final appRouter = GoRouter(
       branches: [
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/',
-              builder: (context, state) => const HomePage(),
-            ),
+            GoRoute(path: '/', builder: (context, state) => const HomePage()),
           ],
         ),
         StatefulShellBranch(
@@ -144,7 +139,8 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: 'new',
-          pageBuilder: (context, state) => _slideRight(const FilamentFormPage()),
+          pageBuilder: (context, state) =>
+              _slideRight(const FilamentFormPage()),
         ),
         GoRoute(
           path: ':id',

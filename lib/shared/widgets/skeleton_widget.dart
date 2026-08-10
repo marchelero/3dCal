@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Skeleton loaders para estados de carga.
 ///
 /// Muestra placeholders animados (shimmer) que mejoran la percepcion
@@ -125,10 +126,16 @@ class HomePageSkeleton extends StatelessWidget {
           const SkeletonCard(),
           const SizedBox(height: AppSpacing.lg),
           const SkeletonBox(
-              width: double.infinity, height: 52, borderRadius: AppRadii.xl),
+            width: double.infinity,
+            height: 52,
+            borderRadius: AppRadii.xl,
+          ),
           const SizedBox(height: AppSpacing.md),
           const SkeletonBox(
-              width: double.infinity, height: 52, borderRadius: AppRadii.xl),
+            width: double.infinity,
+            height: 52,
+            borderRadius: AppRadii.xl,
+          ),
         ],
       ),
     );
@@ -162,7 +169,10 @@ class ListPageSkeleton extends StatelessWidget {
         child: Row(
           children: [
             const SkeletonBox(
-                width: 40, height: 40, borderRadius: AppRadii.xxxl),
+              width: 40,
+              height: 40,
+              borderRadius: AppRadii.xxxl,
+            ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(
@@ -174,8 +184,7 @@ class ListPageSkeleton extends StatelessWidget {
                 ],
               ),
             ),
-            const SkeletonBox(
-                width: 24, height: 24, borderRadius: AppRadii.xs),
+            const SkeletonBox(width: 24, height: 24, borderRadius: AppRadii.xs),
           ],
         ),
       ),

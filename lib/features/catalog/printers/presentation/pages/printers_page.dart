@@ -168,10 +168,11 @@ class _PrinterTile extends ConsumerWidget {
           child: Row(
             children: [
               // Leading icon / badge
-              printer.isDefault
-                  ? const DefaultBadge()
-                  : Icon(Icons.print,
-                      color: color.onSurfaceVariant, size: 24),
+              if (printer.isDefault)
+                const DefaultBadge()
+              else
+                Icon(Icons.print,
+                    color: color.onSurfaceVariant, size: 24),
               const SizedBox(width: AppSpacing.md),
               // Name + details
               Expanded(

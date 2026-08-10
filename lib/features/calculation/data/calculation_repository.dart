@@ -59,12 +59,12 @@ class CalculationRepository {
               clientName: Value(draft.clientName),
               printerId: const Value(null),
               printerNameSnapshot: const Value(null),
-              printerWattsSnapshot: Value(0.0),
+              printerWattsSnapshot: Value(0),
               totalHours: draft.totalHours.toDouble(),
               printMinutes: Value(draft.printMinutes),
               discountPercentage: draft.discountPercentage.toDouble(),
-              kwhRateSnapshot: 0.0,
-              profitBaseSnapshot: 0.0,
+              kwhRateSnapshot: 0,
+              profitBaseSnapshot: 0,
               materialCostSnapshot: o.materialCost.toDouble(),
               electricCostSnapshot: o.electricCost.toDouble(),
               laborCostSnapshot: o.laborCost.toDouble(),
@@ -73,14 +73,14 @@ class CalculationRepository {
               failureCostSnapshot: o.failureCost.toDouble(),
               markupCostSnapshot: o.markupCost.toDouble(),
               profitAmountSnapshot: o.profitAmount.toDouble(),
-              minimumChargeAppliedSnapshot: 0.0,
+              minimumChargeAppliedSnapshot: 0,
               effectiveTotalSnapshot: o.totalFinal.toDouble(),
               totalPriceSnapshot: o.totalPrice.toDouble(),
-              laborRateSnapshot: 0.0,
-              postProcessRateSnapshot: 0.0,
-              failureRateSnapshot: 0.0,
-              minimumChargeSnapshot: 0.0,
-              markupOnMaterialsSnapshot: 0.0,
+              laborRateSnapshot: 0,
+              postProcessRateSnapshot: 0,
+              failureRateSnapshot: 0,
+              minimumChargeSnapshot: 0,
+              markupOnMaterialsSnapshot: 0,
             ),
           );
       for (final m in draft.materials) {
@@ -164,7 +164,7 @@ class CalculationRepository {
     final result = await _db.customSelect(
       'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations',
     ).getSingle();
-    return Decimal.parse(result.read<double>('total')!.toStringAsFixed(2));
+    return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
   /// Total ganado (suma de totalPriceSnapshot donde isSold=true).
@@ -172,7 +172,7 @@ class CalculationRepository {
     final result = await _db.customSelect(
       'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_sold = 1',
     ).getSingle();
-    return Decimal.parse(result.read<double>('total')!.toStringAsFixed(2));
+    return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
   /// Cantidad de cotizaciones vendidas.
@@ -209,9 +209,9 @@ class CalculationRepository {
     ).get();
     return rows.map((r) {
       return MonthlyTotal(
-        yearMonth: r.read<String>('month') ?? '',
-        quoted: r.read<double>('quoted') ?? 0.0,
-        sold: r.read<double>('sold') ?? 0.0,
+        yearMonth: r.read<String>('month'),
+        quoted: r.read<double>('quoted'),
+        sold: r.read<double>('sold'),
       );
     }).toList();
   }
@@ -231,9 +231,9 @@ class CalculationRepository {
     ).get();
     return rows.map((r) {
       return TopMaterial(
-        label: r.read<String>('label') ?? '',
-        count: (r.read<double>('cnt') ?? 0).round(),
-        totalWeightGrams: r.read<double>('total_g') ?? 0.0,
+        label: r.read<String>('label'),
+        count: r.read<double>('cnt').round(),
+        totalWeightGrams: r.read<double>('total_g'),
       );
     }).toList();
   }

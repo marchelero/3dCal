@@ -1,5 +1,6 @@
 /// Strings en ingles (en_US).
 library;
+// ignore_for_file: public_member_api_docs
 
 import 'app_strings.dart';
 
@@ -528,6 +529,74 @@ class EnImpl implements AppStrings {
   String get configCurrency => 'Currency';
   @override
   String get configContinue => 'Continue';
+
+  @override
+  String get configStep1Title => 'Language & currency';
+  @override
+  String get configStep2Title => 'Printer & filament';
+  @override
+  String get configStep3Title => 'Profit & energy';
+  @override
+  String get configBack => 'Back';
+  @override
+  String get configFinish => 'Finish';
+  @override
+  String get configStepSubtitle1 => "Let's start with the basics.";
+  @override
+  String get configStepSubtitle2 =>
+      "Let's start with what you use to print. The printer is required for "
+      'energy cost.';
+  @override
+  String get configStepSubtitle3 =>
+      'These values apply to every quote. You can change them later.';
+  @override
+  String configStepCounter(int step, int total) => 'Step $step of $total';
+  @override
+  String get configLanguageHelper =>
+      'Choose the app language. You can change it later.';
+  @override
+  String get configCurrencyHelper =>
+      'Currency used for prices and quotes. Does not convert values.';
+  @override
+  String get configPrinterSectionHelper =>
+      'We need it to calculate the energy cost of each print.';
+  @override
+  String get configFilamentSectionHelper =>
+      'If you have the spool handy, add it now. Otherwise, add it later from '
+      'Settings → Catalogs.';
+  @override
+  String get configProfitHelper =>
+      'Margin over base cost. 200% doubles the cost. Typical: 100%–300%.';
+  @override
+  String get configKwhHelper =>
+      'Your electricity bill rate. Typical: 0.5–1.5 BOB/kWh.';
+  @override
+  String get settingsDefaultTypical => 'Typical';
+  @override
+  String get configFilamentSkipStatus => 'No filament — add later';
+  @override
+  String get configFilamentAddAction => 'Add filament';
+  @override
+  String get configStartButton => 'Start quoting';
+  @override
+  String get configSummaryTitle => 'Summary';
+  @override
+  String get configSummaryImprint => 'Your next quote:';
+  @override
+  String get configPrinterRequired => 'Printer (required)';
+  @override
+  String get configFilamentOptional => 'Filament (optional)';
+  @override
+  String get configAddFilament => 'Add filament';
+  @override
+  String get configFilamentLater => "I'll add it later";
+  @override
+  String get configFilamentSkipHint =>
+      'You can add filaments anytime from Settings → Catalogs.';
+  @override
+  String get configPrinterSaved => 'Printer registered';
+  @override
+  String get configFilamentSaved => 'Filament added';
 
   // === Feature gates (T14) ===
   @override

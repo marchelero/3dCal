@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Design tokens para border-radius consistente.
 ///
 /// **Escala** (alineada con Material 3 shape system):

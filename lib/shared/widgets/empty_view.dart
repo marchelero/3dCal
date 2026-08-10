@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Vista de estado vacio con icono + mensaje + CTA opcional.
 ///
 /// Usar cuando una lista no tiene datos o una accion inicial no se hizo.
@@ -55,18 +56,18 @@ class EmptyView extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: color.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: color.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             if (subtitle != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: color.onSurfaceVariant,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: color.onSurfaceVariant),
               ),
             ],
             if (ctaLabel != null && onCta != null) ...[
@@ -83,10 +84,6 @@ class EmptyView extends StatelessWidget {
     );
 
     if (semanticLabel == null) return view;
-    return Semantics(
-      container: true,
-      label: semanticLabel,
-      child: view,
-    );
+    return Semantics(container: true, label: semanticLabel, child: view);
   }
 }

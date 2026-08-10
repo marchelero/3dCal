@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Strings en espanol (es_BO).
 ///
 /// [EsBO] es la API publica — todas las call sites existentes siguen usando
@@ -331,6 +332,39 @@ class EsBO {
   static String get configLanguage => _impl.configLanguage;
   static String get configCurrency => _impl.configCurrency;
   static String get configContinue => _impl.configContinue;
+
+  // === Initial config stepper ===
+  static String get configStep1Title => _impl.configStep1Title;
+  static String get configStep2Title => _impl.configStep2Title;
+  static String get configStep3Title => _impl.configStep3Title;
+  static String get configBack => _impl.configBack;
+  static String get configFinish => _impl.configFinish;
+  static String get configStepSubtitle1 => _impl.configStepSubtitle1;
+  static String get configStepSubtitle2 => _impl.configStepSubtitle2;
+  static String get configStepSubtitle3 => _impl.configStepSubtitle3;
+  static String configStepCounter(int step, int total) =>
+      _impl.configStepCounter(step, total);
+  static String get configLanguageHelper => _impl.configLanguageHelper;
+  static String get configCurrencyHelper => _impl.configCurrencyHelper;
+  static String get configPrinterSectionHelper =>
+      _impl.configPrinterSectionHelper;
+  static String get configFilamentSectionHelper =>
+      _impl.configFilamentSectionHelper;
+  static String get configProfitHelper => _impl.configProfitHelper;
+  static String get configKwhHelper => _impl.configKwhHelper;
+  static String get settingsDefaultTypical => _impl.settingsDefaultTypical;
+  static String get configFilamentSkipStatus => _impl.configFilamentSkipStatus;
+  static String get configFilamentAddAction => _impl.configFilamentAddAction;
+  static String get configStartButton => _impl.configStartButton;
+  static String get configSummaryTitle => _impl.configSummaryTitle;
+  static String get configSummaryImprint => _impl.configSummaryImprint;
+  static String get configPrinterRequired => _impl.configPrinterRequired;
+  static String get configFilamentOptional => _impl.configFilamentOptional;
+  static String get configAddFilament => _impl.configAddFilament;
+  static String get configFilamentLater => _impl.configFilamentLater;
+  static String get configFilamentSkipHint => _impl.configFilamentSkipHint;
+  static String get configPrinterSaved => _impl.configPrinterSaved;
+  static String get configFilamentSaved => _impl.configFilamentSaved;
 
   // === Feature gates (T14) ===
   static String get calculatorAdvancedLockedBody =>
@@ -1006,6 +1040,74 @@ class EsImpl implements AppStrings {
   String get configCurrency => 'Moneda';
   @override
   String get configContinue => 'Continuar';
+
+  @override
+  String get configStep1Title => 'Idioma y moneda';
+  @override
+  String get configStep2Title => 'Impresora y filamento';
+  @override
+  String get configStep3Title => 'Ganancia y energía';
+  @override
+  String get configBack => 'Atrás';
+  @override
+  String get configFinish => 'Finalizar';
+  @override
+  String get configStepSubtitle1 => 'Empecemos por lo básico.';
+  @override
+  String get configStepSubtitle2 =>
+      'Empecemos por lo que usás para imprimir. La impresora es necesaria '
+      'para el costo de energía.';
+  @override
+  String get configStepSubtitle3 =>
+      'Estos valores se usan en cada cotización. Los podés cambiar después.';
+  @override
+  String configStepCounter(int step, int total) => 'Paso $step de $total';
+  @override
+  String get configLanguageHelper =>
+      'Elegí el idioma de la app. Podés cambiarlo después.';
+  @override
+  String get configCurrencyHelper =>
+      'Moneda en que se muestran precios y cotizaciones. No convierte valores.';
+  @override
+  String get configPrinterSectionHelper =>
+      'La necesitamos para calcular el costo de energía de cada impresión.';
+  @override
+  String get configFilamentSectionHelper =>
+      'Si tenés el rollo a mano, anotalo ahora. Si no, podés agregarlo desde '
+      'Ajustes → Catálogos.';
+  @override
+  String get configProfitHelper =>
+      'Margen sobre el costo base. 200% duplica el costo. Típico: 100%–300%.';
+  @override
+  String get configKwhHelper =>
+      'Tarifa de tu factura eléctrica. Típico: 0.5–1.5 BOB/kWh.';
+  @override
+  String get settingsDefaultTypical => 'Típico';
+  @override
+  String get configFilamentSkipStatus => 'Sin filamento — agregar después';
+  @override
+  String get configFilamentAddAction => 'Agregar filamento';
+  @override
+  String get configStartButton => 'Empezar a cotizar';
+  @override
+  String get configSummaryTitle => 'Resumen';
+  @override
+  String get configSummaryImprint => 'Tu próxima cotización:';
+  @override
+  String get configPrinterRequired => 'Impresora (requerida)';
+  @override
+  String get configFilamentOptional => 'Filamento (opcional)';
+  @override
+  String get configAddFilament => 'Agregar filamento';
+  @override
+  String get configFilamentLater => 'Lo agrego después';
+  @override
+  String get configFilamentSkipHint =>
+      'Podés agregar filamentos cuando quieras desde Ajustes → Catálogos.';
+  @override
+  String get configPrinterSaved => 'Impresora registrada';
+  @override
+  String get configFilamentSaved => 'Filamento agregado';
 
   // === Feature gates (T14) ===
   @override

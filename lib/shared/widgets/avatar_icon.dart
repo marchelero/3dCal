@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Avatar cuadrado con icono centrado. Patron recurrente de "icono + label".
 ///
 /// Container 40x40 con fondo `primaryContainer` (default) y borde redondeado.

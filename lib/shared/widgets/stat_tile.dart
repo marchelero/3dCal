@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Tile de estadistica compacta: icono + valor grande + label.
 ///
 /// Usado en dashboard y home para KPIs (cotizado, vendido, conversion).
@@ -79,10 +80,6 @@ class StatTile extends StatelessWidget {
     );
 
     if (semanticLabel == null) return tile;
-    return Semantics(
-      container: true,
-      label: semanticLabel,
-      child: tile,
-    );
+    return Semantics(container: true, label: semanticLabel, child: tile);
   }
 }

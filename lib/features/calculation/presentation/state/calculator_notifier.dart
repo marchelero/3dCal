@@ -64,7 +64,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     // Recalcula cuando cambia la impresora activa (elegida en el selector,
     // creada desde el CTA, o restaurada desde prefs) para que el costo de
     // energia se actualice sin que el usuario tenga que tocar un campo.
-    ref.listen(activePrinterProvider, (_, __) {
+    ref.listen(activePrinterProvider, (_, _) {
       if (state.isValid) {
         state = _recompute(state);
       }
@@ -72,7 +72,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     // Idem para settings globales (kwhRate, profitBase, labor, etc.): si el
     // usuario cambia un parametro en Ajustes, el total se recalcula al vuelo
     // en vez de quedar con el valor anterior hasta tocar un campo.
-    ref.listen(settingsNotifierProvider, (_, __) {
+    ref.listen(settingsNotifierProvider, (_, _) {
       if (state.isValid) {
         state = _recompute(state);
       }

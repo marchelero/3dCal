@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Card de seccion: [Card] M3 + [SectionHeader] + contenido.
 ///
 /// Wrapper reutilizable para agrupar inputs/UI logic en bloques con titulo.
@@ -40,11 +41,7 @@ class SectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader(
-              icon: icon,
-              title: title,
-              accentColor: accentColor,
-            ),
+            SectionHeader(icon: icon, title: title, accentColor: accentColor),
             const SizedBox(height: AppSpacing.md),
             child,
           ],
@@ -53,10 +50,6 @@ class SectionCard extends StatelessWidget {
     );
 
     if (semanticLabel == null) return card;
-    return Semantics(
-      container: true,
-      label: semanticLabel,
-      child: card,
-    );
+    return Semantics(container: true, label: semanticLabel, child: card);
   }
 }

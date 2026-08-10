@@ -45,7 +45,7 @@ void main() {
   /// NavigationBar (bottom nav) en vez de NavigationRail. Default test
   /// window es 800x600 → cae en tablet layout. Height generoso (1500) para
   /// que la NavigationBar completa (height 65 + icon + label) entre sin clip.
-  void _useMobileViewport(WidgetTester tester) {
+  void useMobileViewport(WidgetTester tester) {
     tester.view.physicalSize = const Size(360, 1500);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -143,7 +143,7 @@ void main() {
   testWidgets('Tab switch: Inicio → Dashboard via NavigationBar (AC-8.1)', (
     tester,
   ) async {
-    _useMobileViewport(tester);
+    useMobileViewport(tester);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -169,7 +169,7 @@ void main() {
   testWidgets('Tab switch: Inicio → Historial via NavigationBar (AC-7.1)', (
     tester,
   ) async {
-    _useMobileViewport(tester);
+    useMobileViewport(tester);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -191,7 +191,7 @@ void main() {
   testWidgets('Dashboard vacio: muestra EmptyView con CTA (AC-8.4)', (
     tester,
   ) async {
-    _useMobileViewport(tester);
+    useMobileViewport(tester);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

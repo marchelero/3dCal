@@ -17,6 +17,7 @@
 /// );
 /// ```
 library;
+// ignore_for_file: public_member_api_docs
 
 import 'package:flutter/material.dart';
 
@@ -37,43 +38,30 @@ class AppSnackBar extends SnackBar {
     required super.duration,
     SnackBarAction? action,
   }) : super(
-          content: Row(
-            children: [
-              Icon(icon, color: foregroundColor, size: 24),
-              SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  message,
-                  style: TextStyle(color: foregroundColor),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: backgroundColor,
-          // El `behavior` lo define el theme (snackBarTheme: floating).
-          // No forzar aqui: en tests sin AppTheme quedaria floating y el
-          // action no recibe taps durante la animacion de entrada.
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.md),
-          ),
-          action: action == null
-              ? null
-              : SnackBarAction(
-                  label: action.label,
-                  onPressed: action.onPressed,
-                  textColor: foregroundColor,
-                ),
-        );
-
-  /// Arma la [SnackBarAction] opcional de los factories. Si falta el label
-  /// o el callback, no hay accion (null) y el SnackBar queda solo texto.
-  static SnackBarAction? _buildAction(
-    String? actionLabel,
-    VoidCallback? onAction,
-  ) {
-    if (actionLabel == null || onAction == null) return null;
-    return SnackBarAction(label: actionLabel, onPressed: onAction);
-  }
+         content: Row(
+           children: [
+             Icon(icon, color: foregroundColor, size: 24),
+             SizedBox(width: AppSpacing.md),
+             Expanded(
+               child: Text(message, style: TextStyle(color: foregroundColor)),
+             ),
+           ],
+         ),
+         backgroundColor: backgroundColor,
+         // El `behavior` lo define el theme (snackBarTheme: floating).
+         // No forzar aqui: en tests sin AppTheme quedaria floating y el
+         // action no recibe taps durante la animacion de entrada.
+         shape: RoundedRectangleBorder(
+           borderRadius: BorderRadius.circular(AppRadii.md),
+         ),
+         action: action == null
+             ? null
+             : SnackBarAction(
+                 label: action.label,
+                 onPressed: action.onPressed,
+                 textColor: foregroundColor,
+               ),
+       );
 
   /// Feedback positivo (accion exitosa). Verde + check, 2s.
   factory AppSnackBar.success(
@@ -142,5 +130,15 @@ class AppSnackBar extends SnackBar {
       duration: const Duration(seconds: 2),
       action: _buildAction(actionLabel, onAction),
     );
+  }
+
+  /// Arma la [SnackBarAction] opcional de los factories. Si falta el label
+  /// o el callback, no hay accion (null) y el SnackBar queda solo texto.
+  static SnackBarAction? _buildAction(
+    String? actionLabel,
+    VoidCallback? onAction,
+  ) {
+    if (actionLabel == null || onAction == null) return null;
+    return SnackBarAction(label: actionLabel, onPressed: onAction);
   }
 }

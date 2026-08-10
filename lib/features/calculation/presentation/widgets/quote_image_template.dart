@@ -136,7 +136,7 @@ class QuoteImageTemplate extends StatelessWidget {
                     // Target para tests (SC2/SC4/SC5).
                     key: const Key('quote-piece-image'),
                     fit: BoxFit.contain, // foto completa visible, sin crop
-                    errorBuilder: (_, __, ___) => ColoredBox(
+                    errorBuilder: (_, _, _) => ColoredBox(
                       color: Theme.of(
                         context,
                       ).colorScheme.surfaceContainerHighest,
@@ -205,8 +205,8 @@ class QuoteImageTemplate extends StatelessWidget {
               quantity > 1
                   ? '$quantity u. × ${formatCurrency(unitPrice, currency)}'
                   : (hasDiscount
-                      ? EsBO.calcTotalWithDiscount
-                      : EsBO.calcTotalFinal),
+                        ? EsBO.calcTotalWithDiscount
+                        : EsBO.calcTotalFinal),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: color.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
@@ -355,18 +355,19 @@ class QuoteImageTemplate extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Logo o icono default
-        hasLogo
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadii.sm),
-                child: Image.memory(
-                  _base64ToBytes(companyLogoBase64!),
-                  width: 36,
-                  height: 36,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => _defaultLogoIcon(color),
-                ),
-              )
-            : _defaultLogoIcon(color),
+        if (hasLogo)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+            child: Image.memory(
+              _base64ToBytes(companyLogoBase64!),
+              width: 36,
+              height: 36,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => _defaultLogoIcon(color),
+            ),
+          )
+        else
+          _defaultLogoIcon(color),
         const SizedBox(width: 12),
         Expanded(
           child: Column(

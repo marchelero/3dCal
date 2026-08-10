@@ -514,7 +514,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       padding: EdgeInsets.only(bottom: bottomInset),
       // Entrada de sello: UN momento autorado (stamp settle).
       child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 1.12, end: 1.0),
+        tween: Tween(begin: 1.12, end: 1),
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeOutBack,
         builder: (context, scale, child) =>

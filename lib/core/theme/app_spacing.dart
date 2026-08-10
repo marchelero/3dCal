@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Design tokens para spacing consistente en la app.
 ///
 /// **Por que existe**: docenas de `SizedBox(height: 16)` / `EdgeInsets.all(20)`

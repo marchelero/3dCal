@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Monedas del mundo para display de precios.
 ///
 /// La app guarda los valores numericamente sin conversion de moneda.
@@ -36,11 +37,7 @@ class WorldCurrency {
     name: 'Boliviano',
   );
 
-  static const eur = WorldCurrency(
-    code: 'EUR',
-    symbol: '€',
-    name: 'Euro',
-  );
+  static const eur = WorldCurrency(code: 'EUR', symbol: '€', name: 'Euro');
 
   static const gbp = WorldCurrency(
     code: 'GBP',

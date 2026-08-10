@@ -8,13 +8,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
-import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
-import 'package:tresdcal/features/catalog/filaments/presentation/pages/filament_form_page.dart';
+import 'package:tresdcal/features/catalog/printers/presentation/notifiers/printers_notifier.dart';
+import 'package:tresdcal/features/catalog/printers/presentation/pages/printer_form_page.dart';
 import 'package:tresdcal/shared/widgets/brand_selector_field.dart';
 
 Future<ProviderContainer> _pumpForm(
   WidgetTester tester, {
-  Filament? existing,
+  PrinterProfile? existing,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
@@ -32,7 +32,7 @@ Future<ProviderContainer> _pumpForm(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp(home: FilamentFormPage(existing: existing)),
+      child: MaterialApp(home: PrinterFormPage(existing: existing)),
     ),
   );
   await tester.pumpAndSettle();
@@ -40,27 +40,22 @@ Future<ProviderContainer> _pumpForm(
 }
 
 void main() {
-  group('FilamentFormPage (create)', () {
-    testWidgets('titulo "Nuevo filamento"', (tester) async {
+  group('PrinterFormPage (create)', () {
+    testWidgets('titulo "Nueva impresora"', (tester) async {
       await _pumpForm(tester);
-      expect(find.text('Nuevo filamento'), findsOneWidget);
+      expect(find.text('Nueva impresora'), findsOneWidget);
     });
 
-    testWidgets('muestra los 4 inputs numericos + switch default', (
+    testWidgets('muestra marca + modelo + watts + switch default', (
       tester,
     ) async {
       await _pumpForm(tester);
-      // Labels actuales segun EsBO.filament* en l10n/es_bo.dart.
-      expect(find.widgetWithText(TextField, 'Nombre'), findsOneWidget);
       // Marca es un BrandSelectorField (dropdown + Otro...) desde la feature
       // de selector de marcas — no un TextField plano.
       expect(find.byType(BrandSelectorField), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Modelo'), findsOneWidget);
       expect(
-        find.widgetWithText(TextField, 'Precio filamento (\$)'),
-        findsOneWidget,
-      );
-      expect(
-        find.widgetWithText(TextField, 'Gramos por rollo'),
+        find.widgetWithText(TextField, 'Consumo promedio (W)'),
         findsOneWidget,
       );
       expect(find.byType(Switch), findsOneWidget);
@@ -74,81 +69,69 @@ void main() {
     });
 
     testWidgets(
-      'marca (BrandSelectorField) aparece ANTES que el campo nombre',
+      'marca (BrandSelectorField) aparece ANTES que el campo modelo',
       (tester) async {
         await _pumpForm(tester);
 
-        // Orden: Marca primero, luego Nombre (decision del usuario:
+        // Orden: Marca primero, luego Modelo (decision del usuario:
         // "primero la marca y luego recien ingresar el modelo").
         final brandField = tester.getTopLeft(find.byType(BrandSelectorField));
-        final nameField = tester.getTopLeft(
-          find.widgetWithText(TextField, 'Nombre'),
+        final modelField = tester.getTopLeft(
+          find.widgetWithText(TextField, 'Modelo'),
         );
         expect(
-          brandField.dy <= nameField.dy,
+          brandField.dy <= modelField.dy,
           isTrue,
-          reason: 'BrandSelectorField debe estar ARRIBA del campo Nombre',
+          reason: 'BrandSelectorField debe estar ARRIBA del campo Modelo',
         );
       },
     );
 
-    testWidgets('guardar valido crea y cierra (Navigator.pop)', (tester) async {
+    testWidgets('guardar valido crea y persiste', (tester) async {
       final container = await _pumpForm(tester);
-      // Necesitamos un Navigator que soporte pop. Envolvemos en otro
-      // MaterialApp con un parent route que cuente pops.
-      // Re-pump con wrapper:
-      // (mejor: usar NavigatorObserver)
       await tester.enterText(
-        find.widgetWithText(TextField, 'Nombre'),
-        'PLA Test',
+        find.widgetWithText(TextField, 'Modelo'),
+        'Ender 3 V2',
       );
       await tester.enterText(
-        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+        find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '120',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Gramos por rollo'),
-        '1000',
       );
       await tester.pump();
 
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
 
-      // Verifico via el notifier
-      final list = await container.read(filamentsNotifierProvider.future);
+      final list = await container.read(printersNotifierProvider.future);
       expect(list, hasLength(1));
-      expect(list.first.name, 'PLA Test');
+      expect(list.first.name, 'Ender 3 V2');
     });
   });
 
-  group('FilamentFormPage (edit)', () {
-    testWidgets('titulo "Editar filamento" y prefill', (tester) async {
+  group('PrinterFormPage (edit)', () {
+    testWidgets('titulo "Editar impresora" y prefill', (tester) async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
-      // Insert manual
       final id = await db
-          .into(db.filaments)
+          .into(db.printers)
           .insert(
-            FilamentsCompanion.insert(
-              name: 'PLA Pre',
-              brand: const Value('eSun'),
-              pricePerBobbin: 150,
-              gramsPerBobbin: 1000,
+            PrintersCompanion.insert(
+              name: 'Ender Pre',
+              brand: const Value('Creality'),
+              averageWatts: 165,
               isDefault: const Value(true),
               createdAt: DateTime.now().toUtc(),
             ),
           );
-      final existing = (await db.select(db.filaments).get()).first;
-      // (id no usado, pero valido que se haya insertado)
+      final existing = (await db.select(db.printers).get()).first;
       expect(id, isPositive);
-      expect(existing.name, 'PLA Pre');
+      expect(existing.name, 'Ender Pre');
 
       await _pumpForm(tester, existing: existing);
-      expect(find.text('Editar filamento'), findsOneWidget);
+      expect(find.text('Editar impresora'), findsOneWidget);
       final nameField = tester.widget<TextField>(
-        find.widgetWithText(TextField, 'Nombre'),
+        find.widgetWithText(TextField, 'Modelo'),
       );
-      expect(nameField.controller!.text, 'PLA Pre');
+      expect(nameField.controller!.text, 'Ender Pre');
     });
   });
 }

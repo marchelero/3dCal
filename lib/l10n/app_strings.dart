@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Interfaz de strings localizados.
 ///
 /// [EsBO] delega a una implementacion concreta segun el locale activo.
@@ -342,6 +343,66 @@ abstract class AppStrings {
   String get configCurrency;
   String get configContinue;
 
+  // === Initial config stepper ===
+  /// Titulos de los 3 pasos del stepper de configuracion inicial.
+  String get configStep1Title;
+  String get configStep2Title;
+  String get configStep3Title;
+  String get configBack;
+  String get configFinish;
+
+  /// Subtitulo de cada paso (microcopy "por que" del paso).
+  String get configStepSubtitle1;
+  String get configStepSubtitle2;
+  String get configStepSubtitle3;
+
+  /// Contador del paso: "Paso $step de $total".
+  String configStepCounter(int step, int total);
+
+  /// Microcopy: elegible post-config.
+  String get configLanguageHelper;
+
+  /// Microcopy: no convierte valores.
+  String get configCurrencyHelper;
+
+  /// Microcopy: "para que" de la impresora (costo de energia).
+  String get configPrinterSectionHelper;
+
+  /// Microcopy: el filamento es opcional.
+  String get configFilamentSectionHelper;
+
+  /// Microcopy: ganancia (200% duplica, rango tipico).
+  String get configProfitHelper;
+
+  /// Microcopy: kWh (para que + rango tipico Bolivia).
+  String get configKwhHelper;
+
+  /// Tag "Típico" junto a valores por defecto.
+  String get settingsDefaultTypical;
+
+  /// Estado "sin filamento" tras el skip.
+  String get configFilamentSkipStatus;
+
+  /// Accion de agregar filamento desde el estado skip.
+  String get configFilamentAddAction;
+
+  /// Boton final del ultimo paso: "Empezar a cotizar".
+  String get configStartButton;
+
+  /// Titulo del bloque Resumen del paso 3.
+  String get configSummaryTitle;
+
+  /// Intro del Resumen: "Tu próxima cotización:".
+  String get configSummaryImprint;
+
+  String get configPrinterRequired;
+  String get configFilamentOptional;
+  String get configAddFilament;
+  String get configFilamentLater;
+  String get configFilamentSkipHint;
+  String get configPrinterSaved;
+  String get configFilamentSaved;
+
   // === Feature gates (T14 — multi-material calculator gate) ===
   /// Body del SnackBar que se muestra cuando un Free user intenta
   /// cambiar a CalculatorMode.advanced.
@@ -411,7 +472,7 @@ abstract class AppStrings {
   String get settingsLegal;
 
   // === i18n consistency (hardcoded → l10n) ===
-  /// Generic "Error" label (ej: "Error: <detalle>").
+  /// Generic "Error" label (ej: "Error: `<detalle>`").
   String get commonError;
 
   /// "Sin resultados" / "No results" para busquedas.
@@ -441,10 +502,10 @@ abstract class AppStrings {
   /// "Imagen guardada en galería" / "Image saved to gallery".
   String get commonImageSavedGallery;
 
-  /// "Error al exportar PDF" / "Error exporting PDF" (sin ": <e>").
+  /// "Error al exportar PDF" / "Error exporting PDF" (sin ": `<e>`").
   String get commonPdfExportError;
 
-  /// "Error al imprimir" / "Error printing" (sin ": <e>").
+  /// "Error al imprimir" / "Error printing" (sin ": `<e>`").
   String get commonPrintError;
 
   /// " (default)" / " (default)" — sufijo de items default.

@@ -7,9 +7,10 @@ import '../../../../../core/database/app_database.dart';
 import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
-import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../../shared/widgets/brand_selector_field.dart';
+import '../../../../../shared/widgets/k3d_brands.dart';
+import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
 
@@ -100,9 +101,9 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          AppSnackBar.error('${EsBO.printerErrorSave}: $e'),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(AppSnackBar.error('${EsBO.printerErrorSave}: $e'));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -113,9 +114,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   Widget build(BuildContext context) {
     ref.watch(localeProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEdit ? EsBO.printerEdit : EsBO.printerNew),
-      ),
+      appBar: AppBar(title: Text(_isEdit ? EsBO.printerEdit : EsBO.printerNew)),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -125,50 +124,51 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               shrinkWrap: true,
               children: [
-              TextFormField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(
-                  labelText: EsBO.printerModel,
-                  helperText: EsBO.printerModelHelper,
+                BrandSelectorField(
+                  domain: BrandDomain.printer,
+                  controller: _brandCtrl,
+                  label: EsBO.filamentBrand,
+                  helperText: EsBO.printerBrandHelper,
                 ),
-                textInputAction: TextInputAction.next,
-                validator: _requiredText,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              BrandSelectorField(
-                controller: _brandCtrl,
-                label: EsBO.filamentBrand,
-                helperText: EsBO.printerBrandHelper,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              NumericInputField(
-                label: EsBO.printerWatts,
-                controller: _wattsCtrl,
-                allowDecimals: false,
-                helperText: EsBO.printerWattsHelper,
-                textInputAction: TextInputAction.done,
-                validator: _requiredWatts,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SwitchListTile(
-                title: Text(EsBO.filamentDefaultToggle),
-                subtitle: Text(EsBO.printerDefaultSubtitle),
-                value: _isDefault,
-                onChanged: _saving ? null : _setDefault,
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              FilledButton.icon(
-                icon: _saving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(EsBO.commonSave),
-                onPressed: _saving ? null : _save,
-              ),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                TextFormField(
+                  controller: _nameCtrl,
+                  decoration: InputDecoration(
+                    labelText: EsBO.printerModel,
+                    helperText: EsBO.printerModelHelper,
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: _requiredText,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                NumericInputField(
+                  label: EsBO.printerWatts,
+                  controller: _wattsCtrl,
+                  allowDecimals: false,
+                  helperText: EsBO.printerWattsHelper,
+                  textInputAction: TextInputAction.done,
+                  validator: _requiredWatts,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SwitchListTile(
+                  title: Text(EsBO.filamentDefaultToggle),
+                  subtitle: Text(EsBO.printerDefaultSubtitle),
+                  value: _isDefault,
+                  onChanged: _saving ? null : _setDefault,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                FilledButton.icon(
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(EsBO.commonSave),
+                  onPressed: _saving ? null : _save,
+                ),
+              ],
             ),
           ),
         ),

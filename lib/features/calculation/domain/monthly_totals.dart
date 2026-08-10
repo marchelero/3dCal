@@ -1,5 +1,6 @@
 /// Datos agregados por mes para el dashboard.
 library;
+// ignore_for_file: public_member_api_docs
 
 /// Totals de un mes especifico.
 class MonthlyTotal {

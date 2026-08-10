@@ -62,10 +62,12 @@ Future<void> shareQuoteImage(Uint8List imageBytes) async {
   final filename =
       'cotizacion_3dcalc_${DateTime.now().millisecondsSinceEpoch}.png';
 
-  await Share.shareXFiles(
-    [XFile.fromData(imageBytes, mimeType: 'image/png', name: filename)],
-    text: EsBO.calcShareText,
-    subject: EsBO.calcShareSubject,
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [XFile.fromData(imageBytes, mimeType: 'image/png', name: filename)],
+      text: EsBO.calcShareText,
+      subject: EsBO.calcShareSubject,
+    ),
   );
 }
 

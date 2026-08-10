@@ -211,7 +211,7 @@ class _NumericInputFieldState extends State<NumericInputField> {
     final keyPrefixIcon = isKey
         ? (widget.keyHint != null
             ? Tooltip(
-                message: widget.keyHint!,
+                message: widget.keyHint,
                 triggerMode: TooltipTriggerMode.tap,
                 child: keyIcon,
               )

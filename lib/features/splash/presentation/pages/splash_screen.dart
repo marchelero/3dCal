@@ -48,8 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Verificar onboarding
     final prefs = await SharedPreferences.getInstance();
-    final onboardingDone =
-        prefs.getBool(SettingsKeys.onboardingDone) ?? false;
+    final onboardingDone = prefs.getBool(SettingsKeys.onboardingDone) ?? false;
 
     if (!mounted) return;
 
@@ -78,10 +77,7 @@ class _SplashScreenState extends State<SplashScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              cs.primaryContainer,
-              cs.surface,
-            ],
+            colors: [cs.primaryContainer, cs.surface],
           ),
         ),
         child: Stack(
@@ -97,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Image.asset(
                       'assets/images/logo.png',
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Semantics(
+                      errorBuilder: (_, _, _) => Semantics(
                         label: EsBO.appName,
                         child: Image.asset(
                           'assets/images/3dlogo.png',
@@ -130,20 +126,22 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: _loadingController.value,
-                            backgroundColor:
-                                cs.primary.withValues(alpha: 0.12),
-                            valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+                            backgroundColor: cs.primary.withValues(alpha: 0.12),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              cs.primary,
+                            ),
                             minHeight: 4,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           EsBO.commonLoading.toUpperCase(),
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: cs.primary.withValues(alpha: 0.5),
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 4,
-                          ),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: cs.primary.withValues(alpha: 0.5),
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 4,
+                              ),
                         ),
                       ],
                     );

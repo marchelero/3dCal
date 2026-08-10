@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
-import 'core/theme/app_theme.dart';
 import 'core/storage/draft_storage_providers.dart';
+import 'core/theme/app_theme.dart';
 import 'features/dashboard/presentation/providers/dashboard_entitlement_provider.dart';
 import 'features/entitlement/presentation/providers/entitlement_providers.dart';
 
@@ -60,9 +61,6 @@ Future<void> main() async {
   }
 
   runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: const TresdcalApp(),
-    ),
+    UncontrolledProviderScope(container: container, child: const TresdcalApp()),
   );
 }

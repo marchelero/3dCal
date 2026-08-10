@@ -21,7 +21,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
-import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/pro_badge.dart';
@@ -30,6 +29,8 @@ import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dar
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
+import '../widgets/filament_selector_dialog.dart';
+import '../widgets/printer_selector_dialog.dart';
 import '../widgets/result_sheet.dart';
 
 /// Pantalla principal del calculator con UX mejorada.
@@ -1078,7 +1079,7 @@ class _PrinterIndicator extends ConsumerWidget {
       borderRadius: BorderRadius.circular(AppRadii.lg),
       onTap: printers.isEmpty
           ? () => context.push('/settings/printers/new')
-          : () => _showPrinterDialog(context, ref, printers),
+          : () => showPrinterSelectorDialog(context, ref, printers: printers),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
@@ -1168,99 +1169,6 @@ class _PrinterIndicator extends ConsumerWidget {
     );
   }
 
-  /// Persiste el id de la impresora elegida en SharedPreferences para
-  /// restaurarla en la proxima sesion. Best-effort: nunca bloquea la UI.
-  Future<void> _persistActivePrinterId(WidgetRef ref, int id) async {
-    try {
-      final prefs = ref.read(sharedPreferencesProvider);
-      await prefs.setInt(kActivePrinterIdPrefsKey, id);
-    } catch (_) {
-      // Si la persistencia falla, la seleccion sigue valida en esta sesion.
-    }
-  }
-
-  void _showPrinterDialog(
-    BuildContext context,
-    WidgetRef ref,
-    List<PrinterProfile> printers,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        List<PrinterProfile> filtered = printers;
-        void applyFilter(String q) {
-          if (q.isEmpty) {
-            filtered = printers;
-          } else {
-            final lower = q.toLowerCase();
-            filtered = printers.where((p) =>
-              p.name.toLowerCase().contains(lower) ||
-              (p.brand?.toLowerCase().contains(lower) ?? false)
-            ).toList();
-          }
-        }
-        return StatefulBuilder(
-          builder: (context, setInnerState) => AlertDialog(
-            title: Text(EsBO.calcChangePrinter),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: EsBO.calcSearchPrinter,
-                      prefixIcon: Icon(Icons.search),
-                      isDense: true,
-                    ),
-                    onChanged: (v) =>
-                        setInnerState(() => applyFilter(v)),
-                  ),
-                  const SizedBox(height: 12),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 400),
-                    child: filtered.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Center(child: Text(EsBO.commonNoResults)),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: filtered.length,
-                            itemBuilder: (_, i) {
-                              final p = filtered[i];
-                              return ListTile(
-                                leading: AvatarIcon(icon: Icons.print_rounded),
-                                title: Text(p.name),
-                                subtitle: Text(
-                                  '${p.brand != null && p.brand!.isNotEmpty ? '${p.brand} · ' : ''}${p.averageWatts} W'
-                                  '${p.isDefault ? EsBO.commonDefaultSuffix : ''}',
-                                ),
-                                onTap: () {
-                                  ref.read(activePrinterIdProvider.notifier).state = p.id;
-                                  // Persistir la eleccion para restaurarla en
-                                  // la proxima sesion (best-effort).
-                                  unawaited(_persistActivePrinterId(ref, p.id));
-                                  Navigator.of(ctx).pop();
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(EsBO.commonCancel),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 }
 
 // === MaterialCtrls y MaterialRowTile ===
@@ -1419,7 +1327,14 @@ class _MaterialRowTile extends ConsumerWidget {
                 _ActionChip(
                   icon: Icons.inventory_2_rounded,
                   label: EsBO.calcMaterialCatalog,
-                  onTap: () => _showCatalogDialog(context, ref, filaments),
+                  onTap: () async {
+                    final filament = await showFilamentSelectorDialog(
+                      context,
+                      ref,
+                      filaments: filaments,
+                    );
+                    if (filament != null) _loadFromFilament(ref, filament);
+                  },
                 ),
                 if (deletable) const SizedBox(width: AppSpacing.xs),
               ],
@@ -1513,94 +1428,6 @@ class _MaterialRowTile extends ConsumerWidget {
     _emit();
   }
 
-  void _showCatalogDialog(
-    BuildContext context,
-    WidgetRef ref,
-    List<Filament> filaments,
-  ) {
-    final sym = ref.read(selectedCurrencyProvider).symbol;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        List<Filament> filtered = filaments;
-        void applyFilter(String q) {
-          if (q.isEmpty) {
-            filtered = filaments;
-          } else {
-            final lower = q.toLowerCase();
-            filtered = filaments.where((f) =>
-              f.name.toLowerCase().contains(lower) ||
-              (f.brand?.toLowerCase().contains(lower) ?? false)
-            ).toList();
-          }
-        }
-        return StatefulBuilder(
-          builder: (context, setInnerState) => AlertDialog(
-            title: Text(EsBO.calcSelectFilament),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: EsBO.calcSearchFilament,
-                      prefixIcon: Icon(Icons.search),
-                      isDense: true,
-                    ),
-                    onChanged: (v) =>
-                        setInnerState(() => applyFilter(v)),
-                  ),
-                  const SizedBox(height: 12),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 400),
-                    child: filtered.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Center(child: Text(EsBO.commonNoResults)),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: filtered.length,
-                            itemBuilder: (_, i) {
-                              final f = filtered[i];
-                              return ListTile(
-                                leading: AvatarIcon(
-                                  icon: f.isDefault
-                                      ? Icons.star_rounded
-                                      : Icons.label_rounded,
-                                  foreground: f.isDefault
-                                      ? Theme.of(context).colorScheme.tertiary
-                                      : null,
-                                ),
-                                title: Text(f.name),
-                                subtitle: Text(
-                                  '${f.pricePerBobbin.toStringAsFixed(0)} $sym · '
-                                  '${f.gramsPerBobbin.toStringAsFixed(0)} g'
-                                  '${f.isDefault ? EsBO.commonDefaultSuffix : ''}',
-                                ),
-                                onTap: () {
-                                  Navigator.of(ctx).pop();
-                                  _loadFromFilament(ref, f);
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(EsBO.commonCancel),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 }
 
 // === Mode Selector ===

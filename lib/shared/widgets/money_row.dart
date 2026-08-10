@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs
 /// Fila label + valor monetario formateado.
 ///
 /// Usado en home y dashboard para los bloques de totales (cotizado, vendido,

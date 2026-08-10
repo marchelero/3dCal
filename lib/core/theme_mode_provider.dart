@@ -1,10 +1,10 @@
+// ignore_for_file: public_member_api_docs
 /// Provider del theme mode (Claro / Oscuro / Sistema).
 ///
 /// Persiste en SharedPreferences para mantener la preferencia entre sesiones.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,10 +32,10 @@ enum AppThemeMode {
 
   /// Label visible en UI (localizado vía EsBO).
   String get label => switch (this) {
-        AppThemeMode.system => EsBO.themeModeSystem,
-        AppThemeMode.light => EsBO.themeModeLight,
-        AppThemeMode.dark => EsBO.themeModeDark,
-      };
+    AppThemeMode.system => EsBO.themeModeSystem,
+    AppThemeMode.light => EsBO.themeModeLight,
+    AppThemeMode.dark => EsBO.themeModeDark,
+  };
 }
 
 /// Notifier para cambiar y persistir el theme mode.
@@ -63,6 +63,6 @@ class ThemeModeNotifier extends StateNotifier<AppThemeMode> {
 /// Provider del [ThemeModeNotifier].
 final themeModeProvider =
     StateNotifierProvider<ThemeModeNotifier, AppThemeMode>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return ThemeModeNotifier(prefs);
-});
+      final prefs = ref.watch(sharedPreferencesProvider);
+      return ThemeModeNotifier(prefs);
+    });
