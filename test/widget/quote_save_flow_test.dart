@@ -92,6 +92,7 @@ Future<void> _tapSaveAndSettle(WidgetTester tester) async {
       scrollable: find.byType(Scrollable).first,
     );
   }
+  await tester.ensureVisible(saveBtn);
   await tester.pumpAndSettle();
   await tester.tap(saveBtn);
   await tester.pump();

@@ -23,6 +23,7 @@ import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/pro_badge.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/settings.dart';
 import '../../../settings/presentation/notifiers/settings_notifier.dart';
@@ -96,6 +97,7 @@ class _DetailState extends ConsumerState<_Detail> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
   bool _showDetail = false;
+  int _quantity = 1;
 
   Future<void> _handleShare() async {
     if (_isBusy) return;
@@ -158,6 +160,7 @@ class _DetailState extends ConsumerState<_Detail> {
         materials: result.breakdown,
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
         discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        showDetail: _showDetail,
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
         pieceName: calc.pieceName,
@@ -190,6 +193,7 @@ class _DetailState extends ConsumerState<_Detail> {
         materials: result.breakdown,
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
         discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        showDetail: _showDetail,
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
         pieceName: calc.pieceName,
@@ -546,6 +550,82 @@ class _DetailState extends ConsumerState<_Detail> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
+          // === Selector PRO de Cantidad ===
+          const SizedBox(height: AppSpacing.lg),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Cantidad de Piezas',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            if (!ref.watch(isProProvider)) const ProBadge(),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Cotizar por lote / volumen',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton.outlined(
+                    icon: const Icon(Icons.remove_rounded),
+                    onPressed: _quantity > 1
+                        ? () {
+                            if (!ref.read(isProProvider)) {
+                              context.push('/paywall');
+                            } else {
+                              setState(() => _quantity--);
+                            }
+                          }
+                        : null,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: Text(
+                      '$_quantity',
+                      style: AppTheme.num(
+                        theme.textTheme.titleMedium ?? const TextStyle(),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton.outlined(
+                    icon: const Icon(Icons.add_rounded),
+                    onPressed: () {
+                      if (!ref.read(isProProvider)) {
+                        context.push('/paywall');
+                      } else {
+                        setState(() => _quantity++);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
           // === Quote image preview (capturable) ===
           if (result != null) ...[
             Text(
@@ -577,6 +657,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   companyName: settings.companyName,
                   companyLogoBase64: settings.companyLogoBase64,
                   currency: currency,
+                  quantity: _quantity,
                 ),
               ),
             ),

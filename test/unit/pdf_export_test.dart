@@ -288,4 +288,40 @@ void main() {
       },
     );
   });
+
+  group('buildQuotePdfBytes — showDetail mode (visibilidad de desglose)', () {
+    test(
+      'showDetail=false genera PDF basico (mas ligero por omitir desglose)',
+      () async {
+        final fullBytes = await buildQuotePdfBytes(
+          isPro: true,
+          output: _output(),
+          materials: const [],
+          totalHours: Decimal.zero,
+          discountPct: Decimal.zero,
+          showDetail: true,
+          regularFont: helv,
+          boldFont: helvBold,
+        );
+
+        final basicBytes = await buildQuotePdfBytes(
+          isPro: true,
+          output: _output(),
+          materials: const [],
+          totalHours: Decimal.zero,
+          discountPct: Decimal.zero,
+          showDetail: false,
+          regularFont: helv,
+          boldFont: helvBold,
+        );
+
+        expect(basicBytes.length, greaterThan(300));
+        expect(
+          basicBytes.length,
+          lessThan(fullBytes.length),
+          reason: 'PDF sin desglose (showDetail=false) debe ser mas ligero',
+        );
+      },
+    );
+  });
 }

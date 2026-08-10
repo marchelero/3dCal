@@ -11,7 +11,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
 
 import '../../features/calculation/domain/entities/calculation_output.dart';
 import '../../features/calculation/presentation/state/calculator_state.dart';
@@ -64,6 +64,7 @@ Future<void> shareQuotePdf({
   required List<MaterialCostBreakdown> materials,
   required Decimal totalHours,
   required Decimal discountPct,
+  bool showDetail = true,
   String? companyName,
   String? companyLogoBase64,
   String? pieceName,
@@ -77,6 +78,7 @@ Future<void> shareQuotePdf({
     materials: materials,
     totalHours: totalHours,
     discountPct: discountPct,
+    showDetail: showDetail,
     companyName: companyName,
     companyLogoBase64: companyLogoBase64,
     pieceName: pieceName,
@@ -85,10 +87,12 @@ Future<void> shareQuotePdf({
     boldFont: boldFont,
   );
 
-  // XFile.fromData sin escribir a disco para compat mobile + web + desktop.
-  await Share.shareXFiles([
-    XFile.fromData(pdfBytes, name: EsBO.pdfFileName),
-  ], subject: EsBO.pdfShareSubject);
+  // Printing.sharePdf permite descargar / guardar o compartir el PDF en Web, Mobile y Desktop.
+  await Printing.sharePdf(
+    bytes: pdfBytes,
+    filename: EsBO.pdfFileName,
+    subject: EsBO.pdfShareSubject,
+  );
 }
 
 /// Genera los bytes del PDF de cotizacion.
@@ -97,6 +101,7 @@ Future<void> shareQuotePdf({
 ///
 /// - [isPro] gatea el branding: si false, el PDF usa "3dCalc" + sin logo
 ///   (ignora [companyName] y [companyLogoBase64]).
+/// - [showDetail] controla si el PDF incluye el desglose interno de costos.
 /// - [regularFont] / [boldFont] son inyectables para tests (evitan
 ///   `rootBundle.load`); en runtime se cargan desde `assets/fonts/`.
 Future<Uint8List> buildQuotePdfBytes({
@@ -105,6 +110,7 @@ Future<Uint8List> buildQuotePdfBytes({
   required List<MaterialCostBreakdown> materials,
   required Decimal totalHours,
   required Decimal discountPct,
+  bool showDetail = true,
   String? companyName,
   String? companyLogoBase64,
   String? pieceName,
@@ -193,15 +199,13 @@ Future<Uint8List> buildQuotePdfBytes({
             ),
             pw.SizedBox(height: 16),
 
-            // Foto de la pieza: compacta centrada entre fecha y total.
-            // 220x110pt + BoxFit.contain no desborda A4.
+            // Foto de la pieza: tamaño intermedio centrado entre fecha y total.
             if (pieceImageBytes != null) ...[
               pw.SizedBox(height: 12),
               pw.Center(
                 child: pw.Container(
-                  width: 220,
-                  height: 110, // imagen compacta (feedback usuario
-                  // 2026-08-10: "más pequeña, que no ocupe todo")
+                  width: 270,
+                  height: 135,
                   child: pw.Image(
                     pw.MemoryImage(pieceImageBytes), // JPEG/PNG decodificable
                     fit: pw.BoxFit.contain,
@@ -244,54 +248,84 @@ Future<Uint8List> buildQuotePdfBytes({
             ),
             pw.SizedBox(height: 16),
 
-            // Breakdown
-            pw.Text(
-              EsBO.detailBreakdown,
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
-            ),
-            pw.SizedBox(height: 8),
-            _row(EsBO.pdfMaterialCosts, _fmt(output.materialCost)),
-            if (output.electricCost > Decimal.zero)
-              _row(EsBO.pdfElectricity, _fmt(output.electricCost)),
-            if (output.laborCost > Decimal.zero)
-              _row(EsBO.calcDetailLabor, _fmt(output.laborCost)),
-            if (output.postProcessCost > Decimal.zero)
-              _row(EsBO.calcDetailPostProcess, _fmt(output.postProcessCost)),
-            _row(EsBO.calcDetailBase, _fmt(output.baseCost), bold: true),
-            if (output.failureCost > Decimal.zero)
-              _row(EsBO.calcDetailFailure, _fmt(output.failureCost)),
-            if (output.markupCost > Decimal.zero)
-              _row(EsBO.calcFieldWaste, _fmt(output.markupCost)),
-            if (output.profitAmount > Decimal.zero)
-              _row(EsBO.calcDetailProfit, _fmt(output.profitAmount)),
-            if (output.discountAmount > Decimal.zero)
-              _row(EsBO.calcLabelDiscount, '-${_fmt(output.discountAmount)}'),
-            pw.Divider(),
-            _row(EsBO.pdfTotalUpper, _fmt(output.totalPrice), bold: true),
-
-            pw.SizedBox(height: 16),
-
-            // Materials
-            if (materials.isNotEmpty) ...[
+            // Breakdown & Materials (solo si showDetail es true)
+            if (showDetail) ...[
               pw.Text(
-                EsBO.calcSectionMaterials,
+                EsBO.detailBreakdown,
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
               pw.SizedBox(height: 8),
-              for (final m in materials)
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 4),
-                  child: pw.Text(
-                    '${m.label}: ${_fmt(m.cost)}',
-                    style: pw.TextStyle(fontSize: 10),
+              _row(EsBO.pdfMaterialCosts, _fmt(output.materialCost)),
+              if (output.electricCost > Decimal.zero)
+                _row(EsBO.pdfElectricity, _fmt(output.electricCost)),
+              if (output.laborCost > Decimal.zero)
+                _row(EsBO.calcDetailLabor, _fmt(output.laborCost)),
+              if (output.postProcessCost > Decimal.zero)
+                _row(EsBO.calcDetailPostProcess, _fmt(output.postProcessCost)),
+              _row(EsBO.calcDetailBase, _fmt(output.baseCost), bold: true),
+              if (output.failureCost > Decimal.zero)
+                _row(EsBO.calcDetailFailure, _fmt(output.failureCost)),
+              if (output.markupCost > Decimal.zero)
+                _row(EsBO.calcFieldWaste, _fmt(output.markupCost)),
+              if (output.profitAmount > Decimal.zero)
+                _row(EsBO.calcDetailProfit, _fmt(output.profitAmount)),
+              if (output.discountAmount > Decimal.zero)
+                _row(EsBO.calcLabelDiscount, '-${_fmt(output.discountAmount)}'),
+              pw.Divider(),
+              _row(EsBO.pdfTotalUpper, _fmt(output.totalPrice), bold: true),
+              pw.SizedBox(height: 16),
+
+              if (materials.isNotEmpty) ...[
+                pw.Text(
+                  EsBO.calcSectionMaterials,
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
                   ),
                 ),
+                pw.SizedBox(height: 8),
+                for (final m in materials)
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 4),
+                    child: pw.Text(
+                      '${m.label}: ${_fmt(m.cost)}',
+                      style: pw.TextStyle(fontSize: 10),
+                    ),
+                  ),
+                pw.SizedBox(height: 8),
+              ],
+            ] else if (output.discountAmount > Decimal.zero) ...[
+              // En modo basico (showDetail = false) con descuento, mostrar cuadro resumen de descuento
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                ),
+                child: pw.Column(
+                  children: [
+                    _row(
+                      EsBO.quoteNoDiscount,
+                      _fmt(output.totalPrice + output.discountAmount),
+                    ),
+                    _row(
+                      EsBO.quoteDiscountPct(discountPct.toDouble().round()),
+                      '-${_fmt(output.discountAmount)}',
+                    ),
+                    pw.Divider(),
+                    _row(
+                      EsBO.calcTotalWithDiscount,
+                      _fmt(output.totalPrice),
+                      bold: true,
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 16),
             ],
-
-            pw.SizedBox(height: 8),
 
             // Meta
             if (totalHours > Decimal.zero)

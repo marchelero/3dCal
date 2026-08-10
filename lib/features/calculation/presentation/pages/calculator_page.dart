@@ -1,4 +1,4 @@
-﻿// ignore_for_file: public_member_api_docs
+// ignore_for_file: public_member_api_docs
 
 import 'dart:async';
 
@@ -652,19 +652,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
-              // Rubrica: Descuento
-              _RubricSection(
-                icon: Icons.local_offer_rounded,
-                title: EsBO.calcSectionDiscount,
-                child: NumericInputField(
-                  label: EsBO.calcLabelDiscount,
-                  controller: _discountCtrl,
-                  onChanged: notifier.setDiscountPct,
-                  suffix: '%',
-                  helperText: EsBO.calcLabelDiscountHelper,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
+
 
               // Rubrica colapsable: OTROS (mano de obra, post-procesado,
               // falla, markup) — al final para no interponerse al 95%.
@@ -816,19 +804,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
-              // Rubrica: Descuento
-              _RubricSection(
-                icon: Icons.local_offer_rounded,
-                title: EsBO.calcSectionDiscount,
-                child: NumericInputField(
-                  label: EsBO.calcLabelDiscount,
-                  controller: _discountCtrl,
-                  onChanged: notifier.setDiscountPct,
-                  suffix: '%',
-                  helperText: EsBO.calcLabelDiscountHelper,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
+
 
               // Rubrica colapsable: OTROS (mano de obra, post-procesado,
               // falla, markup) — al final para no interponerse al flujo.
@@ -851,19 +827,42 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     WorldCurrency currency,
   ) {
     final theme = Theme.of(context);
+    final isPro = ref.watch(isProProvider);
+    final entitlementState = ref.watch(entitlementNotifierProvider);
+    final isLoading = entitlementState.isLoading;
+    final showProBadge = !isPro && !isLoading;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
           icon: Icons.more_horiz_rounded,
           title: EsBO.calcSectionOthers,
-          onTap: () => setState(() => _showOtros = !_showOtros),
-          trailing: AnimatedRotation(
-            turns: _showOtros ? 0.5 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: Icon(Icons.expand_more, size: 20,
-                color: theme.colorScheme.onSurfaceVariant),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showProBadge) ...[
+                const ProBadge(),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              AnimatedRotation(
+                turns: _showOtros ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  Icons.expand_more,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
+          onTap: () {
+            if (!isPro) {
+              context.push('/paywall');
+            } else {
+              setState(() => _showOtros = !_showOtros);
+            }
+          },
         ),
         AnimatedSize(
           duration: const Duration(milliseconds: 250),

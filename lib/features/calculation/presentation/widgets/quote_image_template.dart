@@ -47,8 +47,16 @@ class QuoteImageTemplate extends StatelessWidget {
     this.companyLogoBase64,
     required this.currency,
     this.pieceImageBytes,
+    this.quantity = 1,
+    this.commercialDiscountPct = 0,
     super.key,
   });
+
+  final int quantity;
+
+  /// Descuento comercial (%) aplicado sobre el subtotal (unitPrice × qty).
+  /// Separado del descuento técnico del cálculo. Valor entero, ej: 10 = 10%.
+  final int commercialDiscountPct;
 
   final CalculationOutput output;
   final String label;
@@ -86,6 +94,17 @@ class QuoteImageTemplate extends StatelessWidget {
     final hasDiscount = output.discountAmount > Decimal.zero;
     final now = DateTime.now();
 
+    // ── Cálculo del total comercial (quantity + descuento comercial) ──
+    final unitPrice = output.totalPrice;
+    final subtotal = unitPrice * Decimal.fromInt(quantity);
+    final hasCommercialDiscount = commercialDiscountPct > 0;
+    final commercialDiscountAmount = hasCommercialDiscount
+        ? (subtotal * Decimal.fromInt(commercialDiscountPct) / Decimal.fromInt(100)).toDecimal()
+        : Decimal.zero;
+    final totalFinal = hasCommercialDiscount
+        ? subtotal - commercialDiscountAmount
+        : subtotal;
+
     return Container(
       width: 400, // ancho fijo para consistencia en la imagen
       padding: const EdgeInsets.all(28),
@@ -106,8 +125,8 @@ class QuoteImageTemplate extends StatelessWidget {
           _divider(color),
           const SizedBox(height: AppSpacing.lg),
 
-          // ── Foto de la pieza: compacta centrada bajo el membrete ──
-          // (feedback usuario 2026-08-10: "más pequeña, que no ocupe todo").
+          // ── Foto de la pieza: tamaño intermedio centrado bajo el membrete ──
+          // (punto intermedio entre imagen hero y vista muy reducida)
           if (pieceImageBytes != null) ...[
             const SizedBox(height: AppSpacing.lg),
             Center(
@@ -115,8 +134,8 @@ class QuoteImageTemplate extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadii.md),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
-                    maxWidth: 224, // ~56% del template 400px: no hero
-                    maxHeight: 132,
+                    maxWidth: 280, // Punto intermedio (~70% del template 400px)
+                    maxHeight: 165,
                   ),
                   child: Image.memory(
                     pieceImageBytes!,
@@ -171,7 +190,7 @@ class QuoteImageTemplate extends StatelessWidget {
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  formatCurrency(output.totalPrice, currency),
+                  formatCurrency(totalFinal, currency),
                   style: AppTheme.num(
                     theme.textTheme.displayMedium ??
                         theme.textTheme.headlineMedium ??
@@ -186,16 +205,71 @@ class QuoteImageTemplate extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
 
-          // Subtitle
+          // Subtitle: desglose quantity × unitario
           Center(
             child: Text(
-              hasDiscount ? EsBO.calcTotalWithDiscount : EsBO.calcTotalFinal,
+              quantity > 1
+                  ? '$quantity u. × ${formatCurrency(unitPrice, currency)}'
+                  : (hasCommercialDiscount || hasDiscount
+                      ? EsBO.calcTotalWithDiscount
+                      : EsBO.calcTotalFinal),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: color.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
+
+          // ── Desglose descuento comercial (quantity + discount) ──
+          if (hasCommercialDiscount) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: color.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(color: color.error, width: 1),
+              ),
+              child: Column(
+                children: [
+                  _discountRow(
+                    quantity > 1
+                        ? '$quantity u. × ${formatCurrency(unitPrice, currency)}'
+                        : EsBO.quoteNoDiscount,
+                    formatCurrency(subtotal, currency),
+                    theme,
+                    color.onSurface,
+                  ),
+                  const SizedBox(height: 6),
+                  _discountRow(
+                    EsBO.quoteDiscountPct(commercialDiscountPct),
+                    '-${formatCurrency(commercialDiscountAmount, currency)}',
+                    theme,
+                    color.error,
+                    bold: true,
+                    strikeThrough: true,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Divider(
+                      height: 1,
+                      color: color.onSurface.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  _discountRow(
+                    EsBO.calcTotalWithDiscount,
+                    formatCurrency(totalFinal, currency),
+                    theme,
+                    color.onSurface,
+                    bold: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           // ── Meta info (grams + time): linea mono, sin pildora ──
           if (metaGrams != null || metaTime != null) ...[

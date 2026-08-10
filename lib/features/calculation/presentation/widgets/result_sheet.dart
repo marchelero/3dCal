@@ -6,6 +6,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/export/pdf_export.dart';
@@ -22,6 +23,7 @@ import '../../../../features/settings/presentation/notifiers/settings_notifier.d
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/perforation.dart';
+import '../../../../shared/widgets/pro_badge.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import 'calc_meta.dart';
@@ -352,6 +354,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   // lo usa para encontrar el RenderObject y capturarlo como PNG.
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
+  int _quantity = 1;
+  int _commercialDiscountPct = 0;
 
   /// Foto de la pieza adjuntada (efimera: solo vive en este sheet, no se
   /// persiste). Se renderiza en el template (PNG) y viaja al PDF.
@@ -425,6 +429,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         totalHours: state.totalHoursDecimal ?? Decimal.zero,
         discountPct:
             CalculatorState.parseDecimal(state.discountPct) ?? Decimal.zero,
+        showDetail: state.showDetail,
         companyName: widget.companyName,
         companyLogoBase64: widget.companyLogoBase64,
         pieceName: state.label.isNotEmpty ? state.label : null,
@@ -579,6 +584,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   companyLogoBase64: widget.companyLogoBase64,
                   currency: widget.currency,
                   pieceImageBytes: _pieceImageBytes,
+                  quantity: _quantity,
+                  commercialDiscountPct: _commercialDiscountPct,
                 ),
               ),
 
@@ -619,7 +626,136 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                       ),
               ),
 
-              // Toggle detail (fuera del RepaintBoundary para no salir en img)
+              // ── Selector PRO de Cantidad (fuera del RepaintBoundary) ──
+              const SizedBox(height: AppSpacing.sm),
+              Builder(builder: (ctx) {
+                final isPro = ProviderScope.containerOf(ctx).read(isProProvider);
+                final entState = ProviderScope.containerOf(ctx).read(entitlementNotifierProvider);
+                final locked = !entState.isLoading && !isPro;
+                return Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.layers_rounded, size: 18),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                'Cantidad',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (locked) ...[
+                                const SizedBox(width: AppSpacing.xs),
+                                const ProBadge(),
+                              ],
+                            ],
+                          ),
+                        ),
+                        IconButton.outlined(
+                          icon: const Icon(Icons.remove_rounded),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: _quantity > 1
+                              ? () {
+                                  if (locked) {
+                                    Navigator.of(ctx).pop();
+                                    GoRouter.of(ctx).push('/paywall');
+                                  } else {
+                                    setState(() => _quantity--);
+                                  }
+                                }
+                              : null,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: Text(
+                            '$_quantity',
+                            style: AppTheme.num(
+                              theme.textTheme.titleMedium ?? const TextStyle(),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton.outlined(
+                          icon: const Icon(Icons.add_rounded),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () {
+                            if (locked) {
+                              Navigator.of(ctx).pop();
+                              GoRouter.of(ctx).push('/paywall');
+                            } else {
+                              setState(() => _quantity++);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+
+              // ── Descuento Comercial (Debajo de Cantidad, disponible para todos) ──
+              const SizedBox(height: AppSpacing.xs),
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.local_offer_rounded, size: 18),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              'Descuento (%)',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: 80,
+                        child: TextFormField(
+                          initialValue: '$_commercialDiscountPct',
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs,
+                            ),
+                            border: OutlineInputBorder(),
+                            suffixText: '%',
+                          ),
+                          onChanged: (val) {
+                            final parsed = int.tryParse(val) ?? 0;
+                            setState(() {
+                              _commercialDiscountPct = parsed.clamp(0, 100);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               const SizedBox(height: AppSpacing.sm),
               Align(
                 child: TextButton.icon(

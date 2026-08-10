@@ -400,8 +400,10 @@ void main() {
         (tester) async {
       await _pumpCalculator(tester);
 
-      expect(find.text(EsBO.proBadgeLabel), findsOneWidget,
-          reason: 'Free: el modo advanced debe mostrar el badge "PRO".');
+      // El badge puede aparecer en varios lugares (modo Advanced + seccion
+      // Otros) — se verifica al menos uno.
+      expect(find.text(EsBO.proBadgeLabel), findsAtLeastNWidgets(1),
+          reason: 'Free: debe mostrarse al menos un badge "PRO".');
       expect(find.byIcon(Icons.lock_rounded), findsAtLeastNWidgets(1),
           reason: 'Free: el badge debe incluir el icono de candado.');
       expect(_dimmed(), findsAtLeastNWidgets(1),
