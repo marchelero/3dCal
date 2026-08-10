@@ -226,6 +226,8 @@ class EnImpl implements AppStrings {
   @override
   String get calcSectionPiece => 'Piece';
   @override
+  String get calcSectionWeight => 'Part weight';
+  @override
   String get calcSectionFilament => 'Filament';
   @override
   String get calcSectionTime =>
@@ -317,6 +319,11 @@ class EnImpl implements AppStrings {
   String get calcSectionPrinter => 'Printer';
   @override
   String get calcNoPrinter => 'No printer registered';
+  @override
+  String get calcPrinterEmptyCta => 'Register printer';
+  @override
+  String get calcPrinterEmptyHint =>
+      'Calculates without energy cost. Register one to add it.';
   @override
   String get calcNoMaterials => 'No materials.';
 
@@ -446,6 +453,13 @@ class EnImpl implements AppStrings {
   @override
   String get filamentBrandHelper =>
       'Optional';
+  @override
+  String get brandSelectorOther => 'Other...';
+  @override
+  String get brandSelectorHint =>
+      'Choose a brand or select Other to type it';
+  @override
+  String get brandSelectorManualHelper => 'Type the brand name';
   @override
   String filamentPrice(String symbol) =>
       'Filament price ($symbol)';

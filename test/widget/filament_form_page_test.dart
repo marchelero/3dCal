@@ -10,6 +10,7 @@ import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filament_form_page.dart';
+import 'package:tresdcal/shared/widgets/brand_selector_field.dart';
 
 Future<ProviderContainer> _pumpForm(
   WidgetTester tester, {
@@ -48,7 +49,9 @@ void main() {
       await _pumpForm(tester);
       // Labels actuales segun EsBO.filament* en l10n/es_bo.dart.
       expect(find.widgetWithText(TextField, 'Nombre'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Marca'), findsOneWidget);
+      // Marca es un BrandSelectorField (dropdown + Otro...) desde la feature
+      // de selector de marcas — no un TextField plano.
+      expect(find.byType(BrandSelectorField), findsOneWidget);
       expect(
           find.widgetWithText(TextField, 'Precio filamento (\$)'),
           findsOneWidget);

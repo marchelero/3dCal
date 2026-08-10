@@ -11,6 +11,7 @@ import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../domain/entities/calculation_output.dart';
 import '../state/calculator_state.dart' show MaterialCostBreakdown;
@@ -19,7 +20,7 @@ import 'detail_section.dart';
 /// Template visual para la imagen compartida de la cotizacion.
 ///
 /// **Diferencia con [SummaryCard]**:
-/// - Diseño tipo recibo/factura (fondo blanco, header con logo).
+/// - Diseño tipo hoja de plano (fondo papel, bloque de titulo, caja de total).
 /// - Sin elementos interactivos (no tiene toggle detail button).
 /// - Con pie de pagina "Generado con 3dCalc".
 /// - Usado exclusivamente dentro del [RepaintBoundary] para captura PNG.
@@ -93,24 +94,12 @@ class QuoteImageTemplate extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Header: logo + branding ──
-          _buildHeader(theme, color),
+          // ── Membrete: logo + branding + folio/fecha ──
+          _buildMembrete(theme, color, now),
           const SizedBox(height: AppSpacing.xs),
 
           // Separator
           _divider(color),
-          const SizedBox(height: AppSpacing.xs),
-
-          // ── Date ──
-          Center(
-            child: Text(
-              DateFormat('dd MMM yyyy HH:mm').format(now),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: color.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
           const SizedBox(height: AppSpacing.lg),
 
           // ── Label (optional) ──
@@ -125,21 +114,39 @@ class QuoteImageTemplate extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.md),
           ],
 
-          // ── Big price ──
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-                    formatCurrency(output.totalPrice, currency),
-              style: theme.textTheme.displayMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color.primary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                letterSpacing: -1,
+          // ── Big price: caja de total de doble regla ──
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: color.onSurface, width: 2),
+                bottom: BorderSide(color: color.onSurface, width: 2),
               ),
-              textAlign: TextAlign.center,
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: color.onSurface, width: 1),
+                  bottom: BorderSide(color: color.onSurface, width: 1),
+                ),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  formatCurrency(output.totalPrice, currency),
+                  style: AppTheme.num(
+                    theme.textTheme.displayMedium ??
+                        const TextStyle(fontSize: 28),
+                    color: color.primary,
+                    fontWeight: FontWeight.bold,
+                  ).copyWith(letterSpacing: -1),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -157,44 +164,36 @@ class QuoteImageTemplate extends StatelessWidget {
             ),
           ),
 
-          // ── Meta info (grams + time) ──
+          // ── Meta info (grams + time): linea mono, sin pildora ──
           if (metaGrams != null || metaTime != null) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
             Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: color.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(AppRadii.xxxl),
-                ),
-                child: Text(
-                  [
-                    ?metaGrams,
-                    ?metaTime,
-                  ].join(EsBO.calcMetaSeparator),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: color.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+              child: Text(
+                [
+                  ?metaGrams,
+                  ?metaTime,
+                ].join(EsBO.calcMetaSeparator),
+                style: AppTheme.num(
+                  theme.textTheme.bodySmall ?? const TextStyle(),
+                  color: color.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
 
-          // ── Discount breakdown: subtotal → descuento → total ──
+          // ── Discount breakdown: correccion de recibo ──
           if (hasDiscount) ...[
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg,
                 vertical: AppSpacing.md,
               ),
               decoration: BoxDecoration(
-                color: color.errorContainer.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(AppRadii.lg),
+                color: color.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(color: color.error, width: 1),
               ),
               child: Column(
                 children: [
@@ -202,27 +201,29 @@ class QuoteImageTemplate extends StatelessWidget {
                     EsBO.quoteNoDiscount,
                     formatCurrency(output.totalPrice + output.discountAmount, currency),
                     theme,
-                    color.onErrorContainer,
+                    color.onSurface,
                   ),
                   const SizedBox(height: 6),
                   _discountRow(
                     EsBO.quoteDiscountPct(int.parse(discountPct)),
                     '-${formatCurrency(output.discountAmount, currency)}',
                     theme,
-                    color.onErrorContainer,
+                    color.error,
+                    bold: true,
+                    strikeThrough: true,
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Divider(
                       height: 1,
-                      color: color.onErrorContainer.withValues(alpha: 0.3),
+                      color: color.onSurface.withValues(alpha: 0.25),
                     ),
                   ),
                   _discountRow(
                     EsBO.calcTotalWithDiscount,
-              formatCurrency(output.totalPrice, currency),
+                    formatCurrency(output.totalPrice, currency),
                     theme,
-                    color.onErrorContainer,
+                    color.onSurface,
                     bold: true,
                   ),
                 ],
@@ -239,7 +240,7 @@ class QuoteImageTemplate extends StatelessWidget {
             // "Detalle" header
             Center(
               child: Text(
-                EsBO.quoteDetail,
+                EsBO.quoteDetail.toUpperCase(),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: color.onSurfaceVariant,
                   letterSpacing: 1.2,
@@ -294,17 +295,17 @@ class QuoteImageTemplate extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(ThemeData theme, ColorScheme color) {
+  Widget _buildMembrete(ThemeData theme, ColorScheme color, DateTime now) {
     final displayName = companyName ?? '3dCalc';
     final hasLogo = companyLogoBase64 != null && companyLogoBase64!.isNotEmpty;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Logo o icono default
         hasLogo
             ? ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadii.md),
+                borderRadius: BorderRadius.circular(AppRadii.sm),
                 child: Image.memory(
                   _base64ToBytes(companyLogoBase64!),
                   width: 36,
@@ -314,14 +315,45 @@ class QuoteImageTemplate extends StatelessWidget {
                 ),
               )
             : _defaultLogoIcon(color),
-        const SizedBox(width: 10),
-        Text(
-          displayName,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: color.onSurface,
-            letterSpacing: -0.5,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayName,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: color.onSurface,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                EsBO.calcSheetTitle.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color.primary,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2,
+                ),
+              ),
+            ],
           ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              DateFormat('dd MMM yyyy HH:mm').format(now),
+              style: AppTheme.num(
+                theme.textTheme.bodySmall ?? const TextStyle(),
+                color: color.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -333,7 +365,7 @@ class QuoteImageTemplate extends StatelessWidget {
       height: 36,
       decoration: BoxDecoration(
         color: color.primary,
-        borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
       ),
       child: Image.asset(
         'assets/images/3dlogo.png',
@@ -367,6 +399,7 @@ Widget _discountRow(
   ThemeData theme,
   Color color, {
   bool bold = false,
+  bool strikeThrough = false,
 }) {
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -380,10 +413,13 @@ Widget _discountRow(
       ),
       Text(
         value,
-        style: theme.textTheme.bodyMedium?.copyWith(
+        style: AppTheme.num(
+          theme.textTheme.bodyMedium ?? const TextStyle(),
           color: color,
           fontWeight: bold ? FontWeight.bold : FontWeight.w600,
-          fontFeatures: const [FontFeature.tabularFigures()],
+        ).copyWith(
+          decoration: strikeThrough ? TextDecoration.lineThrough : null,
+          decorationColor: color,
         ),
       ),
     ],

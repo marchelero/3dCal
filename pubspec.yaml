@@ -49,5 +49,6 @@ flutter:
     - assets/images/3dlogo.png
     - assets/fonts/JetBrainsMono-Bold.ttf
     - assets/fonts/JetBrainsMono-Medium.ttf
+    - assets/fonts/JetBrainsMono-SemiBold.ttf
     - assets/fonts/Roboto-Regular.ttf
     - assets/fonts/Roboto-Bold.ttf

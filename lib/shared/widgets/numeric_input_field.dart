@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_theme.dart';
 import '../../l10n/es_bo.dart';
 
 // ignore_for_file: public_member_api_docs
@@ -60,6 +60,7 @@ class NumericInputField extends StatefulWidget {
     this.showValidation = false,
     this.isKey = false,
     this.keyHint,
+    this.fontSize,
     super.key,
   });
 
@@ -112,6 +113,10 @@ class NumericInputField extends StatefulWidget {
   /// [helperText] cuando [isKey] es `true`. Sirve para explicar al usuario
   /// por que el campo es indispensable (ej: "Sin este dato no se cotiza").
   final String? keyHint;
+
+  /// Tamanio de fuente del numero ingresado (default 16). Usar valores
+  /// mayores (ej: 22) en campos hero como Peso o Tiempo.
+  final double? fontSize;
 
   @override
   State<NumericInputField> createState() => _NumericInputFieldState();
@@ -186,9 +191,9 @@ class _NumericInputFieldState extends State<NumericInputField> {
     final cs = theme.colorScheme;
 
     // === Estilos condicionales para campos clave (isKey) ===
-    // Senalamos los inputs indispensables (ej: peso, tiempo) con un borde
-    // de acento mas visible y un fill levemente tintado. Asi el usuario
-    // entiende que sin esos datos la cotizacion no se puede generar.
+    // Senalamos los inputs indispensables (ej: peso, tiempo) con una regla
+    // de cota mas visible. Asi el usuario entiende que sin esos datos la
+    // cotizacion no se puede generar.
     //
     // **Importante**: el helperText NO se renderiza abajo del field cuando
     // isKey=true. La razon: agrega una linea que rompe la alineacion
@@ -196,10 +201,6 @@ class _NumericInputFieldState extends State<NumericInputField> {
     // explicacion (keyHint) se muestra como Tooltip del push_pin icon.
     // Asi el field mantiene exactamente la misma altura que sus vecinos.
     final isKey = widget.isKey;
-    final keyFill = isKey
-        ? cs.primaryContainer.withValues(alpha: 0.35)
-        : null;
-    final keyBorderColor = isKey ? cs.primary : cs.outlineVariant;
     final keyLabelColor = isKey ? cs.primary : cs.onSurfaceVariant;
     final keyIcon = Icon(
       Icons.push_pin_rounded,
@@ -217,29 +218,35 @@ class _NumericInputFieldState extends State<NumericInputField> {
             : keyIcon)
         : null;
 
-    // Cuando es key, suprimimos el helperText para que el field quede a
-    // la misma altura que los inputs adyacentes. La info sigue accesible
-    // via el Tooltip del push_pin icon (toque largo / hover).
-    final effectiveHelper = isKey ? null : widget.helperText;
+    // El helperText se muestra siempre (incluso en campos clave): los
+    // unicos campos que combinan isKey con helper son los hero (Peso,
+    // Tiempo), que no comparten fila, asi que no hay conflicto de
+    // alineacion vertical.
+    final effectiveHelper = widget.helperText;
+
+    // Los numeros se escriben en mono tabular (dimensiones del plano).
+    final inputStyle = AppTheme.num(
+      theme.textTheme.bodyLarge ?? const TextStyle(),
+      color: cs.onSurface,
+      fontWeight: FontWeight.w500,
+      fontSize: widget.fontSize ?? 16,
+    );
 
     final decoration = InputDecoration(
       labelText: widget.label,
       helperText: effectiveHelper,
       suffixText: widget.suffix,
+      suffixStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
       prefixIcon: keyPrefixIcon,
-      filled: true,
-      fillColor: keyFill,
-      // Sobreescribimos bordes solo si es key: mas visible y en color de
-      // acento. Si no, dejamos los del theme (OutlineInputBorder generico).
+      // Sobreescribimos la regla solo si es key: linea de cota mas
+      // visible. Si no, dejamos la del theme (underline generico).
       enabledBorder: isKey
-          ? OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-              borderSide: BorderSide(color: keyBorderColor, width: 1.5),
+          ? UnderlineInputBorder(
+              borderSide: BorderSide(color: cs.primary, width: 1.5),
             )
           : null,
       focusedBorder: isKey
-          ? OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadii.lg),
+          ? UnderlineInputBorder(
               borderSide: BorderSide(color: cs.primary, width: 2),
             )
           : null,
@@ -266,6 +273,7 @@ class _NumericInputFieldState extends State<NumericInputField> {
       // Si no hay validator, manejamos errorText en vivo via _onTextChanged.
       onChanged: _handleChange,
       validator: combined,
+      style: inputStyle,
     );
 
     if (widget.validator != null) {
@@ -300,6 +308,7 @@ class _NumericInputFieldState extends State<NumericInputField> {
             ),
           ],
           decoration: liveDecoration,
+          style: inputStyle,
         );
       },
     );

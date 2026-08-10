@@ -9,6 +9,7 @@ import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
+import '../../../../../shared/widgets/brand_selector_field.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
 
@@ -135,14 +136,10 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                 validator: _requiredText,
               ),
               const SizedBox(height: AppSpacing.lg),
-              TextFormField(
+              BrandSelectorField(
                 controller: _brandCtrl,
-                decoration: InputDecoration(
-                  labelText: EsBO.filamentBrand,
-                  helperText: EsBO.printerBrandHelper,
-                  border: OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.next,
+                label: EsBO.filamentBrand,
+                helperText: EsBO.printerBrandHelper,
               ),
               const SizedBox(height: AppSpacing.lg),
               NumericInputField(

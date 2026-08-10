@@ -1,11 +1,10 @@
-/// Header de seccion: icono + titulo en una fila.
+/// Header de seccion: icono + titulo en una fila con regla de cota.
 ///
-/// Usado como intro visual de bloques en pages (settings, calculator,
-/// dashboard). El color del icono y del texto usan [accentColor] (default:
+/// Usado como rubrica impresa en pages (settings, calculator, dashboard).
+/// El titulo se muestra en MAYUSCULAS con tracking (voz de documento
+/// plano) y una regla de cota de 1.5px lo cierra por abajo, como la
+/// linea pautada de un formulario. El icono usa [accentColor] (default:
 /// `colorScheme.primary`).
-///
-/// Sigue el tamano y peso del `textTheme.titleSmall` para consistencia con
-/// la densidad M3.
 library;
 
 import 'package:flutter/material.dart';
@@ -15,9 +14,9 @@ import '../../core/theme/app_spacing.dart';
 
 /// Header de seccion: icono + titulo en una fila, con trailing opcional.
 ///
-/// Usado como intro visual de bloques en pages (settings, calculator,
-/// dashboard). Soporta [onTap] para hacerlo tappable (ej: collapsable) y
-/// [trailing] para un widget al final de la fila.
+/// Usado como rubrica impresa en pages (settings, calculator, dashboard).
+/// Soporta [onTap] para hacerlo tappable (ej: collapsable) y [trailing]
+/// para un widget al final de la fila.
 class SectionHeader extends StatelessWidget {
   /// Crea un header de seccion con icono, titulo y trailing opcional.
   const SectionHeader({
@@ -33,10 +32,10 @@ class SectionHeader extends StatelessWidget {
   /// Icono decorativo a la izquierda del titulo.
   final IconData icon;
 
-  /// Texto del titulo de la seccion.
+  /// Texto del titulo de la seccion (se muestra en MAYUSCULAS).
   final String title;
 
-  /// Color de acento para el icono. Por defecto usa `colorScheme.primary`.
+  /// Color de acento para el icono y la regla. Por defecto `colorScheme.primary`.
   final Color? accentColor;
 
   /// Etiqueta semantica opcional. Si se da, se anuncia como `header`
@@ -56,20 +55,17 @@ class SectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final color = accentColor ?? cs.primary;
-    // Padding vertical compacto (sm en vez de md) para que el header no
-    // visualmente "flote" mas alto que el resto del contenido de la card.
-    // Antes: vertical=md (12) + textMedium + border = bloque mas grueso que
-    // el resto. Ahora: vertical=sm (8) + textSmall alineado al mismo ritmo
-    // que los inputs y filas de la card.
+
     final rowChildren = <Widget>[
       Icon(icon, size: 18, color: color),
       const SizedBox(width: AppSpacing.sm),
       Expanded(
         child: Text(
-          title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: cs.onPrimaryContainer,
+          title.toUpperCase(),
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+            color: cs.onSurface,
           ),
         ),
       ),
@@ -89,30 +85,13 @@ class SectionHeader extends StatelessWidget {
       );
     }
 
-    // Header con gradiente azul (primaryContainer) identico al hero de home.
-    // Antes era un fill gris apagado (surfaceContainerHighest) que contrastaba
-    // poco con la card; ahora tiene identidad visual y se integra con la
-    // paleta "Industrial 3D".
+    // Rubrica de plano: regla de cota de 1.5px bajo el titulo en caps.
+    // Sin caja ni gradiente: la linea es la voz del formulario impreso.
     final container = Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            cs.primaryContainer,
-            cs.primaryContainer.withValues(alpha: 0.7),
-            cs.primaryContainer.withValues(alpha: 0.35),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          stops: const [0.0, 0.55, 1.0],
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.25),
-          width: 1,
+        border: Border(
+          bottom: BorderSide(color: color, width: 1.5),
         ),
       ),
       child: row,

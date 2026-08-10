@@ -148,7 +148,7 @@ class _DetailState extends ConsumerState<_Detail> {
       final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
       final settingsAsync = ref.read(settingsNotifierProvider);
       final settings = settingsAsync.valueOrNull ?? Settings.defaults;
-      final printer = ref.read(defaultPrinterProvider);
+      final printer = ref.read(activePrinterProvider);
       final result = _recomputeOutput(calc, materials, settings, printer);
       if (result == null) return;
       await shareQuotePdf(
@@ -180,7 +180,7 @@ class _DetailState extends ConsumerState<_Detail> {
       final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
       final settingsAsync = ref.read(settingsNotifierProvider);
       final settings = settingsAsync.valueOrNull ?? Settings.defaults;
-      final printer = ref.read(defaultPrinterProvider);
+      final printer = ref.read(activePrinterProvider);
       final result = _recomputeOutput(calc, materials, settings, printer);
       if (result == null) return;
       final pdfBytes = await buildQuotePdfBytes(
@@ -214,7 +214,7 @@ class _DetailState extends ConsumerState<_Detail> {
     final materialsAsync = ref.watch(_materialsOfProvider(calc.id));
     final settingsAsync = ref.watch(settingsNotifierProvider);
     final currency = ref.watch(selectedCurrencyProvider);
-    final printer = ref.watch(defaultPrinterProvider);
+    final printer = ref.watch(activePrinterProvider);
 
     final materials = materialsAsync.valueOrNull ?? <CalculationMaterial>[];
     final settings = settingsAsync.valueOrNull ?? Settings.defaults;

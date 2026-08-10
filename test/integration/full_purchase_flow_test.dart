@@ -277,7 +277,7 @@ void main() {
         // ── Free: dashboard teaser, sin charts ──
         appRouter.go('/dashboard');
         await tester.pumpAndSettle();
-        expect(find.text(EsBO.dashboardProTeaserTitle), findsOneWidget,
+        expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsOneWidget,
             reason: 'Free: teaser Pro visible en dashboard.');
         expect(
           find.widgetWithText(FilledButton, EsBO.dashboardGoProAction),
@@ -323,7 +323,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(BarChart), findsOneWidget,
             reason: 'Pro: charts visibles (dashboardIsProProvider wireado).');
-        expect(find.text(EsBO.dashboardProTeaserTitle), findsNothing,
+        expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsNothing,
             reason: 'Pro: teaser ya no se muestra.');
 
         // ── Pro: CSV habilitado (sin gate) ──
@@ -387,7 +387,7 @@ void main() {
       appRouter.go('/dashboard');
       await tester.pumpAndSettle();
       expect(find.byType(BarChart), findsOneWidget);
-      expect(find.text(EsBO.dashboardProTeaserTitle), findsNothing);
+      expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsNothing);
     });
   });
 
@@ -408,7 +408,7 @@ void main() {
       // Dashboard sigue free.
       appRouter.go('/dashboard');
       await tester.pumpAndSettle();
-      expect(find.text(EsBO.dashboardProTeaserTitle), findsOneWidget);
+      expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsOneWidget);
       expect(find.byType(BarChart), findsNothing);
 
       // CSV sigue gated (snackbar del gate persiste al tap).
@@ -438,7 +438,7 @@ void main() {
 
       appRouter.go('/dashboard');
       await tester.pumpAndSettle();
-      expect(find.text(EsBO.dashboardProTeaserTitle), findsOneWidget);
+      expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsOneWidget);
       expect(find.byType(BarChart), findsNothing);
     });
   });

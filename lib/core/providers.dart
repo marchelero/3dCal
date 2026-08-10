@@ -72,24 +72,36 @@ final printersListProvider = Provider<AsyncValue<List<PrinterProfile>>>((ref) {
   return ref.watch(printersNotifierProvider);
 });
 
+/// Key de SharedPreferences donde se persiste el id de la impresora que el
+/// usuario eligio en el cotizador (restaurada en la proxima sesion).
+const kActivePrinterIdPrefsKey = 'active_printer_id';
+
 /// ID de la impresora activa en la sesion del calculator.
 ///
 /// Inicializa con el default. El user puede cambiarla via el selector
-/// en el AppBar. Persiste en memoria de Riverpod; al cerrar la app vuelve
-/// al default.
+/// del cotizador. La eleccion se persiste en SharedPreferences
+/// ([kActivePrinterIdPrefsKey]) y se restaura al reabrir la app.
 final activePrinterIdProvider = StateProvider<int?>((ref) {
   return ref.watch(defaultPrinterProvider)?.id;
 });
 
-/// Impresora activa resuelta. `null` si no hay default ni seleccion.
+/// Impresora activa resuelta. `null` SOLO si no hay impresoras registradas.
+///
+/// Resolucion en cascada: id activo (elegido/persistido) → si ya no existe
+/// (borrada) → default → si no hay default → primera de la lista. Asi el
+/// cotizador nunca muestra "Sin impresora" cuando ya hay impresoras, y el
+/// calculo de watts usa SIEMPRE la misma impresora que muestra la UI.
 final activePrinterProvider = Provider<PrinterProfile?>((ref) {
   final id = ref.watch(activePrinterIdProvider);
   final list = ref.watch(printersNotifierProvider).valueOrNull;
-  if (list == null) return null;
+  if (list == null || list.isEmpty) return null;
   if (id != null) {
     for (final p in list) {
       if (p.id == id) return p;
     }
   }
-  return null;
+  for (final p in list) {
+    if (p.isDefault) return p;
+  }
+  return list.first;
 });

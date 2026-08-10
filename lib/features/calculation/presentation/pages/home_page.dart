@@ -79,154 +79,81 @@ class HomePage extends ConsumerWidget {
         companyName.isNotEmpty;
     final hasLogo = companyLogoBase64 != null && companyLogoBase64.isNotEmpty;
 
+    final Widget content;
+    final String semanticsLabel;
+
     // Modo empresa: muestra logo + nombre empresa grande, app name pequeno
     if (hasCompanyConfig || hasLogo) {
       final displayName = hasCompanyConfig ? companyName : '3dCalc';
-    return Semantics(
-      header: true,
-      label: '$displayName — Cotizaciones 3D',
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xxl,
-          AppSpacing.xl,
-          AppSpacing.xxl,
-          AppSpacing.xxl,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.primaryContainer,
-              color.primaryContainer.withValues(alpha: 0.6),
-              color.primaryContainer.withValues(alpha: 0.15),
-              Colors.transparent,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: const [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
-        child: Row(
-          children: [
-            // Logo o icono default
-            hasLogo
-                ? _buildCompanyLogo(theme, companyLogoBase64)
-                : _defaultHeroIcon(color),
-            const SizedBox(width: AppSpacing.lg),
-            // Texto
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: color.onSurface,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Row(
-                    children: [
-                      // Badge 3dCalc
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: color.primaryContainer,
-                          borderRadius: BorderRadius.circular(AppRadii.sm),
-                        ),
-                        child: Text(
-                          '3dCalc',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: color.onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          EsBO.homeHeroTagline,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: color.onSurfaceVariant,
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Modo default: solo app name
-  return Semantics(
-    header: true,
-    label: '3dCalc — Cotizaciones 3D',
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xxl,
-        AppSpacing.xl,
-        AppSpacing.xxl,
-        AppSpacing.xxl,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.primaryContainer,
-            color.primaryContainer.withValues(alpha: 0.6),
-            color.primaryContainer.withValues(alpha: 0.15),
-            Colors.transparent,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: const [0.0, 0.3, 0.7, 1.0],
-        ),
-      ),
-      child: Row(
+      semanticsLabel = '$displayName — Cotizaciones 3D';
+      content = Row(
         children: [
-          // Icon area grande con decoracion
+          // Logo o icono default
+          hasLogo
+              ? _buildCompanyLogo(theme, companyLogoBase64)
+              : _defaultHeroIcon(color),
+          const SizedBox(width: AppSpacing.lg),
+          // Texto
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color.onSurface,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Row(
+                  children: [
+                    // Badge 3dCalc
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: color.primaryContainer,
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
+                      ),
+                      child: Text(
+                        '3dCalc',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: color.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        EsBO.homeHeroTagline,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: color.onSurfaceVariant,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Modo default: solo app name
+      semanticsLabel = '3dCalc — Cotizaciones 3D';
+      content = Row(
+        children: [
+          // Sello de plano con logo
           Semantics(
             excludeSemantics: true,
-            child: Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color.primary,
-                    color.primary.withValues(alpha: 0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(AppRadii.xxl),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.primary.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                'assets/images/3dlogo.png',
-                width: 34,
-                height: 34,
-                fit: BoxFit.contain,
-              ),
-            ),
+            child: _defaultHeroIcon(color),
           ),
           const SizedBox(width: AppSpacing.lg),
           // Texto
@@ -254,9 +181,49 @@ class HomePage extends ConsumerWidget {
             ),
           ),
         ],
+      );
+    }
+
+    // Caratula de plano: hoja de papel con banda de cota superior
+    return Semantics(
+      header: true,
+      label: semanticsLabel,
+      child: Container(
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: color.surface,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          border: Border.all(color: color.outlineVariant, width: 0.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.onSurface.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Banda de cota superior del plano
+            Container(
+              height: 4,
+              decoration: BoxDecoration(color: color.primary),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xxl,
+                AppSpacing.xl,
+                AppSpacing.xxl,
+                AppSpacing.xxl,
+              ),
+              child: content,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _defaultHeroIcon(ColorScheme color) {
@@ -264,22 +231,8 @@ class HomePage extends ConsumerWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.primary,
-            color.primary.withValues(alpha: 0.7),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppRadii.xxl),
-        boxShadow: [
-          BoxShadow(
-            color: color.primary.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: color.primary,
+        borderRadius: BorderRadius.circular(AppRadii.sm),
       ),
       child: Image.asset(
         'assets/images/3dlogo.png',

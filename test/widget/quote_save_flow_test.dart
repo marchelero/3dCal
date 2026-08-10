@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/money/currency.dart';
@@ -105,6 +106,11 @@ Future<void> _tapSaveAndSettle(WidgetTester tester) async {
 }
 
 void main() {
+  // JetBrainsMono-SemiBold (w600) NO esta bundleado como asset (solo
+  // Bold/Medium): sin esto google_fonts intenta un fetch HTTP en el test env
+  // y la captura toImage de la cotizacion falla con una excepcion cruda.
+  GoogleFonts.config.allowRuntimeFetching = false;
+
   group('ResultSheetContent save button', () {
     testWidgets('error de save → AppSnackBar de error (no excepcion cruda)',
         (tester) async {

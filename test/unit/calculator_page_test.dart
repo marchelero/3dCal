@@ -56,8 +56,8 @@ void main() {
       expect(find.text('Descuento'), findsAtLeastNWidgets(1));
       expect(find.text('Precio bobina'), findsOneWidget);
       expect(find.text('Gramos / bobina'), findsOneWidget);
-      // Printer indicator
-      expect(find.text('Impresora'), findsOneWidget);
+      // Printer indicator (SectionHeader renderiza el titulo en mayusculas)
+      expect(find.text('IMPRESORA'), findsOneWidget);
       expect(find.text('Sin impresora registrada'), findsOneWidget);
       // Ya no existen Watts, Tarifa kWh, Profit
       expect(find.text('Watts'), findsNothing);

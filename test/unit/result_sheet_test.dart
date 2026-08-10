@@ -64,13 +64,13 @@ void main() {
         ),
       );
 
-      expect(find.text('Falta completar'), findsOneWidget);
+      expect(find.text('FALTA COMPLETAR'), findsOneWidget);
       expect(
         find.textContaining('Completa peso'),
         findsOneWidget,
       );
       // No muestra chevron up ni "Ver cotizacion" en estado empty.
-      expect(find.text('Ver cotización'), findsNothing);
+      expect(find.text('VER COTIZACIÓN'), findsNothing);
       expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsNothing);
     });
 
@@ -87,10 +87,10 @@ void main() {
       );
 
       expect(find.text(r'$ 36,00'), findsOneWidget);
-      expect(find.text('Ver cotización'), findsOneWidget);
+      expect(find.text('VER COTIZACIÓN'), findsOneWidget);
       expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsOneWidget);
       // Empty hint no presente.
-      expect(find.text('Falta completar'), findsNothing);
+      expect(find.text('FALTA COMPLETAR'), findsNothing);
 
       await tester.tap(find.byType(ResultBottomBar));
       await tester.pumpAndSettle();
@@ -132,8 +132,8 @@ void main() {
 
       // Quote template visible.
       expect(find.byType(QuoteImageTemplate), findsOneWidget);
-      // Titulo del sheet.
-      expect(find.text('Cotización'), findsWidgets);
+      // Titulo del sheet (SectionHeader uppercase).
+      expect(find.text('COTIZACIÓN'), findsWidgets);
       // Label del state aparece en el card.
       expect(find.text('Pieza de prueba'), findsOneWidget);
       // Total formateado.
@@ -196,7 +196,10 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
-      // Tap save (buscar por tooltip del IconButton).
+      // Tap save (buscar por tooltip del IconButton). El contenido del
+      // sheet supera el viewport del test (800x600) — asegurar visibilidad.
+      await tester.ensureVisible(find.byTooltip('Guardar cotización'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Guardar cotización'));
       await tester.pumpAndSettle();
 

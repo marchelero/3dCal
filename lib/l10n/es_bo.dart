@@ -141,6 +141,7 @@ class EsBO {
 
   // === Calculator ===
   static String get calcSectionPiece => _impl.calcSectionPiece;
+  static String get calcSectionWeight => _impl.calcSectionWeight;
   static String get calcSectionFilament => _impl.calcSectionFilament;
   static String get calcSectionTime => _impl.calcSectionTime;
   static String get calcSectionDiscount => _impl.calcSectionDiscount;
@@ -174,6 +175,8 @@ class EsBO {
   static String get calcSectionMaterials => _impl.calcSectionMaterials;
   static String get calcSectionPrinter => _impl.calcSectionPrinter;
   static String get calcNoPrinter => _impl.calcNoPrinter;
+  static String get calcPrinterEmptyCta => _impl.calcPrinterEmptyCta;
+  static String get calcPrinterEmptyHint => _impl.calcPrinterEmptyHint;
   static String get calcNoMaterials => _impl.calcNoMaterials;
 
   // === Key field hints (campos indispensables) ===
@@ -246,6 +249,9 @@ class EsBO {
   static String get filamentNameHelper => _impl.filamentNameHelper;
   static String get filamentBrand => _impl.filamentBrand;
   static String get filamentBrandHelper => _impl.filamentBrandHelper;
+  static String get brandSelectorOther => _impl.brandSelectorOther;
+  static String get brandSelectorHint => _impl.brandSelectorHint;
+  static String get brandSelectorManualHelper => _impl.brandSelectorManualHelper;
   static String filamentPrice(String symbol) => _impl.filamentPrice(symbol);
   static String get filamentPriceHelper => _impl.filamentPriceHelper;
   static String get filamentGrams => _impl.filamentGrams;
@@ -674,6 +680,8 @@ class EsImpl implements AppStrings {
   @override
   String get calcSectionPiece => 'Pieza';
   @override
+  String get calcSectionWeight => 'Peso de la pieza';
+  @override
   String get calcSectionFilament => 'Filamento';
   @override
   String get calcSectionTime => 'Tiempo de impresion';
@@ -747,6 +755,11 @@ class EsImpl implements AppStrings {
   String get calcSectionPrinter => 'Impresora';
   @override
   String get calcNoPrinter => 'Sin impresora registrada';
+  @override
+  String get calcPrinterEmptyCta => 'Registrar impresora';
+  @override
+  String get calcPrinterEmptyHint =>
+      'Se calcula sin costo de energía. Registra una para sumarlo.';
   @override
   String get calcNoMaterials => 'Sin materiales.';
 
@@ -869,6 +882,12 @@ class EsImpl implements AppStrings {
   String get filamentBrand => 'Marca';
   @override
   String get filamentBrandHelper => 'Opcional';
+  @override
+  String get brandSelectorOther => 'Otro...';
+  @override
+  String get brandSelectorHint => 'Elegí una marca o seleccioná Otro para escribirla';
+  @override
+  String get brandSelectorManualHelper => 'Escribí el nombre de la marca';
   @override
   String filamentPrice(String symbol) =>
       'Precio filamento ($symbol)';

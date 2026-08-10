@@ -12,10 +12,12 @@ import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../features/entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
+import '../../../../shared/widgets/perforation.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import 'calc_meta.dart';
@@ -53,137 +55,211 @@ class ResultBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     final isEmpty = emptyHint != null;
     return SafeArea(
       top: false,
       child: Material(
         elevation: 8,
         color: color.surface,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
-            child: Row(
-              children: [
-                // Icono con fondo animado (empty ↔ total)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isEmpty
-                        ? color.surfaceContainerHighest
-                        : color.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                  ),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    transitionBuilder: (child, animation) =>
-                        ScaleTransition(scale: animation, child: child),
-                    child: Icon(
-                      key: ValueKey(isEmpty),
-                      isEmpty
-                          ? Icons.info_outline_rounded
-                          : Icons.receipt_long_rounded,
-                      color: isEmpty
-                          ? color.onSurfaceVariant
-                          : color.onPrimaryContainer,
-                      size: 22,
-                    ),
-                  ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Borde de arranque perforado: la hoja se desprende aqui.
+            const Perforation(),
+            InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isEmpty
-                            ? EsBO.calcResultBarEmptyHint
-                            : EsBO.calcResultBarTapHint,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: color.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
+                child: Row(
+                  children: [
+                    // Icono cuadrado con tinta de plano (empty ↔ total)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
+                        border: Border.all(
+                          color: isEmpty
+                              ? color.outlineVariant
+                              : color.primary,
+                          width: 1.5,
                         ),
                       ),
-                      if (isEmpty)
-                        Text(
-                          emptyHint!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: color.onSurface,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        )
-                      else
-                        // Total con AnimatedSwitcher — anima cambio de cifra
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) =>
-                              SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0, 0.3),
-                                  end: Offset.zero,
-                                ).animate(
-                                  CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOut,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        transitionBuilder: (child, animation) =>
+                            ScaleTransition(scale: animation, child: child),
+                        child: Icon(
+                          key: ValueKey(isEmpty),
+                          isEmpty
+                              ? Icons.info_outline_rounded
+                              : Icons.receipt_long_rounded,
+                          color: isEmpty
+                              ? color.onSurfaceVariant
+                              : color.primary,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: isEmpty
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  EsBO.calcResultBarEmptyHint.toUpperCase(),
+                                  style: AppTheme.num(
+                                    theme.textTheme.labelSmall?.copyWith(
+                                      letterSpacing: 1.2,
+                                    ) ??
+                                        const TextStyle(),
+                                    color: color.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 10.5,
                                   ),
                                 ),
-                                child: FadeTransition(
-                                  opacity: animation,
-                                  child: child,
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  emptyHint!,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: color.onSurface,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                          child: Text(
-                            totalText,
-                            key: ValueKey(totalText),
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: color.onSurface,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  EsBO.calcResultBarTapHint.toUpperCase(),
+                                  style: AppTheme.num(
+                                    theme.textTheme.labelSmall?.copyWith(
+                                      letterSpacing: 1.2,
+                                    ) ??
+                                        const TextStyle(),
+                                    color: color.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 10.5,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                                // Caja del total con doble regla: el momento
+                                // de la venta.
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(
+                                        color: color.onSurface,
+                                        width: 2,
+                                      ),
+                                      bottom: BorderSide(
+                                        color: color.onSurface,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        top: BorderSide(
+                                          color: color.onSurface,
+                                          width: 1,
+                                        ),
+                                        bottom: BorderSide(
+                                          color: color.onSurface,
+                                          width: 1,
+                                        ),
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 2,
+                                    ),
+                                    child: AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 300),
+                                      transitionBuilder: (child, animation) =>
+                                          SlideTransition(
+                                            position: Tween<Offset>(
+                                              begin: const Offset(0, 0.3),
+                                              end: Offset.zero,
+                                            ).animate(
+                                              CurvedAnimation(
+                                                parent: animation,
+                                                curve: Curves.easeOut,
+                                              ),
+                                            ),
+                                            child: FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            ),
+                                          ),
+                                      child: Text(
+                                        totalText,
+                                        key: ValueKey(totalText),
+                                        style: AppTheme.num(
+                                          theme.textTheme.titleLarge ??
+                                              const TextStyle(),
+                                          color: color.onSurface,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                    ),
+                    if (!isEmpty && hasDiscount) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      // Sello de descuento: correccion en tinta roja.
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: color.error,
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadii.xs),
+                        ),
+                        child: Text(
+                          EsBO.calcToggleShowDetail,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: color.error,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                if (!isEmpty && hasDiscount) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color.errorContainer,
-                      borderRadius: BorderRadius.circular(AppRadii.sm),
-                    ),
-                    child: Text(
-                      EsBO.calcToggleShowDetail,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: color.onErrorContainer,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                  ),
-                ],
-                if (!isEmpty) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  Icon(
-                    Icons.keyboard_arrow_up_rounded,
-                    color: color.onSurfaceVariant,
-                  ),
-                ],
-              ],
+                    ],
+                    if (!isEmpty) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      Icon(
+                        Icons.keyboard_arrow_up_rounded,
+                        color: color.onSurfaceVariant,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -362,27 +438,53 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.sm,
-          AppSpacing.lg,
-          AppSpacing.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Title row
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Text(
-                EsBO.calcSheetTitle,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+      // Entrada de sello: UN momento autorado (stamp settle).
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1.12, end: 1.0),
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutBack,
+        builder: (context, scale, child) =>
+            Transform.scale(scale: scale, child: child),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Bloque de titulo del plano
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant,
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        EsBO.calcSheetTitle.toUpperCase(),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Container(height: 1, color: theme.colorScheme.outlineVariant),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
             // ── Quote Image Template (capturable ──
             // Este widget se captura como PNG. NO tiene elementos interactivos.
@@ -465,11 +567,13 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
           ],
         ),
       ),
+      ),
     );
   }
 }
 
-/// Fila de 4 botones circulares centrados: Guardar, Compartir, Descargar, Reset.
+/// Fila de 5 botones-sello cuadrados centrados: Guardar, PDF, Compartir,
+/// Descargar, Reset.
 class _ActionIconRow extends StatelessWidget {
   const _ActionIconRow({
     required this.isBusy,
@@ -533,7 +637,7 @@ class _ActionIconRow extends StatelessWidget {
   }
 }
 
-/// Botón circular con ícono, usado en [_ActionIconRow].
+/// Boton-sello cuadrado con icono, usado en [_ActionIconRow].
 class _ActionIcon extends StatelessWidget {
   const _ActionIcon({
     required this.icon,
@@ -557,9 +661,13 @@ class _ActionIcon extends StatelessWidget {
       onPressed: onPressed,
       style: IconButton.styleFrom(
         foregroundColor: color,
-        backgroundColor: color.withValues(alpha: 0.12),
-        shape: const CircleBorder(),
-        padding: const EdgeInsets.all(AppSpacing.md),
+        backgroundColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+          side: BorderSide(color: color, width: 1.5),
+        ),
+        minimumSize: const Size(44, 44),
+        padding: const EdgeInsets.all(AppSpacing.sm),
       ),
       icon: isBusy
           ? SizedBox(

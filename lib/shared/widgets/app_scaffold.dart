@@ -132,11 +132,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Barra naranja superior (muy visible) ──
+            // ── Regla de cota superior (muy visible) ──
             Container(
               height: 2.5,
               width: double.infinity,
-              color: color.secondary.withValues(alpha: 0.5),
+              color: color.primary.withValues(alpha: 0.55),
             ),
             NavigationBar(
               selectedIndex: widget.navigationShell.currentIndex,
@@ -221,10 +221,10 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                 ],
               ),
             ),
-            // ── Separador con borde naranja ──
+            // ── Separador con borde de plano ──
             Container(
               width: 2.5,
-              color: color.secondary.withValues(alpha: 0.3),
+              color: color.primary.withValues(alpha: 0.35),
             ),
             // ── Contenido ──
             Expanded(

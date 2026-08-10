@@ -60,7 +60,17 @@ class HistoryCapReachedException implements Exception {
 /// Si el form no es valido, [CalculatorState.output] queda en `null`.
 class CalculatorNotifier extends Notifier<CalculatorState> {
   @override
-  CalculatorState build() => CalculatorState.initial();
+  CalculatorState build() {
+    // Recalcula cuando cambia la impresora activa (elegida en el selector,
+    // creada desde el CTA, o restaurada desde prefs) para que el costo de
+    // energia se actualice sin que el usuario tenga que tocar un campo.
+    ref.listen(activePrinterProvider, (_, __) {
+      if (state.isValid) {
+        state = _recompute(state);
+      }
+    });
+    return CalculatorState.initial();
+  }
 
   // === Mode ===
 
@@ -389,13 +399,14 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
   /// Construye [CalculationInput] desde el state + settings + printer.
   ///
-  /// Lee [Settings] y [defaultPrinter] de los providers para pasar watts,
-  /// kwhRate, profitBase y los 5 nuevos parametros F1 al engine.
+  /// Lee [Settings] y la impresora ACTIVA de los providers para pasar watts,
+  /// kwhRate, profitBase y los 5 nuevos parametros F1 al engine. Se usa la
+  /// activa (no la default) para que el calculo coincida con la UI.
   CalculationInput _buildInput(CalculatorState s) {
     final asyncSettings =
         ref.read<AsyncValue<Settings>>(settingsNotifierProvider);
     final settings = asyncSettings.valueOrNull ?? Settings.defaults;
-    final printer = ref.read(defaultPrinterProvider);
+    final printer = ref.read(activePrinterProvider);
 
     final materials = <MaterialInput>[];
     if (s.mode == CalculatorMode.express) {

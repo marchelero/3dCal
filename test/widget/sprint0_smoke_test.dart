@@ -54,7 +54,7 @@ void main() {
     expect(find.text('Horas'), findsOneWidget);
     expect(find.text('Precio bobina'), findsOneWidget);
     expect(find.text('Gramos / bobina'), findsOneWidget);
-    expect(find.text('Impresora'), findsOneWidget);
+    expect(find.text('IMPRESORA'), findsOneWidget);
     expect(find.text('Sin impresora registrada'), findsOneWidget);
     expect(find.text('Tarifa kWh'), findsNothing);
 

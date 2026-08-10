@@ -122,6 +122,7 @@ abstract class AppStrings {
 
   // === Calculator sections + fields ===
   String get calcSectionPiece;
+  String get calcSectionWeight;
   String get calcSectionFilament;
   String get calcSectionTime;
   String get calcSectionDiscount;
@@ -154,6 +155,8 @@ abstract class AppStrings {
   String get calcSectionMaterials;
   String get calcSectionPrinter;
   String get calcNoPrinter;
+  String get calcPrinterEmptyCta;
+  String get calcPrinterEmptyHint;
   String get calcNoMaterials;
   String get calcEmptyHint;
 
@@ -225,6 +228,12 @@ abstract class AppStrings {
   String get filamentNameHelper;
   String get filamentBrand;
   String get filamentBrandHelper;
+  /// "Otro..." — opcion del selector de marca que activa el ingreso manual.
+  String get brandSelectorOther;
+  /// Hint del selector de marca cuando aun no hay valor.
+  String get brandSelectorHint;
+  /// Helper del campo manual de marca (modo "Otro...").
+  String get brandSelectorManualHelper;
   String filamentPrice(String symbol);
   String get filamentPriceHelper;
   String get filamentGrams;
