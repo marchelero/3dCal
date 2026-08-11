@@ -210,12 +210,12 @@ class _NumericInputFieldState extends State<NumericInputField> {
     );
     final keyPrefixIcon = isKey
         ? (widget.keyHint != null
-            ? Tooltip(
-                message: widget.keyHint,
-                triggerMode: TooltipTriggerMode.tap,
-                child: keyIcon,
-              )
-            : keyIcon)
+              ? Tooltip(
+                  message: widget.keyHint,
+                  triggerMode: TooltipTriggerMode.tap,
+                  child: keyIcon,
+                )
+              : keyIcon)
         : null;
 
     // El helperText se muestra siempre (incluso en campos clave): los

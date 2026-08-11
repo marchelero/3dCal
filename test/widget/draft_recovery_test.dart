@@ -40,9 +40,7 @@ void main() {
     });
 
     test('clear() borra el draft', () async {
-      SharedPreferences.setMockInitialValues({
-        'form_draft': '{"weight":"50"}',
-      });
+      SharedPreferences.setMockInitialValues({'form_draft': '{"weight":"50"}'});
       final prefs = await SharedPreferences.getInstance();
       final storage = DraftStorage(prefs);
 

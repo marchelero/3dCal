@@ -44,28 +44,32 @@ void main() {
       expect(names.single, isNot(endsWith('.png')));
     });
 
-    test('GalException (real de gal 2.3.x) → ShareQuoteException con mensaje',
-        () async {
-      final saver = _ThrowingSaver(
-        GalException(
-          type: GalExceptionType.notEnoughSpace,
-          platformException:
-              PlatformException(code: 'NOT_ENOUGH_SPACE', message: 'storage full'),
-          stackTrace: StackTrace.empty,
-        ),
-      );
-
-      await expectLater(
-        saveQuoteImage(Uint8List(0), gallerySaver: saver),
-        throwsA(
-          isA<ShareQuoteException>().having(
-            (e) => e.message,
-            'message',
-            contains('storage full'),
+    test(
+      'GalException (real de gal 2.3.x) → ShareQuoteException con mensaje',
+      () async {
+        final saver = _ThrowingSaver(
+          GalException(
+            type: GalExceptionType.notEnoughSpace,
+            platformException: PlatformException(
+              code: 'NOT_ENOUGH_SPACE',
+              message: 'storage full',
+            ),
+            stackTrace: StackTrace.empty,
           ),
-        ),
-      );
-    });
+        );
+
+        await expectLater(
+          saveQuoteImage(Uint8List(0), gallerySaver: saver),
+          throwsA(
+            isA<ShareQuoteException>().having(
+              (e) => e.message,
+              'message',
+              contains('storage full'),
+            ),
+          ),
+        );
+      },
+    );
 
     test('GalException sin message → mensaje generico', () async {
       final saver = _ThrowingSaver(
@@ -88,33 +92,37 @@ void main() {
       );
     });
 
-    test('PlatformException (backstop) → ShareQuoteException con errorMessage',
-        () async {
-      final saver = _ThrowingSaver(
-        PlatformException(code: 'save_failed', message: 'boom'),
-      );
+    test(
+      'PlatformException (backstop) → ShareQuoteException con errorMessage',
+      () async {
+        final saver = _ThrowingSaver(
+          PlatformException(code: 'save_failed', message: 'boom'),
+        );
 
-      await expectLater(
-        saveQuoteImage(Uint8List(0), gallerySaver: saver),
-        throwsA(
-          isA<ShareQuoteException>().having(
-            (e) => e.message,
-            'message',
-            contains('boom'),
+        await expectLater(
+          saveQuoteImage(Uint8List(0), gallerySaver: saver),
+          throwsA(
+            isA<ShareQuoteException>().having(
+              (e) => e.message,
+              'message',
+              contains('boom'),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
-    test('Plataforma sin plugin (MissingPluginException) → ShareQuoteException',
-        () async {
-      final saver = _ThrowingSaver(MissingPluginException());
+    test(
+      'Plataforma sin plugin (MissingPluginException) → ShareQuoteException',
+      () async {
+        final saver = _ThrowingSaver(MissingPluginException());
 
-      await expectLater(
-        saveQuoteImage(Uint8List(0), gallerySaver: saver),
-        throwsA(isA<ShareQuoteException>()),
-      );
-    });
+        await expectLater(
+          saveQuoteImage(Uint8List(0), gallerySaver: saver),
+          throwsA(isA<ShareQuoteException>()),
+        );
+      },
+    );
 
     test('excepcion inesperada → ShareQuoteException generico', () async {
       final saver = _ThrowingSaver(Exception('wat'));

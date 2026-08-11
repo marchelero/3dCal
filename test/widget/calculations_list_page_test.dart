@@ -156,12 +156,14 @@ Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final repo = _FakeEntitlementRepository();
   final payment = _FakePaymentService();
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    entitlementRepositoryProvider.overrideWithValue(repo),
-    paymentServiceProvider.overrideWithValue(payment),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entitlementRepositoryProvider.overrideWithValue(repo),
+      paymentServiceProvider.overrideWithValue(payment),
+    ],
+  );
   addTearDown(container.dispose);
   addTearDown(() async {
     await db.close();
@@ -197,12 +199,14 @@ Future<({ProviderContainer container, AppDatabase db})> _pumpPagePro(
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final repo = _FakeEntitlementRepository();
   final payment = _FakePaymentService();
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    entitlementRepositoryProvider.overrideWithValue(repo),
-    paymentServiceProvider.overrideWithValue(payment),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entitlementRepositoryProvider.overrideWithValue(repo),
+      paymentServiceProvider.overrideWithValue(payment),
+    ],
+  );
   addTearDown(container.dispose);
   addTearDown(() async {
     await db.close();
@@ -277,18 +281,16 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('CalculationsListPage — CSV export gate en Free', () {
-    testWidgets(
-      'muestra el IconButton "Exportar CSV" en la AppBar',
-      (tester) async {
-        await _pumpPageFree(tester);
-        expect(
-          find.byTooltip(EsBO.csvExportTooltipLocked),
-          findsOneWidget,
-          reason:
-              'Free: el boton de export CSV (tooltip locked) en la AppBar.',
-        );
-      },
-    );
+    testWidgets('muestra el IconButton "Exportar CSV" en la AppBar', (
+      tester,
+    ) async {
+      await _pumpPageFree(tester);
+      expect(
+        find.byTooltip(EsBO.csvExportTooltipLocked),
+        findsOneWidget,
+        reason: 'Free: el boton de export CSV (tooltip locked) en la AppBar.',
+      );
+    });
 
     testWidgets(
       'tap en "Exportar CSV" muestra SnackBar con body + action "Go Pro"',
@@ -335,37 +337,38 @@ void main() {
         expect(
           find.text('No hay cotizaciones para exportar'),
           findsNothing,
-          reason: 'Lista no vacia: el gate debe dispararse, no el branch empty.',
+          reason:
+              'Lista no vacia: el gate debe dispararse, no el branch empty.',
         );
         // El body del gate SI debe aparecer.
         expect(find.text(EsBO.csvExportLockedBody), findsOneWidget);
       },
     );
 
-    testWidgets(
-      'tap en action "Go Pro" navega a /paywall',
-      (tester) async {
-        await _pumpPageFree(tester);
+    testWidgets('tap en action "Go Pro" navega a /paywall', (tester) async {
+      await _pumpPageFree(tester);
 
-        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-        // El action "Go Pro" del SnackBar debe estar visible.
-        final goProAction = find.text(EsBO.csvGoProAction);
-        expect(goProAction, findsOneWidget);
+      // El action "Go Pro" del SnackBar debe estar visible.
+      final goProAction = find.text(EsBO.csvGoProAction);
+      expect(goProAction, findsOneWidget);
 
-        // Tap en el action. Usamos ensureVisible por si quedo fuera del
-        // viewport en viewports chicos.
-        await tester.ensureVisible(goProAction);
-        await tester.tap(goProAction);
-        await tester.pumpAndSettle();
+      // Tap en el action. Usamos ensureVisible por si quedo fuera del
+      // viewport en viewports chicos.
+      await tester.ensureVisible(goProAction);
+      await tester.tap(goProAction);
+      await tester.pumpAndSettle();
 
-        // La pagina paywall (stub) debe estar visible.
-        expect(find.text('Paywall stub'), findsOneWidget,
-            reason: 'Action "Go Pro" debe navegar a /paywall.');
-      },
-    );
+      // La pagina paywall (stub) debe estar visible.
+      expect(
+        find.text('Paywall stub'),
+        findsOneWidget,
+        reason: 'Action "Go Pro" debe navegar a /paywall.',
+      );
+    });
   });
 
   // ─────────────────────────────────────────────────────────────
@@ -373,45 +376,47 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('CalculationsListPage — CSV export en Pro', () {
-    testWidgets(
-      'tap en "Exportar CSV" NO muestra SnackBar del gate',
-      (tester) async {
-        final res = await _pumpPagePro(tester);
+    testWidgets('tap en "Exportar CSV" NO muestra SnackBar del gate', (
+      tester,
+    ) async {
+      final res = await _pumpPagePro(tester);
 
-        // Sanity check: isProProvider debe ser true antes del tap. El
-        // `_pumpPagePro` fuerza la resolucion del notifier via
-        // `container.read(future)`, asi que esto es un guard redundante
-        // para que un cambio futuro no haga el test silenciosamente
-        // invalido.
-        expect(res.container.read(isProProvider), isTrue,
-            reason: 'Pro setup: el notifier debe haber resuelto a Pro.');
+      // Sanity check: isProProvider debe ser true antes del tap. El
+      // `_pumpPagePro` fuerza la resolucion del notifier via
+      // `container.read(future)`, asi que esto es un guard redundante
+      // para que un cambio futuro no haga el test silenciosamente
+      // invalido.
+      expect(
+        res.container.read(isProProvider),
+        isTrue,
+        reason: 'Pro setup: el notifier debe haber resuelto a Pro.',
+      );
 
-        await tester.tap(find.byTooltip('Exportar CSV'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byTooltip('Exportar CSV'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-        // El body del gate NO debe aparecer.
-        expect(
-          find.text(EsBO.csvExportLockedBody),
-          findsNothing,
-          reason: 'Pro: el gate no debe dispararse.',
-        );
-        // El action "Go Pro" tampoco.
-        expect(
-          find.text(EsBO.csvGoProAction),
-          findsNothing,
-          reason: 'Pro: no debe ofrecer "Go Pro" en el export.',
-        );
-        // Y no debe aparecer el branch de lista vacia tampoco.
-        expect(
-          find.text('No hay cotizaciones para exportar'),
-          findsNothing,
-          reason: 'Lista no vacia: no debe disparar branch empty.',
-        );
-        // El share va a throw MissingPluginException (no hay platform
-        // channel en test), pero eso no rompe el assert: lo que importa
-        // es que el gate NO se disparo.
-      },
-    );
+      // El body del gate NO debe aparecer.
+      expect(
+        find.text(EsBO.csvExportLockedBody),
+        findsNothing,
+        reason: 'Pro: el gate no debe dispararse.',
+      );
+      // El action "Go Pro" tampoco.
+      expect(
+        find.text(EsBO.csvGoProAction),
+        findsNothing,
+        reason: 'Pro: no debe ofrecer "Go Pro" en el export.',
+      );
+      // Y no debe aparecer el branch de lista vacia tampoco.
+      expect(
+        find.text('No hay cotizaciones para exportar'),
+        findsNothing,
+        reason: 'Lista no vacia: no debe disparar branch empty.',
+      );
+      // El share va a throw MissingPluginException (no hay platform
+      // channel en test), pero eso no rompe el assert: lo que importa
+      // es que el gate NO se disparo.
+    });
   });
 }

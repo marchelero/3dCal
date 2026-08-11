@@ -159,6 +159,23 @@ class FrImpl implements AppStrings {
   String get settingsBackupImportCancel => 'Annuler';
 
   @override
+  String get settingsBackupImportSizeError =>
+      'Le fichier de sauvegarde dépasse la taille maximale autorisée.';
+
+  @override
+  String get settingsBackupImportInvalidFile =>
+      'Le fichier sélectionné n\'est pas une sauvegarde valide.';
+
+  @override
+  String get settingsBackupImportFutureVersion =>
+      'Cette sauvegarde a été créée avec une version future de l\'application. '
+      'Mettez à jour 3dCalc et réessayez.';
+
+  @override
+  String get settingsBackupLockedBody =>
+      'Les sauvegardes sont une fonctionnalité Pro.';
+
+  @override
   String get dashboardTitle => 'Tableau de bord';
   @override
   String get dashboardErrorLoad =>
@@ -333,6 +350,69 @@ class FrImpl implements AppStrings {
   String get calcFieldWaste => 'Déchets';
   @override
   String get calcFieldWasteHelper => '% de majoration des déchets';
+
+  @override
+  String get costHelpTitle => 'Comment calibrer vos coûts';
+
+  @override
+  String get costHelpEnergyTitle => 'Coût de l’énergie';
+
+  @override
+  String get costHelpEnergyBody =>
+      'Énergie utilisée à l’impression : heures d’impression × puissance '
+      '(kW) × tarif (\$/kWh). Ex. : 6 h × 0,15 kW × 1,2 \$/kWh ≈ 1,08 \$. '
+      'Ajouté seulement si l’imprimante a une puissance enregistrée.';
+
+  @override
+  String get costHelpLaborTitle => 'Main-d’œuvre';
+
+  @override
+  String get costHelpLaborBody =>
+      'Votre temps : heures de travail × taux horaire (\$/h). Inclut la '
+      'préparation de l’imprimante, le suivi et la finition.';
+
+  @override
+  String get costHelpPostTitle => 'Post-traitement';
+
+  @override
+  String get costHelpPostBody =>
+      'Pourcentage supplémentaire sur le coût des matériaux pour ponçage, '
+      'peinture, colle ou autres finitions.';
+
+  @override
+  String get costHelpFailureTitle => 'Taux d’échec';
+
+  @override
+  String get costHelpFailureBody =>
+      'Pourcentage du coût de base réservé aux pièces ratées. Si 1 pièce sur '
+      '10 échoue, ces 10 % se répartissent sur les 9 vendues.';
+
+  @override
+  String get costHelpWasteTitle => 'Déchets et usure';
+
+  @override
+  String get costHelpWasteBody =>
+      'Pourcentage supplémentaire sur les matériaux : supports, purge de '
+      'buse, filament de test et usure de l’imprimante.';
+
+  @override
+  String get costHelpMinimumChargeTitle => 'Montant minimum';
+
+  @override
+  String get costHelpMinimumChargeBody =>
+      'Prix plancher. Si le total calculé est inférieur, ce montant minimum '
+      'est facturé. Idéal pour les petites pièces qui demandent quand même '
+      'la préparation de l’imprimante.';
+
+  @override
+  String get costHelpMarginTitle => 'Marge (profit)';
+
+  @override
+  String get costHelpMarginBody =>
+      'Pourcentage ajouté au coût total pour votre profit : total × (1 + '
+      'marge/100). Réglable dans Paramètres globaux.';
+  @override
+  String get calcCloseAction => 'Fermer et retourner au menu';
   @override
   String get calcModeExpress => 'Express';
   @override
@@ -345,6 +425,38 @@ class FrImpl implements AppStrings {
   String get calcDialogClient => 'Client';
   @override
   String get calcDialogClientHelper => 'Facultatif';
+  @override
+  String get calcDialogRecentClients => 'Clients récents';
+  @override
+  String get calcDialogNotes => 'Notes (facultatif)';
+  @override
+  String get calcDialogNotesHelper =>
+      'Sp\u00e9cifications, d\u00e9lais, livraison\u2026';
+  @override
+  String get calcDialogConditions => 'Conditions commerciales (facultatif)';
+  @override
+  String get calcDialogConditionsHelper =>
+      'Validit\u00e9, paiement, garantie\u2026';
+
+  @override
+  String get calcTemplatesTitle => 'Mod\u00e8les';
+  @override
+  String get calcTemplateSaveAsAction => 'Enregistrer comme mod\u00e8le';
+  @override
+  String get calcTemplateSaveSuccess => 'Mod\u00e8le enregistr\u00e9';
+  @override
+  String get calcTemplateSaveError => 'Impossible d\u2019enregistrer le mod\u00e8le';
+  @override
+  String get calcTemplateApplySuccess => 'Mod\u00e8le appliqu\u00e9 au formulaire';
+  @override
+  String get calcTemplateApplyError => 'Impossible de charger le mod\u00e8le';
+  @override
+  String get calcTemplateEmpty =>
+      'Aucun mod\u00e8le pour l\u2019instant.\nEnregistrez un travail fr\u00e9quent comme mod\u00e8le pour le r\u00e9utiliser.';
+  @override
+  String get calcTemplateUntitled => 'Sans nom';
+  @override
+  String get calcTemplateDeleteError => 'Impossible de supprimer le mod\u00e8le';
   @override
   String get calcEmptyHintPrefix => 'Renseignez';
   @override
@@ -488,6 +600,15 @@ class FrImpl implements AppStrings {
   String get calcDetailMarkSold => 'Marquer comme vendu';
   @override
   String get calcDetailMarkPending => 'Marquer comme en attente';
+
+  @override
+  String get calcDuplicateAction => 'Dupliquer';
+  @override
+  String get calcDuplicateSuffix => ' (copie)';
+  @override
+  String get calcDuplicateSuccess => 'Devis dupliqué';
+  @override
+  String get calcDuplicateError => 'Impossible de dupliquer le devis';
   @override
   String get historyTitle => 'Devis';
   @override
@@ -538,6 +659,10 @@ class FrImpl implements AppStrings {
   String get onboardingSkip => 'Ignorer';
   @override
   String get onboardingStart => 'Commencer';
+  @override
+  String get onboardingStartQuote => 'Créer mon premier devis';
+  @override
+  String get onboardingGoHome => 'Aller au menu';
   @override
   String get configTitle => 'Configuration initiale';
   @override
@@ -765,6 +890,8 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   @override
   String calcSavedWithId(int id) => 'Devis n° $id enregistré.';
   @override
+  String get calcSavedViewAction => 'Voir';
+  @override
   String get calcAddMaterial => 'Ajouter un matériau';
   @override
   String get calcPrinterPrefix => 'Imprimante : ';
@@ -796,6 +923,16 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get pdfShareSubject => 'Devis 3dCalc';
   @override
   String get pdfDatePrefix => 'Date : ';
+  @override
+  String get pdfQuoteNumber => 'N\u00ba ';
+  @override
+  String get pdfValidUntilPrefix => 'Valable jusqu\u2019au : ';
+  @override
+  String get pdfClientPrefix => 'Client : ';
+  @override
+  String get pdfNotesTitle => 'Notes';
+  @override
+  String get pdfConditionsTitle => 'Conditions';
   @override
   String get pdfMaterialCosts => 'Coût des matériaux';
   @override

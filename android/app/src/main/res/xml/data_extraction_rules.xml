@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Política de backup explícita (Android 12+, targetSdk 31+).
+     3dCalc es local-first: la base SQLite contiene datos comerciales y
+     nombres de clientes. Se desactiva tanto el cloud-backup (Google Drive)
+     como el device-transfer (migración dispositivo→dispositivo) para que
+     NUNCA salgan del dispositivo sin la acción explícita del usuario
+     (export JSON desde Ajustes).
+     La restauración de datos queda cubierta por el backup manual de la app. -->
+<data-extraction-rules>
+    <cloud-backup disable="true" />
+    <device-transfer disable="true" />
+</data-extraction-rules>

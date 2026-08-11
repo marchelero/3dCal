@@ -379,8 +379,7 @@ void main() {
 
         (container.read(settingsNotifierProvider.notifier)
                 as _FakeSettingsNotifier)
-            .setForTest(
-                Settings.defaults.copyWith(profitBase: Decimal.zero));
+            .setForTest(Settings.defaults.copyWith(profitBase: Decimal.zero));
 
         final out = container.read(calculatorNotifierProvider).output!;
         expect(out.totalPrice, Decimal.fromInt(10)); // sin profit
@@ -554,6 +553,7 @@ void main() {
           printerWattsSnapshot: 0,
           totalHours: 1.55,
           printMinutes: 0, // v3: siempre 0
+          isTemplate: false,
           discountPercentage: 0,
           kwhRateSnapshot: 0.6,
           profitBaseSnapshot: 200,

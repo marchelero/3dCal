@@ -178,6 +178,22 @@ class PtBrImpl implements AppStrings {
   String get settingsBackupImportCancel => 'Cancelar';
 
   @override
+  String get settingsBackupImportSizeError =>
+      'O arquivo de backup excede o tamanho máximo permitido.';
+
+  @override
+  String get settingsBackupImportInvalidFile =>
+      'O arquivo selecionado não é um backup válido.';
+
+  @override
+  String get settingsBackupImportFutureVersion =>
+      'Este backup foi criado com uma versão futura do aplicativo. '
+      'Atualize o 3dCalc e tente novamente.';
+
+  @override
+  String get settingsBackupLockedBody => 'Fazer backups é um recurso Pro.';
+
+  @override
   String get dashboardTitle => 'Painel';
   @override
   String get dashboardErrorLoad => 'Erro ao carregar o painel';
@@ -360,6 +376,70 @@ class PtBrImpl implements AppStrings {
   String get calcFieldWasteHelper => '% de margem de desperdício';
 
   @override
+  String get costHelpTitle => 'Como calibrar seus custos';
+
+  @override
+  String get costHelpEnergyTitle => 'Custo de energia';
+
+  @override
+  String get costHelpEnergyBody =>
+      'Energia usada na impressão: horas de impressão × potência (kW) × '
+      'tarifa (\$/kWh). Ex.: 6 h × 0,15 kW × 1,2 \$/kWh ≈ \$1,08. Só entra se '
+      'a impressora tiver potência cadastrada.';
+
+  @override
+  String get costHelpLaborTitle => 'Mão de obra';
+
+  @override
+  String get costHelpLaborBody =>
+      'Seu tempo: horas de trabalho × tarifa horária (\$/h). Inclui preparar '
+      'a impressora, acompanhar a peça e o acabamento final.';
+
+  @override
+  String get costHelpPostTitle => 'Pós-processamento';
+
+  @override
+  String get costHelpPostBody =>
+      'Percentual extra sobre o custo de materiais para lixamento, pintura, '
+      'cola ou outros acabamentos.';
+
+  @override
+  String get costHelpFailureTitle => 'Taxa de falha';
+
+  @override
+  String get costHelpFailureBody =>
+      'Percentual do custo base reservado para peças com falha. Se 1 em cada '
+      '10 falha, esses 10% se distribuem entre as 9 que você vende.';
+
+  @override
+  String get costHelpWasteTitle => 'Desperdício e desgaste';
+
+  @override
+  String get costHelpWasteBody =>
+      'Percentual extra sobre materiais: suportes, purga do bico, filamento '
+      'de teste e desgaste da impressora.';
+
+  @override
+  String get costHelpMinimumChargeTitle => 'Cobrança mínima';
+
+  @override
+  String get costHelpMinimumChargeBody =>
+      'Piso do preço final. Se o total calculado ficar abaixo, cobra-se esse '
+      'mínimo. Ideal para peças pequenas que ainda exigem preparar a '
+      'impressora.';
+
+  @override
+  String get costHelpMarginTitle => 'Lucro (margem)';
+
+  @override
+  String get costHelpMarginBody =>
+      'Percentual somado ao custo total para o seu lucro: total × (1 + '
+      'margem/100). Ajustado em Parâmetros globais.';
+
+  @override
+  String get calcCloseAction => 'Fechar e voltar ao menu';
+
+  @override
   String get calcModeExpress => 'Express';
   @override
   String get calcModeAdvanced => 'Avançado';
@@ -373,6 +453,40 @@ class PtBrImpl implements AppStrings {
   String get calcDialogClient => 'Cliente';
   @override
   String get calcDialogClientHelper => 'Opcional';
+  @override
+  String get calcDialogRecentClients => 'Clientes recentes';
+  @override
+  String get calcDialogNotes => 'Notas (opcional)';
+  @override
+  String get calcDialogNotesHelper =>
+      'Especifica\u00e7\u00f5es, prazos, entregas\u2026';
+  @override
+  String get calcDialogConditions =>
+      'Condi\u00e7\u00f5es comerciais (opcional)';
+  @override
+  String get calcDialogConditionsHelper =>
+      'Validade, pagamento, garantia\u2026';
+
+  @override
+  String get calcTemplatesTitle => 'Modelos';
+  @override
+  String get calcTemplateSaveAsAction => 'Salvar como modelo';
+  @override
+  String get calcTemplateSaveSuccess => 'Modelo salvo';
+  @override
+  String get calcTemplateSaveError => 'N\u00e3o foi poss\u00edvel salvar o modelo';
+  @override
+  String get calcTemplateApplySuccess => 'Modelo aplicado ao formul\u00e1rio';
+  @override
+  String get calcTemplateApplyError => 'N\u00e3o foi poss\u00edvel carregar o modelo';
+  @override
+  String get calcTemplateEmpty =>
+      'Voc\u00ea ainda n\u00e3o tem modelos.\nSalve um trabalho frequente como modelo para reutiliz\u00e1-lo.';
+  @override
+  String get calcTemplateUntitled => 'Sem nome';
+  @override
+  String get calcTemplateDeleteError =>
+      'N\u00e3o foi poss\u00edvel excluir o modelo';
 
   @override
   String get calcEmptyHintPrefix => 'Preencha';
@@ -526,6 +640,15 @@ class PtBrImpl implements AppStrings {
   String get calcDetailMarkPending => 'Marcar como pendente';
 
   @override
+  String get calcDuplicateAction => 'Duplicar';
+  @override
+  String get calcDuplicateSuffix => ' (cópia)';
+  @override
+  String get calcDuplicateSuccess => 'Cotação duplicada';
+  @override
+  String get calcDuplicateError => 'Não foi possível duplicar a cotação';
+
+  @override
   String get historyTitle => 'Orçamentos';
   @override
   String get historyErrorLoad => 'Erro ao carregar orçamentos';
@@ -575,6 +698,10 @@ class PtBrImpl implements AppStrings {
   String get onboardingSkip => 'Pular';
   @override
   String get onboardingStart => 'Começar';
+  @override
+  String get onboardingStartQuote => 'Criar minha primeira cotação';
+  @override
+  String get onboardingGoHome => 'Ir ao menu';
   @override
   String get configTitle => 'Configuração inicial';
   @override
@@ -821,6 +948,8 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   @override
   String calcSavedWithId(int id) => 'Orçamento nº $id salvo.';
   @override
+  String get calcSavedViewAction => 'Ver';
+  @override
   String get calcAddMaterial => 'Adicionar material';
   @override
   String get calcPrinterPrefix => 'Impressora: ';
@@ -855,6 +984,16 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String get pdfShareSubject => 'Orçamento do 3dCalc';
   @override
   String get pdfDatePrefix => 'Data: ';
+  @override
+  String get pdfQuoteNumber => 'N\u00ba ';
+  @override
+  String get pdfValidUntilPrefix => 'V\u00e1lido at\u00e9: ';
+  @override
+  String get pdfClientPrefix => 'Cliente: ';
+  @override
+  String get pdfNotesTitle => 'Notas';
+  @override
+  String get pdfConditionsTitle => 'Condi\u00e7\u00f5es';
   @override
   String get pdfMaterialCosts => 'Custo dos materiais';
   @override

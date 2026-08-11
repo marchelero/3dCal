@@ -128,10 +128,11 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
       }
       if (mounted) context.pop();
     } catch (e) {
+      debugPrint('Filament save failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(AppSnackBar.error('${EsBO.filamentErrorSave}: $e'));
+        ).showSnackBar(AppSnackBar.error(EsBO.filamentErrorSave));
       }
     } finally {
       if (mounted) setState(() => _saving = false);

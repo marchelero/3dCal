@@ -13,9 +13,9 @@ void main() {
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-    ]);
+    container = ProviderContainer(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+    );
   });
 
   tearDown(() async {
@@ -29,20 +29,25 @@ void main() {
       expect(list, isEmpty);
     });
 
-    test('build reactivo: tras seed externo, refresh() trae los datos', () async {
-      // Seed via repo directo (simula otro modulo que inserta)
-      await container.read(filamentRepositoryProvider).create(
-        name: 'PLA Seed',
-        pricePerBobbin: Decimal.parse('150'),
-        gramsPerBobbin: Decimal.parse('1000'),
-      );
+    test(
+      'build reactivo: tras seed externo, refresh() trae los datos',
+      () async {
+        // Seed via repo directo (simula otro modulo que inserta)
+        await container
+            .read(filamentRepositoryProvider)
+            .create(
+              name: 'PLA Seed',
+              pricePerBobbin: Decimal.parse('150'),
+              gramsPerBobbin: Decimal.parse('1000'),
+            );
 
-      // El notifier ya fue build-eado en vacio, hay que refresh
-      await container.read(filamentsNotifierProvider.notifier).refresh();
-      final list = await container.read(filamentsNotifierProvider.future);
-      expect(list, hasLength(1));
-      expect(list.first.name, 'PLA Seed');
-    });
+        // El notifier ya fue build-eado en vacio, hay que refresh
+        await container.read(filamentsNotifierProvider.notifier).refresh();
+        final list = await container.read(filamentsNotifierProvider.future);
+        expect(list, hasLength(1));
+        expect(list.first.name, 'PLA Seed');
+      },
+    );
   });
 
   group('FilamentsNotifier.create', () {
@@ -112,7 +117,9 @@ void main() {
         pricePerBobbin: Decimal.parse('100'),
         gramsPerBobbin: Decimal.parse('1000'),
       );
-      final id = (await container.read(filamentsNotifierProvider.future)).first.id;
+      final id = (await container.read(
+        filamentsNotifierProvider.future,
+      )).first.id;
 
       await n.updateFilament(
         id: id,
@@ -137,7 +144,9 @@ void main() {
         pricePerBobbin: Decimal.parse('100'),
         gramsPerBobbin: Decimal.parse('1000'),
       );
-      final id = (await container.read(filamentsNotifierProvider.future)).first.id;
+      final id = (await container.read(
+        filamentsNotifierProvider.future,
+      )).first.id;
 
       await n.delete(id);
 
@@ -161,9 +170,9 @@ void main() {
         pricePerBobbin: Decimal.parse('200'),
         gramsPerBobbin: Decimal.parse('1000'),
       );
-      final bId = (await container.read(filamentsNotifierProvider.future))
-          .firstWhere((f) => f.name == 'B')
-          .id;
+      final bId = (await container.read(
+        filamentsNotifierProvider.future,
+      )).firstWhere((f) => f.name == 'B').id;
 
       await n.setAsDefault(bId);
 

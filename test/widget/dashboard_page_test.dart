@@ -57,7 +57,10 @@ void main() {
       (tester) async {
         await _pumpPage(tester, stats: emptyStats);
         expect(find.textContaining('Aun no cotizaste nada'), findsOneWidget);
-        expect(find.textContaining('Crea tu primera cotización desde el inicio'), findsOneWidget);
+        expect(
+          find.textContaining('Crea tu primera cotización desde el inicio'),
+          findsOneWidget,
+        );
         expect(
           find.widgetWithText(FilledButton, 'Ir a Inicio'),
           findsOneWidget,
@@ -109,26 +112,27 @@ void main() {
       },
     );
 
-    testWidgets(
-      'conversion 0% cuando ninguna cotizacion esta vendida',
-      (tester) async {
-        await _pumpPage(
-          tester,
-          isPro: true,
-          stats: DashboardStats(
-            totalQuoted: Decimal.fromInt(40000),
-            totalSold: Decimal.zero,
-            countAll: 4,
-            countSold: 0,
-          ),
-        );
-        expect(find.text('0%'), findsOneWidget);
-      },
-    );
+    testWidgets('conversion 0% cuando ninguna cotizacion esta vendida', (
+      tester,
+    ) async {
+      await _pumpPage(
+        tester,
+        isPro: true,
+        stats: DashboardStats(
+          totalQuoted: Decimal.fromInt(40000),
+          totalSold: Decimal.zero,
+          countAll: 4,
+          countSold: 0,
+        ),
+      );
+      expect(find.text('0%'), findsOneWidget);
+    });
   });
 
   group('ProfitBarChart', () {
-    testWidgets('renderiza 2 barras (BarChartGroupData x=0 y x=1)', (tester) async {
+    testWidgets('renderiza 2 barras (BarChartGroupData x=0 y x=1)', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -191,7 +195,10 @@ void main() {
         expect(find.text(EsBO.dashboardTotalQuoted), findsOneWidget);
         expect(find.text(EsBO.dashboardTotalSold), findsOneWidget);
 
-        expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsOneWidget);
+        expect(
+          find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+          findsOneWidget,
+        );
         expect(find.text(EsBO.dashboardProTeaserBody), findsOneWidget);
         expect(
           find.widgetWithText(FilledButton, EsBO.dashboardGoProAction),
@@ -199,50 +206,76 @@ void main() {
           reason: 'Free user debe ver el boton "Go Pro" en el teaser.',
         );
 
-        expect(find.text(EsBO.dashboardChartTitle.toUpperCase()), findsNothing,
-            reason: 'Free: ProfitBarChart card oculto.');
-        expect(find.text(EsBO.dashboardMonthlyTrend.toUpperCase()), findsNothing,
-            reason: 'Free: MonthlyTrendChart card oculto.');
-        expect(find.text(EsBO.dashboardTopMaterials.toUpperCase()), findsNothing,
-            reason: 'Free: TopMaterials card oculto.');
+        expect(
+          find.text(EsBO.dashboardChartTitle.toUpperCase()),
+          findsNothing,
+          reason: 'Free: ProfitBarChart card oculto.',
+        );
+        expect(
+          find.text(EsBO.dashboardMonthlyTrend.toUpperCase()),
+          findsNothing,
+          reason: 'Free: MonthlyTrendChart card oculto.',
+        );
+        expect(
+          find.text(EsBO.dashboardTopMaterials.toUpperCase()),
+          findsNothing,
+          reason: 'Free: TopMaterials card oculto.',
+        );
 
         expect(find.byType(BarChart), findsNothing);
         expect(find.byType(LineChart), findsNothing);
       },
     );
 
-    testWidgets(
-      'pro: muestra todas las chart sections; oculta Pro teaser',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 1600);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+    testWidgets('pro: muestra todas las chart sections; oculta Pro teaser', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-        await _pumpPage(tester, stats: richStats, isPro: true);
+      await _pumpPage(tester, stats: richStats, isPro: true);
 
-        expect(find.text('Cotizaciones'), findsOneWidget);
-        expect(find.text(EsBO.dashboardTotalQuoted), findsOneWidget);
+      expect(find.text('Cotizaciones'), findsOneWidget);
+      expect(find.text(EsBO.dashboardTotalQuoted), findsOneWidget);
 
-        expect(find.text(EsBO.dashboardChartTitle.toUpperCase()), findsOneWidget,
-            reason: 'Pro: ProfitBarChart card visible.');
-        expect(find.byType(BarChart), findsOneWidget,
-            reason: 'Pro: BarChart renderizado.');
-        expect(find.text(EsBO.dashboardMonthlyTrend.toUpperCase()), findsOneWidget,
-            reason: 'Pro: MonthlyTrendChart card visible.');
-        expect(find.byType(LineChart), findsOneWidget,
-            reason: 'Pro: LineChart renderizado.');
-        expect(find.text(EsBO.dashboardTopMaterials.toUpperCase()), findsOneWidget,
-            reason: 'Pro: TopMaterials card visible.');
+      expect(
+        find.text(EsBO.dashboardChartTitle.toUpperCase()),
+        findsOneWidget,
+        reason: 'Pro: ProfitBarChart card visible.',
+      );
+      expect(
+        find.byType(BarChart),
+        findsOneWidget,
+        reason: 'Pro: BarChart renderizado.',
+      );
+      expect(
+        find.text(EsBO.dashboardMonthlyTrend.toUpperCase()),
+        findsOneWidget,
+        reason: 'Pro: MonthlyTrendChart card visible.',
+      );
+      expect(
+        find.byType(LineChart),
+        findsOneWidget,
+        reason: 'Pro: LineChart renderizado.',
+      );
+      expect(
+        find.text(EsBO.dashboardTopMaterials.toUpperCase()),
+        findsOneWidget,
+        reason: 'Pro: TopMaterials card visible.',
+      );
 
-        expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsNothing);
-        expect(find.text(EsBO.dashboardProTeaserBody), findsNothing);
-        expect(
-          find.widgetWithText(FilledButton, EsBO.dashboardGoProAction),
-          findsNothing,
-          reason: 'Pro: no debe haber boton "Go Pro" en el dashboard.',
-        );
-      },
-    );
+      expect(
+        find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+        findsNothing,
+      );
+      expect(find.text(EsBO.dashboardProTeaserBody), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, EsBO.dashboardGoProAction),
+        findsNothing,
+        reason: 'Pro: no debe haber boton "Go Pro" en el dashboard.',
+      );
+    });
 
     testWidgets(
       'free: empty-state no muestra Pro teaser (gate no rompe empty path)',
@@ -250,7 +283,10 @@ void main() {
         await _pumpPage(tester, stats: emptyStats, isPro: false);
 
         expect(find.textContaining('Aun no cotizaste nada'), findsOneWidget);
-        expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsNothing);
+        expect(
+          find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+          findsNothing,
+        );
         expect(
           find.widgetWithText(FilledButton, EsBO.dashboardGoProAction),
           findsNothing,

@@ -22,10 +22,12 @@ Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
   addTearDown(() async {
     container.dispose();
     await db.close();
@@ -39,15 +41,13 @@ Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
         routes: [
           GoRoute(
             path: 'new',
-            builder: (_, _) => const _ScaffoldWithText(
-              title: 'Nuevo filamento',
-            ),
+            builder: (_, _) =>
+                const _ScaffoldWithText(title: 'Nuevo filamento'),
           ),
           GoRoute(
             path: ':id',
-            builder: (_, _) => const _ScaffoldWithText(
-              title: 'Editar filamento',
-            ),
+            builder: (_, _) =>
+                const _ScaffoldWithText(title: 'Editar filamento'),
           ),
         ],
       ),
@@ -73,18 +73,18 @@ void main() {
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
 
-    testWidgets('estado vacio: muestra hint para crear el primero',
-        (tester) async {
+    testWidgets('estado vacio: muestra hint para crear el primero', (
+      tester,
+    ) async {
       await _pumpPage(tester);
-      expect(
-        find.textContaining('Sin filamentos'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Sin filamentos'), findsOneWidget);
     });
 
     testWidgets('lista filamentos con nombre y marca', (tester) async {
       final container = await _pumpPage(tester);
-      await container.read(filamentRepositoryProvider).create(
+      await container
+          .read(filamentRepositoryProvider)
+          .create(
             name: 'PLA',
             brand: 'eSun',
             pricePerBobbin: Decimal.parse('150'),
@@ -99,7 +99,9 @@ void main() {
 
     testWidgets('default muestra estrella amarilla', (tester) async {
       final container = await _pumpPage(tester);
-      await container.read(filamentRepositoryProvider).create(
+      await container
+          .read(filamentRepositoryProvider)
+          .create(
             name: 'PETG',
             pricePerBobbin: Decimal.parse('200'),
             gramsPerBobbin: Decimal.parse('1000'),
@@ -126,10 +128,13 @@ void main() {
       expect(find.text('Nuevo filamento'), findsOneWidget);
     });
 
-    testWidgets('tap en row navega a FilamentFormPage en modo edicion',
-        (tester) async {
+    testWidgets('tap en row navega a FilamentFormPage en modo edicion', (
+      tester,
+    ) async {
       final container = await _pumpPage(tester);
-      await container.read(filamentRepositoryProvider).create(
+      await container
+          .read(filamentRepositoryProvider)
+          .create(
             name: 'PLA Editable',
             pricePerBobbin: Decimal.parse('100'),
             gramsPerBobbin: Decimal.parse('1000'),

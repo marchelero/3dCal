@@ -100,10 +100,11 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
       }
       if (mounted) context.pop();
     } catch (e) {
+      debugPrint('Printer save failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(AppSnackBar.error('${EsBO.printerErrorSave}: $e'));
+        ).showSnackBar(AppSnackBar.error(EsBO.printerErrorSave));
       }
     } finally {
       if (mounted) setState(() => _saving = false);

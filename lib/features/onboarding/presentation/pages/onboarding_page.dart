@@ -67,6 +67,20 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     GoRouter.of(context).go('/');
   }
 
+  /// CTA de la última slide: persiste el onboarding, termina la ruta
+  /// `/onboarding` navegando a `/` (stack limpio → Home) y recién entonces
+  /// abre el calculador encima. Sin este go(), `/onboarding` (y
+  /// `/initial-config`) quedan vivos en el stack y al volver atrás desde el
+  /// calculador se regresa al onboarding → ciclo sin salida.
+  Future<void> _startQuoting() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.onboardingDone, true);
+    if (!mounted) return;
+    final router = GoRouter.of(context);
+    router.go('/');
+    await router.push('/calculator');
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(localeProvider);
@@ -105,7 +119,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   child: TextButton(
                     onPressed: _markDone,
                     child: Text(
-                      isLast ? '' : EsBO.onboardingSkip,
+                      isLast ? EsBO.onboardingGoHome : EsBO.onboardingSkip,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                       ),
@@ -213,19 +227,22 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     Semantics(
                       button: true,
                       label: isLast
-                          ? EsBO.onboardingStart
+                          ? EsBO.onboardingStartQuote
                           : EsBO.onboardingNext,
                       child: SizedBox(
                         width: double.infinity,
-                        child: FilledButton(
+                        child: FilledButton.icon(
                           onPressed: isLast
-                              ? _markDone
+                              ? _startQuoting
                               : () {
                                   _pageCtrl.nextPage(
                                     duration: const Duration(milliseconds: 300),
                                     curve: Curves.easeInOut,
                                   );
                                 },
+                          icon: isLast
+                              ? const Icon(Icons.add_circle_rounded)
+                              : null,
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: bgColor,
@@ -233,8 +250,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               vertical: AppSpacing.md,
                             ),
                           ),
-                          child: Text(
-                            isLast ? EsBO.onboardingStart : EsBO.onboardingNext,
+                          label: Text(
+                            isLast
+                                ? EsBO.onboardingStartQuote
+                                : EsBO.onboardingNext,
                           ),
                         ),
                       ),

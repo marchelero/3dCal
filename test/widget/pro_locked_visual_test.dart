@@ -168,21 +168,25 @@ Future<ProviderContainer> _makeContainer({
 }) async {
   final repo = _FakeEntitlementRepository();
   final payment = _FakePaymentService();
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    entitlementRepositoryProvider.overrideWithValue(repo),
-    paymentServiceProvider.overrideWithValue(payment),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entitlementRepositoryProvider.overrideWithValue(repo),
+      paymentServiceProvider.overrideWithValue(payment),
+    ],
+  );
   if (seedPro) {
-    repo.seedActive(Entitlement(
-      id: 1,
-      source: kSourceLifetimePurchase,
-      productId: kProProductId,
-      purchasedAt: DateTime.utc(2026, 1, 1),
-      validatedAt: DateTime.utc(2026, 1, 1),
-      isActive: true,
-    ));
+    repo.seedActive(
+      Entitlement(
+        id: 1,
+        source: kSourceLifetimePurchase,
+        productId: kProProductId,
+        purchasedAt: DateTime.utc(2026, 1, 1),
+        validatedAt: DateTime.utc(2026, 1, 1),
+        isActive: true,
+      ),
+    );
   }
   await container.read(entitlementNotifierProvider.future);
   return container;
@@ -195,13 +199,16 @@ Future<ProviderContainer> _makeLoadingContainer({
   required AppDatabase db,
   required SharedPreferences prefs,
 }) async {
-  return ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    entitlementRepositoryProvider
-        .overrideWithValue(_DelayedEntitlementRepository()),
-    paymentServiceProvider.overrideWithValue(_FakePaymentService()),
-  ]);
+  return ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entitlementRepositoryProvider.overrideWithValue(
+        _DelayedEntitlementRepository(),
+      ),
+      paymentServiceProvider.overrideWithValue(_FakePaymentService()),
+    ],
+  );
 }
 
 /// Pumpea una [Widget] dentro de un [UncontrolledProviderScope] con el
@@ -213,10 +220,7 @@ Future<void> _pumpRaw(
   Widget child,
 ) async {
   await tester.pumpWidget(
-    UncontrolledProviderScope(
-      container: container,
-      child: child,
-    ),
+    UncontrolledProviderScope(container: container, child: child),
   );
   await tester.pump();
   await tester.pump();
@@ -232,8 +236,7 @@ Future<ProviderContainer> _pumpCalculatorLoading(WidgetTester tester) async {
   });
   final container = await _makeLoadingContainer(db: db, prefs: prefs);
   addTearDown(container.dispose);
-  await _pumpRaw(tester, container,
-      const MaterialApp(home: CalculatorPage()));
+  await _pumpRaw(tester, container, const MaterialApp(home: CalculatorPage()));
   return container;
 }
 
@@ -247,8 +250,11 @@ Future<ProviderContainer> _pumpHistoryLoading(WidgetTester tester) async {
   });
   final container = await _makeLoadingContainer(db: db, prefs: prefs);
   addTearDown(container.dispose);
-  await _pumpRaw(tester, container,
-      const MaterialApp(home: CalculationsListPage()));
+  await _pumpRaw(
+    tester,
+    container,
+    const MaterialApp(home: CalculationsListPage()),
+  );
   return container;
 }
 
@@ -373,10 +379,14 @@ void main() {
     });
 
     test('EsBO.historyUsageCounter formatea en es', () {
-      expect(EsBO.historyUsageCounter(5, kFreeHistoryCap),
-          '5/$kFreeHistoryCap cotizaciones');
-      expect(EsBO.historyUsageCounter(1, kFreeHistoryCap),
-          '1/$kFreeHistoryCap cotización');
+      expect(
+        EsBO.historyUsageCounter(5, kFreeHistoryCap),
+        '5/$kFreeHistoryCap cotizaciones',
+      );
+      expect(
+        EsBO.historyUsageCounter(1, kFreeHistoryCap),
+        '1/$kFreeHistoryCap cotización',
+      );
     });
 
     test('EnImpl expone las keys nuevas', () {
@@ -384,10 +394,14 @@ void main() {
       expect(EsBO.proBadgeLabel, 'PRO');
       expect(EsBO.proLockedTooltip, isNotEmpty);
       expect(EsBO.csvExportTooltipLocked, 'Export CSV (Pro)');
-      expect(EsBO.historyUsageCounter(5, kFreeHistoryCap),
-          '5/$kFreeHistoryCap quotes');
-      expect(EsBO.historyUsageCounter(1, kFreeHistoryCap),
-          '1/$kFreeHistoryCap quote');
+      expect(
+        EsBO.historyUsageCounter(5, kFreeHistoryCap),
+        '5/$kFreeHistoryCap quotes',
+      );
+      expect(
+        EsBO.historyUsageCounter(1, kFreeHistoryCap),
+        '1/$kFreeHistoryCap quote',
+      );
     });
   });
 
@@ -396,30 +410,47 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('Calculator — modo advanced gate visual', () {
-    testWidgets('free: segmento Advanced muestra badge "PRO" + Opacity 0.6',
-        (tester) async {
+    testWidgets('free: segmento Advanced muestra badge "PRO" + Opacity 0.6', (
+      tester,
+    ) async {
       await _pumpCalculator(tester);
 
       // El badge puede aparecer en varios lugares (modo Advanced + seccion
       // Otros) — se verifica al menos uno.
-      expect(find.text(EsBO.proBadgeLabel), findsAtLeastNWidgets(1),
-          reason: 'Free: debe mostrarse al menos un badge "PRO".');
-      expect(find.byIcon(Icons.lock_rounded), findsAtLeastNWidgets(1),
-          reason: 'Free: el badge debe incluir el icono de candado.');
-      expect(_dimmed(), findsAtLeastNWidgets(1),
-          reason: 'Free: el segmento advanced debe estar atenuado (0.6).');
+      expect(
+        find.text(EsBO.proBadgeLabel),
+        findsAtLeastNWidgets(1),
+        reason: 'Free: debe mostrarse al menos un badge "PRO".',
+      );
+      expect(
+        find.byIcon(Icons.lock_rounded),
+        findsAtLeastNWidgets(1),
+        reason: 'Free: el badge debe incluir el icono de candado.',
+      );
+      expect(
+        _dimmed(),
+        findsAtLeastNWidgets(1),
+        reason: 'Free: el segmento advanced debe estar atenuado (0.6).',
+      );
       // El texto "Advanced" sigue presente (el gate de tap no cambia).
       expect(find.text(EsBO.calcModeAdvanced), findsOneWidget);
     });
 
-    testWidgets('pro: segmento Advanced normal, sin badge ni opacidad',
-        (tester) async {
+    testWidgets('pro: segmento Advanced normal, sin badge ni opacidad', (
+      tester,
+    ) async {
       await _pumpCalculator(tester, seedPro: true);
 
-      expect(find.text(EsBO.proBadgeLabel), findsNothing,
-          reason: 'Pro: no debe mostrarse el badge "PRO".');
-      expect(_dimmed(), findsNothing,
-          reason: 'Pro: el modo advanced no debe estar atenuado.');
+      expect(
+        find.text(EsBO.proBadgeLabel),
+        findsNothing,
+        reason: 'Pro: no debe mostrarse el badge "PRO".',
+      );
+      expect(
+        _dimmed(),
+        findsNothing,
+        reason: 'Pro: el modo advanced no debe estar atenuado.',
+      );
     });
   });
 
@@ -428,31 +459,54 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('History — CSV export gate visual', () {
-    testWidgets('free: el boton CSV muestra icono candado atenuado',
-        (tester) async {
+    testWidgets('free: el boton CSV muestra icono candado atenuado', (
+      tester,
+    ) async {
       await _pumpHistory(tester, seedCalculations: 1);
 
-      expect(find.byIcon(Icons.lock_rounded), findsOneWidget,
-          reason: 'Free: el boton CSV debe mostrar el icono de candado.');
-      expect(find.byIcon(Icons.file_download_outlined), findsNothing,
-          reason: 'Free: el icono de descarga no debe verse.');
-      expect(_dimmed(), findsAtLeastNWidgets(1),
-          reason: 'Free: el boton CSV debe estar atenuado (0.6).');
+      expect(
+        find.byIcon(Icons.lock_rounded),
+        findsOneWidget,
+        reason: 'Free: el boton CSV debe mostrar el icono de candado.',
+      );
+      expect(
+        find.byIcon(Icons.file_download_outlined),
+        findsNothing,
+        reason: 'Free: el icono de descarga no debe verse.',
+      );
+      expect(
+        _dimmed(),
+        findsAtLeastNWidgets(1),
+        reason: 'Free: el boton CSV debe estar atenuado (0.6).',
+      );
       // El tooltip locked describe la accion como Pro (no la habilita).
-      expect(find.byTooltip(EsBO.csvExportTooltipLocked), findsOneWidget,
-          reason: 'Free: el tooltip debe indicar que el CSV es Pro.');
-      expect(find.byTooltip('Exportar CSV'), findsNothing,
-          reason: 'Free: el tooltip no debe describir la accion habilitada.');
+      expect(
+        find.byTooltip(EsBO.csvExportTooltipLocked),
+        findsOneWidget,
+        reason: 'Free: el tooltip debe indicar que el CSV es Pro.',
+      );
+      expect(
+        find.byTooltip('Exportar CSV'),
+        findsNothing,
+        reason: 'Free: el tooltip no debe describir la accion habilitada.',
+      );
     });
 
-    testWidgets('pro: el boton CSV mantiene el icono de descarga',
-        (tester) async {
+    testWidgets('pro: el boton CSV mantiene el icono de descarga', (
+      tester,
+    ) async {
       await _pumpHistory(tester, seedCalculations: 1, seedPro: true);
 
-      expect(find.byIcon(Icons.file_download_outlined), findsOneWidget,
-          reason: 'Pro: el boton CSV debe mostrar el icono de descarga.');
-      expect(find.byIcon(Icons.lock_rounded), findsNothing,
-          reason: 'Pro: no debe verse el candado en el export CSV.');
+      expect(
+        find.byIcon(Icons.file_download_outlined),
+        findsOneWidget,
+        reason: 'Pro: el boton CSV debe mostrar el icono de descarga.',
+      );
+      expect(
+        find.byIcon(Icons.lock_rounded),
+        findsNothing,
+        reason: 'Pro: no debe verse el candado en el export CSV.',
+      );
     });
   });
 
@@ -461,51 +515,62 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('History — contador de uso free', () {
-    testWidgets('free con N cotizaciones muestra "N/$kFreeHistoryCap"',
-        (tester) async {
+    testWidgets('free con N cotizaciones muestra "N/$kFreeHistoryCap"', (
+      tester,
+    ) async {
       const n = 3;
       await _pumpHistory(tester, seedCalculations: n);
 
       expect(
         find.text(EsBO.historyUsageCounter(n, kFreeHistoryCap)),
         findsOneWidget,
-        reason: 'Free: el contador de historial debe mostrar "$n/$kFreeHistoryCap".',
+        reason:
+            'Free: el contador de historial debe mostrar "$n/$kFreeHistoryCap".',
       );
     });
 
-    testWidgets('free sin cotizaciones muestra "0/$kFreeHistoryCap"',
-        (tester) async {
+    testWidgets('free sin cotizaciones muestra "0/$kFreeHistoryCap"', (
+      tester,
+    ) async {
       await _pumpHistory(tester, seedCalculations: 0);
 
       expect(
         find.text(EsBO.historyUsageCounter(0, kFreeHistoryCap)),
         findsOneWidget,
-        reason: 'Free: sin cotizaciones el contador muestra 0/$kFreeHistoryCap.',
+        reason:
+            'Free: sin cotizaciones el contador muestra 0/$kFreeHistoryCap.',
       );
       // El EmptyView sigue intacto (no rompe el flujo de lista vacia).
       expect(find.text(EsBO.historyEmpty), findsOneWidget);
     });
 
-    testWidgets('free: el contador se oculta con busqueda activa',
-        (tester) async {
+    testWidgets('free: el contador se oculta con busqueda activa', (
+      tester,
+    ) async {
       const n = 3;
       await _pumpHistory(tester, seedCalculations: n);
 
-      expect(find.text(EsBO.historyUsageCounter(n, kFreeHistoryCap)),
-          findsOneWidget,
-          reason: 'Free: sin filtros el contador se ve.');
+      expect(
+        find.text(EsBO.historyUsageCounter(n, kFreeHistoryCap)),
+        findsOneWidget,
+        reason: 'Free: sin filtros el contador se ve.',
+      );
 
       await tester.enterText(find.byType(TextField), 'zzz');
       await tester.pump();
 
-      expect(find.text(EsBO.historyUsageCounter(n, kFreeHistoryCap)),
-          findsNothing,
-          reason: 'Free: con busqueda activa el contador se oculta '
-               '(el count del state no representa el historial total).');
+      expect(
+        find.text(EsBO.historyUsageCounter(n, kFreeHistoryCap)),
+        findsNothing,
+        reason:
+            'Free: con busqueda activa el contador se oculta '
+            '(el count del state no representa el historial total).',
+      );
     });
 
-    testWidgets('pro: el contador no se muestra (historial ilimitado)',
-        (tester) async {
+    testWidgets('pro: el contador no se muestra (historial ilimitado)', (
+      tester,
+    ) async {
       const n = 3;
       await _pumpHistory(tester, seedCalculations: n, seedPro: true);
 
@@ -522,24 +587,33 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('Settings — branding gate visual', () {
-    testWidgets('free: badge PRO + campo empresa y botones logo atenuados',
-        (tester) async {
+    testWidgets('free: badge PRO + campo empresa y botones logo atenuados', (
+      tester,
+    ) async {
       await _pumpSettings(tester);
 
-      expect(find.text(EsBO.proBadgeLabel), findsOneWidget,
-          reason: 'Free: el badge "PRO" debe verse en la seccion Empresa.');
+      expect(
+        find.text(EsBO.proBadgeLabel),
+        findsOneWidget,
+        reason: 'Free: el badge "PRO" debe verse en la seccion Empresa.',
+      );
       // Campo empresa (1) + botones de logo (1) = 2 Opacity 0.6.
-      expect(_dimmed(), findsAtLeastNWidgets(2),
-          reason: 'Free: campo empresa y botones de logo atenuados (0.6).');
+      expect(
+        _dimmed(),
+        findsAtLeastNWidgets(2),
+        reason: 'Free: campo empresa y botones de logo atenuados (0.6).',
+      );
     });
 
     testWidgets('pro: sin badge ni atenuacion en branding', (tester) async {
       await _pumpSettings(tester, seedPro: true);
 
-      expect(find.text(EsBO.proBadgeLabel), findsNothing,
-          reason: 'Pro: no debe mostrarse el badge "PRO".');
-      expect(_dimmed(), findsNothing,
-          reason: 'Pro: branding sin atenuar.');
+      expect(
+        find.text(EsBO.proBadgeLabel),
+        findsNothing,
+        reason: 'Pro: no debe mostrarse el badge "PRO".',
+      );
+      expect(_dimmed(), findsNothing, reason: 'Pro: branding sin atenuar.');
     });
   });
 
@@ -548,37 +622,61 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('Loading state — gate visual cerrado', () {
-    testWidgets('calculator: sin badge ni Opacity mientras carga',
-        (tester) async {
+    testWidgets('calculator: sin badge ni Opacity mientras carga', (
+      tester,
+    ) async {
       await _pumpCalculatorLoading(tester);
 
-      expect(find.text(EsBO.proBadgeLabel), findsNothing,
-          reason: 'Loading: no debe verse el badge "PRO" (falso locked).');
-      expect(_dimmed(), findsNothing,
-          reason: 'Loading: el segmento advanced no debe atenuarse.');
+      expect(
+        find.text(EsBO.proBadgeLabel),
+        findsNothing,
+        reason: 'Loading: no debe verse el badge "PRO" (falso locked).',
+      );
+      expect(
+        _dimmed(),
+        findsNothing,
+        reason: 'Loading: el segmento advanced no debe atenuarse.',
+      );
     });
 
     testWidgets('history CSV: boton normal mientras carga', (tester) async {
       await _pumpHistoryLoading(tester);
 
-      expect(find.byIcon(Icons.lock_rounded), findsNothing,
-          reason: 'Loading: no debe verse el candado del CSV.');
-      expect(find.byIcon(Icons.file_download_outlined), findsOneWidget,
-          reason: 'Loading: el boton CSV se ve normal (sin gate).');
-      expect(_dimmed(), findsNothing,
-          reason: 'Loading: el boton CSV no debe atenuarse.');
-      expect(find.text(EsBO.historyUsageCounter(0, kFreeHistoryCap)),
-          findsNothing,
-          reason: 'Loading: no debe mostrarse "0/10" antes de resolver.');
+      expect(
+        find.byIcon(Icons.lock_rounded),
+        findsNothing,
+        reason: 'Loading: no debe verse el candado del CSV.',
+      );
+      expect(
+        find.byIcon(Icons.file_download_outlined),
+        findsOneWidget,
+        reason: 'Loading: el boton CSV se ve normal (sin gate).',
+      );
+      expect(
+        _dimmed(),
+        findsNothing,
+        reason: 'Loading: el boton CSV no debe atenuarse.',
+      );
+      expect(
+        find.text(EsBO.historyUsageCounter(0, kFreeHistoryCap)),
+        findsNothing,
+        reason: 'Loading: no debe mostrarse "0/10" antes de resolver.',
+      );
     });
 
     testWidgets('settings: sin badge ni Opacity en branding', (tester) async {
       await _pumpSettingsLoading(tester);
 
-      expect(find.text(EsBO.proBadgeLabel), findsNothing,
-          reason: 'Loading: no debe verse el badge "PRO".');
-      expect(_dimmed(), findsNothing,
-          reason: 'Loading: campo empresa y botones de logo sin atenuar.');
+      expect(
+        find.text(EsBO.proBadgeLabel),
+        findsNothing,
+        reason: 'Loading: no debe verse el badge "PRO".',
+      );
+      expect(
+        _dimmed(),
+        findsNothing,
+        reason: 'Loading: campo empresa y botones de logo sin atenuar.',
+      );
     });
   });
 }

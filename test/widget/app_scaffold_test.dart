@@ -14,10 +14,12 @@ import 'package:tresdcal/shared/widgets/app_scaffold.dart';
 /// realista (necesita un [navigationShell] del shell route).
 Widget _shellTestApp(SharedPreferences prefs) {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
   addTearDown(() async {
     container.dispose();
     await db.close();
@@ -33,7 +35,8 @@ Widget _shellTestApp(SharedPreferences prefs) {
             routes: [
               GoRoute(
                 path: '/a',
-                builder: (_, _) => const Scaffold(body: Center(child: Text('A'))),
+                builder: (_, _) =>
+                    const Scaffold(body: Center(child: Text('A'))),
               ),
             ],
           ),
@@ -41,7 +44,8 @@ Widget _shellTestApp(SharedPreferences prefs) {
             routes: [
               GoRoute(
                 path: '/b',
-                builder: (_, _) => const Scaffold(body: Center(child: Text('B'))),
+                builder: (_, _) =>
+                    const Scaffold(body: Center(child: Text('B'))),
               ),
             ],
           ),

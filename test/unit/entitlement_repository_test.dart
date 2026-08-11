@@ -47,9 +47,13 @@ void main() {
       source: source,
       productId: productId,
       purchasedAt: purchasedAt ?? DateTime.utc(2026, 7, 22),
-      validatedAt: validatedAt == null ? const Value.absent() : Value(validatedAt),
+      validatedAt: validatedAt == null
+          ? const Value.absent()
+          : Value(validatedAt),
       expiresAt: expiresAt == null ? const Value.absent() : Value(expiresAt),
-      receiptData: receiptData == null ? const Value.absent() : Value(receiptData),
+      receiptData: receiptData == null
+          ? const Value.absent()
+          : Value(receiptData),
       isActive: isActive ?? const Value.absent(),
     );
   }
@@ -81,30 +85,35 @@ void main() {
       expect(active.productId, 'B');
 
       // La primera fila sigue existiendo pero como inactiva.
-      final firstRow = await (db.select(db.entitlements)
-            ..where((e) => e.id.equals(id1)))
-          .getSingle();
-      expect(firstRow.isActive, isFalse,
-          reason: 'La fila previa debe quedar isActive=false al reemplazarla.');
+      final firstRow = await (db.select(
+        db.entitlements,
+      )..where((e) => e.id.equals(id1))).getSingle();
+      expect(
+        firstRow.isActive,
+        isFalse,
+        reason: 'La fila previa debe quedar isActive=false al reemplazarla.',
+      );
 
       // Solo 1 fila activa en la DB.
-      final allActive = await (db.select(db.entitlements)
-            ..where((e) => e.isActive.equals(true)))
-          .get();
+      final allActive = await (db.select(
+        db.entitlements,
+      )..where((e) => e.isActive.equals(true))).get();
       expect(allActive, hasLength(1));
     });
 
-    test('isActive=true explicito: misma logica que absent (deactiva previa)',
-        () async {
-      await repo.save(entry(productId: 'A'));
-      final id2 = await repo.save(
-        entry(productId: 'B', isActive: const Value(true)),
-      );
+    test(
+      'isActive=true explicito: misma logica que absent (deactiva previa)',
+      () async {
+        await repo.save(entry(productId: 'A'));
+        final id2 = await repo.save(
+          entry(productId: 'B', isActive: const Value(true)),
+        );
 
-      final active = await repo.getActive();
-      expect(active!.id, id2);
-      expect(active.productId, 'B');
-    });
+        final active = await repo.getActive();
+        expect(active!.id, id2);
+        expect(active.productId, 'B');
+      },
+    );
 
     test('isActive=false explicito: inserta como inactiva, NO toca la activa '
         'existente', () async {
@@ -119,41 +128,44 @@ void main() {
       expect(active.productId, 'A');
 
       // La historica esta inactiva.
-      final historical = await (db.select(db.entitlements)
-            ..where((e) => e.id.equals(idHistorical)))
-          .getSingle();
+      final historical = await (db.select(
+        db.entitlements,
+      )..where((e) => e.id.equals(idHistorical))).getSingle();
       expect(historical.isActive, isFalse);
       expect(historical.productId, 'H');
 
       // Sigue habiendo 1 sola activa.
-      final allActive = await (db.select(db.entitlements)
-            ..where((e) => e.isActive.equals(true)))
-          .get();
+      final allActive = await (db.select(
+        db.entitlements,
+      )..where((e) => e.isActive.equals(true))).get();
       expect(allActive, hasLength(1));
     });
 
-    test('persiste columnas opcionales (validatedAt, expiresAt, receiptData)',
-        () async {
-      final purchased = DateTime.utc(2026, 1, 15);
-      final validated = DateTime.utc(2026, 7, 22);
-      final expires = DateTime.utc(2027, 1, 15);
+    test(
+      'persiste columnas opcionales (validatedAt, expiresAt, receiptData)',
+      () async {
+        final purchased = DateTime.utc(2026, 1, 15);
+        final validated = DateTime.utc(2026, 7, 22);
+        final expires = DateTime.utc(2027, 1, 15);
 
-      final id = await repo.save(entry(
-        purchasedAt: purchased,
-        validatedAt: validated,
-        expiresAt: expires,
-        receiptData: 'base64blob',
-      ));
+        final id = await repo.save(
+          entry(
+            purchasedAt: purchased,
+            validatedAt: validated,
+            expiresAt: expires,
+            receiptData: 'base64blob',
+          ),
+        );
 
-      final row = await (db.select(db.entitlements)
-            ..where((e) => e.id.equals(id)))
-          .getSingle();
-      expect(row.purchasedAt.toUtc(), purchased);
-      expect(row.validatedAt!.toUtc(), validated);
-      expect(row.expiresAt!.toUtc(), expires);
-      expect(row.receiptData, 'base64blob');
-    });
-
+        final row = await (db.select(
+          db.entitlements,
+        )..where((e) => e.id.equals(id))).getSingle();
+        expect(row.purchasedAt.toUtc(), purchased);
+        expect(row.validatedAt!.toUtc(), validated);
+        expect(row.expiresAt!.toUtc(), expires);
+        expect(row.receiptData, 'base64blob');
+      },
+    );
   });
 
   // ---------- getActive ----------
@@ -216,8 +228,11 @@ void main() {
       await repo.clear();
 
       final totalAfter = await db.select(db.entitlements).get();
-      expect(totalAfter, hasLength(2),
-          reason: 'clear() debe preservar las filas — solo cambia isActive.');
+      expect(
+        totalAfter,
+        hasLength(2),
+        reason: 'clear() debe preservar las filas — solo cambia isActive.',
+      );
       expect(totalAfter.every((r) => r.isActive == false), isTrue);
     });
 
@@ -260,10 +275,7 @@ void main() {
       // future, trigger, await future.
       final future = expectLater(
         repo.watchActive(),
-        emitsInOrder([
-          predicate<Entitlement>((e) => e.productId == 'A'),
-          null,
-        ]),
+        emitsInOrder([predicate<Entitlement>((e) => e.productId == 'A'), null]),
       );
       await repo.clear();
       await future;
@@ -297,9 +309,9 @@ void main() {
       expect(active.productId, 'B');
 
       // La fila vieja (A) sigue existiendo como inactiva.
-      final oldRow = await (db.select(db.entitlements)
-            ..where((e) => e.productId.equals('A')))
-          .getSingle();
+      final oldRow = await (db.select(
+        db.entitlements,
+      )..where((e) => e.productId.equals('A'))).getSingle();
       expect(oldRow.isActive, isFalse);
     });
 
@@ -308,9 +320,9 @@ void main() {
       await repo.save(entry(productId: 'B'));
       await repo.save(entry(productId: 'C'));
 
-      final allActive = await (db.select(db.entitlements)
-            ..where((e) => e.isActive.equals(true)))
-          .get();
+      final allActive = await (db.select(
+        db.entitlements,
+      )..where((e) => e.isActive.equals(true))).get();
       expect(allActive, hasLength(1));
       expect(allActive.first.productId, 'C');
     });

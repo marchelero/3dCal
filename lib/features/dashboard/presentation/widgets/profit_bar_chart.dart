@@ -49,126 +49,123 @@ class ProfitBarChart extends StatelessWidget {
     final maxY = (maxValue * 1.2).clamp(100.0, double.infinity);
 
     return Semantics(
-      label: '${EsBO.dashboardChartQuoted} ${formatCurrency(totalQuoted, currency)}, '
+      label:
+          '${EsBO.dashboardChartQuoted} ${formatCurrency(totalQuoted, currency)}, '
           '${EsBO.dashboardChartSold} ${formatCurrency(totalSold, currency)}',
       child: AspectRatio(
         aspectRatio: 1.5,
         child: BarChart(
-        // fl_chart 0.68 auto-anima en rebuilds con datos nuevos
-        BarChartData(
-          maxY: maxY,
-          minY: 0,
-          alignment: BarChartAlignment.spaceAround,
-          barGroups: [
-            BarChartGroupData(
-              x: 0,
-              barRods: [
-                BarChartRodData(
-                  toY: quotedValue,
-                  color: quotedColor,
-                  gradient: LinearGradient(
-                    colors: [
-                      quotedColor.withValues(alpha: 0.4),
-                      quotedColor,
-                    ],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
+          // fl_chart 0.68 auto-anima en rebuilds con datos nuevos
+          BarChartData(
+            maxY: maxY,
+            minY: 0,
+            alignment: BarChartAlignment.spaceAround,
+            barGroups: [
+              BarChartGroupData(
+                x: 0,
+                barRods: [
+                  BarChartRodData(
+                    toY: quotedValue,
+                    color: quotedColor,
+                    gradient: LinearGradient(
+                      colors: [quotedColor.withValues(alpha: 0.4), quotedColor],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
+                    width: 32,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(4),
+                    ),
                   ),
-                  width: 32,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(4),
+                ],
+              ),
+              BarChartGroupData(
+                x: 1,
+                barRods: [
+                  BarChartRodData(
+                    toY: soldValue,
+                    color: soldColor,
+                    gradient: LinearGradient(
+                      colors: [soldColor.withValues(alpha: 0.4), soldColor],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
+                    width: 32,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(4),
+                    ),
                   ),
+                ],
+              ),
+            ],
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (_) => FlLine(
+                color: theme.colorScheme.outlineVariant,
+                strokeWidth: 1,
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 56,
+                  getTitlesWidget: (value, meta) {
+                    return SideTitleWidget(
+                      meta: meta,
+                      space: 4,
+                      child: Text(
+                        _formatYLabel(value, currency.symbol),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
-            BarChartGroupData(
-              x: 1,
-              barRods: [
-                BarChartRodData(
-                  toY: soldValue,
-                  color: soldColor,
-                  gradient: LinearGradient(
-                    colors: [
-                      soldColor.withValues(alpha: 0.4),
-                      soldColor,
-                    ],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                  ),
-                  width: 32,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(4),
-                  ),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 28,
+                  getTitlesWidget: (value, meta) {
+                    final label = value == 0
+                        ? EsBO.dashboardChartQuoted
+                        : EsBO.dashboardChartSold;
+                    return SideTitleWidget(
+                      meta: meta,
+                      space: 4,
+                      child: Text(label, style: theme.textTheme.bodyMedium),
+                    );
+                  },
                 ),
-              ],
+              ),
             ),
-          ],
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) => FlLine(
-              color: theme.colorScheme.outlineVariant,
-              strokeWidth: 1,
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 56,
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    meta: meta,
-                    space: 4,
-                    child: Text(
-                      _formatYLabel(value, currency.symbol),
-                      style: theme.textTheme.bodySmall,
+            barTouchData: BarTouchData(
+              enabled: true,
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (_) => theme.colorScheme.inverseSurface,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  final label = group.x == 0
+                      ? EsBO.dashboardChartQuoted
+                      : EsBO.dashboardChartSold;
+                  return BarTooltipItem(
+                    '$label\n${currency.symbol} ${rod.toY.toStringAsFixed(2)}',
+                    theme.textTheme.bodyMedium!.copyWith(
+                      color: theme.colorScheme.onInverseSurface,
                     ),
                   );
                 },
               ),
             ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 28,
-                getTitlesWidget: (value, meta) {
-                  final label =
-                      value == 0 ? EsBO.dashboardChartQuoted : EsBO.dashboardChartSold;
-                  return SideTitleWidget(
-                    meta: meta,
-                    space: 4,
-                    child: Text(label, style: theme.textTheme.bodyMedium),
-                  );
-                },
-              ),
-            ),
-          ),
-          barTouchData: BarTouchData(
-            enabled: true,
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => theme.colorScheme.inverseSurface,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                final label =
-                    group.x == 0 ? EsBO.dashboardChartQuoted : EsBO.dashboardChartSold;
-                return BarTooltipItem(
-                  '$label\n${currency.symbol} ${rod.toY.toStringAsFixed(2)}',
-                  theme.textTheme.bodyMedium!.copyWith(
-                    color: theme.colorScheme.onInverseSurface,
-                  ),
-                );
-              },
-            ),
           ),
         ),
-      ),
       ),
     );
   }

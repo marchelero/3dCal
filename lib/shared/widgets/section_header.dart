@@ -90,18 +90,12 @@ class SectionHeader extends StatelessWidget {
     final container = Container(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: color, width: 1.5),
-        ),
+        border: Border(bottom: BorderSide(color: color, width: 1.5)),
       ),
       child: row,
     );
 
     if (semanticLabel == null) return container;
-    return Semantics(
-      header: true,
-      label: semanticLabel,
-      child: container,
-    );
+    return Semantics(header: true, label: semanticLabel, child: container);
   }
 }

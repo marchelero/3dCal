@@ -118,9 +118,9 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
   /// feedback segun el caso (contrato de `payment_service.dart`: "el
   /// caller debe mostrar feedback segun el caso").
   Future<PaymentResult> purchase({required String productId}) async {
-    final result = await ref.read(paymentServiceProvider).purchase(
-          productId: productId,
-        );
+    final result = await ref
+        .read(paymentServiceProvider)
+        .purchase(productId: productId);
     switch (result) {
       case PaymentSuccess():
         await activate(source: kSourceLifetimePurchase);
@@ -171,12 +171,14 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
     final now = DateTime.now().toUtc();
 
     final next = await AsyncValue.guard<EntitlementState>(() async {
-      await repo.save(EntitlementsCompanion.insert(
-        source: source,
-        productId: kProProductId,
-        purchasedAt: now,
-        validatedAt: Value(now),
-      ));
+      await repo.save(
+        EntitlementsCompanion.insert(
+          source: source,
+          productId: kProProductId,
+          purchasedAt: now,
+          validatedAt: Value(now),
+        ),
+      );
       await cache.setActive(source: source, validatedAt: now);
       return EntitlementPro(source: source, validatedAt: now);
     });

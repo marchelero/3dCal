@@ -127,6 +127,14 @@ class EsBO {
       _impl.settingsBackupImportConfirm;
   static String get settingsBackupImportCancel =>
       _impl.settingsBackupImportCancel;
+  static String get settingsBackupImportSizeError =>
+      _impl.settingsBackupImportSizeError;
+  static String get settingsBackupImportInvalidFile =>
+      _impl.settingsBackupImportInvalidFile;
+  static String get settingsBackupImportFutureVersion =>
+      _impl.settingsBackupImportFutureVersion;
+  static String get settingsBackupLockedBody =>
+      _impl.settingsBackupLockedBody;
 
   // === Dashboard ===
   static String get dashboardTitle => _impl.dashboardTitle;
@@ -228,6 +236,25 @@ class EsBO {
   static String get calcFieldWaste => _impl.calcFieldWaste;
   static String get calcFieldWasteHelper => _impl.calcFieldWasteHelper;
 
+  // === Cost calibration help ===
+  static String get costHelpTitle => _impl.costHelpTitle;
+  static String get costHelpEnergyTitle => _impl.costHelpEnergyTitle;
+  static String get costHelpEnergyBody => _impl.costHelpEnergyBody;
+  static String get costHelpLaborTitle => _impl.costHelpLaborTitle;
+  static String get costHelpLaborBody => _impl.costHelpLaborBody;
+  static String get costHelpPostTitle => _impl.costHelpPostTitle;
+  static String get costHelpPostBody => _impl.costHelpPostBody;
+  static String get costHelpFailureTitle => _impl.costHelpFailureTitle;
+  static String get costHelpFailureBody => _impl.costHelpFailureBody;
+  static String get costHelpWasteTitle => _impl.costHelpWasteTitle;
+  static String get costHelpWasteBody => _impl.costHelpWasteBody;
+  static String get costHelpMinimumChargeTitle =>
+      _impl.costHelpMinimumChargeTitle;
+  static String get costHelpMinimumChargeBody => _impl.costHelpMinimumChargeBody;
+  static String get costHelpMarginTitle => _impl.costHelpMarginTitle;
+  static String get costHelpMarginBody => _impl.costHelpMarginBody;
+  static String get calcCloseAction => _impl.calcCloseAction;
+
   // === Calculator modes ===
   static String get calcModeExpress => _impl.calcModeExpress;
   static String get calcModeAdvanced => _impl.calcModeAdvanced;
@@ -239,6 +266,23 @@ class EsBO {
   // === Save dialog ===
   static String get calcDialogClient => _impl.calcDialogClient;
   static String get calcDialogClientHelper => _impl.calcDialogClientHelper;
+  static String get calcDialogRecentClients => _impl.calcDialogRecentClients;
+  static String get calcDialogNotes => _impl.calcDialogNotes;
+  static String get calcDialogNotesHelper => _impl.calcDialogNotesHelper;
+  static String get calcDialogConditions => _impl.calcDialogConditions;
+  static String get calcDialogConditionsHelper =>
+      _impl.calcDialogConditionsHelper;
+
+  // === Plantillas de trabajo frecuente ===
+  static String get calcTemplatesTitle => _impl.calcTemplatesTitle;
+  static String get calcTemplateSaveAsAction => _impl.calcTemplateSaveAsAction;
+  static String get calcTemplateSaveSuccess => _impl.calcTemplateSaveSuccess;
+  static String get calcTemplateSaveError => _impl.calcTemplateSaveError;
+  static String get calcTemplateApplySuccess => _impl.calcTemplateApplySuccess;
+  static String get calcTemplateApplyError => _impl.calcTemplateApplyError;
+  static String get calcTemplateEmpty => _impl.calcTemplateEmpty;
+  static String get calcTemplateUntitled => _impl.calcTemplateUntitled;
+  static String get calcTemplateDeleteError => _impl.calcTemplateDeleteError;
 
   // === Dynamic empty hint ===
   static String get calcEmptyHintPrefix => _impl.calcEmptyHintPrefix;
@@ -325,6 +369,12 @@ class EsBO {
   static String get calcDetailMarkSold => _impl.calcDetailMarkSold;
   static String get calcDetailMarkPending => _impl.calcDetailMarkPending;
 
+  // === Duplicar cotizacion ===
+  static String get calcDuplicateAction => _impl.calcDuplicateAction;
+  static String get calcDuplicateSuffix => _impl.calcDuplicateSuffix;
+  static String get calcDuplicateSuccess => _impl.calcDuplicateSuccess;
+  static String get calcDuplicateError => _impl.calcDuplicateError;
+
   // === History ===
   static String get historyTitle => _impl.historyTitle;
   static String get historyErrorLoad => _impl.historyErrorLoad;
@@ -354,6 +404,8 @@ class EsBO {
   static String get onboardingNext => _impl.onboardingNext;
   static String get onboardingSkip => _impl.onboardingSkip;
   static String get onboardingStart => _impl.onboardingStart;
+  static String get onboardingStartQuote => _impl.onboardingStartQuote;
+  static String get onboardingGoHome => _impl.onboardingGoHome;
 
   // === Initial config ===
   static String get configTitle => _impl.configTitle;
@@ -460,6 +512,7 @@ class EsBO {
       _impl.calcFormIncompleteWarning;
   static String get calcSaveFailed => _impl.calcSaveFailed;
   static String calcSavedWithId(int id) => _impl.calcSavedWithId(id);
+  static String get calcSavedViewAction => _impl.calcSavedViewAction;
   static String get calcAddMaterial => _impl.calcAddMaterial;
   static String get calcPrinterPrefix => _impl.calcPrinterPrefix;
   static String get calcChangePrinter => _impl.calcChangePrinter;
@@ -479,6 +532,11 @@ class EsBO {
   static String get pdfFileName => _impl.pdfFileName;
   static String get pdfShareSubject => _impl.pdfShareSubject;
   static String get pdfDatePrefix => _impl.pdfDatePrefix;
+  static String get pdfQuoteNumber => _impl.pdfQuoteNumber;
+  static String get pdfValidUntilPrefix => _impl.pdfValidUntilPrefix;
+  static String get pdfClientPrefix => _impl.pdfClientPrefix;
+  static String get pdfNotesTitle => _impl.pdfNotesTitle;
+  static String get pdfConditionsTitle => _impl.pdfConditionsTitle;
   static String get pdfMaterialCosts => _impl.pdfMaterialCosts;
   static String get pdfElectricity => _impl.pdfElectricity;
   static String get pdfTotalUpper => _impl.pdfTotalUpper;
@@ -714,6 +772,23 @@ class EsImpl implements AppStrings {
   String get settingsBackupImportCancel => 'Cancelar';
 
   @override
+  String get settingsBackupImportSizeError =>
+      'El archivo de backup supera el tamaño permitido.';
+
+  @override
+  String get settingsBackupImportInvalidFile =>
+      'El archivo seleccionado no es un backup valido.';
+
+  @override
+  String get settingsBackupImportFutureVersion =>
+      'Este backup fue creado con una versión futura de la app. '
+      'Actualiza 3dCalc e intenta de nuevo.';
+
+  @override
+  String get settingsBackupLockedBody =>
+      'Hacer copias de seguridad es una función Pro.';
+
+  @override
   String get dashboardTitle => 'Dashboard';
   @override
   String get dashboardErrorLoad => 'Error al cargar el dashboard';
@@ -893,6 +968,70 @@ class EsImpl implements AppStrings {
   String get calcFieldWasteHelper => '% markup desperdicio';
 
   @override
+  String get costHelpTitle => 'Cómo calibrar tus costos';
+
+  @override
+  String get costHelpEnergyTitle => 'Costo de energía';
+
+  @override
+  String get costHelpEnergyBody =>
+      'Energía consumida al imprimir: horas de impresión × potencia (kW) × '
+      'tarifa (\$/kWh). Ej.: 6 h × 0,15 kW × 1,2 \$/kWh ≈ 1,08 \$. Solo se '
+      'suma si la impresora tiene potencia registrada.';
+
+  @override
+  String get costHelpLaborTitle => 'Mano de obra';
+
+  @override
+  String get costHelpLaborBody =>
+      'Tu tiempo: horas de trabajo × tarifa horaria (\$/h). Incluye preparar '
+      'la impresora, supervisar la pieza y el acabado final.';
+
+  @override
+  String get costHelpPostTitle => 'Post-procesado';
+
+  @override
+  String get costHelpPostBody =>
+      'Porcentaje extra sobre el costo de materiales por lijado, pintura, '
+      'pegamento u otros acabados.';
+
+  @override
+  String get costHelpFailureTitle => 'Tasa de falla';
+
+  @override
+  String get costHelpFailureBody =>
+      'Porcentaje del costo base reservado para piezas fallidas. Si falla 1 de '
+      'cada 10 piezas, ese 10% se reparte entre las 9 que sí vendes.';
+
+  @override
+  String get costHelpWasteTitle => 'Desperdicio y desgaste';
+
+  @override
+  String get costHelpWasteBody =>
+      'Porcentaje extra sobre materiales: soportes, purga de boquilla, '
+      'filamento de pruebas y desgaste de la impresora.';
+
+  @override
+  String get costHelpMinimumChargeTitle => 'Cargo mínimo';
+
+  @override
+  String get costHelpMinimumChargeBody =>
+      'Piso del precio final. Si el total calculado queda por debajo, se cobra '
+      'este monto. Ideal para piezas pequeñas que igual requieren preparar la '
+      'impresora.';
+
+  @override
+  String get costHelpMarginTitle => 'Ganancia (margen)';
+
+  @override
+  String get costHelpMarginBody =>
+      'Porcentaje que se agrega al costo total para tu ganancia: total × '
+      '(1 + margen/100). Se ajusta en Parámetros globales.';
+
+  @override
+  String get calcCloseAction => 'Cerrar y volver al menú';
+
+  @override
   String get calcModeExpress => 'Express';
   @override
   String get calcModeAdvanced => 'Avanzado';
@@ -906,6 +1045,37 @@ class EsImpl implements AppStrings {
   String get calcDialogClient => 'Cliente';
   @override
   String get calcDialogClientHelper => 'Opcional';
+  @override
+  String get calcDialogRecentClients => 'Clientes recientes';
+  @override
+  String get calcDialogNotes => 'Notas (opcional)';
+  @override
+  String get calcDialogNotesHelper =>
+      'Especificaciones, plazos, entregas\u2026';
+  @override
+  String get calcDialogConditions => 'Condiciones comerciales (opcional)';
+  @override
+  String get calcDialogConditionsHelper => 'Validez, pago, garant\u00eda\u2026';
+
+  @override
+  String get calcTemplatesTitle => 'Plantillas';
+  @override
+  String get calcTemplateSaveAsAction => 'Guardar como plantilla';
+  @override
+  String get calcTemplateSaveSuccess => 'Plantilla guardada';
+  @override
+  String get calcTemplateSaveError => 'No se pudo guardar la plantilla';
+  @override
+  String get calcTemplateApplySuccess => 'Plantilla aplicada al formulario';
+  @override
+  String get calcTemplateApplyError => 'No se pudo cargar la plantilla';
+  @override
+  String get calcTemplateEmpty =>
+      'A\u00fan no tienes plantillas.\nGuarda un trabajo frecuente como plantilla para reusarlo.';
+  @override
+  String get calcTemplateUntitled => 'Sin nombre';
+  @override
+  String get calcTemplateDeleteError => 'No se pudo eliminar la plantilla';
 
   @override
   String get calcEmptyHintPrefix => 'Completa';
@@ -1057,6 +1227,16 @@ class EsImpl implements AppStrings {
   String get calcDetailMarkSold => 'Marcar vendida';
   @override
   String get calcDetailMarkPending => 'Marcar pendiente';
+
+  @override
+  String get calcDuplicateAction => 'Duplicar';
+  @override
+  String get calcDuplicateSuffix => ' (copia)';
+  @override
+  String get calcDuplicateSuccess => 'Cotización duplicada';
+  @override
+  String get calcDuplicateError => 'No se pudo duplicar la cotización';
+
   @override
   String get historyTitle => 'Cotizaciones';
   @override
@@ -1107,6 +1287,10 @@ class EsImpl implements AppStrings {
   String get onboardingSkip => 'Saltar';
   @override
   String get onboardingStart => 'Comenzar';
+  @override
+  String get onboardingStartQuote => 'Crear mi primera cotización';
+  @override
+  String get onboardingGoHome => 'Ir al menú';
   @override
   String get configTitle => 'Configuración inicial';
   @override
@@ -1354,6 +1538,8 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String calcSavedWithId(int id) => 'Cotización #$id guardada.';
   @override
+  String get calcSavedViewAction => 'Ver';
+  @override
   String get calcAddMaterial => 'Agregar material';
   @override
   String get calcPrinterPrefix => 'Impresora: ';
@@ -1388,6 +1574,16 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String get pdfShareSubject => 'Cotización 3dCalc';
   @override
   String get pdfDatePrefix => 'Fecha: ';
+  @override
+  String get pdfQuoteNumber => 'N\u00ba ';
+  @override
+  String get pdfValidUntilPrefix => 'V\u00e1lido hasta: ';
+  @override
+  String get pdfClientPrefix => 'Cliente: ';
+  @override
+  String get pdfNotesTitle => 'Notas';
+  @override
+  String get pdfConditionsTitle => 'Condiciones';
   @override
   String get pdfMaterialCosts => 'Costo materiales';
   @override

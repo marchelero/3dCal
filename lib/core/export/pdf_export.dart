@@ -24,8 +24,19 @@ import '../money/currency_formatter.dart';
 /// (es atribucion de la app, no branding del user).
 const String kFreeDefaultCompanyName = '3dCalc';
 
+/// Dias de validez de la oferta (se imprime como "valido hasta").
+const int kQuoteValidDays = 15;
+
 /// Shorthand: formatea un Decimal con simbolo Bs para PDF.
 String _fmt(Decimal v) => formatBob(v);
+
+/// Formatea una fecha como dd/MM/yyyy (sin depender de intl).
+String _fmtDate(DateTime d) {
+  final local = d.toLocal();
+  final dd = local.day.toString().padLeft(2, '0');
+  final mm = local.month.toString().padLeft(2, '0');
+  return '$dd/$mm/${local.year}';
+}
 
 /// Resuelve el branding efectivo del PDF segun el estado Pro del user.
 ///
@@ -68,6 +79,12 @@ Future<void> shareQuotePdf({
   String? companyName,
   String? companyLogoBase64,
   String? pieceName,
+  String? clientName,
+  int? quoteNumber,
+  DateTime? quoteDate,
+  DateTime? validUntil,
+  String? notes,
+  String? conditions,
   Uint8List? pieceImageBytes,
   pw.Font? regularFont,
   pw.Font? boldFont,
@@ -82,6 +99,12 @@ Future<void> shareQuotePdf({
     companyName: companyName,
     companyLogoBase64: companyLogoBase64,
     pieceName: pieceName,
+    clientName: clientName,
+    quoteNumber: quoteNumber,
+    quoteDate: quoteDate,
+    validUntil: validUntil,
+    notes: notes,
+    conditions: conditions,
     pieceImageBytes: pieceImageBytes,
     regularFont: regularFont,
     boldFont: boldFont,
@@ -114,6 +137,12 @@ Future<Uint8List> buildQuotePdfBytes({
   String? companyName,
   String? companyLogoBase64,
   String? pieceName,
+  String? clientName,
+  int? quoteNumber,
+  DateTime? quoteDate,
+  DateTime? validUntil,
+  String? notes,
+  String? conditions,
   Uint8List? pieceImageBytes,
   pw.Font? regularFont,
   pw.Font? boldFont,
@@ -142,46 +171,90 @@ Future<Uint8List> buildQuotePdfBytes({
         return pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header: branding a la izquierda, numero + fechas a la derecha
             pw.Row(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                if (branding.logo != null)
-                  pw.Container(
-                    width: 40,
-                    height: 40,
-                    margin: const pw.EdgeInsets.only(right: 12),
-                    child: pw.Image(
-                      pw.MemoryImage(base64Decode(branding.logo!)),
-                      fit: pw.BoxFit.contain,
-                    ),
+                pw.Expanded(
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      if (branding.logo != null)
+                        pw.Container(
+                          width: 40,
+                          height: 40,
+                          margin: const pw.EdgeInsets.only(right: 12),
+                          child: pw.Image(
+                            pw.MemoryImage(base64Decode(branding.logo!)),
+                            fit: pw.BoxFit.contain,
+                          ),
+                        ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            branding.name,
+                            style: pw.TextStyle(
+                              fontSize: 22,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blue800,
+                            ),
+                          ),
+                          pw.Text(
+                            EsBO.calcSheetTitle,
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              color: PdfColors.grey600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      branding.name,
-                      style: pw.TextStyle(
-                        fontSize: 22,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blue800,
-                      ),
-                    ),
-                    pw.Text(
-                      EsBO.calcSheetTitle,
-                      style: pw.TextStyle(
-                        fontSize: 14,
-                        color: PdfColors.grey600,
-                      ),
-                    ),
-                  ],
                 ),
+                if (quoteNumber != null ||
+                    quoteDate != null ||
+                    validUntil != null)
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      if (quoteNumber != null)
+                        pw.Text(
+                          '${EsBO.pdfQuoteNumber}'
+                          '${quoteNumber.toString().padLeft(4, '0')}',
+                          style: pw.TextStyle(
+                            fontSize: 12,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      if (quoteDate != null) ...[
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          '${EsBO.pdfDatePrefix}${_fmtDate(quoteDate)}',
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey600,
+                          ),
+                        ),
+                      ],
+                      if (validUntil != null) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          '${EsBO.pdfValidUntilPrefix}${_fmtDate(validUntil)}',
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
               ],
             ),
             pw.Divider(),
             pw.SizedBox(height: 8),
 
-            // Piece name
+            // Piece name + client
             if (pieceName != null && pieceName.isNotEmpty)
               pw.Text(
                 pieceName,
@@ -190,14 +263,14 @@ Future<Uint8List> buildQuotePdfBytes({
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
+            if (clientName != null && clientName.trim().isNotEmpty) ...[
+              pw.SizedBox(height: 4),
+              pw.Text(
+                '${EsBO.pdfClientPrefix}${clientName.trim()}',
+                style: pw.TextStyle(fontSize: 11, color: PdfColors.grey800),
+              ),
+            ],
             pw.SizedBox(height: 8),
-
-            // Date
-            pw.Text(
-              '${EsBO.pdfDatePrefix}${DateTime.now().toLocal().toString().split('.')[0]}',
-              style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
-            ),
-            pw.SizedBox(height: 16),
 
             // Foto de la pieza: tamaño intermedio centrado entre fecha y total.
             if (pieceImageBytes != null) ...[
@@ -303,7 +376,9 @@ Future<Uint8List> buildQuotePdfBytes({
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(6),
+                  ),
                 ),
                 child: pw.Column(
                   children: [
@@ -338,6 +413,38 @@ Future<Uint8List> buildQuotePdfBytes({
                 EsBO.pdfDiscountPct(discountPct.toDouble().round()),
                 style: pw.TextStyle(fontSize: 10),
               ),
+
+            // Notas y condiciones (opcionales)
+            if (notes != null && notes.trim().isNotEmpty) ...[
+              pw.SizedBox(height: 12),
+              pw.Text(
+                EsBO.pdfNotesTitle,
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                notes.trim(),
+                style: const pw.TextStyle(fontSize: 10, lineSpacing: 3),
+              ),
+            ],
+            if (conditions != null && conditions.trim().isNotEmpty) ...[
+              pw.SizedBox(height: 12),
+              pw.Text(
+                EsBO.pdfConditionsTitle,
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                conditions.trim(),
+                style: const pw.TextStyle(fontSize: 10, lineSpacing: 3),
+              ),
+            ],
 
             pw.SizedBox(height: 24),
             pw.Divider(),

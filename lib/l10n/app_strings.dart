@@ -128,6 +128,18 @@ abstract class AppStrings {
   /// Accion de cancelar import (boton negativo).
   String get settingsBackupImportCancel;
 
+  /// Archivo de backup supera el tamaño permitido.
+  String get settingsBackupImportSizeError;
+
+  /// Archivo seleccionado no es un backup valido.
+  String get settingsBackupImportInvalidFile;
+
+  /// Backup de una version futura de la app.
+  String get settingsBackupImportFutureVersion;
+
+  /// Backups (exportar/importar) son una funcion Pro.
+  String get settingsBackupLockedBody;
+
   // === Dashboard ===
   String get dashboardTitle;
   String get dashboardErrorLoad;
@@ -225,6 +237,26 @@ abstract class AppStrings {
   String get calcFieldWaste;
   String get calcFieldWasteHelper;
 
+  // === Cost calibration help ===
+  String get costHelpTitle;
+  String get costHelpEnergyTitle;
+  String get costHelpEnergyBody;
+  String get costHelpLaborTitle;
+  String get costHelpLaborBody;
+  String get costHelpPostTitle;
+  String get costHelpPostBody;
+  String get costHelpFailureTitle;
+  String get costHelpFailureBody;
+  String get costHelpWasteTitle;
+  String get costHelpWasteBody;
+  String get costHelpMinimumChargeTitle;
+  String get costHelpMinimumChargeBody;
+  String get costHelpMarginTitle;
+  String get costHelpMarginBody;
+
+  /// Botón superior de la calculadora: cerrar y volver al menú.
+  String get calcCloseAction;
+
   // === Calculator modes ===
   String get calcModeExpress;
   String get calcModeAdvanced;
@@ -236,6 +268,24 @@ abstract class AppStrings {
   // === Save dialog ===
   String get calcDialogClient;
   String get calcDialogClientHelper;
+
+  /// Titulo del quick-pick de clientes recientes en el diálogo de guardado.
+  String get calcDialogRecentClients;
+  String get calcDialogNotes;
+  String get calcDialogNotesHelper;
+  String get calcDialogConditions;
+  String get calcDialogConditionsHelper;
+
+  // === Plantillas de trabajo frecuente ===
+  String get calcTemplatesTitle;
+  String get calcTemplateSaveAsAction;
+  String get calcTemplateSaveSuccess;
+  String get calcTemplateSaveError;
+  String get calcTemplateApplySuccess;
+  String get calcTemplateApplyError;
+  String get calcTemplateEmpty;
+  String get calcTemplateUntitled;
+  String get calcTemplateDeleteError;
 
   // === Dynamic empty hint ===
   String get calcEmptyHintPrefix;
@@ -342,6 +392,12 @@ abstract class AppStrings {
   String get calcDetailMarkSold;
   String get calcDetailMarkPending;
 
+  // === Duplicar cotizacion ===
+  String get calcDuplicateAction;
+  String get calcDuplicateSuffix;
+  String get calcDuplicateSuccess;
+  String get calcDuplicateError;
+
   // === History / Calculations list ===
   String get historyTitle;
   String get historyErrorLoad;
@@ -377,6 +433,12 @@ abstract class AppStrings {
   String get onboardingNext;
   String get onboardingSkip;
   String get onboardingStart;
+
+  /// CTA de la última slide: entrar directo a la primera cotización.
+  String get onboardingStartQuote;
+
+  /// Acción secundaria de la última slide: cerrar el onboarding e ir al menú.
+  String get onboardingGoHome;
 
   // === Initial config ===
   String get configTitle;
@@ -597,6 +659,9 @@ abstract class AppStrings {
   /// Confirmacion de guardado con id: "Cotización #$id guardada."
   String calcSavedWithId(int id);
 
+  /// Accion del snackbar post-guardado: abrir el detalle de la cotización.
+  String get calcSavedViewAction;
+
   /// "Agregar material" / "Add material".
   String get calcAddMaterial;
 
@@ -644,6 +709,21 @@ abstract class AppStrings {
 
   /// "Fecha: " / "Date: ".
   String get pdfDatePrefix;
+
+  /// "Nº " / "No. " — prefijo del numero de cotizacion en el PDF.
+  String get pdfQuoteNumber;
+
+  /// "Válido hasta: " / "Valid until: ".
+  String get pdfValidUntilPrefix;
+
+  /// "Cliente: " / "Client: ".
+  String get pdfClientPrefix;
+
+  /// Titulo de la seccion de notas en el PDF.
+  String get pdfNotesTitle;
+
+  /// Titulo de la seccion de condiciones en el PDF.
+  String get pdfConditionsTitle;
 
   /// "Costo materiales" / "Material costs".
   String get pdfMaterialCosts;

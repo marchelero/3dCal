@@ -107,60 +107,68 @@ class AppTheme {
     final desk = isLight ? const Color(0xFFDFE6F0) : const Color(0xFF0A101C);
     final paper = isLight ? const Color(0xFFF7F9FC) : const Color(0xFF111B2C);
     final ink = isLight ? const Color(0xFF1C2431) : const Color(0xFFE6EEF9);
-    final inkSoft =
-        isLight ? const Color(0xFF5A6B85) : const Color(0xFF9FB2CC);
-    final paperEdge =
-        isLight ? const Color(0xFFC4CFE0) : const Color(0xFF2A3A55);
+    final inkSoft = isLight ? const Color(0xFF5A6B85) : const Color(0xFF9FB2CC);
+    final paperEdge = isLight
+        ? const Color(0xFFC4CFE0)
+        : const Color(0xFF2A3A55);
 
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: brightness,
-      primary: isLight ? const Color(0xFF0B5394) : const Color(0xFF8FC0F5),
-      onPrimary: isLight ? Colors.white : const Color(0xFF082C54),
-      secondary:
-          isLight ? const Color(0xFF4A6FA5) : const Color(0xFF9FB8D9),
-      tertiary:
-          isLight ? const Color(0xFF6E7B8F) : const Color(0xFFA8B6C6),
-      error: isLight ? redError : const Color(0xFFF2B8B5),
-    ).copyWith(
-      surface: paper,
-      onSurface: ink,
-      onSurfaceVariant: inkSoft,
-      outline: isLight ? const Color(0xFF7C8CA3) : const Color(0xFF8FA3BF),
-      outlineVariant: paperEdge,
-      surfaceContainerLowest: isLight
-          ? const Color(0xFFFFFFFF)
-          : const Color(0xFF0D1523),
-      surfaceContainerLow: isLight
-          ? const Color(0xFFEFF3F9)
-          : const Color(0xFF141F31),
-      surfaceContainer: isLight
-          ? const Color(0xFFE9EFF7)
-          : const Color(0xFF182336),
-      surfaceContainerHigh: isLight
-          ? const Color(0xFFE3EAF3)
-          : const Color(0xFF1D2A3E),
-      surfaceContainerHighest: isLight
-          ? const Color(0xFFDCE5F0)
-          : const Color(0xFF22304A),
-      primaryContainer:
-          isLight ? const Color(0xFFD3E3F5) : const Color(0xFF1B3A66),
-      onPrimaryContainer:
-          isLight ? const Color(0xFF0A3D6B) : const Color(0xFFCDE2FA),
-      secondaryContainer:
-          isLight ? const Color(0xFFDCE6F3) : const Color(0xFF2B456B),
-      onSecondaryContainer:
-          isLight ? const Color(0xFF223A5E) : const Color(0xFFD9E6F5),
-      tertiaryContainer:
-          isLight ? const Color(0xFFDCE3EA) : const Color(0xFF3A4552),
-      onTertiaryContainer:
-          isLight ? const Color(0xFF2C3542) : const Color(0xFFDCE3EA),
-      errorContainer: isLight
-          ? const Color(0xFFF9DEDC)
-          : const Color(0xFF8C1D18),
-      onErrorContainer:
-          isLight ? const Color(0xFF410E0B) : const Color(0xFFF9DEDC),
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: seedColor,
+          brightness: brightness,
+          primary: isLight ? const Color(0xFF0B5394) : const Color(0xFF8FC0F5),
+          onPrimary: isLight ? Colors.white : const Color(0xFF082C54),
+          secondary: isLight
+              ? const Color(0xFF4A6FA5)
+              : const Color(0xFF9FB8D9),
+          tertiary: isLight ? const Color(0xFF6E7B8F) : const Color(0xFFA8B6C6),
+          error: isLight ? redError : const Color(0xFFF2B8B5),
+        ).copyWith(
+          surface: paper,
+          onSurface: ink,
+          onSurfaceVariant: inkSoft,
+          outline: isLight ? const Color(0xFF7C8CA3) : const Color(0xFF8FA3BF),
+          outlineVariant: paperEdge,
+          surfaceContainerLowest: isLight
+              ? const Color(0xFFFFFFFF)
+              : const Color(0xFF0D1523),
+          surfaceContainerLow: isLight
+              ? const Color(0xFFEFF3F9)
+              : const Color(0xFF141F31),
+          surfaceContainer: isLight
+              ? const Color(0xFFE9EFF7)
+              : const Color(0xFF182336),
+          surfaceContainerHigh: isLight
+              ? const Color(0xFFE3EAF3)
+              : const Color(0xFF1D2A3E),
+          surfaceContainerHighest: isLight
+              ? const Color(0xFFDCE5F0)
+              : const Color(0xFF22304A),
+          primaryContainer: isLight
+              ? const Color(0xFFD3E3F5)
+              : const Color(0xFF1B3A66),
+          onPrimaryContainer: isLight
+              ? const Color(0xFF0A3D6B)
+              : const Color(0xFFCDE2FA),
+          secondaryContainer: isLight
+              ? const Color(0xFFDCE6F3)
+              : const Color(0xFF2B456B),
+          onSecondaryContainer: isLight
+              ? const Color(0xFF223A5E)
+              : const Color(0xFFD9E6F5),
+          tertiaryContainer: isLight
+              ? const Color(0xFFDCE3EA)
+              : const Color(0xFF3A4552),
+          onTertiaryContainer: isLight
+              ? const Color(0xFF2C3542)
+              : const Color(0xFFDCE3EA),
+          errorContainer: isLight
+              ? const Color(0xFFF9DEDC)
+              : const Color(0xFF8C1D18),
+          onErrorContainer: isLight
+              ? const Color(0xFF410E0B)
+              : const Color(0xFFF9DEDC),
+        );
 
     final textTheme = _buildTextTheme(brightness);
 
@@ -203,8 +211,9 @@ class AppTheme {
         backgroundColor: paper,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppRadii.xxl)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.xxl),
+          ),
         ),
       ),
       // Inputs como lineas de cota de plano: sin caja, solo la regla
@@ -228,7 +237,12 @@ class AppTheme {
         focusedErrorBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
-        contentPadding: const EdgeInsets.fromLTRB(0, AppSpacing.lg, 0, AppSpacing.sm),
+        contentPadding: const EdgeInsets.fromLTRB(
+          0,
+          AppSpacing.lg,
+          0,
+          AppSpacing.sm,
+        ),
         labelStyle: const TextStyle(fontWeight: FontWeight.w500),
         helperStyle: TextStyle(
           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
@@ -248,19 +262,19 @@ class AppTheme {
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.xl)),
-          textStyle:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.xl)),
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+          ),
           elevation: 0,
-          textStyle:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           backgroundColor: paper,
           foregroundColor: ink,
         ),
@@ -269,27 +283,25 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.xl)),
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+          ),
           side: BorderSide(color: inkSoft.withValues(alpha: 0.5)),
-          textStyle:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.pill)),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+        ),
         side: BorderSide(color: paperEdge, width: 0.5),
         backgroundColor: Colors.transparent,
       ),
-      dividerTheme: DividerThemeData(
-        color: paperEdge,
-        thickness: 1,
-        space: 1,
-      ),
+      dividerTheme: DividerThemeData(color: paperEdge, thickness: 1, space: 1),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+        ),
         elevation: 3,
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -329,8 +341,9 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: colorScheme.onPrimaryContainer,
         ),
-        unselectedLabelTextStyle:
-            textTheme.labelMedium?.copyWith(color: inkSoft),
+        unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(
+          color: inkSoft,
+        ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colorScheme.primary,
@@ -343,7 +356,8 @@ class AppTheme {
           foregroundColor: colorScheme.onSurfaceVariant,
           side: BorderSide(color: paperEdge),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.md)),
+            borderRadius: BorderRadius.circular(AppRadii.md),
+          ),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
@@ -415,30 +429,14 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         letterSpacing: -0.25,
       ),
-      titleMedium: interBase.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
-      titleSmall: interBase.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
-      bodyLarge: interBase.bodyLarge?.copyWith(
-        fontWeight: FontWeight.w400,
-      ),
-      bodyMedium: interBase.bodyMedium?.copyWith(
-        fontWeight: FontWeight.w400,
-      ),
-      bodySmall: interBase.bodySmall?.copyWith(
-        fontWeight: FontWeight.w400,
-      ),
-      labelLarge: interBase.labelLarge?.copyWith(
-        fontWeight: FontWeight.w500,
-      ),
-      labelMedium: interBase.labelMedium?.copyWith(
-        fontWeight: FontWeight.w500,
-      ),
-      labelSmall: interBase.labelSmall?.copyWith(
-        fontWeight: FontWeight.w500,
-      ),
+      titleMedium: interBase.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      titleSmall: interBase.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+      bodyLarge: interBase.bodyLarge?.copyWith(fontWeight: FontWeight.w400),
+      bodyMedium: interBase.bodyMedium?.copyWith(fontWeight: FontWeight.w400),
+      bodySmall: interBase.bodySmall?.copyWith(fontWeight: FontWeight.w400),
+      labelLarge: interBase.labelLarge?.copyWith(fontWeight: FontWeight.w500),
+      labelMedium: interBase.labelMedium?.copyWith(fontWeight: FontWeight.w500),
+      labelSmall: interBase.labelSmall?.copyWith(fontWeight: FontWeight.w500),
     );
   }
 }

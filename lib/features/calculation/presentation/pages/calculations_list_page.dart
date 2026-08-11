@@ -36,8 +36,7 @@ class CalculationsListPage extends ConsumerStatefulWidget {
       _CalculationsListPageState();
 }
 
-class _CalculationsListPageState
-    extends ConsumerState<CalculationsListPage> {
+class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
   late final TextEditingController _searchCtrl;
   bool? _soldFilter;
 
@@ -71,7 +70,8 @@ class _CalculationsListPageState
     // lista muestra el set completo (sin busqueda ni filtro de venta —
     // con filtros el count del state no representa el historial total).
     // `async.hasValue` evita mostrar "0/10" durante loading/error.
-    final showHistoryCounter = csvLocked &&
+    final showHistoryCounter =
+        csvLocked &&
         async.hasValue &&
         _searchCtrl.text.isEmpty &&
         _soldFilter == null;
@@ -85,9 +85,7 @@ class _CalculationsListPageState
             icon: Opacity(
               opacity: csvLocked ? kLockedOpacity : 1.0,
               child: Icon(
-                csvLocked
-                    ? Icons.lock_rounded
-                    : Icons.file_download_outlined,
+                csvLocked ? Icons.lock_rounded : Icons.file_download_outlined,
                 size: 20,
               ),
             ),
@@ -119,8 +117,10 @@ class _CalculationsListPageState
                       )
                     : null,
                 isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
+                ),
               ),
               onChanged: (v) {
                 notifier.search(v);
@@ -187,14 +187,18 @@ class _CalculationsListPageState
                       ref.refresh(calculationsNotifierProvider.future),
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     itemCount: calcs.length,
                     itemBuilder: (_, i) => _StaggeredItem(
                       index: i,
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: _CalculationCard(
-                            calc: calcs[i], notifier: notifier),
+                          calc: calcs[i],
+                          notifier: notifier,
+                        ),
                       ),
                     ),
                   ),
@@ -210,10 +214,7 @@ class _CalculationsListPageState
   Widget _filterChip(String label, bool? filter) {
     final selected = _soldFilter == filter;
     return FilterChip(
-      label: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium,
-      ),
+      label: Text(label, style: Theme.of(context).textTheme.labelMedium),
       selected: selected,
       onSelected: (_) {
         setState(() => _soldFilter = _soldFilter == filter ? null : filter);
@@ -258,17 +259,18 @@ class _CalculationsListPageState
     final calcs = async.value;
     if (calcs == null || calcs.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.info(context, EsBO.historyNoQuotesToExport),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.info(context, EsBO.historyNoQuotesToExport));
       return;
     }
 
     final buf = StringBuffer();
     // Header
     buf.writeln(
-        'Fecha,Pieza,Cliente,Total,Vendido,Materiales,Horas,Descuento,'
-        'CostoMat,Elect,Profit');
+      'Fecha,Pieza,Cliente,Total,Vendido,Materiales,Horas,Descuento,'
+      'CostoMat,Elect,Profit',
+    );
     // Rows
     for (final c in calcs) {
       final date = DateFormat('yyyy-MM-dd HH:mm').format(c.createdAt.toLocal());
@@ -281,18 +283,20 @@ class _CalculationsListPageState
       final matCost = formatRaw(c.materialCostSnapshot);
       final elect = formatRaw(c.electricCostSnapshot);
       final profit = formatRaw(c.profitAmountSnapshot);
-      buf.writeln('$date,$piece,$client,$total,$sold,$hours,$discount,'
-          '$matCost,$elect,$profit');
+      buf.writeln(
+        '$date,$piece,$client,$total,$sold,$hours,$discount,'
+        '$matCost,$elect,$profit',
+      );
     }
 
     final bytes = Uint8List.fromList(utf8.encode(buf.toString()));
-    final xfile = XFile.fromData(bytes,
-        name: 'cotizaciones_3dcalc.csv', mimeType: 'text/csv');
+    final xfile = XFile.fromData(
+      bytes,
+      name: 'cotizaciones_3dcalc.csv',
+      mimeType: 'text/csv',
+    );
     await SharePlus.instance.share(
-      ShareParams(
-        files: [xfile],
-        text: EsBO.pdfShareSubject,
-      ),
+      ShareParams(files: [xfile], text: EsBO.pdfShareSubject),
     );
   }
 
@@ -334,7 +338,8 @@ class _CalculationCard extends ConsumerWidget {
 
     return Semantics(
       container: true,
-      label: '${_title()}, ${formatCurrency(Decimal.parse(calc.totalPriceSnapshot.toString()), currency)}'
+      label:
+          '${_title()}, ${formatCurrency(Decimal.parse(calc.totalPriceSnapshot.toString()), currency)}'
           '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -346,113 +351,119 @@ class _CalculationCard extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 children: [
-                // Leading icon (decorative — sale status already in label)
-                ExcludeSemantics(
-                  child: Hero(
-                    tag: 'calc-hero-${calc.id}',
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: calc.isSold
-                            ? color.tertiaryContainer
-                            : color.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(AppRadii.lg),
-                      ),
-                      child: Icon(
-                        calc.isSold
-                            ? Icons.check_circle_rounded
-                            : Icons.receipt_long_rounded,
-                        color: calc.isSold
-                            ? color.tertiary
-                            : color.onSurfaceVariant,
-                        size: 22,
+                  // Leading icon (decorative — sale status already in label)
+                  ExcludeSemantics(
+                    child: Hero(
+                      tag: 'calc-hero-${calc.id}',
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: calc.isSold
+                              ? color.tertiaryContainer
+                              : color.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(AppRadii.lg),
+                        ),
+                        child: Icon(
+                          calc.isSold
+                              ? Icons.check_circle_rounded
+                              : Icons.receipt_long_rounded,
+                          color: calc.isSold
+                              ? color.tertiary
+                              : color.onSurfaceVariant,
+                          size: 22,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              const SizedBox(width: 14),
-              // Body
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _title(),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
+                  const SizedBox(width: 14),
+                  // Body
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (client != null && client.isNotEmpty) ...[
-                          Icon(Icons.person_outline_rounded,
-                              size: 12, color: color.onSurfaceVariant),
-                          const SizedBox(width: AppSpacing.xs),
-                          Flexible(
-                            child: Text(
-                              client,
+                        Text(
+                          _title(),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          children: [
+                            if (client != null && client.isNotEmpty) ...[
+                              Icon(
+                                Icons.person_outline_rounded,
+                                size: 12,
+                                color: color.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Flexible(
+                                child: Text(
+                                  client,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: color.onSurfaceVariant,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Container(
+                                width: 3,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: color.onSurfaceVariant,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                            ],
+                            Text(
+                              DateFormat(
+                                'dd MMM HH:mm',
+                              ).format(calc.createdAt.toLocal()),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: color.onSurfaceVariant,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Container(
-                            width: 3,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: color.onSurfaceVariant,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                        ],
-                        Text(
-                          DateFormat('dd MMM HH:mm')
-                              .format(calc.createdAt.toLocal()),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: color.onSurfaceVariant,
-                          ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              // Price + menu
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    formatCurrency(Decimal.parse(
-                        calc.totalPriceSnapshot.toString()), currency),
-                    // M2: precio en list item usa JetBrains Mono + tabular
-                    // para alineacion vertical de cifras en el listado.
-                    style: GoogleFonts.jetBrainsMono(
-                      textStyle: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                        color: color.onSurface,
-                      ),
-                    ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  _PopupMenu(calc: calc, notifier: notifier),
+                  const SizedBox(width: AppSpacing.md),
+                  // Price + menu
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatCurrency(
+                          Decimal.parse(calc.totalPriceSnapshot.toString()),
+                          currency,
+                        ),
+                        // M2: precio en list item usa JetBrains Mono + tabular
+                        // para alineacion vertical de cifras en el listado.
+                        style: GoogleFonts.jetBrainsMono(
+                          textStyle: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            color: color.onSurface,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      _PopupMenu(calc: calc, notifier: notifier),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  ),
     );
   }
 }
@@ -471,15 +482,31 @@ class _PopupMenu extends StatelessWidget {
       iconSize: 18,
       itemBuilder: (_) => [
         PopupMenuItem<_TileAction>(
+          value: _TileAction.duplicate,
+          child: ListTile(
+            leading: const Icon(Icons.copy_all_rounded, size: 20),
+            title: Text(
+              EsBO.calcDuplicateAction,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            dense: true,
+          ),
+        ),
+        PopupMenuItem<_TileAction>(
           value: _TileAction.toggleSold,
           child: ListTile(
             leading: Icon(
-              calc.isSold ? Icons.undo_rounded : Icons.check_circle_outline_rounded,
+              calc.isSold
+                  ? Icons.undo_rounded
+                  : Icons.check_circle_outline_rounded,
               size: 20,
             ),
             title: Text(
-                calc.isSold ? EsBO.calcDetailMarkPending : EsBO.calcDetailMarkSold,
-                style: Theme.of(context).textTheme.labelLarge),
+              calc.isSold
+                  ? EsBO.calcDetailMarkPending
+                  : EsBO.calcDetailMarkSold,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             dense: true,
           ),
         ),
@@ -487,8 +514,10 @@ class _PopupMenu extends StatelessWidget {
           value: _TileAction.delete,
           child: ListTile(
             leading: Icon(Icons.delete_outline_rounded, size: 20),
-            title: Text(EsBO.commonDelete,
-                style: Theme.of(context).textTheme.labelLarge),
+            title: Text(
+              EsBO.commonDelete,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             dense: true,
           ),
         ),
@@ -498,6 +527,23 @@ class _PopupMenu extends StatelessWidget {
 
   Future<void> _handle(BuildContext context, _TileAction a) async {
     switch (a) {
+      case _TileAction.duplicate:
+        try {
+          await notifier.duplicate(
+            calc.id,
+            pieceNameSuffix: EsBO.calcDuplicateSuffix,
+          );
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(AppSnackBar.success(EsBO.calcDuplicateSuccess));
+        } catch (e) {
+          debugPrint('Duplicate quote failed: $e');
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(AppSnackBar.error(EsBO.calcDuplicateError));
+        }
       case _TileAction.toggleSold:
         await notifier.toggleSold(calc.id, !calc.isSold);
       case _TileAction.delete:
@@ -513,7 +559,7 @@ class _PopupMenu extends StatelessWidget {
   }
 }
 
-enum _TileAction { toggleSold, delete }
+enum _TileAction { duplicate, toggleSold, delete }
 
 /// Staggered entrance animation para items de lista.
 ///

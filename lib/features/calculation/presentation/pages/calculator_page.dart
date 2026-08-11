@@ -29,6 +29,7 @@ import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dar
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
+import '../widgets/cost_help_dialog.dart';
 import '../widgets/filament_selector_dialog.dart';
 import '../widgets/printer_selector_dialog.dart';
 import '../widgets/result_sheet.dart';
@@ -60,7 +61,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   late final TextEditingController _discountCtrl;
   late final TextEditingController _priceCtrl;
   late final TextEditingController _gramsCtrl;
-  late final TextEditingController _labelCtrl; // material label (Express) / piece label (Advanced listener)
+  late final TextEditingController
+  _labelCtrl; // material label (Express) / piece label (Advanced listener)
   late final TextEditingController _pieceLabelCtrl; // piece name (Express only)
 
   // OTROS controllers (F1: mano de obra, post-procesado, falla, minimo, markup).
@@ -92,14 +94,16 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _gramsCtrl = TextEditingController(text: initial.filamentGrams);
     _labelCtrl = TextEditingController(text: initial.filamentLabel);
     _pieceLabelCtrl = TextEditingController(text: initial.label);
-    _extraLaborRateCtrl =
-        TextEditingController(text: initial.extraLaborRate);
-    _extraPostProcessRateCtrl =
-        TextEditingController(text: initial.extraPostProcessRate);
-    _extraFailureRateCtrl =
-        TextEditingController(text: initial.extraFailureRate);
-    _extraMarkupOnMaterialsCtrl =
-        TextEditingController(text: initial.extraMarkupOnMaterials);
+    _extraLaborRateCtrl = TextEditingController(text: initial.extraLaborRate);
+    _extraPostProcessRateCtrl = TextEditingController(
+      text: initial.extraPostProcessRate,
+    );
+    _extraFailureRateCtrl = TextEditingController(
+      text: initial.extraFailureRate,
+    );
+    _extraMarkupOnMaterialsCtrl = TextEditingController(
+      text: initial.extraMarkupOnMaterials,
+    );
 
     for (final c in [
       _weightCtrl,
@@ -116,11 +120,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       c.addListener(_onAnyFieldChange);
     }
     _labelCtrl.addListener(() {
-      ref.read(calculatorNotifierProvider.notifier)
+      ref
+          .read(calculatorNotifierProvider.notifier)
           .setFilamentLabel(_labelCtrl.text);
     });
     _pieceLabelCtrl.addListener(() {
-      ref.read(calculatorNotifierProvider.notifier)
+      ref
+          .read(calculatorNotifierProvider.notifier)
           .setLabel(_pieceLabelCtrl.text);
     });
 
@@ -385,23 +391,189 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _materialCtrls.clear();
   }
 
+  /// Bottom sheet de plantillas de trabajo: tap = aplica al form
+  /// (reusa [CalculatorNotifier.loadFromCalculation]); icono = elimina.
+  Future<void> _showTemplatesSheet() async {
+    final notifier = ref.read(calculatorNotifierProvider.notifier);
+    final currency = ref.watch(selectedCurrencyProvider);
+    final List<Calculation> templates;
+    try {
+      templates = await notifier.templates();
+    } catch (e) {
+      debugPrint('List templates failed: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(EsBO.calcTemplateApplyError));
+      return;
+    }
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        if (templates.isEmpty) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.folder_copy_outlined,
+                    size: 48,
+                    color: Theme.of(sheetCtx).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    EsBO.calcTemplateEmpty,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(sheetCtx).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  EsBO.calcTemplatesTitle,
+                  style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: templates.length,
+                  itemBuilder: (ctx, i) {
+                    final t = templates[i];
+                    final name = (t.pieceName?.trim().isNotEmpty ?? false)
+                        ? t.pieceName!.trim()
+                        : EsBO.calcTemplateUntitled;
+                    return ListTile(
+                      leading: const Icon(Icons.article_outlined),
+                      title: Text(name),
+                      subtitle: Text(
+                        formatCurrency(
+                          Decimal.parse(
+                            t.totalPriceSnapshot.toStringAsFixed(2),
+                          ),
+                          currency,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        tooltip: EsBO.commonDelete,
+                        onPressed: () async {
+                          try {
+                            final ok = await notifier.deleteTemplate(t.id);
+                            if (!sheetCtx.mounted) return;
+                            ScaffoldMessenger.of(sheetCtx).hideCurrentSnackBar();
+                            if (!ok) {
+                              ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                AppSnackBar.error(
+                                  EsBO.calcTemplateDeleteError,
+                                ),
+                              );
+                              return;
+                            }
+                            Navigator.of(sheetCtx).pop();
+                            await _showTemplatesSheet();
+                          } catch (e) {
+                            debugPrint('Delete template failed: $e');
+                            if (!sheetCtx.mounted) return;
+                            ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                              AppSnackBar.error(EsBO.calcTemplateDeleteError),
+                            );
+                          }
+                        },
+                      ),
+                      onTap: () async {
+                        try {
+                          await notifier.loadFromCalculation(t);
+                          if (!sheetCtx.mounted) return;
+                          Navigator.of(sheetCtx).pop();
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context)
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
+                              AppSnackBar.success(
+                                EsBO.calcTemplateApplySuccess,
+                              ),
+                            );
+                        } catch (e) {
+                          debugPrint('Apply template failed: $e');
+                          if (!sheetCtx.mounted) return;
+                          ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                            AppSnackBar.error(EsBO.calcTemplateApplyError),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _showSaveDialog() async {
     final state = ref.read(calculatorNotifierProvider);
     if (!state.isValid || state.output == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.warning(EsBO.calcFormIncompleteWarning),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.warning(EsBO.calcFormIncompleteWarning));
       return;
     }
+    final recentClients = await ref
+        .read(calculationRepositoryProvider)
+        .recentClientNames();
+    if (!mounted) return;
     final result = await showDialog<_SaveResult>(
       context: context,
-      builder: (_) => const _SaveDialog(),
+      builder: (_) => _SaveDialog(recentClients: recentClients),
     );
     if (result == null || !mounted) return;
+    if (result.asTemplate) {
+      try {
+        final id = await ref
+            .read(calculatorNotifierProvider.notifier)
+            .saveAsTemplate(clientName: result.clientName);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            id != null
+                ? AppSnackBar.success(EsBO.calcTemplateSaveSuccess)
+                : AppSnackBar.warning(EsBO.calcTemplateSaveError),
+          );
+      } catch (e) {
+        debugPrint('Save template failed: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(AppSnackBar.error(EsBO.calcTemplateSaveError));
+      }
+      return;
+    }
     try {
       final id = await ref
           .read(calculatorNotifierProvider.notifier)
-          .save(clientName: result.clientName);
+          .save(
+            clientName: result.clientName,
+            notes: result.notes,
+            conditions: result.conditions,
+          );
       if (!mounted) return;
       if (id != null) {
         await ref.read(draftStorageProvider).clear();
@@ -413,8 +585,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ).showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.success(EsBO.calcSavedWithId(id)),
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        AppSnackBar.success(
+          EsBO.calcSavedWithId(id),
+          actionLabel: EsBO.calcSavedViewAction,
+          onAction: () => context.push('/history/$id'),
+        ),
       );
     } on HistoryCapReachedException catch (_) {
       // T15: free user intento guardar la #11. SnackBar dedicado con CTA
@@ -433,10 +611,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
         );
     } catch (e) {
+      debugPrint('Quote save failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(AppSnackBar.error('${EsBO.commonError}: $e'));
+      ).showSnackBar(AppSnackBar.error(EsBO.commonErrorGeneric));
     }
   }
 
@@ -448,11 +627,41 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        // Salida explícita: con ruta push, el leading por defecto es una
+        // flecha sutil. Un botón "cerrar" comunica mejor que vuelve al menú
+        // (sobre todo en web, donde no hay back del sistema).
+        leading: Semantics(
+          button: true,
+          label: EsBO.calcCloseAction,
+          child: IconButton(
+            icon: const Icon(Icons.close_rounded),
+            tooltip: EsBO.calcCloseAction,
+            onPressed: () => context.pop(),
+          ),
+        ),
         title: Semantics(
           header: true,
           child: Text(ref.watch(localeStringsProvider).calcSheetTitle),
         ),
         actions: [
+          Semantics(
+            button: true,
+            label: EsBO.costHelpTitle,
+            child: IconButton(
+              icon: const Icon(Icons.help_outline_rounded),
+              tooltip: EsBO.costHelpTitle,
+              onPressed: () => showCostHelpDialog(context),
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: EsBO.calcTemplatesTitle,
+            child: IconButton(
+              icon: const Icon(Icons.folder_copy_rounded),
+              tooltip: EsBO.calcTemplatesTitle,
+              onPressed: _showTemplatesSheet,
+            ),
+          ),
           Semantics(
             button: true,
             label: EsBO.calcActionReset,
@@ -534,9 +743,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final joined = parts.length == 1
         ? parts.first
         : parts.length == 2
-            ? '${parts[0]} y ${parts[1]}'
-            : '${parts.sublist(0, parts.length - 1).join(', ')} '
-                'y ${parts.last}';
+        ? '${parts[0]} y ${parts[1]}'
+        : '${parts.sublist(0, parts.length - 1).join(', ')} '
+              'y ${parts.last}';
     return '${EsBO.calcEmptyHintPrefix} $joined '
         '${EsBO.calcEmptyHintSuffix}.';
   }
@@ -678,8 +887,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 child: _PrinterIndicator(),
               ),
               const SizedBox(height: AppSpacing.xxl),
-
-
 
               // Rubrica colapsable: OTROS (mano de obra, post-procesado,
               // falla, markup) — al final para no interponerse al 95%.
@@ -830,8 +1037,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 child: _PrinterIndicator(),
               ),
               const SizedBox(height: AppSpacing.xxl),
-
-
 
               // Rubrica colapsable: OTROS (mano de obra, post-procesado,
               // falla, markup) — al final para no interponerse al flujo.
@@ -1012,10 +1217,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Container(
-            height: 1,
-            color: cs.outlineVariant,
-          ),
+          Container(height: 1, color: cs.outlineVariant),
           const SizedBox(height: AppSpacing.sm),
           Text(
             dateStr,
@@ -1048,10 +1250,7 @@ class _ActionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return ActionChip(
       avatar: Icon(icon, size: 16),
-      label: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium,
-      ),
+      label: Text(label, style: Theme.of(context).textTheme.labelMedium),
       onPressed: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 4),
     );
@@ -1076,99 +1275,98 @@ class _PrinterIndicator extends ConsumerWidget {
           ? '${EsBO.calcPrinterPrefix}${activePrinter.name}'
           : '${EsBO.calcNoPrinter}. ${EsBO.calcPrinterEmptyCta}',
       child: InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      onTap: printers.isEmpty
-          ? () => context.push('/settings/printers/new')
-          : () => showPrinterSelectorDialog(context, ref, printers: printers),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(AppRadii.md),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        onTap: printers.isEmpty
+            ? () => context.push('/settings/printers/new')
+            : () => showPrinterSelectorDialog(context, ref, printers: printers),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                ),
+                child: Icon(
+                  Icons.print_rounded,
+                  size: 20,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
-              child: Icon(
-                Icons.print_rounded,
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: activePrinter != null
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            activePrinter.name,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            activePrinter.brand != null &&
+                                    activePrinter.brand!.isNotEmpty
+                                ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
+                                : '${activePrinter.averageWatts} W',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            EsBO.calcNoPrinter,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            EsBO.calcPrinterEmptyHint,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            EsBO.calcPrinterEmptyCta,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
                 size: 20,
-                color: theme.colorScheme.onPrimaryContainer,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: activePrinter != null
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          activePrinter.name,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          activePrinter.brand != null &&
-                                  activePrinter.brand!.isNotEmpty
-                              ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
-                              : '${activePrinter.averageWatts} W',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          EsBO.calcNoPrinter,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          EsBO.calcPrinterEmptyHint,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          EsBO.calcPrinterEmptyCta,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
   }
-
 }
 
 // === MaterialCtrls y MaterialRowTile ===
@@ -1271,139 +1469,142 @@ class _MaterialRowTile extends ConsumerWidget {
       container: true,
       label: EsBO.calcMaterialTitle(index + 1),
       child: Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      // Fila de tabla impresa: solo reglas superior e inferior, sin caja.
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        border: Border(
-          top: BorderSide(color: theme.colorScheme.outlineVariant),
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        // Fila de tabla impresa: solo reglas superior e inferior, sin caja.
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+            bottom: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header: badge + titulo + Spacer + catalog chips + (opcional) delete
-          Row(
-            children: [
-              Semantics(
-                label: EsBO.calcMaterialTitle(index + 1),
-                excludeSemantics: true,
-                child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: theme.colorScheme.primary,
-                    width: 1.5,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
-                ),
-                child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: AppTheme.num(
-                      theme.textTheme.labelMedium ?? const TextStyle(),
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header: badge + titulo + Spacer + catalog chips + (opcional) delete
+            Row(
+              children: [
+                Semantics(
+                  label: EsBO.calcMaterialTitle(index + 1),
+                  excludeSemantics: true,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: theme.colorScheme.primary,
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadii.sm),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: AppTheme.num(
+                          theme.textTheme.labelMedium ?? const TextStyle(),
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-              Text(EsBO.calcMaterialTitle(index + 1), style: theme.textTheme.titleSmall),
-              const Spacer(),
-              if (filaments.isNotEmpty) ...[
-                if (defaultFilament != null)
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  EsBO.calcMaterialTitle(index + 1),
+                  style: theme.textTheme.titleSmall,
+                ),
+                const Spacer(),
+                if (filaments.isNotEmpty) ...[
+                  if (defaultFilament != null)
+                    _ActionChip(
+                      icon: Icons.star_rounded,
+                      label: EsBO.calcMaterialUse(defaultFilament.name),
+                      onTap: () => _loadFromFilament(ref, defaultFilament),
+                    ),
+                  if (defaultFilament != null)
+                    const SizedBox(width: AppSpacing.xs),
                   _ActionChip(
-                    icon: Icons.star_rounded,
-                    label: EsBO.calcMaterialUse(defaultFilament.name),
-                    onTap: () => _loadFromFilament(ref, defaultFilament),
+                    icon: Icons.inventory_2_rounded,
+                    label: EsBO.calcMaterialCatalog,
+                    onTap: () async {
+                      final filament = await showFilamentSelectorDialog(
+                        context,
+                        ref,
+                        filaments: filaments,
+                      );
+                      if (filament != null) _loadFromFilament(ref, filament);
+                    },
                   ),
-                if (defaultFilament != null)
-                  const SizedBox(width: AppSpacing.xs),
-                _ActionChip(
-                  icon: Icons.inventory_2_rounded,
-                  label: EsBO.calcMaterialCatalog,
-                  onTap: () async {
-                    final filament = await showFilamentSelectorDialog(
-                      context,
-                      ref,
-                      filaments: filaments,
-                    );
-                    if (filament != null) _loadFromFilament(ref, filament);
-                  },
-                ),
-                if (deletable) const SizedBox(width: AppSpacing.xs),
+                  if (deletable) const SizedBox(width: AppSpacing.xs),
+                ],
+                if (deletable)
+                  Semantics(
+                    button: true,
+                    label: EsBO.calcMaterialRemove(index + 1),
+                    child: IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      tooltip: EsBO.calcMaterialRemove(index + 1),
+                      onPressed: onRemove,
+                      style: IconButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
+                    ),
+                  ),
               ],
-              if (deletable)
-                Semantics(
-                  button: true,
-                  label: EsBO.calcMaterialRemove(index + 1),
-                  child: IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  tooltip: EsBO.calcMaterialRemove(index + 1),
-                  onPressed: onRemove,
-                  style: IconButton.styleFrom(
-                    foregroundColor: theme.colorScheme.error,
-                  ),
+            ),
+            if (showLabel) ...[
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: labelCtrl,
+                decoration: InputDecoration(
+                  labelText: EsBO.calcFieldLabel,
+                  helperText: EsBO.calcFieldLabelHelper,
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.label_outline, size: 18),
                 ),
+                onChanged: (v) => _emit(),
               ),
             ],
-          ),
-          if (showLabel) ...[
             const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: labelCtrl,
-              decoration: InputDecoration(
-                labelText: EsBO.calcFieldLabel,
-                helperText: EsBO.calcFieldLabelHelper,
-                isDense: true,
-                prefixIcon: const Icon(Icons.label_outline, size: 18),
-              ),
-              onChanged: (v) => _emit(),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              if (showWeight) ...[
+            Row(
+              children: [
+                if (showWeight) ...[
+                  Expanded(
+                    child: NumericInputField(
+                      label: EsBO.calcFieldWeight,
+                      controller: weightCtrl,
+                      onChanged: (v) => _emit(),
+                      suffix: 'g',
+                      isKey: isKeyWeight,
+                      keyHint: EsBO.calcKeyWeightHint,
+                      showValidation: showValidation,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
                 Expanded(
                   child: NumericInputField(
-                    label: EsBO.calcFieldWeight,
-                    controller: weightCtrl,
+                    label: EsBO.calcFieldSpoolPrice,
+                    controller: priceCtrl,
                     onChanged: (v) => _emit(),
-                    suffix: 'g',
-                    isKey: isKeyWeight,
-                    keyHint: EsBO.calcKeyWeightHint,
+                    suffix: currency.symbol,
                     showValidation: showValidation,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: NumericInputField(
+                    label: EsBO.calcFieldSpoolGrams,
+                    controller: gramsCtrl,
+                    onChanged: (v) => _emit(),
+                    suffix: 'g',
+                    showValidation: showValidation,
+                  ),
+                ),
               ],
-              Expanded(
-                child: NumericInputField(
-                  label: EsBO.calcFieldSpoolPrice,
-                  controller: priceCtrl,
-                  onChanged: (v) => _emit(),
-                  suffix: currency.symbol,
-                  showValidation: showValidation,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: NumericInputField(
-                  label: EsBO.calcFieldSpoolGrams,
-                  controller: gramsCtrl,
-                  onChanged: (v) => _emit(),
-                  suffix: 'g',
-                  showValidation: showValidation,
-                ),
-              ),
-            ],
-          ),
+            ),
           ],
         ),
       ),
@@ -1427,7 +1628,6 @@ class _MaterialRowTile extends ConsumerWidget {
     gramsCtrl.text = f.gramsPerBobbin.toStringAsFixed(0);
     _emit();
   }
-
 }
 
 // === Mode Selector ===
@@ -1502,12 +1702,26 @@ class _ModeSelector extends ConsumerWidget {
 // === Save dialog ===
 
 class _SaveResult {
-  const _SaveResult({this.clientName});
+  const _SaveResult({
+    this.clientName,
+    this.notes,
+    this.conditions,
+    this.asTemplate = false,
+  });
   final String? clientName;
+  final String? notes;
+  final String? conditions;
+
+  /// True cuando el usuario pidio "Guardar como plantilla" en lugar de
+  /// guardar la cotizacion en el historial.
+  final bool asTemplate;
 }
 
 class _SaveDialog extends StatefulWidget {
-  const _SaveDialog();
+  const _SaveDialog({this.recentClients = const []});
+
+  /// Clientes más recientes para el quick-pick (chips).
+  final List<String> recentClients;
 
   @override
   State<_SaveDialog> createState() => _SaveDialogState();
@@ -1515,15 +1729,25 @@ class _SaveDialog extends StatefulWidget {
 
 class _SaveDialogState extends State<_SaveDialog> {
   final _clientCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
+  final _conditionsCtrl = TextEditingController();
 
   @override
   void dispose() {
     _clientCtrl.dispose();
+    _notesCtrl.dispose();
+    _conditionsCtrl.dispose();
     super.dispose();
   }
 
   void _submit() {
-    Navigator.of(context).pop(_SaveResult(clientName: _clientCtrl.text));
+    Navigator.of(context).pop(
+      _SaveResult(
+        clientName: _clientCtrl.text,
+        notes: _notesCtrl.text,
+        conditions: _conditionsCtrl.text,
+      ),
+    );
   }
 
   @override
@@ -1543,12 +1767,74 @@ class _SaveDialogState extends State<_SaveDialog> {
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
           ),
+          if (widget.recentClients.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                EsBO.calcDialogRecentClients,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final client in widget.recentClients)
+                  ActionChip(
+                    label: Text(
+                      client,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _clientCtrl.text = client,
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notesCtrl,
+            decoration: InputDecoration(
+              labelText: EsBO.calcDialogNotes,
+              helperText: EsBO.calcDialogNotesHelper,
+              prefixIcon: const Icon(Icons.notes_rounded),
+            ),
+            maxLines: 3,
+            textInputAction: TextInputAction.newline,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _conditionsCtrl,
+            decoration: InputDecoration(
+              labelText: EsBO.calcDialogConditions,
+              helperText: EsBO.calcDialogConditionsHelper,
+              prefixIcon: const Icon(Icons.rule_rounded),
+            ),
+            maxLines: 3,
+            textInputAction: TextInputAction.newline,
+          ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(EsBO.commonCancel),
+        ),
+        TextButton.icon(
+          onPressed: () => Navigator.of(context).pop(
+            _SaveResult(
+              clientName: _clientCtrl.text,
+              notes: _notesCtrl.text,
+              conditions: _conditionsCtrl.text,
+              asTemplate: true,
+            ),
+          ),
+          icon: const Icon(Icons.playlist_add_rounded, size: 18),
+          label: Text(EsBO.calcTemplateSaveAsAction),
         ),
         FilledButton(onPressed: _submit, child: Text(EsBO.commonSave)),
       ],

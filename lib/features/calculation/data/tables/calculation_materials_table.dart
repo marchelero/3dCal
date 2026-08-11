@@ -17,11 +17,8 @@ import 'calculations_table.dart';
 class CalculationMaterials extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  IntColumn get calculationId => integer().references(
-        Calculations,
-        #id,
-        onDelete: KeyAction.cascade,
-      )();
+  IntColumn get calculationId =>
+      integer().references(Calculations, #id, onDelete: KeyAction.cascade)();
 
   /// Soft FK a `filaments.id`. Nullable.
   IntColumn get filamentId => integer().nullable()();

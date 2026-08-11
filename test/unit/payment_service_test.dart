@@ -30,8 +30,11 @@ void main() {
       );
       expect(ok.productId, 'tresdcal_pro_lifetime');
       expect(ok.purchasedAt, purchasedAt);
-      expect(ok.source, 'lifetime_purchase',
-          reason: 'Source default = lifetime_purchase.');
+      expect(
+        ok.source,
+        'lifetime_purchase',
+        reason: 'Source default = lifetime_purchase.',
+      );
     });
 
     test('PaymentCancelled: instance of PaymentResult', () {
@@ -47,16 +50,15 @@ void main() {
 
     test('pattern matching exhaustivo (success/cancelled/error)', () {
       String describe(PaymentResult r) => switch (r) {
-            PaymentSuccess() => 'success',
-            PaymentCancelled() => 'cancelled',
-            PaymentError() => 'error',
-          };
+        PaymentSuccess() => 'success',
+        PaymentCancelled() => 'cancelled',
+        PaymentError() => 'error',
+      };
 
       expect(
-        describe(PaymentSuccess(
-          productId: 'X',
-          purchasedAt: DateTime.utc(2026),
-        )),
+        describe(
+          PaymentSuccess(productId: 'X', purchasedAt: DateTime.utc(2026)),
+        ),
         'success',
       );
       expect(describe(const PaymentCancelled()), 'cancelled');
@@ -92,17 +94,19 @@ void main() {
 
     test('pattern matching exhaustivo (active/empty/error)', () {
       String describe(RestoreResult r) => switch (r) {
-            RestoreActive() => 'active',
-            RestoreEmpty() => 'empty',
-            RestoreError() => 'error',
-          };
+        RestoreActive() => 'active',
+        RestoreEmpty() => 'empty',
+        RestoreError() => 'error',
+      };
 
       expect(
-        describe(RestoreActive(
-          productId: 'X',
-          purchasedAt: DateTime.utc(2026),
-          validatedAt: DateTime.utc(2026),
-        )),
+        describe(
+          RestoreActive(
+            productId: 'X',
+            purchasedAt: DateTime.utc(2026),
+            validatedAt: DateTime.utc(2026),
+          ),
+        ),
         'active',
       );
       expect(describe(const RestoreEmpty()), 'empty');

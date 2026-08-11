@@ -175,6 +175,22 @@ class EnImpl implements AppStrings {
   String get settingsBackupImportCancel => 'Cancel';
 
   @override
+  String get settingsBackupImportSizeError =>
+      'The backup file exceeds the maximum allowed size.';
+
+  @override
+  String get settingsBackupImportInvalidFile =>
+      'The selected file is not a valid backup.';
+
+  @override
+  String get settingsBackupImportFutureVersion =>
+      'This backup was created with a future version of the app. '
+      'Update 3dCalc and try again.';
+
+  @override
+  String get settingsBackupLockedBody => 'Backups are a Pro feature.';
+
+  @override
   String get dashboardTitle => 'Dashboard';
   @override
   String get dashboardErrorLoad => 'Error loading dashboard';
@@ -352,6 +368,70 @@ class EnImpl implements AppStrings {
   String get calcFieldWasteHelper => '% waste markup';
 
   @override
+  String get costHelpTitle => 'How to calibrate your costs';
+
+  @override
+  String get costHelpEnergyTitle => 'Energy cost';
+
+  @override
+  String get costHelpEnergyBody =>
+      'Energy used while printing: print hours × power (kW) × rate (\$/kWh). '
+      'E.g.: 6 h × 0.15 kW × 1.2 \$/kWh ≈ \$1.08. Only added if the printer '
+      'has a registered wattage.';
+
+  @override
+  String get costHelpLaborTitle => 'Labor';
+
+  @override
+  String get costHelpLaborBody =>
+      'Your time: work hours × hourly rate (\$/h). Includes prepping the '
+      'printer, supervising the print, and final finishing.';
+
+  @override
+  String get costHelpPostTitle => 'Post-processing';
+
+  @override
+  String get costHelpPostBody =>
+      'Extra percentage on material cost for sanding, painting, glue, or '
+      'other finishes.';
+
+  @override
+  String get costHelpFailureTitle => 'Failure rate';
+
+  @override
+  String get costHelpFailureBody =>
+      'Percentage of the base cost reserved for failed prints. If 1 in 10 '
+      'prints fails, that 10% is spread over the 9 you actually sell.';
+
+  @override
+  String get costHelpWasteTitle => 'Waste & wear';
+
+  @override
+  String get costHelpWasteBody =>
+      'Extra percentage on materials: supports, nozzle purge, test filament, '
+      'and printer wear.';
+
+  @override
+  String get costHelpMinimumChargeTitle => 'Minimum charge';
+
+  @override
+  String get costHelpMinimumChargeBody =>
+      'Price floor. If the calculated total is below this amount, this '
+      'minimum is charged. Ideal for small parts that still need printer '
+      'setup.';
+
+  @override
+  String get costHelpMarginTitle => 'Profit (margin)';
+
+  @override
+  String get costHelpMarginBody =>
+      'Percentage added to the total cost for your profit: total × '
+      '(1 + margin/100). Adjusted under Global parameters.';
+
+  @override
+  String get calcCloseAction => 'Close and return to menu';
+
+  @override
   String get calcModeExpress => 'Express';
   @override
   String get calcModeAdvanced => 'Advanced';
@@ -365,6 +445,35 @@ class EnImpl implements AppStrings {
   String get calcDialogClient => 'Client';
   @override
   String get calcDialogClientHelper => 'Optional';
+  @override
+  String get calcDialogRecentClients => 'Recent clients';
+  @override
+  String get calcDialogNotes => 'Notes (optional)';
+  @override
+  String get calcDialogNotesHelper => 'Specs, deadlines, delivery\u2026';
+  @override
+  String get calcDialogConditions => 'Business conditions (optional)';
+  @override
+  String get calcDialogConditionsHelper => 'Validity, payment, warranty\u2026';
+  @override
+  String get calcTemplatesTitle => 'Templates';
+  @override
+  String get calcTemplateSaveAsAction => 'Save as template';
+  @override
+  String get calcTemplateSaveSuccess => 'Template saved';
+  @override
+  String get calcTemplateSaveError => 'Could not save the template';
+  @override
+  String get calcTemplateApplySuccess => 'Template applied to the form';
+  @override
+  String get calcTemplateApplyError => 'Could not load the template';
+  @override
+  String get calcTemplateEmpty =>
+      'No templates yet.\nSave a frequent job as a template to reuse it.';
+  @override
+  String get calcTemplateUntitled => 'Untitled';
+  @override
+  String get calcTemplateDeleteError => 'Could not delete the template';
 
   @override
   String get calcEmptyHintPrefix => 'Fill in';
@@ -517,6 +626,15 @@ class EnImpl implements AppStrings {
   String get calcDetailMarkPending => 'Mark as pending';
 
   @override
+  String get calcDuplicateAction => 'Duplicate';
+  @override
+  String get calcDuplicateSuffix => ' (copy)';
+  @override
+  String get calcDuplicateSuccess => 'Quote duplicated';
+  @override
+  String get calcDuplicateError => 'Could not duplicate the quote';
+
+  @override
   String get historyTitle => 'Quotations';
   @override
   String get historyErrorLoad => 'Error loading quotations';
@@ -566,6 +684,10 @@ class EnImpl implements AppStrings {
   String get onboardingSkip => 'Skip';
   @override
   String get onboardingStart => 'Get Started';
+  @override
+  String get onboardingStartQuote => 'Create my first quote';
+  @override
+  String get onboardingGoHome => 'Go to menu';
   @override
   String get configTitle => 'Initial Setup';
   @override
@@ -810,6 +932,8 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String calcSavedWithId(int id) => 'Quote #$id saved.';
   @override
+  String get calcSavedViewAction => 'View';
+  @override
   String get calcAddMaterial => 'Add material';
   @override
   String get calcPrinterPrefix => 'Printer: ';
@@ -844,6 +968,16 @@ We may update, suspend, or remove application features. These terms may also cha
   String get pdfShareSubject => '3dCalc quotation';
   @override
   String get pdfDatePrefix => 'Date: ';
+  @override
+  String get pdfQuoteNumber => 'No. ';
+  @override
+  String get pdfValidUntilPrefix => 'Valid until: ';
+  @override
+  String get pdfClientPrefix => 'Client: ';
+  @override
+  String get pdfNotesTitle => 'Notes';
+  @override
+  String get pdfConditionsTitle => 'Terms';
   @override
   String get pdfMaterialCosts => 'Material costs';
   @override

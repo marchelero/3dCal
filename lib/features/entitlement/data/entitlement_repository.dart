@@ -88,8 +88,7 @@ class DriftEntitlementRepository implements EntitlementRepository {
     // stream cuando la row trackeada deja de matchear el WHERE (ej: tras
     // `clear()` que pone isActive=false). En su lugar, observamos la lista
     // completa y mapeamos a la primera fila o null. Stream nunca cierra.
-    return (_db.select(_db.entitlements)
-          ..where((e) => e.isActive.equals(true)))
+    return (_db.select(_db.entitlements)..where((e) => e.isActive.equals(true)))
         .watch()
         .map((rows) => rows.isEmpty ? null : rows.first);
   }
@@ -107,7 +106,8 @@ class DriftEntitlementRepository implements EntitlementRepository {
   /// - [save] (cuando reemplazamos la activa).
   /// - [clear] (restore dice "no hay entitlement").
   Future<int> _deactivateAll() {
-    return _db.update(_db.entitlements)
+    return _db
+        .update(_db.entitlements)
         .write(const EntitlementsCompanion(isActive: Value(false)));
   }
 }

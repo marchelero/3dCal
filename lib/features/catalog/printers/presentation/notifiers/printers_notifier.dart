@@ -92,5 +92,5 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
 
 final printersNotifierProvider =
     AsyncNotifierProvider<PrintersNotifier, List<PrinterProfile>>(
-  PrintersNotifier.new,
-);
+      PrintersNotifier.new,
+    );

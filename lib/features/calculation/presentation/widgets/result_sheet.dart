@@ -3,7 +3,7 @@
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -408,10 +408,11 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
     } catch (e) {
+      debugPrint('Quote image pick failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(AppSnackBar.error('${EsBO.quoteImageError}: $e'));
+      ).showSnackBar(AppSnackBar.error(EsBO.quoteImageError));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -442,10 +443,11 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         pieceImageBytes: _pieceImageBytes,
       );
     } catch (e) {
+      debugPrint('Quote PDF share failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(AppSnackBar.error('${EsBO.commonPdfExportError}: $e'));
+      ).showSnackBar(AppSnackBar.error(EsBO.commonPdfExportError));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -485,10 +487,11 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
     } catch (e) {
+      debugPrint('Quote image save failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(AppSnackBar.error('${EsBO.calcShareError}: $e'));
+      ).showSnackBar(AppSnackBar.error(EsBO.calcShareError));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -633,80 +636,87 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
 
               // ── Selector PRO de Cantidad (fuera del RepaintBoundary) ──
               const SizedBox(height: AppSpacing.sm),
-              Builder(builder: (ctx) {
-                final isPro = ProviderScope.containerOf(ctx).read(isProProvider);
-                final entState = ProviderScope.containerOf(ctx).read(entitlementNotifierProvider);
-                final locked = !entState.isLoading && !isPro;
-                return Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              const Icon(Icons.layers_rounded, size: 18),
-                              const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                'Cantidad',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (locked) ...[
+              Builder(
+                builder: (ctx) {
+                  final isPro = ProviderScope.containerOf(
+                    ctx,
+                  ).read(isProProvider);
+                  final entState = ProviderScope.containerOf(
+                    ctx,
+                  ).read(entitlementNotifierProvider);
+                  final locked = !entState.isLoading && !isPro;
+                  return Card(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.layers_rounded, size: 18),
                                 const SizedBox(width: AppSpacing.xs),
-                                const ProBadge(),
+                                Text(
+                                  'Cantidad',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (locked) ...[
+                                  const SizedBox(width: AppSpacing.xs),
+                                  const ProBadge(),
+                                ],
                               ],
-                            ],
-                          ),
-                        ),
-                        IconButton.outlined(
-                          icon: const Icon(Icons.remove_rounded),
-                          visualDensity: VisualDensity.compact,
-                          onPressed: _quantity > 1
-                              ? () {
-                                  if (locked) {
-                                    Navigator.of(ctx).pop();
-                                    GoRouter.of(ctx).push('/paywall');
-                                  } else {
-                                    setState(() => _quantity--);
-                                  }
-                                }
-                              : null,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                          ),
-                          child: Text(
-                            '$_quantity',
-                            style: AppTheme.num(
-                              theme.textTheme.titleMedium ?? const TextStyle(),
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                        IconButton.outlined(
-                          icon: const Icon(Icons.add_rounded),
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () {
-                            if (locked) {
-                              Navigator.of(ctx).pop();
-                              GoRouter.of(ctx).push('/paywall');
-                            } else {
-                              setState(() => _quantity++);
-                            }
-                          },
-                        ),
-                      ],
+                          IconButton.outlined(
+                            icon: const Icon(Icons.remove_rounded),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: _quantity > 1
+                                ? () {
+                                    if (locked) {
+                                      Navigator.of(ctx).pop();
+                                      GoRouter.of(ctx).push('/paywall');
+                                    } else {
+                                      setState(() => _quantity--);
+                                    }
+                                  }
+                                : null,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                            ),
+                            child: Text(
+                              '$_quantity',
+                              style: AppTheme.num(
+                                theme.textTheme.titleMedium ??
+                                    const TextStyle(),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton.outlined(
+                            icon: const Icon(Icons.add_rounded),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () {
+                              if (locked) {
+                                Navigator.of(ctx).pop();
+                                GoRouter.of(ctx).push('/paywall');
+                              } else {
+                                setState(() => _quantity++);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
 
               // ── Descuento (Debajo de Cantidad, disponible para todos) ──
               // Fuente unica de verdad: state.discountPct (engine). Escribir
@@ -738,11 +748,12 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                       SizedBox(
                         width: 80,
                         child: TextFormField(
-                          initialValue: (double.tryParse(
-                                widget.state.discountPct,
-                              )?.round() ??
-                              0)
-                              .toString(),
+                          initialValue:
+                              (double.tryParse(
+                                        widget.state.discountPct,
+                                      )?.round() ??
+                                      0)
+                                  .toString(),
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
                           decoration: const InputDecoration(

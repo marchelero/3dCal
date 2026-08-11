@@ -31,27 +31,27 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   int _prevIndex = 0;
 
   List<_NavDest> _destinations(AppStrings s) => [
-        _NavDest(
-          icon: Icons.home_outlined,
-          selectedIcon: Icons.home,
-          label: s.navHome,
-        ),
-        _NavDest(
-          icon: Icons.history_outlined,
-          selectedIcon: Icons.history,
-          label: s.navHistory,
-        ),
-        _NavDest(
-          icon: Icons.bar_chart_outlined,
-          selectedIcon: Icons.bar_chart,
-          label: s.navDashboard,
-        ),
-        _NavDest(
-          icon: Icons.settings_outlined,
-          selectedIcon: Icons.settings,
-          label: s.navSettings,
-        ),
-      ];
+    _NavDest(
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home,
+      label: s.navHome,
+    ),
+    _NavDest(
+      icon: Icons.history_outlined,
+      selectedIcon: Icons.history,
+      label: s.navHistory,
+    ),
+    _NavDest(
+      icon: Icons.bar_chart_outlined,
+      selectedIcon: Icons.bar_chart,
+      label: s.navDashboard,
+    ),
+    _NavDest(
+      icon: Icons.settings_outlined,
+      selectedIcon: Icons.settings,
+      label: s.navSettings,
+    ),
+  ];
 
   @override
   void initState() {
@@ -107,19 +107,13 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   Widget _buildMobileNav(BuildContext context, List<_NavDest> dests) {
     final color = Theme.of(context).colorScheme;
     return Scaffold(
-      body: FadeTransition(
-        opacity: _fadeCtrl,
-        child: widget.navigationShell,
-      ),
+      body: FadeTransition(opacity: _fadeCtrl, child: widget.navigationShell),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              color.surfaceContainerLow,
-              color.surfaceContainer,
-            ],
+            colors: [color.surfaceContainerLow, color.surfaceContainer],
           ),
           boxShadow: [
             BoxShadow(
@@ -162,7 +156,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     );
   }
 
-  Widget _buildTabletNav(BuildContext context, List<_NavDest> dests, {required bool extended}) {
+  Widget _buildTabletNav(
+    BuildContext context,
+    List<_NavDest> dests, {
+    required bool extended,
+  }) {
     final color = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
@@ -174,10 +172,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    color.surfaceContainerLow,
-                    color.surfaceContainer,
-                  ],
+                  colors: [color.surfaceContainerLow, color.surfaceContainer],
                 ),
               ),
               child: Column(
@@ -222,10 +217,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
               ),
             ),
             // ── Separador con borde de plano ──
-            Container(
-              width: 2.5,
-              color: color.primary.withValues(alpha: 0.35),
-            ),
+            Container(width: 2.5, color: color.primary.withValues(alpha: 0.35)),
             // ── Contenido ──
             Expanded(
               child: FadeTransition(

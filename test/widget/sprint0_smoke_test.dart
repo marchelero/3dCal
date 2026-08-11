@@ -18,9 +18,7 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    SharedPreferences.setMockInitialValues({
-      'onboarding_done': true,
-    });
+    SharedPreferences.setMockInitialValues({'onboarding_done': true});
     prefs = await SharedPreferences.getInstance();
   });
 
@@ -61,10 +59,11 @@ void main() {
     // Cleanup: volver a home para no contaminar el siguiente test.
     // Con go_router StatefulShellRoute, dejar el calculator en la
     // pila hace que el siguiente pumpWidget no termine de montar
-    // el home a tiempo.
-    final back = find.byType(BackButton);
-    if (back.evaluate().isNotEmpty) {
-      await tester.tap(back);
+    // el home a tiempo. El calculador tiene un leading close explícito
+    // (Icons.close_rounded) — ya no hay BackButton por defecto.
+    final close = find.byIcon(Icons.close_rounded);
+    if (close.evaluate().isNotEmpty) {
+      await tester.tap(close);
       await tester.pumpAndSettle();
     }
   });

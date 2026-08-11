@@ -15,20 +15,21 @@ class FilamentRepository {
   final AppDatabase _db;
 
   Future<List<Filament>> listAll() {
-    return (_db.select(_db.filaments)
-          ..orderBy([(f) => OrderingTerm.asc(f.name)]))
-        .get();
+    return (_db.select(
+      _db.filaments,
+    )..orderBy([(f) => OrderingTerm.asc(f.name)])).get();
   }
 
   Stream<List<Filament>> watchAll() {
-    return (_db.select(_db.filaments)
-          ..orderBy([(f) => OrderingTerm.asc(f.name)]))
-        .watch();
+    return (_db.select(
+      _db.filaments,
+    )..orderBy([(f) => OrderingTerm.asc(f.name)])).watch();
   }
 
   Future<Filament?> getDefault() {
-    return (_db.select(_db.filaments)..where((f) => f.isDefault.equals(true)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.filaments,
+    )..where((f) => f.isDefault.equals(true))).getSingleOrNull();
   }
 
   Future<int> create({
@@ -41,7 +42,9 @@ class FilamentRepository {
     if (asDefault) {
       await _clearDefault();
     }
-    return _db.into(_db.filaments).insert(
+    return _db
+        .into(_db.filaments)
+        .insert(
           FilamentsCompanion.insert(
             name: name,
             brand: Value(brand),
@@ -64,18 +67,18 @@ class FilamentRepository {
     if (asDefault == true) {
       await _clearDefault();
     }
-    final updated = await (_db.update(_db.filaments)..where((f) => f.id.equals(id)))
-        .write(
-      FilamentsCompanion(
-        name: Value(name),
-        brand: Value(brand),
-        pricePerBobbin: Value(pricePerBobbin.toDouble()),
-        gramsPerBobbin: Value(gramsPerBobbin.toDouble()),
-        isDefault: asDefault == null
-            ? const Value.absent()
-            : Value(asDefault),
-      ),
-    );
+    final updated =
+        await (_db.update(_db.filaments)..where((f) => f.id.equals(id))).write(
+          FilamentsCompanion(
+            name: Value(name),
+            brand: Value(brand),
+            pricePerBobbin: Value(pricePerBobbin.toDouble()),
+            gramsPerBobbin: Value(gramsPerBobbin.toDouble()),
+            isDefault: asDefault == null
+                ? const Value.absent()
+                : Value(asDefault),
+          ),
+        );
     return updated > 0;
   }
 

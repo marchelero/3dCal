@@ -134,10 +134,7 @@ void main() {
   });
 
   /// Inserta [count] cotizaciones via repo real.
-  Future<void> _seedCalculations(
-    ProviderContainer container,
-    int count,
-  ) async {
+  Future<void> _seedCalculations(ProviderContainer container, int count) async {
     final calcRepo = container.read(calculationRepositoryProvider);
     for (var i = 0; i < count; i++) {
       await calcRepo.create(
@@ -179,13 +176,15 @@ void main() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     repo = _FakeEntitlementRepository();
     payment = _FakePaymentService();
-    final container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      sharedPreferencesProvider.overrideWithValue(prefs),
-      entitlementRepositoryProvider.overrideWithValue(repo),
-      paymentServiceProvider.overrideWithValue(payment),
-      dashboardIsProProvider.overrideWith((ref) => ref.watch(isProProvider)),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        entitlementRepositoryProvider.overrideWithValue(repo),
+        paymentServiceProvider.overrideWithValue(payment),
+        dashboardIsProProvider.overrideWith((ref) => ref.watch(isProProvider)),
+      ],
+    );
     addTearDown(container.dispose);
     addTearDown(() async {
       await db.close();
@@ -232,8 +231,11 @@ void main() {
       FilledButton,
       EsBO.paywallUnlockButton(EsBO.paywallPrice),
     );
-    expect(unlock, findsOneWidget,
-        reason: 'Paywall free debe mostrar el boton Unlock.');
+    expect(
+      unlock,
+      findsOneWidget,
+      reason: 'Paywall free debe mostrar el boton Unlock.',
+    );
     await tester.ensureVisible(unlock);
     await tester.tap(unlock);
     await tester.pumpAndSettle();
@@ -241,12 +243,12 @@ void main() {
 
   /// Tapa el boton Restore del paywall (paywall ya montado).
   Future<void> _tapRestore(WidgetTester tester) async {
-    final restore = find.widgetWithText(
-      TextButton,
-      EsBO.paywallRestoreButton,
+    final restore = find.widgetWithText(TextButton, EsBO.paywallRestoreButton);
+    expect(
+      restore,
+      findsOneWidget,
+      reason: 'Paywall free debe mostrar el boton Restore.',
     );
-    expect(restore, findsOneWidget,
-        reason: 'Paywall free debe mostrar el boton Restore.');
     await tester.ensureVisible(restore);
     await tester.tap(restore);
     await tester.pumpAndSettle();
@@ -267,100 +269,129 @@ void main() {
   }
 
   group('Purchase success → gates unlock', () {
-    testWidgets(
-      'dashboard charts, CSV habilitado y history cap levantado',
-      (tester) async {
-        _useTallViewport(tester);
-        // 10 existentes: cap activo en free, save #11 solo para Pro.
-        final container = await _pumpApp(tester, seedCalculations: 10);
+    testWidgets('dashboard charts, CSV habilitado y history cap levantado', (
+      tester,
+    ) async {
+      _useTallViewport(tester);
+      // 10 existentes: cap activo en free, save #11 solo para Pro.
+      final container = await _pumpApp(tester, seedCalculations: 10);
 
-        // ── Free: dashboard teaser, sin charts ──
-        appRouter.go('/dashboard');
-        await tester.pumpAndSettle();
-        expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsOneWidget,
-            reason: 'Free: teaser Pro visible en dashboard.');
-        expect(
-          find.widgetWithText(FilledButton, EsBO.dashboardGoProAction),
-          findsOneWidget,
-        );
-        expect(find.byType(BarChart), findsNothing,
-            reason: 'Free: charts ocultos (dashboardIsProProvider=false).');
+      // ── Free: dashboard teaser, sin charts ──
+      appRouter.go('/dashboard');
+      await tester.pumpAndSettle();
+      expect(
+        find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+        findsOneWidget,
+        reason: 'Free: teaser Pro visible en dashboard.',
+      );
+      expect(
+        find.widgetWithText(FilledButton, EsBO.dashboardGoProAction),
+        findsOneWidget,
+      );
+      expect(
+        find.byType(BarChart),
+        findsNothing,
+        reason: 'Free: charts ocultos (dashboardIsProProvider=false).',
+      );
 
-        // ── Free: CSV gated ──
-        appRouter.go('/history');
-        await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-        expect(find.text(EsBO.csvExportLockedBody), findsOneWidget,
-            reason: 'Free: CSV gate con SnackBar.');
+      // ── Free: CSV gated ──
+      appRouter.go('/history');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.text(EsBO.csvExportLockedBody),
+        findsOneWidget,
+        reason: 'Free: CSV gate con SnackBar.',
+      );
 
-        // Oculta la snackbar free: el messenger es root-level y persiste
-        // entre paginas. Si queda viva, al volver a /history en modo Pro la
-        // asercion veria la snackbar vieja como si el gate siguiera activo.
-        // (El auto-dismiss timer de la SnackBar arranca recien cuando termina
-        // la animacion de entrada, asi que pump(5s) no es deterministico.)
-        tester
-            .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
-            .hideCurrentSnackBar();
-        await tester.pumpAndSettle();
+      // Oculta la snackbar free: el messenger es root-level y persiste
+      // entre paginas. Si queda viva, al volver a /history en modo Pro la
+      // asercion veria la snackbar vieja como si el gate siguiera activo.
+      // (El auto-dismiss timer de la SnackBar arranca recien cuando termina
+      // la animacion de entrada, asi que pump(5s) no es deterministico.)
+      tester
+          .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
+          .hideCurrentSnackBar();
+      await tester.pumpAndSettle();
 
-        // ── Paywall → purchase success ──
-        await _unlockViaPaywall(tester, seed: () {
-          payment.seedPurchase(PaymentSuccess(
-            productId: kProProductId,
-            purchasedAt: DateTime.now().toUtc(),
-          ));
-        });
+      // ── Paywall → purchase success ──
+      await _unlockViaPaywall(
+        tester,
+        seed: () {
+          payment.seedPurchase(
+            PaymentSuccess(
+              productId: kProProductId,
+              purchasedAt: DateTime.now().toUtc(),
+            ),
+          );
+        },
+      );
 
-        // isPro reactivo = true.
-        expect(container.read(isProProvider), isTrue,
-            reason: 'Purchase success debe activar Pro.');
-        expect(payment.purchaseCalls, 1);
+      // isPro reactivo = true.
+      expect(
+        container.read(isProProvider),
+        isTrue,
+        reason: 'Purchase success debe activar Pro.',
+      );
+      expect(payment.purchaseCalls, 1);
 
-        // ── Pro: dashboard charts visibles, teaser gone ──
-        appRouter.go('/dashboard');
-        await tester.pumpAndSettle();
-        expect(find.byType(BarChart), findsOneWidget,
-            reason: 'Pro: charts visibles (dashboardIsProProvider wireado).');
-        expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsNothing,
-            reason: 'Pro: teaser ya no se muestra.');
+      // ── Pro: dashboard charts visibles, teaser gone ──
+      appRouter.go('/dashboard');
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(BarChart),
+        findsOneWidget,
+        reason: 'Pro: charts visibles (dashboardIsProProvider wireado).',
+      );
+      expect(
+        find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+        findsNothing,
+        reason: 'Pro: teaser ya no se muestra.',
+      );
 
-        // ── Pro: CSV habilitado (sin gate) ──
-        appRouter.go('/history');
-        await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('Exportar CSV'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-        expect(find.text(EsBO.csvExportLockedBody), findsNothing,
-            reason: 'Pro: CSV sin gate.');
+      // ── Pro: CSV habilitado (sin gate) ──
+      appRouter.go('/history');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Exportar CSV'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.text(EsBO.csvExportLockedBody),
+        findsNothing,
+        reason: 'Pro: CSV sin gate.',
+      );
 
-        // ── Pro: history cap levantado → save #11 funciona ──
-        unawaited(appRouter.push('/calculator'));
-        await tester.pumpAndSettle();
-        await _fillCalculatorForm(tester);
-        await tester.tap(find.byType(ResultBottomBar));
-        await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('Guardar cotización'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Guardar'));
-        await tester.pumpAndSettle();
-        expect(await db.select(db.calculations).get(), hasLength(11),
-            reason: 'Pro: el save #11 no debe chocar con el history cap.');
+      // ── Pro: history cap levantado → save #11 funciona ──
+      unawaited(appRouter.push('/calculator'));
+      await tester.pumpAndSettle();
+      await _fillCalculatorForm(tester);
+      await tester.tap(find.byType(ResultBottomBar));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Guardar cotización'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+      expect(
+        await db.select(db.calculations).get(),
+        hasLength(11),
+        reason: 'Pro: el save #11 no debe chocar con el history cap.',
+      );
 
-        // Drena los Future.delayed del stagger del listado de /history
-        // (calculations_list_page.dart:483, index*60ms → item 10 = 600ms)
-        // que quedan montados en el shell; si no, quedan pendientes al
-        // teardown y el binding falla con "A Timer is still pending".
-        await tester.pump(const Duration(seconds: 1));
-        await tester.pumpAndSettle();
-      },
-    );
+      // Drena los Future.delayed del stagger del listado de /history
+      // (calculations_list_page.dart:483, index*60ms → item 10 = 600ms)
+      // que quedan montados en el shell; si no, quedan pendientes al
+      // teardown y el binding falla con "A Timer is still pending".
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+    });
   });
 
   group('Restore success → gates unlock', () {
-    testWidgets('dashboard charts visibles tras restore activo',
-        (tester) async {
+    testWidgets('dashboard charts visibles tras restore activo', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       final container = await _pumpApp(tester);
 
@@ -370,45 +401,61 @@ void main() {
       expect(find.byType(BarChart), findsNothing);
 
       // Paywall → restore success.
-      payment.seedRestore(RestoreActive(
-        productId: kProProductId,
-        purchasedAt: DateTime.now().toUtc(),
-        validatedAt: DateTime.now().toUtc(),
-      ));
+      payment.seedRestore(
+        RestoreActive(
+          productId: kProProductId,
+          purchasedAt: DateTime.now().toUtc(),
+          validatedAt: DateTime.now().toUtc(),
+        ),
+      );
       unawaited(appRouter.push('/paywall'));
       await tester.pumpAndSettle();
       await _tapRestore(tester);
 
-      expect(container.read(isProProvider), isTrue,
-          reason: 'Restore activo debe activar Pro.');
+      expect(
+        container.read(isProProvider),
+        isTrue,
+        reason: 'Restore activo debe activar Pro.',
+      );
       expect(payment.restoreCalls, 1);
 
       // Pro: charts visibles.
       appRouter.go('/dashboard');
       await tester.pumpAndSettle();
       expect(find.byType(BarChart), findsOneWidget);
-      expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsNothing);
+      expect(
+        find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+        findsNothing,
+      );
     });
   });
 
   group('Cancel path → sin unlock', () {
-    testWidgets('cancel no cambia estado; CSV sigue gated',
-        (tester) async {
+    testWidgets('cancel no cambia estado; CSV sigue gated', (tester) async {
       _useTallViewport(tester);
       final container = await _pumpApp(tester);
 
-      await _unlockViaPaywall(tester, seed: () {
-        payment.seedPurchase(const PaymentCancelled());
-      });
+      await _unlockViaPaywall(
+        tester,
+        seed: () {
+          payment.seedPurchase(const PaymentCancelled());
+        },
+      );
 
-      expect(container.read(isProProvider), isFalse,
-          reason: 'Cancel no debe activar Pro.');
+      expect(
+        container.read(isProProvider),
+        isFalse,
+        reason: 'Cancel no debe activar Pro.',
+      );
       expect(payment.purchaseCalls, 1);
 
       // Dashboard sigue free.
       appRouter.go('/dashboard');
       await tester.pumpAndSettle();
-      expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsOneWidget);
+      expect(
+        find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+        findsOneWidget,
+      );
       expect(find.byType(BarChart), findsNothing);
 
       // CSV sigue gated (snackbar del gate persiste al tap).
@@ -417,28 +464,41 @@ void main() {
       await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text(EsBO.csvExportLockedBody), findsOneWidget,
-          reason: 'Cancel: el gate CSV debe seguir activo.');
+      expect(
+        find.text(EsBO.csvExportLockedBody),
+        findsOneWidget,
+        reason: 'Cancel: el gate CSV debe seguir activo.',
+      );
     });
   });
 
   group('Error path → sin unlock', () {
-    testWidgets('error de purchase no cambia estado; dashboard sigue free',
-        (tester) async {
+    testWidgets('error de purchase no cambia estado; dashboard sigue free', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       final container = await _pumpApp(tester);
 
-      await _unlockViaPaywall(tester, seed: () {
-        payment.seedPurchase(const PaymentError('network'));
-      });
+      await _unlockViaPaywall(
+        tester,
+        seed: () {
+          payment.seedPurchase(const PaymentError('network'));
+        },
+      );
 
-      expect(container.read(isProProvider), isFalse,
-          reason: 'Error de purchase no debe activar Pro.');
+      expect(
+        container.read(isProProvider),
+        isFalse,
+        reason: 'Error de purchase no debe activar Pro.',
+      );
       expect(payment.purchaseCalls, 1);
 
       appRouter.go('/dashboard');
       await tester.pumpAndSettle();
-      expect(find.text(EsBO.dashboardProTeaserTitle.toUpperCase()), findsOneWidget);
+      expect(
+        find.text(EsBO.dashboardProTeaserTitle.toUpperCase()),
+        findsOneWidget,
+      );
       expect(find.byType(BarChart), findsNothing);
     });
   });

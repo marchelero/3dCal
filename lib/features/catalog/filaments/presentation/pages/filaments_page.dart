@@ -56,7 +56,10 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
           // ── Search field ──
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xs,
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xs,
             ),
             child: TextField(
               controller: _searchCtrl,
@@ -116,8 +119,7 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
                       bottom: AppSpacing.xxl,
                     ),
                     itemCount: filtered.length,
-                    itemBuilder: (_, i) =>
-                        _FilamentTile(filament: filtered[i]),
+                    itemBuilder: (_, i) => _FilamentTile(filament: filtered[i]),
                   ),
                 );
               },
@@ -150,16 +152,12 @@ class _FilamentTile extends ConsumerWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        side: BorderSide(
-          color: color.outlineVariant.withValues(alpha: 0.5),
-        ),
+        side: BorderSide(color: color.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        onTap: () => context.push(
-          '/settings/filaments/${filament.id}',
-          extra: filament,
-        ),
+        onTap: () =>
+            context.push('/settings/filaments/${filament.id}', extra: filament),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -171,8 +169,11 @@ class _FilamentTile extends ConsumerWidget {
               if (filament.isDefault)
                 const DefaultBadge()
               else
-                Icon(Icons.label_outline,
-                    color: color.onSurfaceVariant, size: 24),
+                Icon(
+                  Icons.label_outline,
+                  color: color.onSurfaceVariant,
+                  size: 24,
+                ),
               const SizedBox(width: AppSpacing.md),
               // Name + details
               Expanded(
@@ -223,7 +224,10 @@ class _FilamentTile extends ConsumerWidget {
   }
 
   Future<void> _handleAction(
-      BuildContext context, WidgetRef ref, _TileAction a) async {
+    BuildContext context,
+    WidgetRef ref,
+    _TileAction a,
+  ) async {
     final notifier = ref.read(filamentsNotifierProvider.notifier);
     switch (a) {
       case _TileAction.setDefault:

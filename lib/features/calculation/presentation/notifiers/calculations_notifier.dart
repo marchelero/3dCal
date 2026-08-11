@@ -67,6 +67,18 @@ class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
     await _reload();
   }
 
+  /// Duplica una cotizacion (copia snapshots + materiales con id nuevo,
+  /// createdAt = ahora e isSold = false). Devuelve el id de la copia.
+  ///
+  /// [pieceNameSuffix] se agrega al nombre de la pieza original para
+  /// distinguir la copia (ej: ' (copia)').
+  Future<int> duplicate(int id, {String? pieceNameSuffix}) async {
+    final repo = ref.read(calculationRepositoryProvider);
+    final newId = await repo.duplicate(id, pieceNameSuffix: pieceNameSuffix);
+    await _reload();
+    return newId;
+  }
+
   Future<void> _reload() async {
     final repo = ref.read(calculationRepositoryProvider);
     _all = await repo.listAll();
@@ -99,5 +111,5 @@ class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
 /// Provider del [CalculationsNotifier].
 final calculationsNotifierProvider =
     AsyncNotifierProvider<CalculationsNotifier, List<Calculation>>(
-  CalculationsNotifier.new,
-);
+      CalculationsNotifier.new,
+    );

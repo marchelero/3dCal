@@ -159,10 +159,7 @@ void main() {
   }
 
   /// Inserta [count] cotizaciones (para el history cap: [kFreeHistoryCap]).
-  Future<void> _seedCalculations(
-    ProviderContainer container,
-    int count,
-  ) async {
+  Future<void> _seedCalculations(ProviderContainer container, int count) async {
     final calcRepo = container.read(calculationRepositoryProvider);
     for (var i = 0; i < count; i++) {
       await calcRepo.create(
@@ -207,26 +204,30 @@ void main() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     repo = _FakeEntitlementRepository();
     payment = _FakePaymentService();
-    final container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      sharedPreferencesProvider.overrideWithValue(prefs),
-      entitlementRepositoryProvider.overrideWithValue(repo),
-      paymentServiceProvider.overrideWithValue(payment),
-      dashboardIsProProvider.overrideWith((ref) => ref.watch(isProProvider)),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        entitlementRepositoryProvider.overrideWithValue(repo),
+        paymentServiceProvider.overrideWithValue(payment),
+        dashboardIsProProvider.overrideWith((ref) => ref.watch(isProProvider)),
+      ],
+    );
     addTearDown(container.dispose);
     addTearDown(() async {
       await db.close();
     });
     if (seedPro) {
-      repo.seedActive(Entitlement(
-        id: 1,
-        source: kSourceLifetimePurchase,
-        productId: kProProductId,
-        purchasedAt: DateTime.utc(2026, 1, 1),
-        validatedAt: DateTime.utc(2026, 1, 1),
-        isActive: true,
-      ));
+      repo.seedActive(
+        Entitlement(
+          id: 1,
+          source: kSourceLifetimePurchase,
+          productId: kProProductId,
+          purchasedAt: DateTime.utc(2026, 1, 1),
+          validatedAt: DateTime.utc(2026, 1, 1),
+          isActive: true,
+        ),
+      );
     } else if (seedOne) {
       await _seedOneCalculation(container);
     } else if (seedCalculations > 0) {
@@ -251,8 +252,11 @@ void main() {
   /// cuando la ruta no existia).
   Future<void> _expectPaywall(WidgetTester tester) async {
     await tester.pumpAndSettle();
-    expect(find.byType(PaywallPage), findsOneWidget,
-        reason: 'El gate debe navegar a PaywallPage (ruta real, no error).');
+    expect(
+      find.byType(PaywallPage),
+      findsOneWidget,
+      reason: 'El gate debe navegar a PaywallPage (ruta real, no error).',
+    );
   }
 
   group('Gates → /paywall (router real, no _RouterErrorPage)', () {
@@ -260,10 +264,7 @@ void main() {
       'Calculator: history cap save #11 → SnackBar Go Pro → PaywallPage',
       (tester) async {
         _useTallViewport(tester);
-        await _pumpApp(
-          tester,
-          seedCalculations: kFreeHistoryCap,
-        );
+        await _pumpApp(tester, seedCalculations: kFreeHistoryCap);
         expect(await db.select(db.calculations).get(), hasLength(10));
 
         // push() devuelve un Future que resuelve al POP — no se awaita.
@@ -301,35 +302,10 @@ void main() {
 
         // Free + 10 existentes → cap: SnackBar con CTA Go Pro.
         final goPro = find.text(EsBO.calculatorGoProAction);
-        expect(goPro, findsOneWidget,
-            reason: 'History cap en free debe ofrecer "Go Pro".');
-        await tester.ensureVisible(goPro);
-        await tester.tap(goPro);
-
-        await _expectPaywall(tester);
-      },
-    );
-
-    testWidgets(
-      'Historial: CSV export gate → SnackBar Go Pro → PaywallPage',
-      (tester) async {
-        _useTallViewport(tester);
-        await _pumpApp(tester, seedOne: true);
-
-        appRouter.go('/history');
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
-        // pumpAndSettle: deja que la snackbar termine de animar antes de
-        // tocar su action (tap durante el slide es absorbido).
-        await tester.pumpAndSettle();
-
-        final goPro = find.byType(SnackBarAction);
-        expect(goPro, findsOneWidget,
-            reason: 'CSV gate en free debe ofrecer "Go Pro".');
         expect(
-          find.descendant(of: goPro, matching: find.text(EsBO.csvGoProAction)),
+          goPro,
           findsOneWidget,
+          reason: 'History cap en free debe ofrecer "Go Pro".',
         );
         await tester.ensureVisible(goPro);
         await tester.tap(goPro);
@@ -338,27 +314,57 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Dashboard: Pro teaser button → PaywallPage',
-      (tester) async {
-        _useTallViewport(tester);
-        await _pumpApp(tester, seedOne: true);
+    testWidgets('Historial: CSV export gate → SnackBar Go Pro → PaywallPage', (
+      tester,
+    ) async {
+      _useTallViewport(tester);
+      await _pumpApp(tester, seedOne: true);
 
-        appRouter.go('/dashboard');
-        await tester.pumpAndSettle();
+      appRouter.go('/history');
+      await tester.pumpAndSettle();
 
-        final goPro = find.widgetWithText(
-          FilledButton,
-          EsBO.dashboardGoProAction,
-        );
-        expect(goPro, findsOneWidget,
-            reason: 'Free: el teaser del dashboard debe tener boton Go Pro.');
-        await tester.ensureVisible(goPro);
-        await tester.tap(goPro);
+      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
+      // pumpAndSettle: deja que la snackbar termine de animar antes de
+      // tocar su action (tap durante el slide es absorbido).
+      await tester.pumpAndSettle();
 
-        await _expectPaywall(tester);
-      },
-    );
+      final goPro = find.byType(SnackBarAction);
+      expect(
+        goPro,
+        findsOneWidget,
+        reason: 'CSV gate en free debe ofrecer "Go Pro".',
+      );
+      expect(
+        find.descendant(of: goPro, matching: find.text(EsBO.csvGoProAction)),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(goPro);
+      await tester.tap(goPro);
+
+      await _expectPaywall(tester);
+    });
+
+    testWidgets('Dashboard: Pro teaser button → PaywallPage', (tester) async {
+      _useTallViewport(tester);
+      await _pumpApp(tester, seedOne: true);
+
+      appRouter.go('/dashboard');
+      await tester.pumpAndSettle();
+
+      final goPro = find.widgetWithText(
+        FilledButton,
+        EsBO.dashboardGoProAction,
+      );
+      expect(
+        goPro,
+        findsOneWidget,
+        reason: 'Free: el teaser del dashboard debe tener boton Go Pro.',
+      );
+      await tester.ensureVisible(goPro);
+      await tester.tap(goPro);
+
+      await _expectPaywall(tester);
+    });
 
     testWidgets(
       'Settings: companyName field gate → SnackBar Go Pro → PaywallPage',
@@ -375,10 +381,16 @@ void main() {
         await tester.pumpAndSettle();
 
         final goPro = find.byType(SnackBarAction);
-        expect(goPro, findsOneWidget,
-            reason: 'companyName gate en free debe ofrecer "Go Pro".');
         expect(
-          find.descendant(of: goPro, matching: find.text(EsBO.settingsGoProAction)),
+          goPro,
+          findsOneWidget,
+          reason: 'companyName gate en free debe ofrecer "Go Pro".',
+        );
+        expect(
+          find.descendant(
+            of: goPro,
+            matching: find.text(EsBO.settingsGoProAction),
+          ),
           findsOneWidget,
         );
         await tester.ensureVisible(goPro);
@@ -388,31 +400,36 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Settings: logo pick gate → SnackBar Go Pro → PaywallPage',
-      (tester) async {
-        _useTallViewport(tester);
-        await _pumpApp(tester);
+    testWidgets('Settings: logo pick gate → SnackBar Go Pro → PaywallPage', (
+      tester,
+    ) async {
+      _useTallViewport(tester);
+      await _pumpApp(tester);
 
-        appRouter.go('/settings');
-        await tester.pumpAndSettle();
+      appRouter.go('/settings');
+      await tester.pumpAndSettle();
 
-        await tester.tap(find.text(EsBO.settingsCompanyLogoPick));
-        await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.settingsCompanyLogoPick));
+      await tester.pumpAndSettle();
 
-        final goPro = find.byType(SnackBarAction);
-        expect(goPro, findsOneWidget,
-            reason: 'Logo pick gate en free debe ofrecer "Go Pro".');
-        expect(
-          find.descendant(of: goPro, matching: find.text(EsBO.settingsGoProAction)),
-          findsOneWidget,
-        );
-        await tester.ensureVisible(goPro);
-        await tester.tap(goPro);
+      final goPro = find.byType(SnackBarAction);
+      expect(
+        goPro,
+        findsOneWidget,
+        reason: 'Logo pick gate en free debe ofrecer "Go Pro".',
+      );
+      expect(
+        find.descendant(
+          of: goPro,
+          matching: find.text(EsBO.settingsGoProAction),
+        ),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(goPro);
+      await tester.tap(goPro);
 
-        await _expectPaywall(tester);
-      },
-    );
+      await _expectPaywall(tester);
+    });
 
     testWidgets(
       'Calculator: advanced mode gate (free) → SnackBar Go Pro → PaywallPage',
@@ -435,19 +452,30 @@ void main() {
         await tester.tap(find.text(EsBO.calcModeAdvanced));
         await tester.pumpAndSettle();
 
-        expect(find.text(EsBO.calculatorAdvancedLockedBody), findsOneWidget,
-            reason: 'Free: gate del modo advanced debe mostrar el body locked.');
+        expect(
+          find.text(EsBO.calculatorAdvancedLockedBody),
+          findsOneWidget,
+          reason: 'Free: gate del modo advanced debe mostrar el body locked.',
+        );
         final goPro = find.byType(SnackBarAction);
-        expect(goPro, findsOneWidget,
-            reason: 'Advanced gate en free debe ofrecer "Go Pro".');
+        expect(
+          goPro,
+          findsOneWidget,
+          reason: 'Advanced gate en free debe ofrecer "Go Pro".',
+        );
         expect(
           find.descendant(
-              of: goPro, matching: find.text(EsBO.calculatorGoProAction)),
+            of: goPro,
+            matching: find.text(EsBO.calculatorGoProAction),
+          ),
           findsOneWidget,
         );
         // El modo NO cambio: el form advanced sigue sin montarse.
-        expect(find.text('Agregar material'), findsNothing,
-            reason: 'Free: el modo advanced NO debe activarse.');
+        expect(
+          find.text('Agregar material'),
+          findsNothing,
+          reason: 'Free: el modo advanced NO debe activarse.',
+        );
 
         await tester.ensureVisible(goPro);
         await tester.tap(goPro);
@@ -456,31 +484,30 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Calculator: advanced mode gate (pro) → el modo SI cambia',
-      (tester) async {
-        _useTallViewport(tester);
-        final container = await _pumpApp(tester, seedPro: true);
+    testWidgets('Calculator: advanced mode gate (pro) → el modo SI cambia', (
+      tester,
+    ) async {
+      _useTallViewport(tester);
+      final container = await _pumpApp(tester, seedPro: true);
 
-        unawaited(appRouter.push('/calculator'));
-        await tester.pumpAndSettle();
+      unawaited(appRouter.push('/calculator'));
+      await tester.pumpAndSettle();
 
-        expect(find.text('Agregar material'), findsNothing);
+      expect(find.text('Agregar material'), findsNothing);
 
-        // El calculator NO lee isProProvider durante build — forzamos que
-        // el entitlementNotifier complete su boot (lee DB → Pro) antes del
-        // tap, para que el gate vea el estado real.
-        await container.read(entitlementNotifierProvider.future);
-        await tester.pumpAndSettle();
+      // El calculator NO lee isProProvider durante build — forzamos que
+      // el entitlementNotifier complete su boot (lee DB → Pro) antes del
+      // tap, para que el gate vea el estado real.
+      await container.read(entitlementNotifierProvider.future);
+      await tester.pumpAndSettle();
 
-        await tester.tap(find.text(EsBO.calcModeAdvanced));
-        await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.calcModeAdvanced));
+      await tester.pumpAndSettle();
 
-        // Pro: gate NO dispara (sin SnackBar locked) y el form advanced
-        // (multi-material, con boton "Agregar material") se monta.
-        expect(find.text(EsBO.calculatorAdvancedLockedBody), findsNothing);
-        expect(find.text('Agregar material'), findsOneWidget);
-      },
-    );
+      // Pro: gate NO dispara (sin SnackBar locked) y el form advanced
+      // (multi-material, con boton "Agregar material") se monta.
+      expect(find.text(EsBO.calculatorAdvancedLockedBody), findsNothing);
+      expect(find.text('Agregar material'), findsOneWidget);
+    });
   });
 }

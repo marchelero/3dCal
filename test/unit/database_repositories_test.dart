@@ -38,10 +38,7 @@ void main() {
 
   group('PrinterRepository', () {
     test('create + listAll', () async {
-      final id = await printers.create(
-        name: 'Ender 3',
-        averageWatts: 150,
-      );
+      final id = await printers.create(name: 'Ender 3', averageWatts: 150);
       expect(id, greaterThan(0));
 
       final list = await printers.listAll();
@@ -72,11 +69,7 @@ void main() {
 
     test('update cambia nombre y watts', () async {
       final id = await printers.create(name: 'Old', averageWatts: 100);
-      final ok = await printers.update(
-        id: id,
-        name: 'New',
-        averageWatts: 250,
-      );
+      final ok = await printers.update(id: id, name: 'New', averageWatts: 250);
       expect(ok, isTrue);
 
       final all = await printers.listAll();
@@ -202,6 +195,170 @@ void main() {
       expect(all.first.pieceName, 'Nuevo');
       expect(all.first.clientName, 'Maria');
     });
+
+    test('duplicate copia snapshots + materiales con id nuevo', () async {
+      final id = await calculations.create(_simpleDraft('Engranaje X', 'Juan'));
+      await calculations.toggleSold(id, true);
+
+      final copyId = await calculations.duplicate(id);
+
+      expect(copyId, isNot(id));
+      final all = await calculations.listAll();
+      expect(all, hasLength(2));
+
+      final copy = all.firstWhere((c) => c.id == copyId);
+      final original = all.firstWhere((c) => c.id == id);
+      expect(copy.pieceName, 'Engranaje X');
+      expect(copy.clientName, 'Juan');
+      expect(copy.isSold, isFalse);
+      expect(
+        copy.totalPriceSnapshot,
+        closeTo(original.totalPriceSnapshot, 0.0001),
+      );
+      expect(
+        copy.materialCostSnapshot,
+        closeTo(original.materialCostSnapshot, 0.0001),
+      );
+
+      final mats = await calculations.materialsOf(copyId);
+      expect(mats, hasLength(1));
+      expect(mats.first.label, 'PLA');
+      expect(mats.first.weightGrams, closeTo(100, 0.001));
+    });
+
+    test('duplicate agrega sufijo al nombre de la pieza', () async {
+      final id = await calculations.create(_simpleDraft('Soporte'));
+      final copyId = await calculations.duplicate(
+        id,
+        pieceNameSuffix: ' (copia)',
+      );
+
+      final all = await calculations.listAll();
+      final copy = all.firstWhere((c) => c.id == copyId);
+      expect(copy.pieceName, 'Soporte (copia)');
+    });
+
+    test('duplicate de id inexistente lanza StateError', () async {
+      expect(() => calculations.duplicate(9999), throwsA(isA<StateError>()));
+    });
+
+    test('create persiste notas y condiciones (v6)', () async {
+      final id = await calculations.create(
+        _simpleDraft(
+          'Engranaje X',
+          'Juan',
+          'Entregar en 3 dias',
+          'Pago contra entrega',
+        ),
+      );
+
+      final all = await calculations.listAll();
+      final calc = all.firstWhere((c) => c.id == id);
+      expect(calc.notes, 'Entregar en 3 dias');
+      expect(calc.conditions, 'Pago contra entrega');
+    });
+
+    test('create sin notas/condiciones deja columnas null (v6)', () async {
+      final id = await calculations.create(_simpleDraft('P1'));
+      final all = await calculations.listAll();
+      final calc = all.firstWhere((c) => c.id == id);
+      expect(calc.notes, isNull);
+      expect(calc.conditions, isNull);
+    });
+
+    test('duplicate copia notas y condiciones', () async {
+      final id = await calculations.create(
+        _simpleDraft('Soporte', 'Juan', 'Nota A', 'Cond B'),
+      );
+      final copyId = await calculations.duplicate(id);
+
+      final all = await calculations.listAll();
+      final copy = all.firstWhere((c) => c.id == copyId);
+      expect(copy.notes, 'Nota A');
+      expect(copy.conditions, 'Cond B');
+    });
+
+    test('createTemplate guarda con isTemplate=true y listTemplates lo ve',
+        () async {
+      final id = await calculations.createTemplate(
+        _simpleDraft('Base de lampara'),
+      );
+
+      final templates = await calculations.listTemplates();
+      final t = templates.firstWhere((c) => c.id == id);
+      expect(t.isTemplate, isTrue);
+    });
+
+    test('createTemplate NO aparece en historial ni dashboard ni cap',
+        () async {
+      await calculations.create(_simpleDraft('Cotizacion normal'));
+      await calculations.createTemplate(_simpleDraft('Plantilla oculta'));
+
+      expect(await calculations.countAll(), 1,
+          reason: 'countAll (cap free) no debe contar plantillas.');
+      expect(await calculations.listAll(), hasLength(1));
+      expect(await calculations.search('oculta'), isEmpty);
+      expect(await calculations.totalQuoted(), _d('15'),
+          reason: 'totalQuoted solo debe sumar la cotizacion, no la plantilla.');
+      final totals = await calculations.monthlyTotals();
+      expect(totals, hasLength(1));
+      expect(totals.first.quoted, 15,
+          reason: 'monthlyTotals no debe incluir plantillas.');
+    });
+
+    test('create normal no aparece en listTemplates', () async {
+      await calculations.create(_simpleDraft('Cotizacion A'));
+      expect(await calculations.listTemplates(), isEmpty);
+    });
+
+    test('delete elimina solo la plantilla indicada', () async {
+      final qId = await calculations.create(_simpleDraft('Q'));
+      final tId = await calculations.createTemplate(_simpleDraft('T'));
+
+      expect(await calculations.delete(tId), greaterThan(0));
+      expect(await calculations.listTemplates(), isEmpty);
+      expect((await calculations.listAll()).map((c) => c.id), contains(qId));
+    });
+
+    test('duplicate de una plantilla produce cotizacion normal (no plantilla)',
+        () async {
+      final tId = await calculations.createTemplate(_simpleDraft('Plantilla'));
+      final copyId = await calculations.duplicate(tId);
+
+      expect(await calculations.countAll(), 1,
+          reason: 'la copia debe ser una cotizacion normal (is_template=0).');
+      final copy = (await calculations.listAll()).firstWhere(
+        (c) => c.id == copyId,
+      );
+      expect(copy.isTemplate, isFalse);
+    });
+
+    test('recentClientNames devuelve clientes distintos, mas recientes primero',
+        () async {
+      await calculations.create(_simpleDraft('A', 'Ana'));
+      await calculations.create(_simpleDraft('B', 'Beto'));
+      // Ana aparece de nuevo: debe deduplicarse y quedar de primera.
+      await calculations.create(_simpleDraft('C', 'Ana'));
+
+      final names = await calculations.recentClientNames();
+      expect(names, ['Ana', 'Beto']);
+    });
+
+    test('recentClientNames excluye plantillas y nombres vacios', () async {
+      await calculations.createTemplate(_simpleDraft('T', 'Plantilla Cliente'));
+      await calculations.create(_simpleDraft('Sin cliente'));
+      await calculations.create(_simpleDraft('Real', 'Carla'));
+
+      final names = await calculations.recentClientNames();
+      expect(names, ['Carla']);
+    });
+
+    test('recentClientNames respeta el limite', () async {
+      await calculations.create(_simpleDraft('A', 'Cliente A'));
+      await calculations.create(_simpleDraft('B', 'Cliente B'));
+
+      expect(await calculations.recentClientNames(limit: 1), ['Cliente B']);
+    });
   });
 }
 
@@ -209,7 +366,12 @@ void main() {
 
 Decimal _d(String s) => Decimal.parse(s);
 
-CalculationDraft _simpleDraft(String pieceName, [String? clientName]) {
+CalculationDraft _simpleDraft(
+  String pieceName, [
+  String? clientName,
+  String? notes,
+  String? conditions,
+]) {
   final materials = [
     MaterialInput(
       label: 'PLA',
@@ -238,5 +400,7 @@ CalculationDraft _simpleDraft(String pieceName, [String? clientName]) {
     output: output,
     pieceName: pieceName,
     clientName: clientName,
+    notes: notes,
+    conditions: conditions,
   );
 }

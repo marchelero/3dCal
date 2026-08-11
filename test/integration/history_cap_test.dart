@@ -181,8 +181,11 @@ void main() {
         expect(all, hasLength(10));
         // Los 10 ids originales siguen presentes, sin cambios.
         for (final id in seededIds) {
-          expect(all.any((c) => c.id == id), isTrue,
-              reason: 'Id $id debe seguir presente post-cap.');
+          expect(
+            all.any((c) => c.id == id),
+            isTrue,
+            reason: 'Id $id debe seguir presente post-cap.',
+          );
         }
       },
     );
@@ -197,9 +200,7 @@ void main() {
 
         _fillValid(container);
         try {
-          await container
-              .read(calculatorNotifierProvider.notifier)
-              .save();
+          await container.read(calculatorNotifierProvider.notifier).save();
           fail('Deberia haber tirado HistoryCapReachedException');
         } on HistoryCapReachedException catch (e) {
           expect(e.currentCount, kFreeHistoryCap);
@@ -253,11 +254,13 @@ void main() {
         // Usamos un holder mutable para no chocar con la regla de
         // `updateOverrides` (mismo length, solo update de valores).
         final isProHolder = _MutableIsProHolder(false);
-        final c = ProviderContainer(overrides: [
-          appDatabaseProvider.overrideWithValue(db),
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          isProProvider.overrideWith((ref) => isProHolder.value),
-        ]);
+        final c = ProviderContainer(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            isProProvider.overrideWith((ref) => isProHolder.value),
+          ],
+        );
         addTearDown(c.dispose);
 
         await _seedCalculations(c, kFreeHistoryCap);

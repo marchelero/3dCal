@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
-import '../state/calculator_state.dart'
-    show MaterialCostBreakdown;
+import '../state/calculator_state.dart' show MaterialCostBreakdown;
 
 /// Seccion de detalle expandible: costo material, energia, mano de obra,
 /// post-procesado, base, falla, markup, ganancia, cargo minimo y total final.
@@ -48,7 +47,8 @@ class DetailSection extends StatelessWidget {
     final s = theme.textTheme.bodySmall?.copyWith(
       color: tc.withValues(alpha: 0.8),
     );
-    final hasExtras = laborCost > Decimal.zero ||
+    final hasExtras =
+        laborCost > Decimal.zero ||
         postProcessCost > Decimal.zero ||
         failureCost > Decimal.zero ||
         markupCost > Decimal.zero;
@@ -66,10 +66,18 @@ class DetailSection extends StatelessWidget {
           _dr(EsBO.calcDetailLabor, formatBob(laborCost), s, tc: tc),
         if (postProcessCost > Decimal.zero)
           _dr(
-              EsBO.calcDetailPostProcess, formatBob(postProcessCost), s,
-              tc: tc),
-        _dr(EsBO.calcDetailBase, formatBob(baseCost), s, tc: tc,
-            isSubtotal: hasExtras),
+            EsBO.calcDetailPostProcess,
+            formatBob(postProcessCost),
+            s,
+            tc: tc,
+          ),
+        _dr(
+          EsBO.calcDetailBase,
+          formatBob(baseCost),
+          s,
+          tc: tc,
+          isSubtotal: hasExtras,
+        ),
         if (failureCost > Decimal.zero)
           _dr(EsBO.calcDetailFailure, formatBob(failureCost), s, tc: tc),
         if (markupCost > Decimal.zero)
@@ -84,8 +92,9 @@ class DetailSection extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Divider(
           height: 1,
-          color: (textColor ?? theme.colorScheme.onSurface)
-              .withValues(alpha: 0.2),
+          color: (textColor ?? theme.colorScheme.onSurface).withValues(
+            alpha: 0.2,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         _dr(
@@ -100,11 +109,7 @@ class DetailSection extends StatelessWidget {
   }
 
   /// Fila individual de costo por material en el desglose.
-  Widget _materialRow(
-    MaterialCostBreakdown m,
-    ThemeData theme,
-    Color tc,
-  ) {
+  Widget _materialRow(MaterialCostBreakdown m, ThemeData theme, Color tc) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -155,7 +160,12 @@ class DetailSection extends StatelessWidget {
                   ? FontWeight.w600
                   : null,
               color: tc?.withValues(
-                  alpha: isTotal ? 1.0 : isSubtotal ? 1.0 : 0.8),
+                alpha: isTotal
+                    ? 1.0
+                    : isSubtotal
+                    ? 1.0
+                    : 0.8,
+              ),
             ),
           ),
           Text(

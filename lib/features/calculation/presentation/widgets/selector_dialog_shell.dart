@@ -25,7 +25,7 @@ Future<T?> showSelectorDialog<T>({
   required List<T> items,
   required bool Function(T item, String query) matches,
   required Widget Function(BuildContext context, T item, void Function() select)
-      itemBuilder,
+  itemBuilder,
 }) {
   return showDialog<T>(
     context: context,
@@ -72,7 +72,11 @@ Future<T?> showSelectorDialog<T>({
                           itemCount: filtered.length,
                           itemBuilder: (_, i) {
                             final item = filtered[i];
-                            return itemBuilder(context, item, () => select(item));
+                            return itemBuilder(
+                              context,
+                              item,
+                              () => select(item),
+                            );
                           },
                         ),
                 ),

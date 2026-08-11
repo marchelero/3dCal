@@ -113,8 +113,9 @@ void main() {
   GoogleFonts.config.allowRuntimeFetching = false;
 
   group('ResultSheetContent save button', () {
-    testWidgets('error de save → AppSnackBar de error (no excepcion cruda)',
-        (tester) async {
+    testWidgets('error de save → AppSnackBar de error (no excepcion cruda)', (
+      tester,
+    ) async {
       final state = _validState();
 
       await tester.pumpWidget(
@@ -149,17 +150,20 @@ void main() {
   });
 
   group('CalculationDetailPage save button', () {
-    testWidgets('error de save → AppSnackBar de error (no excepcion cruda)',
-        (tester) async {
+    testWidgets('error de save → AppSnackBar de error (no excepcion cruda)', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final prefs = await SharedPreferences.getInstance();
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
 
-      final container = ProviderContainer(overrides: [
-        appDatabaseProvider.overrideWithValue(db),
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ]);
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
       addTearDown(container.dispose);
 
       final repo = container.read(calculationRepositoryProvider);
@@ -188,9 +192,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp(
-            home: CalculationDetailPage(calcId: calcId),
-          ),
+          child: MaterialApp(home: CalculationDetailPage(calcId: calcId)),
         ),
       );
       await tester.pumpAndSettle();

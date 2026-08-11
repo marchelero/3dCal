@@ -14,22 +14,23 @@ class PrinterRepository {
 
   /// Lista todas las impresoras ordenadas por nombre.
   Future<List<PrinterProfile>> listAll() {
-    return (_db.select(_db.printers)
-          ..orderBy([(p) => OrderingTerm.asc(p.name)]))
-        .get();
+    return (_db.select(
+      _db.printers,
+    )..orderBy([(p) => OrderingTerm.asc(p.name)])).get();
   }
 
   /// Observa la lista de impresoras (Stream para Riverpod .watch()).
   Stream<List<PrinterProfile>> watchAll() {
-    return (_db.select(_db.printers)
-          ..orderBy([(p) => OrderingTerm.asc(p.name)]))
-        .watch();
+    return (_db.select(
+      _db.printers,
+    )..orderBy([(p) => OrderingTerm.asc(p.name)])).watch();
   }
 
   /// Obtiene la impresora marcada como default. Devuelve null si no hay.
   Future<PrinterProfile?> getDefault() {
-    return (_db.select(_db.printers)..where((p) => p.isDefault.equals(true)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.printers,
+    )..where((p) => p.isDefault.equals(true))).getSingleOrNull();
   }
 
   /// Inserta una nueva impresora.
@@ -44,7 +45,9 @@ class PrinterRepository {
     if (asDefault) {
       await _clearDefault();
     }
-    return _db.into(_db.printers).insert(
+    return _db
+        .into(_db.printers)
+        .insert(
           PrintersCompanion.insert(
             name: name,
             brand: Value(brand),
@@ -66,17 +69,17 @@ class PrinterRepository {
     if (asDefault == true) {
       await _clearDefault();
     }
-    final updated = await (_db.update(_db.printers)..where((p) => p.id.equals(id)))
-        .write(
-      PrintersCompanion(
-        name: Value(name),
-        brand: Value(brand),
-        averageWatts: Value(averageWatts),
-        isDefault: asDefault == null
-            ? const Value.absent()
-            : Value(asDefault),
-      ),
-    );
+    final updated =
+        await (_db.update(_db.printers)..where((p) => p.id.equals(id))).write(
+          PrintersCompanion(
+            name: Value(name),
+            brand: Value(brand),
+            averageWatts: Value(averageWatts),
+            isDefault: asDefault == null
+                ? const Value.absent()
+                : Value(asDefault),
+          ),
+        );
     return updated > 0;
   }
 

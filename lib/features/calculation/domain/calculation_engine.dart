@@ -41,12 +41,13 @@ class CalculationEngine {
     final materialCost = _sumMaterialCost(input.materials);
 
     // Electricidad
-    final electricCost = input.printerWatts > 0 && input.totalHours > Decimal.zero
+    final electricCost =
+        input.printerWatts > 0 && input.totalHours > Decimal.zero
         ? (Decimal.fromInt(input.printerWatts) *
-                input.totalHours *
-                input.kwhRate /
-                Decimal.fromInt(1000))
-            .toDecimal()
+                  input.totalHours *
+                  input.kwhRate /
+                  Decimal.fromInt(1000))
+              .toDecimal()
         : Decimal.zero;
 
     // Mano de obra

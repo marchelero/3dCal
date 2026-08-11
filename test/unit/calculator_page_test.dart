@@ -30,7 +30,9 @@ Future<void> _pumpPage(WidgetTester tester) async {
 Future<void> _fillValid(WidgetTester tester) async {
   await tester.enterText(find.widgetWithText(TextField, 'Peso'), '100');
   await tester.enterText(
-      find.widgetWithText(TextField, 'Precio bobina'), '120');
+    find.widgetWithText(TextField, 'Precio bobina'),
+    '120',
+  );
   await tester.enterText(find.widgetWithText(TextField, 'Horas'), '2');
   // Gramos / bobina ya no se muestra — default 1000 internamente.
   // Descuento default 0 es valido.
@@ -60,19 +62,18 @@ void main() {
       expect(find.text('Profit'), findsNothing);
     });
 
-    testWidgets('muestra mensaje inicial cuando form no valido',
-        (tester) async {
+    testWidgets('muestra mensaje inicial cuando form no valido', (
+      tester,
+    ) async {
       await _pumpPage(tester);
-      expect(
-        find.textContaining('Completa peso'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Completa peso'), findsOneWidget);
       // Output card NO debe estar visible (form vacio).
       expect(find.textContaining('Completa peso'), findsOneWidget);
     });
 
-    testWidgets('live output aparece al completar todos los inputs validos',
-        (tester) async {
+    testWidgets('live output aparece al completar todos los inputs validos', (
+      tester,
+    ) async {
       await _pumpPage(tester);
       await _fillValid(tester);
 
@@ -99,8 +100,7 @@ void main() {
       await _fillValid(tester);
       expect(find.textContaining(r'$ '), findsWidgets);
 
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Peso'), '');
+      await tester.enterText(find.widgetWithText(TextField, 'Peso'), '');
       await tester.pumpAndSettle();
 
       expect(find.textContaining(r'$ 12,00'), findsNothing);

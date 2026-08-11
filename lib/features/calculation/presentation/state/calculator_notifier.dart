@@ -337,7 +337,12 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// [kFreeHistoryCap] cotizaciones, lanza [HistoryCapReachedException]
   /// y NO inserta nada. Los items existentes quedan intactos.
   /// Pro users: sin cap.
-  Future<int?> save({String? pieceName, String? clientName}) async {
+  Future<int?> save({
+    String? pieceName,
+    String? clientName,
+    String? notes,
+    String? conditions,
+  }) async {
     if (!state.isValid || state.output == null) return null;
     final repo = ref.read(calculationRepositoryProvider);
     // T15: cap check ANTES de delegar al repo. Solo aplica a free.
@@ -371,10 +376,65 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       clientName: (clientName == null || clientName.trim().isEmpty)
           ? null
           : clientName.trim(),
+      notes: (notes == null || notes.trim().isEmpty) ? null : notes.trim(),
+      conditions: (conditions == null || conditions.trim().isEmpty)
+          ? null
+          : conditions.trim(),
     );
     final id = await repo.create(draft);
     ref.invalidate(calculationsNotifierProvider);
     return id;
+  }
+
+  /// Guarda el form actual como plantilla de trabajo frecuente.
+  ///
+  /// A diferencia de [save], las plantillas NO cuentan contra el cap free
+  /// (T15): se excluyen del historial y del dashboard. Reusan la misma
+  /// fila de `calculations` con `isTemplate = true`.
+  Future<int?> saveAsTemplate({
+    String? pieceName,
+    String? clientName,
+  }) async {
+    if (!state.isValid || state.output == null) return null;
+    final repo = ref.read(calculationRepositoryProvider);
+    final input = _buildInput(state);
+    final draft = CalculationDraft(
+      materials: input.materials,
+      totalHours: input.totalHours,
+      printMinutes:
+          CalculatorState.parseDecimal(
+            state.printMinutes,
+          )?.toBigInt().toInt() ??
+          0,
+      discountPercentage: input.discountPercentage,
+      output: state.output!,
+      filamentLabel: state.filamentLabel,
+      pieceName: (state.label.trim().isNotEmpty)
+          ? state.label.trim()
+          : (pieceName == null || pieceName.trim().isEmpty
+                ? null
+                : pieceName.trim()),
+      clientName: (clientName == null || clientName.trim().isEmpty)
+          ? null
+          : clientName.trim(),
+      isTemplate: true,
+    );
+    final id = await repo.createTemplate(draft);
+    ref.invalidate(calculationsNotifierProvider);
+    return id;
+  }
+
+  /// Elimina una plantilla por id. Devuelve true si existia.
+  Future<bool> deleteTemplate(int id) async {
+    final repo = ref.read(calculationRepositoryProvider);
+    final removed = await repo.delete(id);
+    ref.invalidate(calculationsNotifierProvider);
+    return removed > 0;
+  }
+
+  /// Lista las plantillas guardadas, mas recientes primero.
+  Future<List<Calculation>> templates() {
+    return ref.read(calculationRepositoryProvider).listTemplates();
   }
 
   /// Recalcula el output si el form es valido usando el engine completo (F1).

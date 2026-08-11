@@ -64,7 +64,9 @@ Future<void> shareQuoteImage(Uint8List imageBytes) async {
 
   await SharePlus.instance.share(
     ShareParams(
-      files: [XFile.fromData(imageBytes, mimeType: 'image/png', name: filename)],
+      files: [
+        XFile.fromData(imageBytes, mimeType: 'image/png', name: filename),
+      ],
       text: EsBO.calcShareText,
       subject: EsBO.calcShareSubject,
     ),

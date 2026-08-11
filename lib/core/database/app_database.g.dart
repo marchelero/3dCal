@@ -950,6 +950,26 @@ class $CalculationsTable extends Calculations
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _conditionsMeta = const VerificationMeta(
+    'conditions',
+  );
+  @override
+  late final GeneratedColumn<String> conditions = GeneratedColumn<String>(
+    'conditions',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _printerIdMeta = const VerificationMeta(
     'printerId',
   );
@@ -1050,6 +1070,21 @@ class $CalculationsTable extends Calculations
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("is_sold" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isTemplateMeta = const VerificationMeta(
+    'isTemplate',
+  );
+  @override
+  late final GeneratedColumn<bool> isTemplate = GeneratedColumn<bool>(
+    'is_template',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_template" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
@@ -1237,6 +1272,8 @@ class $CalculationsTable extends Calculations
     createdAt,
     pieceName,
     clientName,
+    notes,
+    conditions,
     printerId,
     printerNameSnapshot,
     printerWattsSnapshot,
@@ -1246,6 +1283,7 @@ class $CalculationsTable extends Calculations
     kwhRateSnapshot,
     profitBaseSnapshot,
     isSold,
+    isTemplate,
     materialCostSnapshot,
     electricCostSnapshot,
     laborCostSnapshot,
@@ -1296,6 +1334,18 @@ class $CalculationsTable extends Calculations
       context.handle(
         _clientNameMeta,
         clientName.isAcceptableOrUnknown(data['client_name']!, _clientNameMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('conditions')) {
+      context.handle(
+        _conditionsMeta,
+        conditions.isAcceptableOrUnknown(data['conditions']!, _conditionsMeta),
       );
     }
     if (data.containsKey('printer_id')) {
@@ -1376,6 +1426,12 @@ class $CalculationsTable extends Calculations
       context.handle(
         _isSoldMeta,
         isSold.isAcceptableOrUnknown(data['is_sold']!, _isSoldMeta),
+      );
+    }
+    if (data.containsKey('is_template')) {
+      context.handle(
+        _isTemplateMeta,
+        isTemplate.isAcceptableOrUnknown(data['is_template']!, _isTemplateMeta),
       );
     }
     if (data.containsKey('material_cost_snapshot')) {
@@ -1579,6 +1635,14 @@ class $CalculationsTable extends Calculations
         DriftSqlType.string,
         data['${effectivePrefix}client_name'],
       ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      conditions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conditions'],
+      ),
       printerId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}printer_id'],
@@ -1614,6 +1678,10 @@ class $CalculationsTable extends Calculations
       isSold: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_sold'],
+      )!,
+      isTemplate: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_template'],
       )!,
       materialCostSnapshot: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
@@ -1700,6 +1768,14 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// Nombre del cliente. Nullable.
   final String? clientName;
 
+  /// Notas de la cotizacion (ej: condiciones de entrega, especificaciones
+  /// de la pieza). Opcional. Se imprimen en el PDF.
+  final String? notes;
+
+  /// Condiciones comerciales (ej: validez de la oferta, forma de pago,
+  /// garantia). Opcional. Se imprimen en el PDF.
+  final String? conditions;
+
   /// Soft FK a `printers.id`. Nullable si no habia impresora.
   final int? printerId;
 
@@ -1735,6 +1811,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// Marca como vendida (alimenta dashboard).
   final bool isSold;
 
+  /// Marca como plantilla de trabajo frecuente.
+  ///
+  /// Las plantillas reutilizan la misma fila y snapshots que una cotizacion,
+  /// pero se excluyen del historial, del dashboard y del cap free (T15):
+  /// son configuraciones guardadas para re-aplicarse ("Cargar plantilla").
+  final bool isTemplate;
+
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   final double materialCostSnapshot;
   final double electricCostSnapshot;
@@ -1759,6 +1842,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.createdAt,
     this.pieceName,
     this.clientName,
+    this.notes,
+    this.conditions,
     this.printerId,
     this.printerNameSnapshot,
     required this.printerWattsSnapshot,
@@ -1768,6 +1853,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.kwhRateSnapshot,
     required this.profitBaseSnapshot,
     required this.isSold,
+    required this.isTemplate,
     required this.materialCostSnapshot,
     required this.electricCostSnapshot,
     required this.laborCostSnapshot,
@@ -1796,6 +1882,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     if (!nullToAbsent || clientName != null) {
       map['client_name'] = Variable<String>(clientName);
     }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || conditions != null) {
+      map['conditions'] = Variable<String>(conditions);
+    }
     if (!nullToAbsent || printerId != null) {
       map['printer_id'] = Variable<int>(printerId);
     }
@@ -1809,6 +1901,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     map['kwh_rate_snapshot'] = Variable<double>(kwhRateSnapshot);
     map['profit_base_snapshot'] = Variable<double>(profitBaseSnapshot);
     map['is_sold'] = Variable<bool>(isSold);
+    map['is_template'] = Variable<bool>(isTemplate);
     map['material_cost_snapshot'] = Variable<double>(materialCostSnapshot);
     map['electric_cost_snapshot'] = Variable<double>(electricCostSnapshot);
     map['labor_cost_snapshot'] = Variable<double>(laborCostSnapshot);
@@ -1846,6 +1939,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       clientName: clientName == null && nullToAbsent
           ? const Value.absent()
           : Value(clientName),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      conditions: conditions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conditions),
       printerId: printerId == null && nullToAbsent
           ? const Value.absent()
           : Value(printerId),
@@ -1859,6 +1958,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       kwhRateSnapshot: Value(kwhRateSnapshot),
       profitBaseSnapshot: Value(profitBaseSnapshot),
       isSold: Value(isSold),
+      isTemplate: Value(isTemplate),
       materialCostSnapshot: Value(materialCostSnapshot),
       electricCostSnapshot: Value(electricCostSnapshot),
       laborCostSnapshot: Value(laborCostSnapshot),
@@ -1888,6 +1988,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       pieceName: serializer.fromJson<String?>(json['pieceName']),
       clientName: serializer.fromJson<String?>(json['clientName']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      conditions: serializer.fromJson<String?>(json['conditions']),
       printerId: serializer.fromJson<int?>(json['printerId']),
       printerNameSnapshot: serializer.fromJson<String?>(
         json['printerNameSnapshot'],
@@ -1905,6 +2007,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
         json['profitBaseSnapshot'],
       ),
       isSold: serializer.fromJson<bool>(json['isSold']),
+      isTemplate: serializer.fromJson<bool>(json['isTemplate']),
       materialCostSnapshot: serializer.fromJson<double>(
         json['materialCostSnapshot'],
       ),
@@ -1957,6 +2060,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'pieceName': serializer.toJson<String?>(pieceName),
       'clientName': serializer.toJson<String?>(clientName),
+      'notes': serializer.toJson<String?>(notes),
+      'conditions': serializer.toJson<String?>(conditions),
       'printerId': serializer.toJson<int?>(printerId),
       'printerNameSnapshot': serializer.toJson<String?>(printerNameSnapshot),
       'printerWattsSnapshot': serializer.toJson<double>(printerWattsSnapshot),
@@ -1966,6 +2071,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'kwhRateSnapshot': serializer.toJson<double>(kwhRateSnapshot),
       'profitBaseSnapshot': serializer.toJson<double>(profitBaseSnapshot),
       'isSold': serializer.toJson<bool>(isSold),
+      'isTemplate': serializer.toJson<bool>(isTemplate),
       'materialCostSnapshot': serializer.toJson<double>(materialCostSnapshot),
       'electricCostSnapshot': serializer.toJson<double>(electricCostSnapshot),
       'laborCostSnapshot': serializer.toJson<double>(laborCostSnapshot),
@@ -2000,6 +2106,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     DateTime? createdAt,
     Value<String?> pieceName = const Value.absent(),
     Value<String?> clientName = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    Value<String?> conditions = const Value.absent(),
     Value<int?> printerId = const Value.absent(),
     Value<String?> printerNameSnapshot = const Value.absent(),
     double? printerWattsSnapshot,
@@ -2009,6 +2117,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     double? kwhRateSnapshot,
     double? profitBaseSnapshot,
     bool? isSold,
+    bool? isTemplate,
     double? materialCostSnapshot,
     double? electricCostSnapshot,
     double? laborCostSnapshot,
@@ -2030,6 +2139,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     createdAt: createdAt ?? this.createdAt,
     pieceName: pieceName.present ? pieceName.value : this.pieceName,
     clientName: clientName.present ? clientName.value : this.clientName,
+    notes: notes.present ? notes.value : this.notes,
+    conditions: conditions.present ? conditions.value : this.conditions,
     printerId: printerId.present ? printerId.value : this.printerId,
     printerNameSnapshot: printerNameSnapshot.present
         ? printerNameSnapshot.value
@@ -2041,6 +2152,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     kwhRateSnapshot: kwhRateSnapshot ?? this.kwhRateSnapshot,
     profitBaseSnapshot: profitBaseSnapshot ?? this.profitBaseSnapshot,
     isSold: isSold ?? this.isSold,
+    isTemplate: isTemplate ?? this.isTemplate,
     materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
     electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
     laborCostSnapshot: laborCostSnapshot ?? this.laborCostSnapshot,
@@ -2071,6 +2183,10 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       clientName: data.clientName.present
           ? data.clientName.value
           : this.clientName,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      conditions: data.conditions.present
+          ? data.conditions.value
+          : this.conditions,
       printerId: data.printerId.present ? data.printerId.value : this.printerId,
       printerNameSnapshot: data.printerNameSnapshot.present
           ? data.printerNameSnapshot.value
@@ -2094,6 +2210,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ? data.profitBaseSnapshot.value
           : this.profitBaseSnapshot,
       isSold: data.isSold.present ? data.isSold.value : this.isSold,
+      isTemplate: data.isTemplate.present
+          ? data.isTemplate.value
+          : this.isTemplate,
       materialCostSnapshot: data.materialCostSnapshot.present
           ? data.materialCostSnapshot.value
           : this.materialCostSnapshot,
@@ -2152,6 +2271,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('createdAt: $createdAt, ')
           ..write('pieceName: $pieceName, ')
           ..write('clientName: $clientName, ')
+          ..write('notes: $notes, ')
+          ..write('conditions: $conditions, ')
           ..write('printerId: $printerId, ')
           ..write('printerNameSnapshot: $printerNameSnapshot, ')
           ..write('printerWattsSnapshot: $printerWattsSnapshot, ')
@@ -2161,6 +2282,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('kwhRateSnapshot: $kwhRateSnapshot, ')
           ..write('profitBaseSnapshot: $profitBaseSnapshot, ')
           ..write('isSold: $isSold, ')
+          ..write('isTemplate: $isTemplate, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
           ..write('laborCostSnapshot: $laborCostSnapshot, ')
@@ -2189,6 +2311,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     createdAt,
     pieceName,
     clientName,
+    notes,
+    conditions,
     printerId,
     printerNameSnapshot,
     printerWattsSnapshot,
@@ -2198,6 +2322,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     kwhRateSnapshot,
     profitBaseSnapshot,
     isSold,
+    isTemplate,
     materialCostSnapshot,
     electricCostSnapshot,
     laborCostSnapshot,
@@ -2223,6 +2348,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.createdAt == this.createdAt &&
           other.pieceName == this.pieceName &&
           other.clientName == this.clientName &&
+          other.notes == this.notes &&
+          other.conditions == this.conditions &&
           other.printerId == this.printerId &&
           other.printerNameSnapshot == this.printerNameSnapshot &&
           other.printerWattsSnapshot == this.printerWattsSnapshot &&
@@ -2232,6 +2359,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.kwhRateSnapshot == this.kwhRateSnapshot &&
           other.profitBaseSnapshot == this.profitBaseSnapshot &&
           other.isSold == this.isSold &&
+          other.isTemplate == this.isTemplate &&
           other.materialCostSnapshot == this.materialCostSnapshot &&
           other.electricCostSnapshot == this.electricCostSnapshot &&
           other.laborCostSnapshot == this.laborCostSnapshot &&
@@ -2256,6 +2384,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<DateTime> createdAt;
   final Value<String?> pieceName;
   final Value<String?> clientName;
+  final Value<String?> notes;
+  final Value<String?> conditions;
   final Value<int?> printerId;
   final Value<String?> printerNameSnapshot;
   final Value<double> printerWattsSnapshot;
@@ -2265,6 +2395,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<double> kwhRateSnapshot;
   final Value<double> profitBaseSnapshot;
   final Value<bool> isSold;
+  final Value<bool> isTemplate;
   final Value<double> materialCostSnapshot;
   final Value<double> electricCostSnapshot;
   final Value<double> laborCostSnapshot;
@@ -2286,6 +2417,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.createdAt = const Value.absent(),
     this.pieceName = const Value.absent(),
     this.clientName = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.conditions = const Value.absent(),
     this.printerId = const Value.absent(),
     this.printerNameSnapshot = const Value.absent(),
     this.printerWattsSnapshot = const Value.absent(),
@@ -2295,6 +2428,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.kwhRateSnapshot = const Value.absent(),
     this.profitBaseSnapshot = const Value.absent(),
     this.isSold = const Value.absent(),
+    this.isTemplate = const Value.absent(),
     this.materialCostSnapshot = const Value.absent(),
     this.electricCostSnapshot = const Value.absent(),
     this.laborCostSnapshot = const Value.absent(),
@@ -2317,6 +2451,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     required DateTime createdAt,
     this.pieceName = const Value.absent(),
     this.clientName = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.conditions = const Value.absent(),
     this.printerId = const Value.absent(),
     this.printerNameSnapshot = const Value.absent(),
     this.printerWattsSnapshot = const Value.absent(),
@@ -2326,6 +2462,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     required double kwhRateSnapshot,
     required double profitBaseSnapshot,
     this.isSold = const Value.absent(),
+    this.isTemplate = const Value.absent(),
     required double materialCostSnapshot,
     required double electricCostSnapshot,
     required double laborCostSnapshot,
@@ -2368,6 +2505,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<DateTime>? createdAt,
     Expression<String>? pieceName,
     Expression<String>? clientName,
+    Expression<String>? notes,
+    Expression<String>? conditions,
     Expression<int>? printerId,
     Expression<String>? printerNameSnapshot,
     Expression<double>? printerWattsSnapshot,
@@ -2377,6 +2516,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<double>? kwhRateSnapshot,
     Expression<double>? profitBaseSnapshot,
     Expression<bool>? isSold,
+    Expression<bool>? isTemplate,
     Expression<double>? materialCostSnapshot,
     Expression<double>? electricCostSnapshot,
     Expression<double>? laborCostSnapshot,
@@ -2399,6 +2539,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       if (createdAt != null) 'created_at': createdAt,
       if (pieceName != null) 'piece_name': pieceName,
       if (clientName != null) 'client_name': clientName,
+      if (notes != null) 'notes': notes,
+      if (conditions != null) 'conditions': conditions,
       if (printerId != null) 'printer_id': printerId,
       if (printerNameSnapshot != null)
         'printer_name_snapshot': printerNameSnapshot,
@@ -2411,6 +2553,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       if (profitBaseSnapshot != null)
         'profit_base_snapshot': profitBaseSnapshot,
       if (isSold != null) 'is_sold': isSold,
+      if (isTemplate != null) 'is_template': isTemplate,
       if (materialCostSnapshot != null)
         'material_cost_snapshot': materialCostSnapshot,
       if (electricCostSnapshot != null)
@@ -2448,6 +2591,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<DateTime>? createdAt,
     Value<String?>? pieceName,
     Value<String?>? clientName,
+    Value<String?>? notes,
+    Value<String?>? conditions,
     Value<int?>? printerId,
     Value<String?>? printerNameSnapshot,
     Value<double>? printerWattsSnapshot,
@@ -2457,6 +2602,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<double>? kwhRateSnapshot,
     Value<double>? profitBaseSnapshot,
     Value<bool>? isSold,
+    Value<bool>? isTemplate,
     Value<double>? materialCostSnapshot,
     Value<double>? electricCostSnapshot,
     Value<double>? laborCostSnapshot,
@@ -2479,6 +2625,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       createdAt: createdAt ?? this.createdAt,
       pieceName: pieceName ?? this.pieceName,
       clientName: clientName ?? this.clientName,
+      notes: notes ?? this.notes,
+      conditions: conditions ?? this.conditions,
       printerId: printerId ?? this.printerId,
       printerNameSnapshot: printerNameSnapshot ?? this.printerNameSnapshot,
       printerWattsSnapshot: printerWattsSnapshot ?? this.printerWattsSnapshot,
@@ -2488,6 +2636,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       kwhRateSnapshot: kwhRateSnapshot ?? this.kwhRateSnapshot,
       profitBaseSnapshot: profitBaseSnapshot ?? this.profitBaseSnapshot,
       isSold: isSold ?? this.isSold,
+      isTemplate: isTemplate ?? this.isTemplate,
       materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
       electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
       laborCostSnapshot: laborCostSnapshot ?? this.laborCostSnapshot,
@@ -2528,6 +2677,12 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     if (clientName.present) {
       map['client_name'] = Variable<String>(clientName.value);
     }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (conditions.present) {
+      map['conditions'] = Variable<String>(conditions.value);
+    }
     if (printerId.present) {
       map['printer_id'] = Variable<int>(printerId.value);
     }
@@ -2558,6 +2713,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     }
     if (isSold.present) {
       map['is_sold'] = Variable<bool>(isSold.value);
+    }
+    if (isTemplate.present) {
+      map['is_template'] = Variable<bool>(isTemplate.value);
     }
     if (materialCostSnapshot.present) {
       map['material_cost_snapshot'] = Variable<double>(
@@ -2639,6 +2797,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('createdAt: $createdAt, ')
           ..write('pieceName: $pieceName, ')
           ..write('clientName: $clientName, ')
+          ..write('notes: $notes, ')
+          ..write('conditions: $conditions, ')
           ..write('printerId: $printerId, ')
           ..write('printerNameSnapshot: $printerNameSnapshot, ')
           ..write('printerWattsSnapshot: $printerWattsSnapshot, ')
@@ -2648,6 +2808,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('kwhRateSnapshot: $kwhRateSnapshot, ')
           ..write('profitBaseSnapshot: $profitBaseSnapshot, ')
           ..write('isSold: $isSold, ')
+          ..write('isTemplate: $isTemplate, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
           ..write('laborCostSnapshot: $laborCostSnapshot, ')
@@ -4477,6 +4638,8 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       required DateTime createdAt,
       Value<String?> pieceName,
       Value<String?> clientName,
+      Value<String?> notes,
+      Value<String?> conditions,
       Value<int?> printerId,
       Value<String?> printerNameSnapshot,
       Value<double> printerWattsSnapshot,
@@ -4486,6 +4649,7 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       required double kwhRateSnapshot,
       required double profitBaseSnapshot,
       Value<bool> isSold,
+      Value<bool> isTemplate,
       required double materialCostSnapshot,
       required double electricCostSnapshot,
       required double laborCostSnapshot,
@@ -4509,6 +4673,8 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<String?> pieceName,
       Value<String?> clientName,
+      Value<String?> notes,
+      Value<String?> conditions,
       Value<int?> printerId,
       Value<String?> printerNameSnapshot,
       Value<double> printerWattsSnapshot,
@@ -4518,6 +4684,7 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<double> kwhRateSnapshot,
       Value<double> profitBaseSnapshot,
       Value<bool> isSold,
+      Value<bool> isTemplate,
       Value<double> materialCostSnapshot,
       Value<double> electricCostSnapshot,
       Value<double> laborCostSnapshot,
@@ -4595,6 +4762,16 @@ class $$CalculationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get conditions => $composableBuilder(
+    column: $table.conditions,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get printerId => $composableBuilder(
     column: $table.printerId,
     builder: (column) => ColumnFilters(column),
@@ -4637,6 +4814,11 @@ class $$CalculationsTableFilterComposer
 
   ColumnFilters<bool> get isSold => $composableBuilder(
     column: $table.isSold,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isTemplate => $composableBuilder(
+    column: $table.isTemplate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4775,6 +4957,16 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get conditions => $composableBuilder(
+    column: $table.conditions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get printerId => $composableBuilder(
     column: $table.printerId,
     builder: (column) => ColumnOrderings(column),
@@ -4817,6 +5009,11 @@ class $$CalculationsTableOrderingComposer
 
   ColumnOrderings<bool> get isSold => $composableBuilder(
     column: $table.isSold,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isTemplate => $composableBuilder(
+    column: $table.isTemplate,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4925,6 +5122,14 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get conditions => $composableBuilder(
+    column: $table.conditions,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get printerId =>
       $composableBuilder(column: $table.printerId, builder: (column) => column);
 
@@ -4965,6 +5170,11 @@ class $$CalculationsTableAnnotationComposer
 
   GeneratedColumn<bool> get isSold =>
       $composableBuilder(column: $table.isSold, builder: (column) => column);
+
+  GeneratedColumn<bool> get isTemplate => $composableBuilder(
+    column: $table.isTemplate,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get materialCostSnapshot => $composableBuilder(
     column: $table.materialCostSnapshot,
@@ -5106,6 +5316,8 @@ class $$CalculationsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> pieceName = const Value.absent(),
                 Value<String?> clientName = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> conditions = const Value.absent(),
                 Value<int?> printerId = const Value.absent(),
                 Value<String?> printerNameSnapshot = const Value.absent(),
                 Value<double> printerWattsSnapshot = const Value.absent(),
@@ -5115,6 +5327,7 @@ class $$CalculationsTableTableManager
                 Value<double> kwhRateSnapshot = const Value.absent(),
                 Value<double> profitBaseSnapshot = const Value.absent(),
                 Value<bool> isSold = const Value.absent(),
+                Value<bool> isTemplate = const Value.absent(),
                 Value<double> materialCostSnapshot = const Value.absent(),
                 Value<double> electricCostSnapshot = const Value.absent(),
                 Value<double> laborCostSnapshot = const Value.absent(),
@@ -5137,6 +5350,8 @@ class $$CalculationsTableTableManager
                 createdAt: createdAt,
                 pieceName: pieceName,
                 clientName: clientName,
+                notes: notes,
+                conditions: conditions,
                 printerId: printerId,
                 printerNameSnapshot: printerNameSnapshot,
                 printerWattsSnapshot: printerWattsSnapshot,
@@ -5146,6 +5361,7 @@ class $$CalculationsTableTableManager
                 kwhRateSnapshot: kwhRateSnapshot,
                 profitBaseSnapshot: profitBaseSnapshot,
                 isSold: isSold,
+                isTemplate: isTemplate,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
                 laborCostSnapshot: laborCostSnapshot,
@@ -5169,6 +5385,8 @@ class $$CalculationsTableTableManager
                 required DateTime createdAt,
                 Value<String?> pieceName = const Value.absent(),
                 Value<String?> clientName = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> conditions = const Value.absent(),
                 Value<int?> printerId = const Value.absent(),
                 Value<String?> printerNameSnapshot = const Value.absent(),
                 Value<double> printerWattsSnapshot = const Value.absent(),
@@ -5178,6 +5396,7 @@ class $$CalculationsTableTableManager
                 required double kwhRateSnapshot,
                 required double profitBaseSnapshot,
                 Value<bool> isSold = const Value.absent(),
+                Value<bool> isTemplate = const Value.absent(),
                 required double materialCostSnapshot,
                 required double electricCostSnapshot,
                 required double laborCostSnapshot,
@@ -5199,6 +5418,8 @@ class $$CalculationsTableTableManager
                 createdAt: createdAt,
                 pieceName: pieceName,
                 clientName: clientName,
+                notes: notes,
+                conditions: conditions,
                 printerId: printerId,
                 printerNameSnapshot: printerNameSnapshot,
                 printerWattsSnapshot: printerWattsSnapshot,
@@ -5208,6 +5429,7 @@ class $$CalculationsTableTableManager
                 kwhRateSnapshot: kwhRateSnapshot,
                 profitBaseSnapshot: profitBaseSnapshot,
                 isSold: isSold,
+                isTemplate: isTemplate,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
                 laborCostSnapshot: laborCostSnapshot,

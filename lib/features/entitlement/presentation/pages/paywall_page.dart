@@ -64,9 +64,9 @@ class _PaywallPageState extends ConsumerState<PaywallPage> {
         if (next.hasError && prev?.hasError != true) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              AppSnackBar.error(EsBO.paywallErrorGeneric),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(AppSnackBar.error(EsBO.paywallErrorGeneric));
           });
         }
       },
@@ -132,9 +132,7 @@ class _LoadingBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 }
 
@@ -240,7 +238,9 @@ class _FreeBodyState extends ConsumerState<_FreeBody> {
         case RestoreEmpty():
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(AppSnackBar.info(context, EsBO.settingsRestoreEmpty));
+            ..showSnackBar(
+              AppSnackBar.info(context, EsBO.settingsRestoreEmpty),
+            );
         // Error: feedback explicito (no se cambio el state).
         case RestoreError():
           ScaffoldMessenger.of(context)
@@ -330,9 +330,7 @@ class _FreeBodyState extends ConsumerState<_FreeBody> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
                   )
                 : Text(unlockLabel),
           ),

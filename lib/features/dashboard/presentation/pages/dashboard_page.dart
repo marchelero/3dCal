@@ -32,9 +32,7 @@ class DashboardPage extends ConsumerWidget {
     final currency = ref.watch(selectedCurrencyProvider);
     final isPro = ref.watch(dashboardIsProProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(EsBO.dashboardTitle),
-      ),
+      appBar: AppBar(title: Text(EsBO.dashboardTitle)),
       body: SafeArea(
         child: asyncStats.when(
           loading: () => const LoadingView(),
@@ -55,8 +53,7 @@ class DashboardPage extends ConsumerWidget {
               );
             }
             return RefreshIndicator(
-              onRefresh: () =>
-                  ref.refresh(dashboardStatsProvider.future),
+              onRefresh: () => ref.refresh(dashboardStatsProvider.future),
               child: _DashboardBody(
                 stats: stats,
                 currency: currency,
@@ -188,10 +185,15 @@ class _DashboardBody extends StatelessWidget {
                           height: 30,
                           child: Row(
                             children: [
-                              _LegendDot(color: color.primary, label: EsBO.dashboardChartQuoted),
+                              _LegendDot(
+                                color: color.primary,
+                                label: EsBO.dashboardChartQuoted,
+                              ),
                               const SizedBox(width: AppSpacing.lg),
                               _LegendDot(
-                                  color: color.tertiary, label: EsBO.dashboardChartSold),
+                                color: color.tertiary,
+                                label: EsBO.dashboardChartSold,
+                              ),
                             ],
                           ),
                         ),
@@ -285,10 +287,7 @@ class _LegendDot extends StatelessWidget {
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(label, style: Theme.of(context).textTheme.labelMedium),
@@ -311,7 +310,11 @@ class _MaterialRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(Icons.circle, size: 8, color: Theme.of(context).colorScheme.primary),
+          Icon(
+            Icons.circle,
+            size: 8,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(

@@ -15,9 +15,9 @@ class SettingsRepository {
 
   /// Lee el valor de un setting como [Decimal]. Default si no existe.
   Future<Decimal> getDecimal(String key, Decimal fallback) async {
-    final row = await (_db.select(_db.settingsTable)
-          ..where((s) => s.key.equals(key)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.settingsTable,
+    )..where((s) => s.key.equals(key))).getSingleOrNull();
     if (row == null) {
       return fallback;
     }
@@ -26,17 +26,17 @@ class SettingsRepository {
 
   /// Lee el valor como String.
   Future<String> getString(String key, String fallback) async {
-    final row = await (_db.select(_db.settingsTable)
-          ..where((s) => s.key.equals(key)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.settingsTable,
+    )..where((s) => s.key.equals(key))).getSingleOrNull();
     return row?.value ?? fallback;
   }
 
   /// Lee el valor como bool. Default si no existe o no parsea.
   Future<bool> getBool(String key, bool fallback) async {
-    final row = await (_db.select(_db.settingsTable)
-          ..where((s) => s.key.equals(key)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.settingsTable,
+    )..where((s) => s.key.equals(key))).getSingleOrNull();
     if (row == null) {
       return fallback;
     }
@@ -60,11 +60,13 @@ class SettingsRepository {
 
   /// Helper que hace upsert: insert si no existe, update si existe.
   Future<void> _upsert(String key, String value) async {
-    final existing = await (_db.select(_db.settingsTable)
-          ..where((s) => s.key.equals(key)))
-        .getSingleOrNull();
+    final existing = await (_db.select(
+      _db.settingsTable,
+    )..where((s) => s.key.equals(key))).getSingleOrNull();
     if (existing == null) {
-      await _db.into(_db.settingsTable).insert(
+      await _db
+          .into(_db.settingsTable)
+          .insert(
             SettingsTableCompanion.insert(
               key: key,
               value: value,
@@ -72,8 +74,9 @@ class SettingsRepository {
             ),
           );
     } else {
-      await (_db.update(_db.settingsTable)..where((s) => s.key.equals(key)))
-          .write(
+      await (_db.update(
+        _db.settingsTable,
+      )..where((s) => s.key.equals(key))).write(
         SettingsTableCompanion(
           value: Value(value),
           updatedAt: Value(DateTime.now().toUtc()),
@@ -86,15 +89,18 @@ class SettingsRepository {
 
   /// Ganancia base global (%). Default: [kDefaultProfitBasePercentage].
   Future<Decimal> getProfitBase() => getDecimal(
-      SettingsKeys.profitBasePercentage,
-      Decimal.fromInt(kDefaultProfitBasePercentage.toInt()));
+    SettingsKeys.profitBasePercentage,
+    Decimal.fromInt(kDefaultProfitBasePercentage.toInt()),
+  );
 
   Future<void> setProfitBase(Decimal value) =>
       setDecimal(SettingsKeys.profitBasePercentage, value);
 
   /// Tarifa electrica (BOB/kWh). Default: [kDefaultKwhRate].
-  Future<Decimal> getKwhRate() =>
-      getDecimal(SettingsKeys.kwhRate, Decimal.parse(kDefaultKwhRate.toString()));
+  Future<Decimal> getKwhRate() => getDecimal(
+    SettingsKeys.kwhRate,
+    Decimal.parse(kDefaultKwhRate.toString()),
+  );
 
   Future<void> setKwhRate(Decimal value) =>
       setDecimal(SettingsKeys.kwhRate, value);
@@ -107,15 +113,14 @@ class SettingsRepository {
       setString(SettingsKeys.companyName, value);
 
   /// Logo de la empresa en base64. Null si no configurado.
-  Future<String?> getCompanyLogo() =>
-      getStringOrNull(SettingsKeys.companyLogo);
+  Future<String?> getCompanyLogo() => getStringOrNull(SettingsKeys.companyLogo);
 
   Future<void> setCompanyLogo(String? base64) async {
     if (base64 == null) {
       // Borrar la key
-      await (_db.delete(_db.settingsTable)
-            ..where((s) => s.key.equals(SettingsKeys.companyLogo)))
-          .go();
+      await (_db.delete(
+        _db.settingsTable,
+      )..where((s) => s.key.equals(SettingsKeys.companyLogo))).go();
       return;
     }
     await setString(SettingsKeys.companyLogo, base64);
@@ -123,9 +128,9 @@ class SettingsRepository {
 
   /// Lee el valor como String? (null si no existe).
   Future<String?> getStringOrNull(String key) async {
-    final row = await (_db.select(_db.settingsTable)
-          ..where((s) => s.key.equals(key)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.settingsTable,
+    )..where((s) => s.key.equals(key))).getSingleOrNull();
     return row?.value;
   }
 

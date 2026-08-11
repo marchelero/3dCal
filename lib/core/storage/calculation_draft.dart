@@ -35,9 +35,9 @@ class CalculationDraft {
       filamentLabel: json['filamentLabel'] as String? ?? '',
       clientName: json['clientName'] as String? ?? '',
       isAdvanced: json['isAdvanced'] as bool? ?? false,
-      materials: (json['materials'] as List?)
-              ?.map((e) =>
-                  MaterialDraft.fromJson(e as Map<String, dynamic>))
+      materials:
+          (json['materials'] as List?)
+              ?.map((e) => MaterialDraft.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       extraLaborRate: json['extraLaborRate'] as String? ?? '',
@@ -66,22 +66,22 @@ class CalculationDraft {
   final String extraMarkupOnMaterials;
 
   Map<String, dynamic> toJson() => {
-        'weight': weight,
-        'printHours': printHours,
-        'printMinutes': printMinutes,
-        'discountPct': discountPct,
-        'filamentPrice': filamentPrice,
-        'filamentGrams': filamentGrams,
-        'label': label,
-        'filamentLabel': filamentLabel,
-        'clientName': clientName,
-        'isAdvanced': isAdvanced,
-        'materials': materials.map((m) => m.toJson()).toList(),
-        'extraLaborRate': extraLaborRate,
-        'extraPostProcessRate': extraPostProcessRate,
-        'extraFailureRate': extraFailureRate,
-        'extraMarkupOnMaterials': extraMarkupOnMaterials,
-      };
+    'weight': weight,
+    'printHours': printHours,
+    'printMinutes': printMinutes,
+    'discountPct': discountPct,
+    'filamentPrice': filamentPrice,
+    'filamentGrams': filamentGrams,
+    'label': label,
+    'filamentLabel': filamentLabel,
+    'clientName': clientName,
+    'isAdvanced': isAdvanced,
+    'materials': materials.map((m) => m.toJson()).toList(),
+    'extraLaborRate': extraLaborRate,
+    'extraPostProcessRate': extraPostProcessRate,
+    'extraFailureRate': extraFailureRate,
+    'extraMarkupOnMaterials': extraMarkupOnMaterials,
+  };
 
   String encode() => jsonEncode(toJson());
 
@@ -118,9 +118,9 @@ class MaterialDraft {
   final String gramsPerBobbin;
 
   Map<String, dynamic> toJson() => {
-        'label': label,
-        'weight': weight,
-        'pricePerBobbin': pricePerBobbin,
-        'gramsPerBobbin': gramsPerBobbin,
-      };
+    'label': label,
+    'weight': weight,
+    'pricePerBobbin': pricePerBobbin,
+    'gramsPerBobbin': gramsPerBobbin,
+  };
 }

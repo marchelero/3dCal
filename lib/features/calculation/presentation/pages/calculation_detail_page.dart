@@ -48,6 +48,32 @@ class CalculationDetailPage extends ConsumerWidget {
         title: Text(EsBO.calcDetailTitle),
         actions: [
           IconButton(
+            tooltip: EsBO.calcDuplicateAction,
+            icon: const Icon(Icons.copy_all_rounded),
+            onPressed: calc == null
+                ? null
+                : () async {
+                    try {
+                      await ref
+                          .read(calculationsNotifierProvider.notifier)
+                          .duplicate(
+                            calcId,
+                            pieceNameSuffix: EsBO.calcDuplicateSuffix,
+                          );
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        AppSnackBar.success(EsBO.calcDuplicateSuccess),
+                      );
+                    } catch (e) {
+                      debugPrint('Duplicate quote failed: $e');
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        AppSnackBar.error(EsBO.calcDuplicateError),
+                      );
+                    }
+                  },
+          ),
+          IconButton(
             tooltip: EsBO.calcDetailDelete,
             icon: const Icon(Icons.delete_outline_rounded),
             onPressed: calc == null
@@ -164,12 +190,21 @@ class _DetailState extends ConsumerState<_Detail> {
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
         pieceName: calc.pieceName,
+        clientName: calc.clientName,
+        quoteNumber: calc.id,
+        quoteDate: calc.createdAt.toLocal(),
+        validUntil: calc.createdAt.toLocal().add(
+          const Duration(days: kQuoteValidDays),
+        ),
+        notes: calc.notes,
+        conditions: calc.conditions,
       );
     } catch (e) {
+      debugPrint('Quote PDF share failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(AppSnackBar.error('${EsBO.commonPdfExportError}: $e'));
+      ).showSnackBar(AppSnackBar.error(EsBO.commonPdfExportError));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -197,13 +232,22 @@ class _DetailState extends ConsumerState<_Detail> {
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
         pieceName: calc.pieceName,
+        clientName: calc.clientName,
+        quoteNumber: calc.id,
+        quoteDate: calc.createdAt.toLocal(),
+        validUntil: calc.createdAt.toLocal().add(
+          const Duration(days: kQuoteValidDays),
+        ),
+        notes: calc.notes,
+        conditions: calc.conditions,
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
     } catch (e) {
+      debugPrint('Quote PDF print failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(AppSnackBar.error('${EsBO.commonPrintError}: $e'));
+      ).showSnackBar(AppSnackBar.error(EsBO.commonPrintError));
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }

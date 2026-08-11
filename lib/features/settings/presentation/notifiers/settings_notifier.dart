@@ -60,10 +60,9 @@ class SettingsNotifier extends AsyncNotifier<Settings> {
     final repo = ref.read(settingsRepositoryProvider);
     await repo.setCompanyLogo(base64);
     final current = state.value ?? Settings.defaults;
-    state = AsyncValue.data(current.copyWith(
-      companyLogoBase64: base64,
-      clearLogo: base64 == null,
-    ));
+    state = AsyncValue.data(
+      current.copyWith(companyLogoBase64: base64, clearLogo: base64 == null),
+    );
   }
 
   // === F1: Mano de obra + Post-procesado ===

@@ -72,8 +72,7 @@ class _FakeEntitlementRepository implements EntitlementRepository {
       purchasedAt: entry.purchasedAt.value,
       validatedAt: entry.validatedAt.present ? entry.validatedAt.value : null,
       expiresAt: entry.expiresAt.present ? entry.expiresAt.value : null,
-      receiptData:
-          entry.receiptData.present ? entry.receiptData.value : null,
+      receiptData: entry.receiptData.present ? entry.receiptData.value : null,
       isActive: entry.isActive.present ? entry.isActive.value : true,
     );
     return 1;
@@ -155,20 +154,19 @@ void main() {
 
       expect(prefs.getBool(kIsProKey), isTrue);
       expect(prefs.getString(kEntitlementSourceKey), 'lifetime_purchase');
-      expect(
-        prefs.getString(kEntitlementValidatedAtKey),
-        ts.toIso8601String(),
-      );
+      expect(prefs.getString(kEntitlementValidatedAtKey), ts.toIso8601String());
     });
 
-    test('setActive con validatedAt=null NO escribe la key de timestamp',
-        () async {
-      await cache.setActive(source: 'lifetime_purchase');
+    test(
+      'setActive con validatedAt=null NO escribe la key de timestamp',
+      () async {
+        await cache.setActive(source: 'lifetime_purchase');
 
-      expect(prefs.getBool(kIsProKey), isTrue);
-      expect(prefs.getString(kEntitlementSourceKey), 'lifetime_purchase');
-      expect(prefs.containsKey(kEntitlementValidatedAtKey), isFalse);
-    });
+        expect(prefs.getBool(kIsProKey), isTrue);
+        expect(prefs.getString(kEntitlementSourceKey), 'lifetime_purchase');
+        expect(prefs.containsKey(kEntitlementValidatedAtKey), isFalse);
+      },
+    );
 
     test('clear borra los 3 keys y lectura retorna defaults', () async {
       final ts = DateTime.utc(2026, 7, 22);
@@ -217,11 +215,13 @@ void main() {
       prefs = await SharedPreferences.getInstance();
       repo = _FakeEntitlementRepository();
       paymentService = _FakePaymentService();
-      container = ProviderContainer(overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        entitlementRepositoryProvider.overrideWithValue(repo),
-        paymentServiceProvider.overrideWithValue(paymentService),
-      ]);
+      container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(paymentService),
+        ],
+      );
     }
 
     /// Espera a que cualquier microtask pendiente (incluyendo el refresh
@@ -237,24 +237,31 @@ void main() {
       container.dispose();
     });
 
-    test('boot: cache vacio + repo sin fila activa → EntitlementFree',
-        () async {
-      await setupContainer();
+    test(
+      'boot: cache vacio + repo sin fila activa → EntitlementFree',
+      () async {
+        await setupContainer();
 
-      final state = await container.read(entitlementNotifierProvider.future);
+        final state = await container.read(entitlementNotifierProvider.future);
 
-      expect(state, isA<EntitlementFree>());
-      expect(repo.getActiveCalls, 1,
-          reason: 'Debio consultar DB una sola vez (no habia cache).');
-    });
+        expect(state, isA<EntitlementFree>());
+        expect(
+          repo.getActiveCalls,
+          1,
+          reason: 'Debio consultar DB una sola vez (no habia cache).',
+        );
+      },
+    );
 
     test('boot: cache.isPro=true → EntitlementPro sin tocar repo', () async {
       final validated = DateTime.now().toUtc();
-      await setupContainer(spInitial: <String, Object>{
-        kIsProKey: true,
-        kEntitlementSourceKey: 'lifetime_purchase',
-        kEntitlementValidatedAtKey: validated.toIso8601String(),
-      });
+      await setupContainer(
+        spInitial: <String, Object>{
+          kIsProKey: true,
+          kEntitlementSourceKey: 'lifetime_purchase',
+          kEntitlementValidatedAtKey: validated.toIso8601String(),
+        },
+      );
 
       final state = await container.read(entitlementNotifierProvider.future);
 
@@ -262,24 +269,29 @@ void main() {
       final pro = state as EntitlementPro;
       expect(pro.source, 'lifetime_purchase');
       expect(pro.validatedAt, validated);
-      expect(repo.getActiveCalls, 0,
-          reason: 'No debe consultar DB si cache ya dice Pro.');
+      expect(
+        repo.getActiveCalls,
+        0,
+        reason: 'No debe consultar DB si cache ya dice Pro.',
+      );
     });
 
     test('boot: cache vacio + repo con fila activa → EntitlementPro + '
         'cache SP actualizada', () async {
       await setupContainer();
       final now = DateTime.now().toUtc();
-      repo.seedActive(Entitlement(
-        id: 1,
-        source: 'lifetime_purchase',
-        productId: kProProductId,
-        purchasedAt: now,
-        validatedAt: now,
-        expiresAt: null,
-        receiptData: null,
-        isActive: true,
-      ));
+      repo.seedActive(
+        Entitlement(
+          id: 1,
+          source: 'lifetime_purchase',
+          productId: kProProductId,
+          purchasedAt: now,
+          validatedAt: now,
+          expiresAt: null,
+          receiptData: null,
+          isActive: true,
+        ),
+      );
 
       final state = await container.read(entitlementNotifierProvider.future);
 
@@ -299,60 +311,80 @@ void main() {
 
     test('boot: cache Pro stale (validatedAt > 7 dias) → trigger restore '
         'async que reescribe cache', () async {
-      final stale = DateTime.now().toUtc()
-          .subtract(const Duration(days: 8));
-      await setupContainer(spInitial: <String, Object>{
-        kIsProKey: true,
-        kEntitlementSourceKey: 'lifetime_purchase',
-        kEntitlementValidatedAtKey: stale.toIso8601String(),
-      });
+      final stale = DateTime.now().toUtc().subtract(const Duration(days: 8));
+      await setupContainer(
+        spInitial: <String, Object>{
+          kIsProKey: true,
+          kEntitlementSourceKey: 'lifetime_purchase',
+          kEntitlementValidatedAtKey: stale.toIso8601String(),
+        },
+      );
       // Store confirma el entitlement con timestamp fresco.
       final fresh = DateTime.now().toUtc();
-      paymentService.seedRestore(RestoreActive(
-        productId: kProProductId,
-        purchasedAt: stale,
-        validatedAt: fresh,
-      ));
+      paymentService.seedRestore(
+        RestoreActive(
+          productId: kProProductId,
+          purchasedAt: stale,
+          validatedAt: fresh,
+        ),
+      );
 
       final state = await container.read(entitlementNotifierProvider.future);
-      expect(state, isA<EntitlementPro>(),
-          reason: 'Primera emit (sync) debe venir del cache: Pro.');
+      expect(
+        state,
+        isA<EntitlementPro>(),
+        reason: 'Primera emit (sync) debe venir del cache: Pro.',
+      );
 
       // Esperar a que el restore fire-and-forget complete.
       await waitForAsyncRefresh();
 
-      expect(paymentService.restoreCalls, greaterThanOrEqualTo(1),
-          reason: 'El restore async debio consultar el PaymentService '
-              'al menos 1 vez.');
+      expect(
+        paymentService.restoreCalls,
+        greaterThanOrEqualTo(1),
+        reason:
+            'El restore async debio consultar el PaymentService '
+            'al menos 1 vez.',
+      );
 
       // Cache SP debe haberse actualizado con timestamp fresco.
       final cache = EntitlementCache(prefs);
       expect(cache.validatedAt, isNotNull);
-      expect(cache.validatedAt!.isAfter(stale), isTrue,
-          reason: 'validatedAt debio refrescarse via activate().');
+      expect(
+        cache.validatedAt!.isAfter(stale),
+        isTrue,
+        reason: 'validatedAt debio refrescarse via activate().',
+      );
     });
 
     test('boot: cache Pro stale + restore empty → downgrade a Free', () async {
-      final stale = DateTime.now().toUtc()
-          .subtract(const Duration(days: 8));
-      await setupContainer(spInitial: <String, Object>{
-        kIsProKey: true,
-        kEntitlementSourceKey: 'lifetime_purchase',
-        kEntitlementValidatedAtKey: stale.toIso8601String(),
-      });
+      final stale = DateTime.now().toUtc().subtract(const Duration(days: 8));
+      await setupContainer(
+        spInitial: <String, Object>{
+          kIsProKey: true,
+          kEntitlementSourceKey: 'lifetime_purchase',
+          kEntitlementValidatedAtKey: stale.toIso8601String(),
+        },
+      );
       // Store dice "no hay entitlement" (refund, etc).
       paymentService.seedRestore(const RestoreEmpty());
 
       final state = await container.read(entitlementNotifierProvider.future);
-      expect(state, isA<EntitlementPro>(),
-          reason: 'Primera emit (sync) es Pro desde cache.');
+      expect(
+        state,
+        isA<EntitlementPro>(),
+        reason: 'Primera emit (sync) es Pro desde cache.',
+      );
 
       await waitForAsyncRefresh();
 
       // Tras el restore empty, el state debe haber bajado a Free.
       final finalState = container.read(entitlementNotifierProvider).value;
-      expect(finalState, isA<EntitlementFree>(),
-          reason: 'Restore empty + cache stale → downgrade a Free.');
+      expect(
+        finalState,
+        isA<EntitlementFree>(),
+        reason: 'Restore empty + cache stale → downgrade a Free.',
+      );
 
       // Y la cache debe haberse limpiado.
       final cache = EntitlementCache(prefs);
@@ -387,8 +419,7 @@ void main() {
       expect(prefs.getString(kEntitlementValidatedAtKey), isNotNull);
     });
 
-    test('deactivate() → Free + cache cleared + repo.clear llamado',
-        () async {
+    test('deactivate() → Free + cache cleared + repo.clear llamado', () async {
       await setupContainer();
       // Activar primero.
       await container
@@ -421,51 +452,60 @@ void main() {
 
       // Ahora seed: DB tiene fila activa.
       final now = DateTime.now().toUtc();
-      repo.seedActive(Entitlement(
-        id: 1,
-        source: 'lifetime_purchase',
-        productId: kProProductId,
-        purchasedAt: now,
-        validatedAt: now,
-        expiresAt: null,
-        receiptData: null,
-        isActive: true,
-      ));
+      repo.seedActive(
+        Entitlement(
+          id: 1,
+          source: 'lifetime_purchase',
+          productId: kProProductId,
+          purchasedAt: now,
+          validatedAt: now,
+          expiresAt: null,
+          receiptData: null,
+          isActive: true,
+        ),
+      );
       final callsBefore = repo.getActiveCalls;
 
       await container.read(entitlementNotifierProvider.notifier).refresh();
 
       final state = container.read(entitlementNotifierProvider).value;
       expect(state, isA<EntitlementPro>());
-      expect(repo.getActiveCalls, callsBefore + 1,
-          reason: 'refresh() debio consultar DB.');
+      expect(
+        repo.getActiveCalls,
+        callsBefore + 1,
+        reason: 'refresh() debio consultar DB.',
+      );
       expect(prefs.getBool(kIsProKey), isTrue);
       expect(prefs.getString(kEntitlementSourceKey), 'lifetime_purchase');
     });
 
-    test('refresh() con DB vacia → transiciona Pro→Free y limpia cache',
-        () async {
-      final validated = DateTime.now().toUtc();
-      await setupContainer(spInitial: <String, Object>{
-        kIsProKey: true,
-        kEntitlementSourceKey: 'lifetime_purchase',
-        kEntitlementValidatedAtKey: validated.toIso8601String(),
-      });
-      await container.read(entitlementNotifierProvider.future);
-      expect(
-        container.read(entitlementNotifierProvider).value,
-        isA<EntitlementPro>(),
-      );
+    test(
+      'refresh() con DB vacia → transiciona Pro→Free y limpia cache',
+      () async {
+        final validated = DateTime.now().toUtc();
+        await setupContainer(
+          spInitial: <String, Object>{
+            kIsProKey: true,
+            kEntitlementSourceKey: 'lifetime_purchase',
+            kEntitlementValidatedAtKey: validated.toIso8601String(),
+          },
+        );
+        await container.read(entitlementNotifierProvider.future);
+        expect(
+          container.read(entitlementNotifierProvider).value,
+          isA<EntitlementPro>(),
+        );
 
-      // DB ahora vacia (e.g. restore reporto "no subscription").
-      repo.seedActive(null);
+        // DB ahora vacia (e.g. restore reporto "no subscription").
+        repo.seedActive(null);
 
-      await container.read(entitlementNotifierProvider.notifier).refresh();
+        await container.read(entitlementNotifierProvider.notifier).refresh();
 
-      final state = container.read(entitlementNotifierProvider).value;
-      expect(state, isA<EntitlementFree>());
-      expect(prefs.getBool(kIsProKey), isNull);
-    });
+        final state = container.read(entitlementNotifierProvider).value;
+        expect(state, isA<EntitlementFree>());
+        expect(prefs.getBool(kIsProKey), isNull);
+      },
+    );
   });
 
   // ---------- isProProvider ----------
@@ -483,11 +523,13 @@ void main() {
       prefs = await SharedPreferences.getInstance();
       repo = _FakeEntitlementRepository();
       paymentService = _FakePaymentService();
-      container = ProviderContainer(overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        entitlementRepositoryProvider.overrideWithValue(repo),
-        paymentServiceProvider.overrideWithValue(paymentService),
-      ]);
+      container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(paymentService),
+        ],
+      );
     }
 
     tearDown(() {
@@ -503,14 +545,19 @@ void main() {
       final p = await SharedPreferences.getInstance();
       final r = _FakeEntitlementRepository()..blockGetActive();
       final ps = _FakePaymentService();
-      final c = ProviderContainer(overrides: [
-        sharedPreferencesProvider.overrideWithValue(p),
-        entitlementRepositoryProvider.overrideWithValue(r),
-        paymentServiceProvider.overrideWithValue(ps),
-      ]);
+      final c = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(p),
+          entitlementRepositoryProvider.overrideWithValue(r),
+          paymentServiceProvider.overrideWithValue(ps),
+        ],
+      );
       try {
-        expect(c.read(isProProvider), isFalse,
-            reason: 'Mientras el notifier esta en loading, isPro=false.');
+        expect(
+          c.read(isProProvider),
+          isFalse,
+          reason: 'Mientras el notifier esta en loading, isPro=false.',
+        );
       } finally {
         r.unblockGetActive();
         c.dispose();
@@ -525,11 +572,13 @@ void main() {
 
     test('true cuando state es EntitlementPro', () async {
       final validated = DateTime.now().toUtc();
-      await setupContainer(spInitial: <String, Object>{
-        kIsProKey: true,
-        kEntitlementSourceKey: 'lifetime_purchase',
-        kEntitlementValidatedAtKey: validated.toIso8601String(),
-      });
+      await setupContainer(
+        spInitial: <String, Object>{
+          kIsProKey: true,
+          kEntitlementSourceKey: 'lifetime_purchase',
+          kEntitlementValidatedAtKey: validated.toIso8601String(),
+        },
+      );
       await container!.read(entitlementNotifierProvider.future);
       expect(container!.read(isProProvider), isTrue);
     });

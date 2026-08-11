@@ -54,7 +54,10 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
           // ── Search field ──
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xs,
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xs,
             ),
             child: TextField(
               controller: _searchCtrl,
@@ -114,8 +117,7 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
                       bottom: AppSpacing.xxl,
                     ),
                     itemCount: filtered.length,
-                    itemBuilder: (_, i) =>
-                        _PrinterTile(printer: filtered[i]),
+                    itemBuilder: (_, i) => _PrinterTile(printer: filtered[i]),
                   ),
                 );
               },
@@ -150,16 +152,12 @@ class _PrinterTile extends ConsumerWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        side: BorderSide(
-          color: color.outlineVariant.withValues(alpha: 0.5),
-        ),
+        side: BorderSide(color: color.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        onTap: () => context.push(
-          '/settings/printers/${printer.id}',
-          extra: printer,
-        ),
+        onTap: () =>
+            context.push('/settings/printers/${printer.id}', extra: printer),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -171,8 +169,7 @@ class _PrinterTile extends ConsumerWidget {
               if (printer.isDefault)
                 const DefaultBadge()
               else
-                Icon(Icons.print,
-                    color: color.onSurfaceVariant, size: 24),
+                Icon(Icons.print, color: color.onSurfaceVariant, size: 24),
               const SizedBox(width: AppSpacing.md),
               // Name + details
               Expanded(
@@ -223,7 +220,10 @@ class _PrinterTile extends ConsumerWidget {
   }
 
   Future<void> _handleAction(
-      BuildContext context, WidgetRef ref, _TileAction a) async {
+    BuildContext context,
+    WidgetRef ref,
+    _TileAction a,
+  ) async {
     final notifier = ref.read(printersNotifierProvider.notifier);
     switch (a) {
       case _TileAction.setDefault:

@@ -114,5 +114,5 @@ class FilamentsNotifier extends AsyncNotifier<List<Filament>> {
 /// Provider del [FilamentsNotifier].
 final filamentsNotifierProvider =
     AsyncNotifierProvider<FilamentsNotifier, List<Filament>>(
-  FilamentsNotifier.new,
-);
+      FilamentsNotifier.new,
+    );

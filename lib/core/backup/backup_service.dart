@@ -18,6 +18,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:share_plus/share_plus.dart';
 
 import '../database/app_database.dart';
@@ -86,21 +87,36 @@ class BackupService {
       appName: kBackupAppName,
       filaments: filaments.map<Map<String, dynamic>>(_rowToMap).toList(),
       printers: printers.map<Map<String, dynamic>>(_rowToMap).toList(),
-      calculations:
-          calculations.map<Map<String, dynamic>>(_rowToMap).toList(),
-      calculationMaterials:
-          materials.map<Map<String, dynamic>>(_rowToMap).toList(),
+      calculations: calculations.map<Map<String, dynamic>>(_rowToMap).toList(),
+      calculationMaterials: materials
+          .map<Map<String, dynamic>>(_rowToMap)
+          .toList(),
       settings: settings.map<Map<String, dynamic>>(_rowToMap).toList(),
     );
   }
 
   /// Convierte una fila de drift a Map.
   ///
-  /// Las clases generadas por drift exponen `toJson()` (NO `toMap()`), que
-  /// serializa DateTime a ISO8601 y usa claves camelCase iguales a los
-  /// nombres de campo Dart — las mismas que esperan los metodos `_insert*`.
+  /// Las clases generadas por drift exponen `toJson()` (NO `toMap()`).
+  /// Normalizamos DateTime porque algunas versiones/serializadores de Drift
+  /// lo producen como milisegundos Unix y el formato público del backup es
+  /// ISO-8601.
   Map<String, dynamic> _rowToMap(Object row) {
-    return (row as dynamic).toJson() as Map<String, dynamic>;
+    final json = Map<String, dynamic>.from(
+      (row as dynamic).toJson() as Map<String, dynamic>,
+    );
+    for (final key in const ['createdAt', 'updatedAt']) {
+      final value = json[key];
+      if (value is num && value.isFinite && value % 1 == 0) {
+        json[key] = DateTime.fromMillisecondsSinceEpoch(
+          value.toInt(),
+          isUtc: true,
+        ).toIso8601String();
+      } else if (value is DateTime) {
+        json[key] = value.toUtc().toIso8601String();
+      }
+    }
+    return json;
   }
 
   // ─────────────────────────────────────────────
@@ -126,18 +142,37 @@ class BackupService {
       // En movil/desktop `bytes` suele ser null y se lee por path.
       final file = result.files.single;
       final bytes = file.bytes;
+
+      // Limite de tamaño ANTES de cargar a memoria (archivos gigantes o
+      // corruptos no deben agotar la RAM del dispositivo).
+      final size = file.size;
+      if (size > kBackupMaxFileBytes) {
+        return 'El archivo de backup supera el tamaño permitido '
+            '(${_formatBytes(kBackupMaxFileBytes)}).';
+      }
+
       final String content;
       if (bytes != null) {
+        if (bytes.lengthInBytes > kBackupMaxFileBytes) {
+          return 'El archivo de backup supera el tamaño permitido.';
+        }
         content = utf8.decode(bytes);
       } else if (file.path != null) {
-        content = await File(file.path!).readAsString();
+        final f = File(file.path!);
+        if (f.lengthSync() > kBackupMaxFileBytes) {
+          return 'El archivo de backup supera el tamaño permitido.';
+        }
+        content = await f.readAsString();
       } else {
         return 'No se pudo leer el archivo seleccionado';
       }
 
       return restoreFromJson(content);
+    } on FormatException {
+      return 'El archivo seleccionado no es un backup valido.';
     } catch (e) {
-      return 'Error al importar: $e';
+      debugPrint('[Backup] import fallo: $e');
+      return 'No se pudo leer el archivo seleccionado.';
     }
   }
 
@@ -145,18 +180,45 @@ class BackupService {
   ///
   /// Retorna null si el usuario cancelo (validacion fallo), o un mensaje
   /// de error. Retorna string vacio si fue exitoso.
+  ///
+  /// **Seguridad**: el restore corre dentro de una transaccion Drift: si
+  /// cualquier insert falla a mitad de camino, TODA la operacion se revierte
+  /// (rollback) y los datos actuales quedan intactos. Nunca queda un estado
+  /// intermedio.
   Future<String?> restoreFromJson(String jsonContent) async {
     try {
-      final parsed = jsonDecode(jsonContent) as Map<String, dynamic>;
-      final backup = BackupData.fromJson(parsed);
+      // Limite de tamaño sobre el contenido ya deserializado.
+      if (jsonContent.length > kBackupMaxFileBytes) {
+        return 'El archivo de backup supera el tamaño permitido '
+            '(${_formatBytes(kBackupMaxFileBytes)}).';
+      }
 
-      // Validar
+      final Object? raw;
+      try {
+        raw = jsonDecode(jsonContent);
+      } on FormatException {
+        return 'El archivo seleccionado no es un backup valido.';
+      }
+      if (raw is! Map<String, dynamic>) {
+        return 'El archivo seleccionado no es un backup valido.';
+      }
+      final backup = BackupData.fromJson(raw);
+
+      // Validar estructura, tipos, duplicados y referencias.
       final error = backup.validate();
       if (error != null) {
         return error;
       }
 
-      // Restaurar en transaccion
+      // Rechazar backups de un schema FUTURO (no sabemos migrar hacia atras).
+      // Backups de schema anterior son aceptables: la app migra hacia adelante.
+      if (backup.schemaVersion > _db.schemaVersion) {
+        return 'Backup de version futura incompatible (schema '
+            '${backup.schemaVersion}; la app soporta hasta '
+            '${_db.schemaVersion}). Actualiza la app e intenta de nuevo.';
+      }
+
+      // Restaurar en transaccion (atomica: fallo parcial => rollback total)
       await _db.transaction(() async {
         await _clearAllData();
         await _insertFilaments(backup.filaments);
@@ -167,11 +229,20 @@ class BackupService {
       });
 
       return ''; // Exito
-    } on FormatException catch (e) {
-      return 'Archivo de backup invalido: $e';
     } catch (e) {
-      return 'Error al restaurar: $e';
+      debugPrint('[Backup] restoreFromJson fallo: $e');
+      return 'No se pudo restaurar el backup. Tus datos actuales no '
+          'fueron modificados.';
     }
+  }
+
+  /// Formatea bytes a una unidad legible (KB/MB).
+  static String _formatBytes(int bytes) {
+    if (bytes >= 1024 * 1024) {
+      final mb = bytes / (1024 * 1024);
+      return '${mb.toStringAsFixed(0)} MB';
+    }
+    return '${(bytes / 1024).toStringAsFixed(0)} KB';
   }
 
   /// Borra toda la data actual (excepto entitlements).
@@ -186,14 +257,15 @@ class BackupService {
   /// Inserta filamentos desde el backup.
   Future<void> _insertFilaments(List<Map<String, dynamic>> rows) async {
     for (final row in rows) {
-      await _db.into(_db.filaments).insert(
+      await _db
+          .into(_db.filaments)
+          .insert(
             FilamentsCompanion(
               id: Value(row['id'] as int),
               name: Value(row['name'] as String),
               brand: Value(row['brand'] as String?),
               pricePerBobbin: Value((row['pricePerBobbin'] as num).toDouble()),
-              gramsPerBobbin: Value(
-                  (row['gramsPerBobbin'] as num).toDouble()),
+              gramsPerBobbin: Value((row['gramsPerBobbin'] as num).toDouble()),
               isDefault: Value(row['isDefault'] as bool),
               createdAt: Value(_parseDateTime(row['createdAt'])),
             ),
@@ -204,7 +276,9 @@ class BackupService {
   /// Inserta impresoras desde el backup.
   Future<void> _insertPrinters(List<Map<String, dynamic>> rows) async {
     for (final row in rows) {
-      await _db.into(_db.printers).insert(
+      await _db
+          .into(_db.printers)
+          .insert(
             PrintersCompanion(
               id: Value(row['id'] as int),
               brand: Value(row['brand'] as String?),
@@ -220,59 +294,82 @@ class BackupService {
   /// Inserta cotizaciones desde el backup.
   Future<void> _insertCalculations(List<Map<String, dynamic>> rows) async {
     for (final row in rows) {
-      await _db.into(_db.calculations).insert(
+      await _db
+          .into(_db.calculations)
+          .insert(
             CalculationsCompanion(
               id: Value(row['id'] as int),
               createdAt: Value(_parseDateTime(row['createdAt'])),
               pieceName: Value(row['pieceName'] as String?),
               clientName: Value(row['clientName'] as String?),
+              notes: Value(row['notes'] as String?),
+              conditions: Value(row['conditions'] as String?),
               printerId: Value(row['printerId'] as int?),
               printerNameSnapshot: Value(row['printerNameSnapshot'] as String?),
               printerWattsSnapshot: Value(
-                  (row['printerWattsSnapshot'] as num).toDouble()),
+                (row['printerWattsSnapshot'] as num).toDouble(),
+              ),
               totalHours: Value((row['totalHours'] as num).toDouble()),
               printMinutes: Value(row['printMinutes'] as int),
               discountPercentage: Value(
-                  (row['discountPercentage'] as num).toDouble()),
+                (row['discountPercentage'] as num).toDouble(),
+              ),
               kwhRateSnapshot: Value(
-                  (row['kwhRateSnapshot'] as num).toDouble()),
+                (row['kwhRateSnapshot'] as num).toDouble(),
+              ),
               profitBaseSnapshot: Value(
-                  (row['profitBaseSnapshot'] as num).toDouble()),
+                (row['profitBaseSnapshot'] as num).toDouble(),
+              ),
               isSold: Value(row['isSold'] as bool),
+              isTemplate: Value(row['isTemplate'] == 1),
               materialCostSnapshot: Value(
-                  (row['materialCostSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['materialCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               electricCostSnapshot: Value(
-                  (row['electricCostSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['electricCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               laborCostSnapshot: Value(
-                  (row['laborCostSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['laborCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               postProcessCostSnapshot: Value(
-                  (row['postProcessCostSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['postProcessCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               baseCostSnapshot: Value(
-                  (row['baseCostSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['baseCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               failureCostSnapshot: Value(
-                  (row['failureCostSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['failureCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               markupCostSnapshot: Value(
-                  (row['markupCostSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['markupCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               profitAmountSnapshot: Value(
-                  (row['profitAmountSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['profitAmountSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               minimumChargeAppliedSnapshot: Value(
-                  (row['minimumChargeAppliedSnapshot'] as num?)?.toDouble() ??
-                      0),
+                (row['minimumChargeAppliedSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               effectiveTotalSnapshot: Value(
-                  (row['effectiveTotalSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['effectiveTotalSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               totalPriceSnapshot: Value(
-                  (row['totalPriceSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['totalPriceSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               laborRateSnapshot: Value(
-                  (row['laborRateSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['laborRateSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               postProcessRateSnapshot: Value(
-                  (row['postProcessRateSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['postProcessRateSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               failureRateSnapshot: Value(
-                  (row['failureRateSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['failureRateSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               minimumChargeSnapshot: Value(
-                  (row['minimumChargeSnapshot'] as num?)?.toDouble() ?? 0),
+                (row['minimumChargeSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
               markupOnMaterialsSnapshot: Value(
-                  (row['markupOnMaterialsSnapshot'] as num?)?.toDouble() ??
-                      0),
+                (row['markupOnMaterialsSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
             ),
           );
     }
@@ -280,9 +377,12 @@ class BackupService {
 
   /// Inserta materiales de cotizaciones desde el backup.
   Future<void> _insertCalculationMaterials(
-      List<Map<String, dynamic>> rows) async {
+    List<Map<String, dynamic>> rows,
+  ) async {
     for (final row in rows) {
-      await _db.into(_db.calculationMaterials).insert(
+      await _db
+          .into(_db.calculationMaterials)
+          .insert(
             CalculationMaterialsCompanion(
               id: Value(row['id'] as int),
               calculationId: Value(row['calculationId'] as int),
@@ -290,9 +390,11 @@ class BackupService {
               label: Value(row['label'] as String),
               weightGrams: Value((row['weightGrams'] as num).toDouble()),
               pricePerBobbinSnapshot: Value(
-                  (row['pricePerBobbinSnapshot'] as num).toDouble()),
+                (row['pricePerBobbinSnapshot'] as num).toDouble(),
+              ),
               gramsPerBobbinSnapshot: Value(
-                  (row['gramsPerBobbinSnapshot'] as num).toDouble()),
+                (row['gramsPerBobbinSnapshot'] as num).toDouble(),
+              ),
             ),
           );
     }
@@ -301,7 +403,9 @@ class BackupService {
   /// Inserta settings desde el backup.
   Future<void> _insertSettings(List<Map<String, dynamic>> rows) async {
     for (final row in rows) {
-      await _db.into(_db.settingsTable).insert(
+      await _db
+          .into(_db.settingsTable)
+          .insert(
             SettingsTableCompanion(
               key: Value(row['key'] as String),
               value: Value(row['value'] as String),
@@ -311,17 +415,15 @@ class BackupService {
     }
   }
 
-  /// Parsea un string DateTime o retorna la fecha actual como fallback.
+  /// Parsea ISO-8601 o milisegundos Unix de backups antiguos.
   DateTime _parseDateTime(dynamic value) {
-    if (value == null) return DateTime.now().toUtc();
     if (value is DateTime) return value.toUtc();
     if (value is String) {
-      try {
-        return DateTime.parse(value).toUtc();
-      } catch (_) {
-        return DateTime.now().toUtc();
-      }
+      return DateTime.parse(value).toUtc();
     }
-    return DateTime.now().toUtc();
+    if (value is num && value.isFinite && value % 1 == 0) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt(), isUtc: true);
+    }
+    throw const FormatException('Fecha de backup invalida');
   }
 }

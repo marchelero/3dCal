@@ -50,8 +50,9 @@ String formatBobNumber(Decimal amount) {
 ///   200.0  -> "200%"
 ///   12.5   -> "12,5%"
 String formatPercentage(Decimal value) {
-  final formatted =
-      NumberFormat.decimalPattern('es_BO').format(value.toDouble());
+  final formatted = NumberFormat.decimalPattern(
+    'es_BO',
+  ).format(value.toDouble());
   return '$formatted%';
 }
 

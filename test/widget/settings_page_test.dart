@@ -24,10 +24,12 @@ Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
   addTearDown(() async {
     container.dispose();
     await db.close();
@@ -49,11 +51,13 @@ Future<ProviderContainer> _pumpPageFree(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    isProProvider.overrideWith((ref) => false),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      isProProvider.overrideWith((ref) => false),
+    ],
+  );
   addTearDown(() async {
     container.dispose();
     await db.close();
@@ -71,32 +75,29 @@ Future<ProviderContainer> _pumpPageFree(WidgetTester tester) async {
 /// Helper: monta [SettingsPage] en estado Free CON GoRouter (incluye
 /// `/paywall` stub). Para tests que ejercitan la accion "Go Pro" del
 /// SnackBar y verifican la navegacion.
-Future<({ProviderContainer container, GoRouter router})> _pumpPageFreeWithRouter(
-  WidgetTester tester,
-) async {
+Future<({ProviderContainer container, GoRouter router})>
+_pumpPageFreeWithRouter(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final router = GoRouter(
     initialLocation: '/settings',
     routes: [
-      GoRoute(
-        path: '/settings',
-        builder: (_, _) => const SettingsPage(),
-      ),
+      GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
       GoRoute(
         path: '/paywall',
-        builder: (_, _) => const Scaffold(
-          body: Center(child: Text('PAYWALL_STUB_T12')),
-        ),
+        builder: (_, _) =>
+            const Scaffold(body: Center(child: Text('PAYWALL_STUB_T12'))),
       ),
     ],
   );
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    isProProvider.overrideWith((ref) => false),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      isProProvider.overrideWith((ref) => false),
+    ],
+  );
   addTearDown(() async {
     router.dispose();
     container.dispose();
@@ -118,11 +119,13 @@ Future<ProviderContainer> _pumpPagePro(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    isProProvider.overrideWith((ref) => true),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      isProProvider.overrideWith((ref) => true),
+    ],
+  );
   addTearDown(() async {
     container.dispose();
     await db.close();
@@ -147,82 +150,91 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await _pumpPage(tester);
-      expect(find.text('3dCalc'), findsWidgets); // header + company name field default
-      expect(find.text('PARÁMETROS GLOBALES'), findsOneWidget); // _SettingsSection usa toUpperCase
-      expect(find.text('EMPRESA'), findsOneWidget); // _SettingsSection usa toUpperCase
+      expect(
+        find.text('3dCalc'),
+        findsWidgets,
+      ); // header + company name field default
+      expect(
+        find.text('PARÁMETROS GLOBALES'),
+        findsOneWidget,
+      ); // _SettingsSection usa toUpperCase
+      expect(
+        find.text('EMPRESA'),
+        findsOneWidget,
+      ); // _SettingsSection usa toUpperCase
       expect(find.text('Nombre de la empresa'), findsOneWidget);
       expect(find.text('Filamentos'), findsOneWidget);
       expect(find.text('Impresoras'), findsOneWidget);
-      expect(find.textContaining('Privacidad:'), findsAtLeast(1));
+      expect(find.textContaining('Privacidad'), findsAtLeast(1));
     });
 
-    testWidgets(
-      'auto-save on blur: editar profit base persiste el cambio',
-      (tester) async {
-        final container = await _pumpPage(tester);
+    testWidgets('auto-save on blur: editar profit base persiste el cambio', (
+      tester,
+    ) async {
+      final container = await _pumpPage(tester);
 
-        // _AutoSaveField usa NumericInputField -> TextField (no TextFormField
-        // porque validator=null). El valor inicial 200 sale de settings.profitBase.
-        final profitField = find.widgetWithText(TextField, '200');
-        await tester.enterText(profitField, '350');
-        await tester.pumpAndSettle();
-        // Blur para disparar el listener.
-        tester.binding.focusManager.primaryFocus?.unfocus();
-        await tester.pumpAndSettle();
+      // _AutoSaveField usa NumericInputField -> TextField (no TextFormField
+      // porque validator=null). El valor inicial 200 sale de settings.profitBase.
+      final profitField = find.widgetWithText(TextField, '200');
+      await tester.enterText(profitField, '350');
+      await tester.pumpAndSettle();
+      // Blur para disparar el listener.
+      tester.binding.focusManager.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
 
-        final notifier = container.read(settingsNotifierProvider);
-        expect(notifier.value!.profitBase.toString(), '350');
-      },
-    );
+      final notifier = container.read(settingsNotifierProvider);
+      expect(notifier.value!.profitBase.toString(), '350');
+    });
 
-    testWidgets(
-      'tap en "Filamentos" navega a /settings/filaments (AC-9.1)',
-      (tester) async {
-        // Viewport alto para que el ListTile de "Filamentos" (que vive
-        // en la seccion Catalogos, en el medio de la page) no quede
-        // fuera de pantalla. Default 800x600 no alcanza.
-        tester.view.physicalSize = const Size(800, 1600);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+    testWidgets('tap en "Filamentos" navega a /settings/filaments (AC-9.1)', (
+      tester,
+    ) async {
+      // Viewport alto para que el ListTile de "Filamentos" (que vive
+      // en la seccion Catalogos, en el medio de la page) no quede
+      // fuera de pantalla. Default 800x600 no alcanza.
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-        SharedPreferences.setMockInitialValues({});
-        final prefs = await SharedPreferences.getInstance();
-        final db = AppDatabase.forTesting(NativeDatabase.memory());
-        final container = ProviderContainer(overrides: [
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final container = ProviderContainer(
+        overrides: [
           appDatabaseProvider.overrideWithValue(db),
           sharedPreferencesProvider.overrideWithValue(prefs),
-        ]);
-        addTearDown(() async {
-          container.dispose();
-          await db.close();
-        });
+        ],
+      );
+      addTearDown(() async {
+        container.dispose();
+        await db.close();
+      });
 
-        // Mini app con GoRouter porque SettingsPage usa context.push.
-        final router = GoRouter(
-          initialLocation: '/settings',
-          routes: [
-            GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
-            GoRoute(
-              path: '/settings/filaments',
-              builder: (_, _) => const FilamentsPage(),
-            ),
-          ],
-        );
-        addTearDown(router.dispose);
-
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp.router(routerConfig: router),
+      // Mini app con GoRouter porque SettingsPage usa context.push.
+      final router = GoRouter(
+        initialLocation: '/settings',
+        routes: [
+          GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+          GoRoute(
+            path: '/settings/filaments',
+            builder: (_, _) => const FilamentsPage(),
           ),
-        );
-        await tester.pumpAndSettle();
+        ],
+      );
+      addTearDown(router.dispose);
 
-        await tester.tap(find.widgetWithText(ListTile, 'Filamentos'));
-        await tester.pumpAndSettle();
-        expect(find.byType(FilamentsPage), findsOneWidget);
-      },
-    );
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ListTile, 'Filamentos'));
+      await tester.pumpAndSettle();
+      expect(find.byType(FilamentsPage), findsOneWidget);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────
@@ -271,8 +283,11 @@ void main() {
         expect(nameField, findsOneWidget);
 
         final textField = tester.widget<TextField>(nameField);
-        expect(textField.readOnly, isTrue,
-            reason: 'Free: companyName TextField debe ser readOnly.');
+        expect(
+          textField.readOnly,
+          isTrue,
+          reason: 'Free: companyName TextField debe ser readOnly.',
+        );
       },
     );
 
@@ -295,36 +310,44 @@ void main() {
           findsOneWidget,
           reason: 'Free: tap companyName debe disparar SnackBar del gate.',
         );
-        expect(find.text(EsBO.settingsBrandingLockedBody), findsOneWidget,
-            reason: 'Body del SnackBar debe ser settingsBrandingLockedBody.');
-        expect(find.text(EsBO.settingsGoProAction), findsOneWidget,
-            reason: 'Action del SnackBar debe ser settingsGoProAction.');
+        expect(
+          find.text(EsBO.settingsBrandingLockedBody),
+          findsOneWidget,
+          reason: 'Body del SnackBar debe ser settingsBrandingLockedBody.',
+        );
+        expect(
+          find.text(EsBO.settingsGoProAction),
+          findsOneWidget,
+          reason: 'Action del SnackBar debe ser settingsGoProAction.',
+        );
       },
     );
 
-    testWidgets(
-      'tap en accion "Go Pro" del SnackBar navega a /paywall',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 1600);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+    testWidgets('tap en accion "Go Pro" del SnackBar navega a /paywall', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-        await _pumpPageFreeWithRouter(tester);
+      await _pumpPageFreeWithRouter(tester);
 
-        await tester.tap(find.widgetWithText(TextField, '3dCalc'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.widgetWithText(TextField, '3dCalc'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        final goPro = find.text(EsBO.settingsGoProAction);
-        expect(goPro, findsOneWidget);
-        await tester.tap(goPro);
-        await tester.pumpAndSettle();
+      final goPro = find.text(EsBO.settingsGoProAction);
+      expect(goPro, findsOneWidget);
+      await tester.tap(goPro);
+      await tester.pumpAndSettle();
 
-        // El stub del paywall debe estar visible.
-        expect(find.text('PAYWALL_STUB_T12'), findsOneWidget,
-            reason: 'Action "Go Pro" debe navegar a /paywall.');
-      },
-    );
+      // El stub del paywall debe estar visible.
+      expect(
+        find.text('PAYWALL_STUB_T12'),
+        findsOneWidget,
+        reason: 'Action "Go Pro" debe navegar a /paywall.',
+      );
+    });
 
     testWidgets(
       'muestra badge "Pro" en la seccion Empresa cuando isPro=false',
@@ -337,31 +360,36 @@ void main() {
 
         // El badge "PRO" debe estar visible (en o cerca de la seccion
         // Empresa). Buscamos por el texto.
-        expect(find.text(EsBO.proBadgeLabel), findsAtLeast(1),
-            reason: 'Free: debe mostrarse el badge "PRO" en la UI.');
+        expect(
+          find.text(EsBO.proBadgeLabel),
+          findsAtLeast(1),
+          reason: 'Free: debe mostrarse el badge "PRO" en la UI.',
+        );
       },
     );
 
-    testWidgets(
-      'tap en "Seleccionar imagen" muestra SnackBar del gate',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 1600);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+    testWidgets('tap en "Seleccionar imagen" muestra SnackBar del gate', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-        await _pumpPageFree(tester);
+      await _pumpPageFree(tester);
 
-        // El boton de pick logo tiene el label "Seleccionar imagen".
-        await tester.tap(find.text(EsBO.settingsCompanyLogoPick));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      // El boton de pick logo tiene el label "Seleccionar imagen".
+      await tester.tap(find.text(EsBO.settingsCompanyLogoPick));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        expect(find.byType(SnackBar), findsOneWidget,
-            reason: 'Free: tap en pick logo debe disparar SnackBar del gate.');
-        expect(find.text(EsBO.settingsBrandingLockedBody), findsOneWidget);
-        expect(find.text(EsBO.settingsGoProAction), findsOneWidget);
-      },
-    );
+      expect(
+        find.byType(SnackBar),
+        findsOneWidget,
+        reason: 'Free: tap en pick logo debe disparar SnackBar del gate.',
+      );
+      expect(find.text(EsBO.settingsBrandingLockedBody), findsOneWidget);
+      expect(find.text(EsBO.settingsGoProAction), findsOneWidget);
+    });
   });
 
   group('T12 — Branding gate en Pro', () {
@@ -378,8 +406,11 @@ void main() {
         expect(nameField, findsOneWidget);
 
         final textField = tester.widget<TextField>(nameField);
-        expect(textField.readOnly, isFalse,
-            reason: 'Pro: companyName TextField debe ser editable.');
+        expect(
+          textField.readOnly,
+          isFalse,
+          reason: 'Pro: companyName TextField debe ser editable.',
+        );
 
         // El usuario puede escribir un nuevo nombre y persistirlo via
         // onTapOutside. Para dispararlo en test, hacemos tap fuera del
@@ -390,8 +421,11 @@ void main() {
         await tester.pumpAndSettle();
 
         final notifier = container.read(settingsNotifierProvider);
-        expect(notifier.value!.companyName, 'Acme 3D Studio',
-            reason: 'Pro: companyName nuevo debe persistir.');
+        expect(
+          notifier.value!.companyName,
+          'Acme 3D Studio',
+          reason: 'Pro: companyName nuevo debe persistir.',
+        );
       },
     );
 
@@ -409,10 +443,16 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Pro: NO debe aparecer el SnackBar del gate.
-        expect(find.text(EsBO.settingsBrandingLockedBody), findsNothing,
-            reason: 'Pro: gate del companyName NO debe dispararse.');
-        expect(find.text(EsBO.settingsGoProAction), findsNothing,
-            reason: 'Pro: no debe ofrecer "Go Pro" en companyName.');
+        expect(
+          find.text(EsBO.settingsBrandingLockedBody),
+          findsNothing,
+          reason: 'Pro: gate del companyName NO debe dispararse.',
+        );
+        expect(
+          find.text(EsBO.settingsGoProAction),
+          findsNothing,
+          reason: 'Pro: no debe ofrecer "Go Pro" en companyName.',
+        );
       },
     );
 
@@ -437,8 +477,11 @@ void main() {
           // Ignoramos MissingPluginException del image_picker channel.
         }
 
-        expect(find.text(EsBO.settingsBrandingLockedBody), findsNothing,
-            reason: 'Pro: gate del logo NO debe dispararse.');
+        expect(
+          find.text(EsBO.settingsBrandingLockedBody),
+          findsNothing,
+          reason: 'Pro: gate del logo NO debe dispararse.',
+        );
         expect(find.text(EsBO.settingsGoProAction), findsNothing);
       },
     );
@@ -465,12 +508,14 @@ void main() {
       addTearDown(() async {
         await db.close();
       });
-      final container = ProviderContainer(overrides: [
-        appDatabaseProvider.overrideWithValue(db),
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        entitlementRepositoryProvider.overrideWithValue(repo),
-        paymentServiceProvider.overrideWithValue(payment),
-      ]);
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(payment),
+        ],
+      );
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -506,12 +551,65 @@ void main() {
 
         await pumpForRestore(tester);
 
-        await tester.tap(find.byType(FilledButton));
+        // El boton de exportar backup tambien es FilledButton; apuntar
+        // especificamente al boton "Restaurar compras". Ademas esta al
+        // final de la pagina: scrollear hasta que sea visible.
+        final restoreButton = find.widgetWithText(
+          FilledButton,
+          EsBO.settingsRestorePurchases,
+        );
+        await tester.ensureVisible(restoreButton);
+        await tester.pumpAndSettle();
+        await tester.tap(restoreButton);
         await tester.pumpAndSettle();
 
-        expect(payment.restoreCalls, 1,
-            reason:
-                'Tap en boton Restaurar debe llamar PaymentService.restore().');
+        expect(
+          payment.restoreCalls,
+          1,
+          reason:
+              'Tap en boton Restaurar debe llamar PaymentService.restore().',
+        );
+      },
+    );
+
+    testWidgets(
+      'backup: free → tap Exportar muestra gate Pro sin exportar',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        await _pumpPageFreeWithRouter(tester);
+
+        final exportButton = find.widgetWithText(
+          FilledButton,
+          EsBO.settingsBackupExport,
+        );
+        await tester.ensureVisible(exportButton);
+        await tester.pumpAndSettle();
+        await tester.tap(exportButton);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+
+        expect(
+          find.text(EsBO.settingsBackupLockedBody),
+          findsOneWidget,
+          reason: 'Free: tap Exportar debe disparar SnackBar del gate Pro.',
+        );
+        expect(
+          find.text(EsBO.settingsGoProAction),
+          findsOneWidget,
+          reason: 'El snackbar debe ofrecer ir a Pro.',
+        );
+
+        // La accion "Go Pro" navega al paywall.
+        await tester.tap(find.text(EsBO.settingsGoProAction));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('PAYWALL_STUB_T12'),
+          findsOneWidget,
+          reason: 'Action "Go Pro" del gate backup debe ir a /paywall.',
+        );
       },
     );
   });

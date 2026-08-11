@@ -42,8 +42,8 @@ final paymentServiceProvider = Provider<PaymentService>((ref) {
 /// de los consumers deberian usar [isProProvider] en su lugar.
 final entitlementNotifierProvider =
     AsyncNotifierProvider<EntitlementNotifier, EntitlementState>(
-  EntitlementNotifier.new,
-);
+      EntitlementNotifier.new,
+    );
 
 /// Provider derived: `true` si el user es Pro.
 ///

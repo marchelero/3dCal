@@ -69,7 +69,11 @@ class RevenueCatPaymentService implements PaymentService {
       // No dejamos que un fallo de init rompa el boot. La app arranca
       // como free (gates cerrados, pero funcional). El user vera el
       // paywall con un error si intenta comprar.
-      debugPrint('[RevenueCat] configure fallo: $e\n$st');
+      if (kDebugMode) {
+        debugPrint('[RevenueCat] configure fallo: $e\n$st');
+      } else {
+        debugPrint('[RevenueCat] configure fallo: ${e.runtimeType}');
+      }
       _configured = true;
     }
   }
@@ -84,10 +88,9 @@ class RevenueCatPaymentService implements PaymentService {
       // 1. Lookup del product en el store. Si no existe (item no
       // activado en Play Console, o package name mismatch), retorna
       // lista vacia → error explicito.
-      final products = await Purchases.getProducts(
-        [productId],
-        productCategory: ProductCategory.nonSubscription,
-      );
+      final products = await Purchases.getProducts([
+        productId,
+      ], productCategory: ProductCategory.nonSubscription);
       if (products.isEmpty) {
         return const PaymentError('Product not found');
       }
@@ -110,7 +113,8 @@ class RevenueCatPaymentService implements PaymentService {
       // 4. parsedAt: el originalPurchaseDate del entitlement es ISO 8601
       // string. Fallback a `now()` si el campo esta vacio (no deberia,
       // pero defensivo).
-      final purchasedAt = DateTime.tryParse(proEntitlement.originalPurchaseDate) ??
+      final purchasedAt =
+          DateTime.tryParse(proEntitlement.originalPurchaseDate) ??
           DateTime.now().toUtc();
 
       return PaymentSuccess(
@@ -125,14 +129,16 @@ class RevenueCatPaymentService implements PaymentService {
         PurchasesErrorCode.productNotAvailableForPurchaseError =>
           const PaymentError('Product not available'),
         PurchasesErrorCode.networkError => const PaymentError('Network error'),
-        PurchasesErrorCode.purchaseNotAllowedError =>
-          const PaymentError('Purchase not allowed'),
-        PurchasesErrorCode.productAlreadyPurchasedError =>
-          const PaymentError('Product already owned (use Restore)'),
+        PurchasesErrorCode.purchaseNotAllowedError => const PaymentError(
+          'Purchase not allowed',
+        ),
+        PurchasesErrorCode.productAlreadyPurchasedError => const PaymentError(
+          'Product already owned (use Restore)',
+        ),
         _ => PaymentError('Purchase failed: ${e.message ?? e.code}'),
       };
     } catch (e) {
-      return PaymentError('Unexpected error: $e');
+      return PaymentError('Unexpected error: ${e.runtimeType}');
     }
   }
 
@@ -152,7 +158,7 @@ class RevenueCatPaymentService implements PaymentService {
 
       final purchasedAt =
           DateTime.tryParse(proEntitlement.originalPurchaseDate) ??
-              DateTime.now().toUtc();
+          DateTime.now().toUtc();
       return RestoreActive(
         productId: proEntitlement.productIdentifier,
         purchasedAt: purchasedAt,
@@ -161,7 +167,7 @@ class RevenueCatPaymentService implements PaymentService {
     } on PlatformException catch (e) {
       return RestoreError('Restore failed: ${e.message ?? e.code}');
     } catch (e) {
-      return RestoreError('Unexpected error: $e');
+      return RestoreError('Unexpected error: ${e.runtimeType}');
     }
   }
 

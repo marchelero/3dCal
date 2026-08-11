@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -81,6 +81,19 @@ class AppDatabase extends _$AppDatabase {
         // Una sola fila activa a la vez (enforcement en
         // EntitlementRepository, no DB constraint).
         await m.createTable(entitlements);
+      }
+      if (from <= 5) {
+        // v5→v6: notas y condiciones comerciales por cotizacion (se
+        // imprimen en el PDF). Columnas opcionales: registros viejos
+        // quedan null.
+        await m.addColumn(calculations, calculations.notes);
+        await m.addColumn(calculations, calculations.conditions);
+      }
+      if (from <= 6) {
+        // v6→v7: plantillas de trabajo. Reusa la misma tabla
+        // calculations con flag isTemplate (excluida de historial/
+        // dashboard/cap). Registros viejos quedan isTemplate=false.
+        await m.addColumn(calculations, calculations.isTemplate);
       }
     },
   );

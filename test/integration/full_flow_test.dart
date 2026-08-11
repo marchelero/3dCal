@@ -33,9 +33,7 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    SharedPreferences.setMockInitialValues({
-      'onboarding_done': true,
-    });
+    SharedPreferences.setMockInitialValues({'onboarding_done': true});
     prefs = await SharedPreferences.getInstance();
     // Reset GoRouter state (es global, persiste entre tests en el mismo file).
     appRouter.go('/');
@@ -96,9 +94,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CalculatorPage), findsOneWidget);
-    expect(
-        find.widgetWithText(NumericInputField, 'Peso'),
-        findsOneWidget);
+    expect(find.widgetWithText(NumericInputField, 'Peso'), findsOneWidget);
     expect(find.widgetWithText(NumericInputField, 'Horas'), findsOneWidget);
   });
 

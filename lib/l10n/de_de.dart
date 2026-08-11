@@ -182,6 +182,22 @@ class DeImpl implements AppStrings {
   String get settingsBackupImportCancel => 'Abbrechen';
 
   @override
+  String get settingsBackupImportSizeError =>
+      'Die Sicherungsdatei überschreitet die maximal zulässige Größe.';
+
+  @override
+  String get settingsBackupImportInvalidFile =>
+      'Die ausgewählte Datei ist kein gültiges Backup.';
+
+  @override
+  String get settingsBackupImportFutureVersion =>
+      'Dieses Backup wurde mit einer zukünftigen Version der App erstellt. '
+      'Aktualisiere 3dCalc und versuche es erneut.';
+
+  @override
+  String get settingsBackupLockedBody => 'Backups sind eine Pro-Funktion.';
+
+  @override
   String get dashboardTitle => 'Übersicht';
   @override
   String get dashboardErrorLoad => 'Fehler beim Laden der Übersicht';
@@ -361,6 +377,70 @@ class DeImpl implements AppStrings {
   String get calcFieldWasteHelper => '% Aufschlag für Verschnitt';
 
   @override
+  String get costHelpTitle => 'So kalibrieren Sie Ihre Kosten';
+
+  @override
+  String get costHelpEnergyTitle => 'Energiekosten';
+
+  @override
+  String get costHelpEnergyBody =>
+      'Energie beim Drucken: Druckstunden × Leistung (kW) × Tarif (\$/kWh). '
+      'Z. B.: 6 h × 0,15 kW × 1,2 \$/kWh ≈ 1,08 \$. Nur wenn der Drucker eine '
+      'Wattzahl hat.';
+
+  @override
+  String get costHelpLaborTitle => 'Arbeitszeit';
+
+  @override
+  String get costHelpLaborBody =>
+      'Ihre Zeit: Arbeitsstunden × Stundensatz (\$/h). Inklusive '
+      'Vorbereitung, Überwachung und Endbearbeitung.';
+
+  @override
+  String get costHelpPostTitle => 'Nachbearbeitung';
+
+  @override
+  String get costHelpPostBody =>
+      'Zusätzlicher Prozentsatz auf Materialkosten für Schleifen, Lackieren, '
+      'Kleben oder andere Oberflächen.';
+
+  @override
+  String get costHelpFailureTitle => 'Fehlerquote';
+
+  @override
+  String get costHelpFailureBody =>
+      'Prozentsatz der Basiskosten für fehlgeschlagene Teile. Wenn 1 von 10 '
+      'Teilen fehlschlägt, werden diese 10 % auf die 9 verkauften verteilt.';
+
+  @override
+  String get costHelpWasteTitle => 'Verschnitt & Verschleiß';
+
+  @override
+  String get costHelpWasteBody =>
+      'Zusätzlicher Prozentsatz auf Materialien: Stützen, Düsenreinigung, '
+      'Testfilament und Abnutzung des Druckers.';
+
+  @override
+  String get costHelpMinimumChargeTitle => 'Mindestbetrag';
+
+  @override
+  String get costHelpMinimumChargeBody =>
+      'Preisuntergrenze. Liegt der berechnete Gesamtbetrag darunter, wird '
+      'dieser Mindestbetrag berechnet. Ideal für kleine Teile, die trotzdem '
+      'Vorbereitung brauchen.';
+
+  @override
+  String get costHelpMarginTitle => 'Gewinn (Marge)';
+
+  @override
+  String get costHelpMarginBody =>
+      'Prozentsatz, der zum Gesamtkostenpreis für Ihren Gewinn addiert wird: '
+      'Gesamt × (1 + Marge/100). Einstellbar unter Globale Parameter.';
+
+  @override
+  String get calcCloseAction => 'Schließen und zum Menü zurückkehren';
+
+  @override
   String get calcModeExpress => 'Express';
   @override
   String get calcModeAdvanced => 'Erweitert';
@@ -374,6 +454,37 @@ class DeImpl implements AppStrings {
   String get calcDialogClient => 'Kunde';
   @override
   String get calcDialogClientHelper => 'Optional';
+  @override
+  String get calcDialogRecentClients => 'Letzte Kunden';
+  @override
+  String get calcDialogNotes => 'Notizen (optional)';
+  @override
+  String get calcDialogNotesHelper => 'Details, Fristen, Lieferung\u2026';
+  @override
+  String get calcDialogConditions => 'Gesch\u00e4ftsbedingungen (optional)';
+  @override
+  String get calcDialogConditionsHelper =>
+      'G\u00fcltigkeit, Zahlung, Garantie\u2026';
+
+  @override
+  String get calcTemplatesTitle => 'Vorlagen';
+  @override
+  String get calcTemplateSaveAsAction => 'Als Vorlage speichern';
+  @override
+  String get calcTemplateSaveSuccess => 'Vorlage gespeichert';
+  @override
+  String get calcTemplateSaveError => 'Vorlage konnte nicht gespeichert werden';
+  @override
+  String get calcTemplateApplySuccess => 'Vorlage auf das Formular angewendet';
+  @override
+  String get calcTemplateApplyError => 'Vorlage konnte nicht geladen werden';
+  @override
+  String get calcTemplateEmpty =>
+      'Noch keine Vorlagen.\nSpeichere einen h\u00e4ufigen Auftrag als Vorlage, um ihn wiederzuverwenden.';
+  @override
+  String get calcTemplateUntitled => 'Ohne Namen';
+  @override
+  String get calcTemplateDeleteError => 'Vorlage konnte nicht gel\u00f6scht werden';
 
   @override
   String get calcEmptyHintPrefix => 'Geben Sie';
@@ -528,6 +639,15 @@ class DeImpl implements AppStrings {
   String get calcDetailMarkPending => 'Als offen markieren';
 
   @override
+  String get calcDuplicateAction => 'Duplizieren';
+  @override
+  String get calcDuplicateSuffix => ' (Kopie)';
+  @override
+  String get calcDuplicateSuccess => 'Angebot dupliziert';
+  @override
+  String get calcDuplicateError => 'Angebot konnte nicht dupliziert werden';
+
+  @override
   String get historyTitle => 'Angebote';
   @override
   String get historyErrorLoad => 'Fehler beim Laden der Angebote';
@@ -577,6 +697,10 @@ class DeImpl implements AppStrings {
   String get onboardingSkip => 'Überspringen';
   @override
   String get onboardingStart => 'Loslegen';
+  @override
+  String get onboardingStartQuote => 'Mein erstes Angebot erstellen';
+  @override
+  String get onboardingGoHome => 'Zum Menü';
   @override
   String get configTitle => 'Ersteinrichtung';
   @override
@@ -823,6 +947,8 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   @override
   String calcSavedWithId(int id) => 'Angebot Nr. $id gespeichert.';
   @override
+  String get calcSavedViewAction => 'Ansehen';
+  @override
   String get calcAddMaterial => 'Material hinzufügen';
   @override
   String get calcPrinterPrefix => 'Drucker: ';
@@ -857,6 +983,16 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   String get pdfShareSubject => '3dCalc-Angebot';
   @override
   String get pdfDatePrefix => 'Datum: ';
+  @override
+  String get pdfQuoteNumber => 'Nr. ';
+  @override
+  String get pdfValidUntilPrefix => 'G\u00fcltig bis: ';
+  @override
+  String get pdfClientPrefix => 'Kunde: ';
+  @override
+  String get pdfNotesTitle => 'Notizen';
+  @override
+  String get pdfConditionsTitle => 'Bedingungen';
   @override
   String get pdfMaterialCosts => 'Materialkosten';
   @override

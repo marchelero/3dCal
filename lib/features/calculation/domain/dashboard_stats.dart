@@ -43,8 +43,9 @@ class DashboardStats {
 
 /// Provider derivado: queries agregadas + monthly + top materials.
 /// Se re-corre cuando [calculationsNotifierProvider] emite nuevo state.
-final dashboardStatsProvider =
-    FutureProvider.autoDispose<DashboardStats>((ref) async {
+final dashboardStatsProvider = FutureProvider.autoDispose<DashboardStats>((
+  ref,
+) async {
   ref.watch(calculationsNotifierProvider);
   final repo = ref.watch(calculationRepositoryProvider);
   return DashboardStats(

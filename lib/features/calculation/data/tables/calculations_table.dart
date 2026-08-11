@@ -23,6 +23,14 @@ class Calculations extends Table {
   /// Nombre del cliente. Nullable.
   TextColumn get clientName => text().nullable()();
 
+  /// Notas de la cotizacion (ej: condiciones de entrega, especificaciones
+  /// de la pieza). Opcional. Se imprimen en el PDF.
+  TextColumn get notes => text().nullable()();
+
+  /// Condiciones comerciales (ej: validez de la oferta, forma de pago,
+  /// garantia). Opcional. Se imprimen en el PDF.
+  TextColumn get conditions => text().nullable()();
+
   /// Soft FK a `printers.id`. Nullable si no habia impresora.
   IntColumn get printerId => integer().nullable()();
 
@@ -30,7 +38,8 @@ class Calculations extends Table {
   TextColumn get printerNameSnapshot => text().nullable()();
 
   /// Snapshot de watts de la impresora al guardar.
-  RealColumn get printerWattsSnapshot => real().withDefault(const Constant(0))();
+  RealColumn get printerWattsSnapshot =>
+      real().withDefault(const Constant(0))();
 
   /// Tiempo total en horas (decimal, ej: 1.55 = 1h 33min).
   RealColumn get totalHours => real()();
@@ -57,6 +66,13 @@ class Calculations extends Table {
 
   /// Marca como vendida (alimenta dashboard).
   BoolColumn get isSold => boolean().withDefault(const Constant(false))();
+
+  /// Marca como plantilla de trabajo frecuente.
+  ///
+  /// Las plantillas reutilizan la misma fila y snapshots que una cotizacion,
+  /// pero se excluyen del historial, del dashboard y del cap free (T15):
+  /// son configuraciones guardadas para re-aplicarse ("Cargar plantilla").
+  BoolColumn get isTemplate => boolean().withDefault(const Constant(false))();
 
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   RealColumn get materialCostSnapshot => real()();

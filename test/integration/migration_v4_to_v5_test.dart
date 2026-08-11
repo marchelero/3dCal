@@ -214,33 +214,63 @@ void main() {
       addTearDown(() async => db.close());
     });
 
-    test('onUpgrade(4, 5) crea tabla entitlements y bumpea user_version a 5',
-        () async {
-      // Forzar la apertura lazy de Drift ejecutando una query.
-      final tables = await db.customSelect(
-        'SELECT name FROM sqlite_master '
-        "WHERE type='table' AND name='entitlements'",
-      ).get();
-      expect(tables, hasLength(1),
-          reason: 'onUpgrade(4, 5) debe haber creado la tabla entitlements. '
+    test(
+      'onUpgrade(4, 7) crea tabla entitlements y bumpea user_version a 7',
+      () async {
+        // Forzar la apertura lazy de Drift ejecutando una query.
+        final tables = await db
+            .customSelect(
+              'SELECT name FROM sqlite_master '
+              "WHERE type='table' AND name='entitlements'",
+            )
+            .get();
+        expect(
+          tables,
+          hasLength(1),
+          reason:
+              'onUpgrade(4, 5) debe haber creado la tabla entitlements. '
               'Si fallo, verificar app_database.dart onUpgrade '
-              '`if (from <= 4)`.'
-      );
+              '`if (from <= 4)`.',
+        );
 
-      // user_version debe ser 5 post-migration.
-      final versionRows = await db.customSelect('PRAGMA user_version').get();
-      expect(versionRows.first.read<int>('user_version'), 5,
-          reason: 'AppDatabase debe setear user_version=schemaVersion tras '
-              'onUpgrade exitoso.');
+        // user_version debe ser 7 post-migration (v4 migra directo a v7:
+        // onUpgrade encadena los pasos v4→v5, v5→v6 y v6→v7).
+        final versionRows = await db.customSelect('PRAGMA user_version').get();
+        expect(
+          versionRows.first.read<int>('user_version'),
+          7,
+          reason:
+              'AppDatabase debe setear user_version=schemaVersion tras '
+              'onUpgrade exitoso.',
+        );
 
-      // Tabla entitlements vacia post-migration (sin inserts automaticos).
-      final count = await db.customSelect(
-        'SELECT COUNT(*) AS c FROM entitlements',
-      ).get();
-      expect(count.first.read<int>('c'), 0,
-          reason: 'Migration NO debe insertar filas. El estado inicial es '
-              'free (sin entitlement activo).');
-    });
+        // La cadena v5→v6→v7 tambien debe haber corrido: columnas
+        // notes/conditions/isTemplate presentes.
+        final cols = await db.customSelect(
+          'SELECT name FROM pragma_table_info(\'calculations\')',
+        ).get();
+        final colNames = cols.map((r) => r.read<String>('name')).toList();
+        expect(
+          colNames,
+          containsAll(['notes', 'conditions', 'is_template']),
+          reason:
+              'La cadena onUpgrade(4,7) debe incluir v5→v6 (notes/conditions) '
+              'y v6→v7 (is_template).',
+        );
+
+        // Tabla entitlements vacia post-migration (sin inserts automaticos).
+        final count = await db
+            .customSelect('SELECT COUNT(*) AS c FROM entitlements')
+            .get();
+        expect(
+          count.first.read<int>('c'),
+          0,
+          reason:
+              'Migration NO debe insertar filas. El estado inicial es '
+              'free (sin entitlement activo).',
+        );
+      },
+    );
 
     test('migration es no-destructiva: datos v4 sobreviven', () async {
       // Dispara apertura lazy de Drift.
@@ -266,13 +296,16 @@ void main() {
       expect(calcs.first.read<String>('piece_name'), 'Llave Allen');
       expect(calcs.first.read<String>('client_name'), 'Juan Perez');
       expect(calcs.first.read<double>('total_hours'), 2.5);
-      expect(calcs.first.read<int>('print_minutes'), 30,
-          reason: 'print_minutes (v3→v4 column) debe preservarse.');
+      expect(
+        calcs.first.read<int>('print_minutes'),
+        30,
+        reason: 'print_minutes (v3→v4 column) debe preservarse.',
+      );
 
       // calculation_materials: 1 row, FK a calculations ok.
-      final mats = await db.customSelect(
-        'SELECT * FROM calculation_materials',
-      ).get();
+      final mats = await db
+          .customSelect('SELECT * FROM calculation_materials')
+          .get();
       expect(mats, hasLength(1));
       expect(mats.first.read<String>('label'), 'PLA Negro');
       expect(mats.first.read<int>('calculation_id'), 1);
@@ -290,16 +323,22 @@ void main() {
       // Dispara apertura + migration.
       await db.customSelect('SELECT 1').get();
 
-      final rows = await db.customSelect(
-        'SELECT name, type, "notnull" AS isNotNull, '
-        'dflt_value AS defaultValue, pk AS isPk '
-        'FROM pragma_table_info(\'entitlements\') '
-        'ORDER BY cid',
-      ).get();
+      final rows = await db
+          .customSelect(
+            'SELECT name, type, "notnull" AS isNotNull, '
+            'dflt_value AS defaultValue, pk AS isPk '
+            'FROM pragma_table_info(\'entitlements\') '
+            'ORDER BY cid',
+          )
+          .get();
 
-      expect(rows, isNotEmpty,
-          reason: 'pragma_table_info(\'entitlements\') no devolvio filas. '
-              'La tabla no existe.');
+      expect(
+        rows,
+        isNotEmpty,
+        reason:
+            'pragma_table_info(\'entitlements\') no devolvio filas. '
+            'La tabla no existe.',
+      );
 
       // Index por nombre para asserts legibles.
       final byName = <String, QueryRow>{};
@@ -309,17 +348,27 @@ void main() {
 
       // 8 columnas: id, source, product_id, purchased_at, validated_at,
       // expires_at, receipt_data, is_active.
-      expect(byName.keys, hasLength(8),
-          reason: 'entitlements debe tener exactamente 8 columnas. Drift '
-              'genera snake_case desde los field names de '
-              'Entitlements (entitlements_table.dart).');
+      expect(
+        byName.keys,
+        hasLength(8),
+        reason:
+            'entitlements debe tener exactamente 8 columnas. Drift '
+            'genera snake_case desde los field names de '
+            'Entitlements (entitlements_table.dart).',
+      );
 
       // id — INTEGER PK.
       expect(byName['id']!.read<String>('type'), 'INTEGER');
-      expect(byName['id']!.read<int>('isPk'), 1,
-          reason: 'id debe ser PK (pk=1).');
-      expect(byName['id']!.read<int>('isNotNull'), 1,
-          reason: 'id debe ser NOT NULL (PK).');
+      expect(
+        byName['id']!.read<int>('isPk'),
+        1,
+        reason: 'id debe ser PK (pk=1).',
+      );
+      expect(
+        byName['id']!.read<int>('isNotNull'),
+        1,
+        reason: 'id debe ser NOT NULL (PK).',
+      );
 
       // source — TEXT NOT NULL.
       expect(byName['source']!.read<String>('type'), 'TEXT');
@@ -330,16 +379,25 @@ void main() {
       expect(byName['product_id']!.read<int>('isNotNull'), 1);
 
       // purchased_at — INTEGER NOT NULL (DateTime → unix epoch).
-      expect(byName['purchased_at']!.read<int>('isNotNull'), 1,
-          reason: 'purchased_at debe ser NOT NULL.');
+      expect(
+        byName['purchased_at']!.read<int>('isNotNull'),
+        1,
+        reason: 'purchased_at debe ser NOT NULL.',
+      );
 
       // validated_at — INTEGER NULLABLE.
-      expect(byName['validated_at']!.read<int>('isNotNull'), 0,
-          reason: 'validated_at debe ser NULLABLE.');
+      expect(
+        byName['validated_at']!.read<int>('isNotNull'),
+        0,
+        reason: 'validated_at debe ser NULLABLE.',
+      );
 
       // expires_at — INTEGER NULLABLE (null = lifetime).
-      expect(byName['expires_at']!.read<int>('isNotNull'), 0,
-          reason: 'expires_at debe ser NULLABLE.');
+      expect(
+        byName['expires_at']!.read<int>('isNotNull'),
+        0,
+        reason: 'expires_at debe ser NULLABLE.',
+      );
 
       // receipt_data — TEXT NULLABLE.
       expect(byName['receipt_data']!.read<String>('type'), 'TEXT');
@@ -347,47 +405,70 @@ void main() {
 
       // is_active — INTEGER NOT NULL DEFAULT 1 (boolean).
       expect(byName['is_active']!.read<int>('isNotNull'), 1);
-      final isActiveDefault =
-          byName['is_active']!.read<String?>('defaultValue');
-      expect(isActiveDefault, isNotNull,
-          reason: 'is_active debe tener DEFAULT (= 1 = true).');
-      expect(int.parse(isActiveDefault!), 1,
-          reason: 'is_active DEFAULT debe ser 1.');
-    });
-
-    test('post-migration: insert + read via AppDatabase accessor funciona',
-        () async {
-      // Dispara apertura + migration.
-      await db.customSelect('SELECT 1').get();
-
-      final purchasedAt = DateTime.utc(2026, 7, 22);
-      final id = await db.into(db.entitlements).insert(
-        EntitlementsCompanion.insert(
-          source: 'play_store',
-          productId: 'tresdcal_pro_lifetime',
-          purchasedAt: purchasedAt,
-        ),
+      final isActiveDefault = byName['is_active']!.read<String?>(
+        'defaultValue',
       );
-      expect(id, greaterThan(0),
-          reason: 'autoIncrement debe retornar un id > 0.');
-
-      final all = await db.select(db.entitlements).get();
-      expect(all, hasLength(1));
-      expect(all.first.id, id);
-      expect(all.first.source, 'play_store');
-      expect(all.first.productId, 'tresdcal_pro_lifetime');
-      expect(all.first.purchasedAt.toUtc(), purchasedAt);
-      expect(all.first.isActive, isTrue,
-          reason: 'is_active DEFAULT true → fila nueva es activa.');
-      expect(all.first.validatedAt, isNull);
-      expect(all.first.expiresAt, isNull,
-          reason: 'lifetime purchase → expiresAt null.');
-      expect(all.first.receiptData, isNull);
-
-      // Las tablas v4 siguen intactas despues del insert en entitlements.
-      final calcs = await db.customSelect('SELECT * FROM calculations').get();
-      expect(calcs, hasLength(1),
-          reason: 'Insert en entitlements NO debe tocar calculations.');
+      expect(
+        isActiveDefault,
+        isNotNull,
+        reason: 'is_active debe tener DEFAULT (= 1 = true).',
+      );
+      expect(
+        int.parse(isActiveDefault!),
+        1,
+        reason: 'is_active DEFAULT debe ser 1.',
+      );
     });
+
+    test(
+      'post-migration: insert + read via AppDatabase accessor funciona',
+      () async {
+        // Dispara apertura + migration.
+        await db.customSelect('SELECT 1').get();
+
+        final purchasedAt = DateTime.utc(2026, 7, 22);
+        final id = await db
+            .into(db.entitlements)
+            .insert(
+              EntitlementsCompanion.insert(
+                source: 'play_store',
+                productId: 'tresdcal_pro_lifetime',
+                purchasedAt: purchasedAt,
+              ),
+            );
+        expect(
+          id,
+          greaterThan(0),
+          reason: 'autoIncrement debe retornar un id > 0.',
+        );
+
+        final all = await db.select(db.entitlements).get();
+        expect(all, hasLength(1));
+        expect(all.first.id, id);
+        expect(all.first.source, 'play_store');
+        expect(all.first.productId, 'tresdcal_pro_lifetime');
+        expect(all.first.purchasedAt.toUtc(), purchasedAt);
+        expect(
+          all.first.isActive,
+          isTrue,
+          reason: 'is_active DEFAULT true → fila nueva es activa.',
+        );
+        expect(all.first.validatedAt, isNull);
+        expect(
+          all.first.expiresAt,
+          isNull,
+          reason: 'lifetime purchase → expiresAt null.',
+        );
+        expect(all.first.receiptData, isNull);
+
+        // Las tablas v4 siguen intactas despues del insert en entitlements.
+        final calcs = await db.customSelect('SELECT * FROM calculations').get();
+        expect(
+          calcs,
+          hasLength(1),
+          reason: 'Insert en entitlements NO debe tocar calculations.',
+        );
+      },
+    );
   });
 }

@@ -139,10 +139,11 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
         context,
       ).showSnackBar(AppSnackBar.success(EsBO.configPrinterSaved));
     } catch (e) {
+      debugPrint('Initial config printer save failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(AppSnackBar.error('${EsBO.printerErrorSave}: $e'));
+        ).showSnackBar(AppSnackBar.error(EsBO.printerErrorSave));
       }
     } finally {
       if (mounted) setState(() => _printerSaving = false);
@@ -189,10 +190,11 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
         context,
       ).showSnackBar(AppSnackBar.success(EsBO.configFilamentSaved));
     } catch (e) {
+      debugPrint('Initial config filament save failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(AppSnackBar.error('${EsBO.filamentErrorSave}: $e'));
+        ).showSnackBar(AppSnackBar.error(EsBO.filamentErrorSave));
       }
     } finally {
       if (mounted) setState(() => _filamentSaving = false);

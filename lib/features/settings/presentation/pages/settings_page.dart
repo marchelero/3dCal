@@ -28,6 +28,10 @@ import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/pro_badge.dart';
+import '../../../calculation/domain/dashboard_stats.dart';
+import '../../../calculation/presentation/notifiers/calculations_notifier.dart';
+import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
+import '../../../catalog/printers/presentation/notifiers/printers_notifier.dart';
 import '../../../entitlement/data/payment_service.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../domain/settings.dart';
@@ -1266,8 +1270,27 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
   bool _isExporting = false;
   bool _isImporting = false;
 
+  /// Gate Pro: los backups (exportar/importar) son funcion paga.
+  void _showLockedSnack() {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        AppSnackBar.warning(
+          EsBO.settingsBackupLockedBody,
+          actionLabel: EsBO.settingsGoProAction,
+          onAction: () => GoRouter.of(context).push('/paywall'),
+        ),
+      );
+  }
+
   Future<void> _handleExport() async {
     if (_isExporting) return;
+    final ent = ref.watch(entitlementNotifierProvider);
+    final isPro = ref.watch(isProProvider);
+    if (!ent.isLoading && !isPro) {
+      _showLockedSnack();
+      return;
+    }
     setState(() => _isExporting = true);
 
     try {
@@ -1279,12 +1302,11 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
         ..hideCurrentSnackBar()
         ..showSnackBar(AppSnackBar.success(EsBO.settingsBackupExportSuccess));
     } catch (e) {
+      debugPrint('Backup export failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          AppSnackBar.error('${EsBO.settingsBackupExportError}: $e'),
-        );
+        ..showSnackBar(AppSnackBar.error(EsBO.settingsBackupExportError));
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
@@ -1292,6 +1314,12 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
 
   Future<void> _handleImport() async {
     if (_isImporting) return;
+    final ent = ref.watch(entitlementNotifierProvider);
+    final isPro = ref.watch(isProProvider);
+    if (!ent.isLoading && !isPro) {
+      _showLockedSnack();
+      return;
+    }
 
     // First, preview what's in the backup
     final result = await FilePicker.platform.pickFiles(
@@ -1302,25 +1330,72 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
 
     // En web `path` es null: leer desde `bytes`. En movil/desktop por path.
     final file = result.files.single;
-    final bytes = file.bytes;
-    final String content;
-    if (bytes != null) {
-      content = utf8.decode(bytes);
-    } else if (file.path != null) {
-      content = await File(file.path!).readAsString();
-    } else {
+
+    // Limite de tamaño ANTES de cargar a memoria.
+    if (file.size > kBackupMaxFileBytes) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(EsBO.settingsBackupImportSizeError));
       return;
     }
 
-    // Read and validate
-    final parsed = jsonDecode(content) as Map<String, dynamic>;
-    final backup = BackupData.fromJson(parsed);
+    final String content;
+    try {
+      final bytes = file.bytes;
+      if (bytes != null) {
+        if (bytes.lengthInBytes > kBackupMaxFileBytes) {
+          throw const FormatException('archivo demasiado grande');
+        }
+        content = utf8.decode(bytes);
+      } else if (file.path != null) {
+        content = await File(file.path!).readAsString();
+      } else {
+        throw const FormatException('sin contenido');
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(EsBO.settingsBackupImportInvalidFile));
+      return;
+    }
+
+    // Read and validate (JSON malformado o campos invalidos -> mensaje
+    // amigable, nunca una excepcion cruda ni un crash).
+    final BackupData backup;
+    try {
+      final parsed = jsonDecode(content);
+      if (parsed is! Map<String, dynamic>) {
+        throw const FormatException('estructura inesperada');
+      }
+      backup = BackupData.fromJson(parsed);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(EsBO.settingsBackupImportInvalidFile));
+      return;
+    }
+
     final error = backup.validate();
     if (error != null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(AppSnackBar.error(error));
+      return;
+    }
+
+    // Rechazar backups de un schema FUTURO.
+    final db = ref.read(appDatabaseProvider);
+    if (backup.schemaVersion > db.schemaVersion) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          AppSnackBar.error(EsBO.settingsBackupImportFutureVersion),
+        );
       return;
     }
 
@@ -1350,10 +1425,9 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     );
     if (confirmed != true) return;
 
-    // Perform import
+    // Perform import (reusa `db` obtenido arriba para validar el schema).
     setState(() => _isImporting = true);
     try {
-      final db = ref.read(appDatabaseProvider);
       final service = BackupService(db);
       final importResult = await service.restoreFromJson(content);
       if (!mounted) return;
@@ -1363,6 +1437,15 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
       }
       if (importResult.isEmpty) {
         final summary = backup.summary;
+        // Invalida todos los providers de datos: son fetch-once (listAll o
+        // cómputos únicos), así que sin esto el historial/dashboard/catálogo
+        // seguirían mostrando el estado viejo hasta el próximo refresh.
+        ref
+          ..invalidate(calculationsNotifierProvider)
+          ..invalidate(dashboardStatsProvider)
+          ..invalidate(filamentsNotifierProvider)
+          ..invalidate(printersNotifierProvider)
+          ..invalidate(settingsNotifierProvider);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -1388,6 +1471,9 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final ent = ref.watch(entitlementNotifierProvider);
+    final isPro = ref.watch(isProProvider);
+    final locked = !ent.isLoading && !isPro;
 
     return _SettingsSection(
       icon: Icons.backup_rounded,
@@ -1401,39 +1487,45 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            icon: _isExporting
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: color.onPrimary,
-                    ),
-                  )
-                : const Icon(Icons.upload_rounded, size: 18),
-            label: Text(EsBO.settingsBackupExport),
-            onPressed: _isExporting ? null : _handleExport,
+        Opacity(
+          opacity: locked ? kLockedOpacity : 1.0,
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              icon: _isExporting
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: color.onPrimary,
+                      ),
+                    )
+                  : const Icon(Icons.upload_rounded, size: 18),
+              label: Text(EsBO.settingsBackupExport),
+              onPressed: _isExporting ? null : _handleExport,
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            icon: _isImporting
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: color.primary,
-                    ),
-                  )
-                : const Icon(Icons.download_rounded, size: 18),
-            label: Text(EsBO.settingsBackupImport),
-            onPressed: _isImporting ? null : _handleImport,
+        Opacity(
+          opacity: locked ? kLockedOpacity : 1.0,
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: _isImporting
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: color.primary,
+                      ),
+                    )
+                  : const Icon(Icons.download_rounded, size: 18),
+              label: Text(EsBO.settingsBackupImport),
+              onPressed: _isImporting ? null : _handleImport,
+            ),
           ),
         ),
       ],

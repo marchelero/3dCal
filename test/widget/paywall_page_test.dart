@@ -121,16 +121,18 @@ class _ErrorNotifier extends EntitlementNotifier {
 /// fakados. Retorna el container + el payment service para que los tests
 /// inspeccionen side effects.
 Future<({ProviderContainer container, _FakePaymentService payment})>
-    _pumpPaywall(WidgetTester tester) async {
+_pumpPaywall(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final payment = _FakePaymentService();
   final repo = _FakeRepo();
-  final container = ProviderContainer(overrides: [
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    entitlementRepositoryProvider.overrideWithValue(repo),
-    paymentServiceProvider.overrideWithValue(payment),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entitlementRepositoryProvider.overrideWithValue(repo),
+      paymentServiceProvider.overrideWithValue(payment),
+    ],
+  );
   addTearDown(container.dispose);
 
   await tester.pumpWidget(
@@ -145,7 +147,7 @@ Future<({ProviderContainer container, _FakePaymentService payment})>
 }
 
 Future<({ProviderContainer container, _FakePaymentService payment})>
-    _pumpPaywallPro(WidgetTester tester) async {
+_pumpPaywallPro(WidgetTester tester) async {
   final validated = DateTime.now().toUtc();
   SharedPreferences.setMockInitialValues(<String, Object>{
     kIsProKey: true,
@@ -155,11 +157,13 @@ Future<({ProviderContainer container, _FakePaymentService payment})>
   final prefs = await SharedPreferences.getInstance();
   final payment = _FakePaymentService();
   final repo = _FakeRepo();
-  final container = ProviderContainer(overrides: [
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    entitlementRepositoryProvider.overrideWithValue(repo),
-    paymentServiceProvider.overrideWithValue(payment),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entitlementRepositoryProvider.overrideWithValue(repo),
+      paymentServiceProvider.overrideWithValue(payment),
+    ],
+  );
   addTearDown(container.dispose);
 
   await tester.pumpWidget(
@@ -173,17 +177,19 @@ Future<({ProviderContainer container, _FakePaymentService payment})>
 }
 
 Future<({ProviderContainer container, _FakePaymentService payment})>
-    _pumpPaywallLoading(WidgetTester tester) async {
+_pumpPaywallLoading(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final payment = _FakePaymentService();
   final repo = _FakeRepo();
-  final container = ProviderContainer(overrides: [
-    sharedPreferencesProvider.overrideWithValue(prefs),
-    entitlementRepositoryProvider.overrideWithValue(repo),
-    paymentServiceProvider.overrideWithValue(payment),
-    entitlementNotifierProvider.overrideWith(_LoadingNotifier.new),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      entitlementRepositoryProvider.overrideWithValue(repo),
+      paymentServiceProvider.overrideWithValue(payment),
+      entitlementNotifierProvider.overrideWith(_LoadingNotifier.new),
+    ],
+  );
   addTearDown(container.dispose);
 
   await tester.pumpWidget(
@@ -225,8 +231,9 @@ void main() {
   });
 
   group('PaywallPage — Free state', () {
-    testWidgets('renderiza titulo, precio, 5 features, Unlock y Restore',
-        (tester) async {
+    testWidgets('renderiza titulo, precio, 5 features, Unlock y Restore', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       await _pumpPaywall(tester);
 
@@ -235,30 +242,38 @@ void main() {
       expect(find.text(EsBO.paywallTitle), findsAtLeast(1));
       expect(find.text(EsBO.paywallSubtitle), findsOneWidget);
       expect(find.text(_formatPrice()), findsOneWidget);
-      expect(find.text(EsBO.paywallUnlockButton(_formatPrice())),
-          findsOneWidget);
+      expect(
+        find.text(EsBO.paywallUnlockButton(_formatPrice())),
+        findsOneWidget,
+      );
       expect(find.text(EsBO.paywallRestoreButton), findsOneWidget);
 
       // 5 features.
       final features = EsBO.paywallFeatures;
       expect(features.length, 5);
       for (final f in features) {
-        expect(find.text(f), findsOneWidget,
-            reason: 'Feature "$f" no encontrada en el paywall.');
+        expect(
+          find.text(f),
+          findsOneWidget,
+          reason: 'Feature "$f" no encontrada en el paywall.',
+        );
       }
     });
 
-    testWidgets('tap en Unlock invoca notifier.purchase con kProProductId',
-        (tester) async {
+    testWidgets('tap en Unlock invoca notifier.purchase con kProProductId', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       final result = await _pumpPaywall(tester);
       final payment = result.payment;
 
       // Seed: purchase retorna success para que el flow no se queje.
-      payment.seedPurchase(PaymentSuccess(
-        productId: kProProductId,
-        purchasedAt: DateTime.now().toUtc(),
-      ));
+      payment.seedPurchase(
+        PaymentSuccess(
+          productId: kProProductId,
+          purchasedAt: DateTime.now().toUtc(),
+        ),
+      );
 
       final unlockButton = find.widgetWithText(
         FilledButton,
@@ -269,10 +284,16 @@ void main() {
       // pumpAndSettle para que el Future del notifier complete.
       await tester.pumpAndSettle();
 
-      expect(payment.purchaseCalls, 1,
-          reason: 'Tap en Unlock debe llamar PaymentService.purchase.');
-      expect(payment.lastPurchaseProductId, kProProductId,
-          reason: 'Purchase debe recibir el productId correcto.');
+      expect(
+        payment.purchaseCalls,
+        1,
+        reason: 'Tap en Unlock debe llamar PaymentService.purchase.',
+      );
+      expect(
+        payment.lastPurchaseProductId,
+        kProProductId,
+        reason: 'Purchase debe recibir el productId correcto.',
+      );
       // No leak de restore.
       expect(payment.restoreCalls, 0);
     });
@@ -292,8 +313,11 @@ void main() {
       await tester.tap(restoreButton);
       await tester.pumpAndSettle();
 
-      expect(payment.restoreCalls, 1,
-          reason: 'Tap en Restore debe llamar PaymentService.restore.');
+      expect(
+        payment.restoreCalls,
+        1,
+        reason: 'Tap en Restore debe llamar PaymentService.restore.',
+      );
       // No leak de purchase.
       expect(payment.purchaseCalls, 0);
     });
@@ -308,16 +332,23 @@ void main() {
 
         expect(find.text(EsBO.paywallAlreadyPro), findsOneWidget);
         // Boton Close presente (FilledButton con label "Close").
-        expect(find.widgetWithText(FilledButton, EsBO.paywallClose),
-            findsOneWidget);
+        expect(
+          find.widgetWithText(FilledButton, EsBO.paywallClose),
+          findsOneWidget,
+        );
         // Unlock ausente (no hay nada que comprar).
-        expect(find.text(EsBO.paywallUnlockButton(_formatPrice())),
-            findsNothing);
+        expect(
+          find.text(EsBO.paywallUnlockButton(_formatPrice())),
+          findsNothing,
+        );
         // Features ausentes (no estamos vendiendo nada).
         final features = EsBO.paywallFeatures;
         for (final f in features) {
-          expect(find.text(f), findsNothing,
-              reason: 'Feature "$f" no debe estar en Already Pro view.');
+          expect(
+            find.text(f),
+            findsNothing,
+            reason: 'Feature "$f" no debe estar en Already Pro view.',
+          );
         }
         // Subtitulo "Unlock all features" ausente.
         expect(find.text(EsBO.paywallSubtitle), findsNothing);
@@ -331,8 +362,11 @@ void main() {
       (tester) async {
         await _pumpPaywallLoading(tester);
 
-        expect(find.byType(CircularProgressIndicator), findsAtLeast(1),
-            reason: 'Loading state debe mostrar al menos 1 spinner.');
+        expect(
+          find.byType(CircularProgressIndicator),
+          findsAtLeast(1),
+          reason: 'Loading state debe mostrar al menos 1 spinner.',
+        );
       },
     );
   });
@@ -345,15 +379,20 @@ void main() {
         final result = await _pumpPaywall(tester);
         result.payment.seedPurchase(const PaymentError('network'));
 
-        await tester.tap(find.widgetWithText(
-          FilledButton,
-          EsBO.paywallUnlockButton(_formatPrice()),
-        ));
+        await tester.tap(
+          find.widgetWithText(
+            FilledButton,
+            EsBO.paywallUnlockButton(_formatPrice()),
+          ),
+        );
         await tester.pumpAndSettle();
 
         // El caller (paywall) debe surfcear el error — no solo el notifier.
-        expect(find.text(EsBO.paywallErrorGeneric), findsOneWidget,
-            reason: 'PaymentError debe mostrar SnackBar de error en paywall.');
+        expect(
+          find.text(EsBO.paywallErrorGeneric),
+          findsOneWidget,
+          reason: 'PaymentError debe mostrar SnackBar de error en paywall.',
+        );
         // Sigue en free (el boton Unlock persiste: no hubo unlock).
         expect(
           find.widgetWithText(
@@ -365,54 +404,66 @@ void main() {
       },
     );
 
-    testWidgets('PaymentCancelled al tap Unlock → no-op (sin SnackBar)',
-        (tester) async {
+    testWidgets('PaymentCancelled al tap Unlock → no-op (sin SnackBar)', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       final result = await _pumpPaywall(tester);
       result.payment.seedPurchase(const PaymentCancelled());
 
-      await tester.tap(find.widgetWithText(
-        FilledButton,
-        EsBO.paywallUnlockButton(_formatPrice()),
-      ));
+      await tester.tap(
+        find.widgetWithText(
+          FilledButton,
+          EsBO.paywallUnlockButton(_formatPrice()),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Cancel es intencional del user: no feedback de error.
-      expect(find.byType(SnackBar), findsNothing,
-          reason: 'PaymentCancelled no debe mostrar SnackBar.');
+      expect(
+        find.byType(SnackBar),
+        findsNothing,
+        reason: 'PaymentCancelled no debe mostrar SnackBar.',
+      );
       expect(find.text(EsBO.paywallErrorGeneric), findsNothing);
     });
 
-    testWidgets('RestoreError al tap Restore → SnackBar de error visible',
-        (tester) async {
+    testWidgets('RestoreError al tap Restore → SnackBar de error visible', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       final result = await _pumpPaywall(tester);
       result.payment.seedRestore(const RestoreError('network'));
 
-      await tester.tap(find.widgetWithText(
-        TextButton,
-        EsBO.paywallRestoreButton,
-      ));
+      await tester.tap(
+        find.widgetWithText(TextButton, EsBO.paywallRestoreButton),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text(EsBO.commonErrorGeneric), findsOneWidget,
-          reason: 'RestoreError debe mostrar SnackBar de error en paywall.');
+      expect(
+        find.text(EsBO.commonErrorGeneric),
+        findsOneWidget,
+        reason: 'RestoreError debe mostrar SnackBar de error en paywall.',
+      );
     });
 
-    testWidgets('RestoreEmpty al tap Restore → SnackBar informativo',
-        (tester) async {
+    testWidgets('RestoreEmpty al tap Restore → SnackBar informativo', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       final result = await _pumpPaywall(tester);
       result.payment.seedRestore(const RestoreEmpty());
 
-      await tester.tap(find.widgetWithText(
-        TextButton,
-        EsBO.paywallRestoreButton,
-      ));
+      await tester.tap(
+        find.widgetWithText(TextButton, EsBO.paywallRestoreButton),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text(EsBO.settingsRestoreEmpty), findsOneWidget,
-          reason: 'RestoreEmpty debe informar que no hay compras previas.');
+      expect(
+        find.text(EsBO.settingsRestoreEmpty),
+        findsOneWidget,
+        reason: 'RestoreEmpty debe informar que no hay compras previas.',
+      );
     });
   });
 
@@ -428,14 +479,15 @@ void main() {
         payment = _FakePaymentService();
         final repo = _FakeRepo();
 
-        final errorNotifier =
-            _ErrorNotifier(Exception('boom from notifier'));
-        container = ProviderContainer(overrides: [
-          sharedPreferencesProvider.overrideWithValue(prefs),
-          entitlementRepositoryProvider.overrideWithValue(repo),
-          paymentServiceProvider.overrideWithValue(payment),
-          entitlementNotifierProvider.overrideWith(() => errorNotifier),
-        ]);
+        final errorNotifier = _ErrorNotifier(Exception('boom from notifier'));
+        container = ProviderContainer(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            entitlementRepositoryProvider.overrideWithValue(repo),
+            paymentServiceProvider.overrideWithValue(payment),
+            entitlementNotifierProvider.overrideWith(() => errorNotifier),
+          ],
+        );
         addTearDown(container.dispose);
 
         await tester.pumpWidget(
@@ -449,8 +501,11 @@ void main() {
         await tester.pumpAndSettle();
 
         // El SnackBar con el mensaje de error generico debe estar visible.
-        expect(find.byType(SnackBar), findsAtLeast(1),
-            reason: 'Error debe disparar SnackBar.');
+        expect(
+          find.byType(SnackBar),
+          findsAtLeast(1),
+          reason: 'Error debe disparar SnackBar.',
+        );
         // El mensaje exacto viene del paywall — debe contener la key l10n.
         expect(find.textContaining(EsBO.paywallErrorGeneric), findsAtLeast(1));
       },
@@ -474,11 +529,13 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       final payment = _FakePaymentService();
       final repo = _FakeRepo();
-      final container = ProviderContainer(overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        entitlementRepositoryProvider.overrideWithValue(repo),
-        paymentServiceProvider.overrideWithValue(payment),
-      ]);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(payment),
+        ],
+      );
       addTearDown(container.dispose);
 
       final router = GoRouter(
@@ -486,14 +543,10 @@ void main() {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, _) => const Scaffold(
-              body: Center(child: Text('HOME_T20')),
-            ),
+            builder: (_, _) =>
+                const Scaffold(body: Center(child: Text('HOME_T20'))),
           ),
-          GoRoute(
-            path: '/paywall',
-            builder: (_, _) => const PaywallPage(),
-          ),
+          GoRoute(path: '/paywall', builder: (_, _) => const PaywallPage()),
         ],
       );
       addTearDown(router.dispose);
@@ -513,8 +566,9 @@ void main() {
       return router;
     }
 
-    testWidgets('X en AppBar dispara context.pop() y vuelve a /home',
-        (tester) async {
+    testWidgets('X en AppBar dispara context.pop() y vuelve a /home', (
+      tester,
+    ) async {
       final router = await pumpPaywallWithStack(tester);
 
       // El X es el IconButton con tooltip "Close" (paywallClose).
@@ -527,8 +581,10 @@ void main() {
       expect(find.byType(PaywallPage), findsNothing);
       expect(find.text('HOME_T20'), findsOneWidget);
       // Router confirma la locacion.
-      expect(router.routerDelegate.currentConfiguration.uri.toString(),
-          '/home');
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/home',
+      );
     });
   });
 
@@ -536,8 +592,9 @@ void main() {
     /// Igual al anterior pero con state Pro (mock prefs con isPro=true).
     /// El paywall muestra "Already Pro" view con un FilledButton "Close"
     /// en vez del X del AppBar. Tambien gated por `canPop()`.
-    testWidgets('FilledButton "Close" en Already Pro view dispara pop()',
-        (tester) async {
+    testWidgets('FilledButton "Close" en Already Pro view dispara pop()', (
+      tester,
+    ) async {
       _useTallViewport(tester);
       final validated = DateTime.now().toUtc();
       SharedPreferences.setMockInitialValues(<String, Object>{
@@ -548,11 +605,13 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       final payment = _FakePaymentService();
       final repo = _FakeRepo();
-      final container = ProviderContainer(overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        entitlementRepositoryProvider.overrideWithValue(repo),
-        paymentServiceProvider.overrideWithValue(payment),
-      ]);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(payment),
+        ],
+      );
       addTearDown(container.dispose);
 
       final router = GoRouter(
@@ -560,14 +619,10 @@ void main() {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, _) => const Scaffold(
-              body: Center(child: Text('HOME_T20')),
-            ),
+            builder: (_, _) =>
+                const Scaffold(body: Center(child: Text('HOME_T20'))),
           ),
-          GoRoute(
-            path: '/paywall',
-            builder: (_, _) => const PaywallPage(),
-          ),
+          GoRoute(path: '/paywall', builder: (_, _) => const PaywallPage()),
         ],
       );
       addTearDown(router.dispose);
@@ -591,8 +646,10 @@ void main() {
       // Pop realizado: paywall gone, home visible.
       expect(find.byType(PaywallPage), findsNothing);
       expect(find.text('HOME_T20'), findsOneWidget);
-      expect(router.routerDelegate.currentConfiguration.uri.toString(),
-          '/home');
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/home',
+      );
     });
   });
 }

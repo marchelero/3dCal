@@ -324,4 +324,65 @@ void main() {
       },
     );
   });
+
+  group('buildQuotePdfBytes — metadatos de cotizacion (v6)', () {
+    test(
+      'PDF con cliente, numero, fechas, notas y condiciones pesa mas que el base',
+      () async {
+        final base = await buildQuotePdfBytes(
+          isPro: true,
+          output: _output(),
+          materials: const [],
+          totalHours: Decimal.zero,
+          discountPct: Decimal.zero,
+          regularFont: helv,
+          boldFont: helvBold,
+        );
+
+        final rich = await buildQuotePdfBytes(
+          isPro: true,
+          output: _output(),
+          materials: const [],
+          totalHours: Decimal.zero,
+          discountPct: Decimal.zero,
+          clientName: 'Juan Perez',
+          quoteNumber: 123,
+          quoteDate: DateTime(2026, 8, 1, 10, 30),
+          validUntil: DateTime(2026, 8, 16),
+          notes: 'Entregar en 3 dias habiles.',
+          conditions: 'Pago contra entrega. Garantia 6 meses.',
+          regularFont: helv,
+          boldFont: helvBold,
+        );
+
+        expect(
+          rich.length,
+          greaterThan(base.length),
+          reason:
+              'El PDF con metadatos debe llevar mas contenido '
+              '(numero, fechas, cliente, notas, condiciones).',
+        );
+      },
+    );
+
+    test('metadatos opcionales null no rompen el PDF (regresion)', () async {
+      final bytes = await buildQuotePdfBytes(
+        isPro: false,
+        output: _output(),
+        materials: const [],
+        totalHours: Decimal.zero,
+        discountPct: Decimal.zero,
+        clientName: null,
+        quoteNumber: null,
+        quoteDate: null,
+        validUntil: null,
+        notes: null,
+        conditions: null,
+        regularFont: helv,
+        boldFont: helvBold,
+      );
+
+      expect(bytes.length, greaterThan(500));
+    });
+  });
 }

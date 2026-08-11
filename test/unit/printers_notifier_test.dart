@@ -12,9 +12,9 @@ void main() {
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-    ]);
+    container = ProviderContainer(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+    );
   });
 
   tearDown(() async {
@@ -26,10 +26,9 @@ void main() {
     final list = await container.read(printersNotifierProvider.future);
     expect(list, isEmpty);
 
-    await container.read(printersNotifierProvider.notifier).create(
-          name: 'Ender 3',
-          averageWatts: 150,
-        );
+    await container
+        .read(printersNotifierProvider.notifier)
+        .create(name: 'Ender 3', averageWatts: 150);
     final after = await container.read(printersNotifierProvider.future);
     expect(after, hasLength(1));
     expect(after.first.name, 'Ender 3');
@@ -42,8 +41,7 @@ void main() {
     await container.read(printersNotifierProvider.future); // build
     await n.create(name: 'A', averageWatts: 100, asDefault: true);
     await n.create(name: 'B', averageWatts: 200);
-    final bId =
-        (await container.read(printersNotifierProvider.future)).last.id;
+    final bId = (await container.read(printersNotifierProvider.future)).last.id;
 
     await n.setAsDefault(bId);
 
