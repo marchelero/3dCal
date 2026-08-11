@@ -113,8 +113,10 @@ class EsBO {
   static String get settingsBackupExportError =>
       _impl.settingsBackupExportError;
   static String settingsBackupImportSuccess(
-          int calcs, int filaments, int printers) =>
-      _impl.settingsBackupImportSuccess(calcs, filaments, printers);
+    int calcs,
+    int filaments,
+    int printers,
+  ) => _impl.settingsBackupImportSuccess(calcs, filaments, printers);
   static String get settingsBackupImportError =>
       _impl.settingsBackupImportError;
   static String get settingsBackupImportConfirmTitle =>
@@ -336,6 +338,9 @@ class EsBO {
   static String get localeLabel => _impl.localeLabel;
   static String get localeEs => _impl.localeEs;
   static String get localeEn => _impl.localeEn;
+  static String get localePtBr => _impl.localePtBr;
+  static String get localeDe => _impl.localeDe;
+  static String get localeFr => _impl.localeFr;
 
   // === Onboarding ===
   static String get onboardingTitle1 => _impl.onboardingTitle1;
@@ -420,6 +425,8 @@ class EsBO {
   static String get paywallPrivacyPolicy => _impl.paywallPrivacyPolicy;
   static String get paywallTermsOfService => _impl.paywallTermsOfService;
   static String get settingsLegal => _impl.settingsLegal;
+  static String get legalPrivacyDocument => _impl.legalPrivacyDocument;
+  static String get legalTermsDocument => _impl.legalTermsDocument;
 
   // === i18n consistency (hardcoded → l10n) ===
   static String get commonError => _impl.commonError;
@@ -592,7 +599,7 @@ class EsImpl implements AppStrings {
   @override
   String get settingsAbout => 'Acerca de';
   @override
-  String get settingsPrivacy => 'Privacidad: 100% local, sin telemetria';
+  String get settingsPrivacy => 'Privacidad y datos';
   @override
   String get settingsSaved => 'Guardado';
   @override
@@ -1069,6 +1076,12 @@ class EsImpl implements AppStrings {
   @override
   String get localeEn => 'Inglés';
   @override
+  String get localePtBr => 'Portugués (Brasil)';
+  @override
+  String get localeDe => 'Alemán';
+  @override
+  String get localeFr => 'Francés';
+  @override
   String get onboardingTitle1 => 'Bienvenido a 3dCalc';
   @override
   String get onboardingDesc1 =>
@@ -1229,6 +1242,53 @@ class EsImpl implements AppStrings {
   String get paywallTermsOfService => 'Terminos del Servicio';
   @override
   String get settingsLegal => 'Legal';
+
+  @override
+  String get legalPrivacyDocument =>
+      '''Última actualización: 11 de agosto de 2026
+
+1. Alcance
+Esta Política de Privacidad describe cómo 3dCalc trata la información cuando utilizas la aplicación. El responsable es Juan Marcelo Albis Ortiz, con domicilio en Bolivia. No necesitas crear una cuenta para utilizar sus funciones principales. La aplicación está destinada a personas de 10 años o más. Si eres menor de edad, debes utilizarla con autorización y supervisión de tu madre, padre o tutor.
+
+2. Información almacenada
+Los datos que introduces —como configuraciones, catálogos y cálculos— se almacenan en el dispositivo. Los archivos de respaldo se guardan en la ubicación que selecciones.
+
+3. Compras
+Las compras se procesan mediante Google Play. 3dCalc no recibe ni almacena los datos completos de tu tarjeta. La aplicación utiliza RevenueCat como proveedor técnico para gestionar compras, restauraciones y estados de acceso; estos servicios pueden tratar identificadores técnicos, datos de transacción y datos de producto según sus propias políticas.
+
+4. Datos compartidos
+No vendemos tus datos ni compartimos el contenido de tus cálculos. La tienda y el proveedor de procesamiento de compras pueden recibir identificadores técnicos y datos de transacción necesarios para validar una compra, conforme a sus políticas.
+
+5. Eliminación y control
+Puedes eliminar los datos guardados desde la aplicación o desinstalándola. Los archivos de respaldo exportados deben eliminarse manualmente.
+
+6. Cambios y contacto
+Podemos actualizar esta política cuando cambien la aplicación o sus requisitos legales. Para consultas sobre privacidad, contacta a Juan Marcelo Albis Ortiz en marcheloalbis@gmail.com. Google Play y RevenueCat gestionan sus propios datos conforme a sus políticas y procedimientos.
+
+Esta política es informativa y debe revisarse con asesoría legal antes de publicar en una jurisdicción específica.''';
+
+  @override
+  String get legalTermsDocument => '''Última actualización: 11 de agosto de 2026
+
+1. Aceptación
+Al instalar o utilizar 3dCalc, aceptas estos Términos de Servicio. El proveedor es Juan Marcelo Albis Ortiz, Bolivia. Si no estás de acuerdo, no utilices la aplicación.
+
+2. Uso permitido
+Puedes utilizar 3dCalc para realizar cálculos y administrar información de trabajo con fines personales o comerciales. Debes tener al menos 10 años y utilizar la aplicación de acuerdo con la ley aplicable. Si eres menor de edad, necesitas autorización y supervisión de tu madre, padre o tutor.
+
+3. Resultados y responsabilidad
+Los resultados son estimaciones y herramientas de apoyo. Verifica entradas, costos, unidades y resultados antes de tomar decisiones comerciales, técnicas o de seguridad. No garantizamos resultados para un caso particular.
+
+4. Compras y restauración
+La compra Pro es una compra única, si así aparece configurada en Google Play, y no una suscripción automática. Las compras, restauraciones, precios, impuestos y reembolsos están sujetos a Google Play. RevenueCat proporciona servicios técnicos para validar el estado de la compra.
+
+5. Propiedad intelectual
+La aplicación, su diseño y sus recursos pertenecen a sus respectivos titulares. No puedes copiar, redistribuir, modificar ni realizar ingeniería inversa salvo cuando la ley lo permita.
+
+6. Disponibilidad y cambios
+Podemos actualizar, suspender o retirar funciones. Estos términos también pueden cambiar; la fecha de actualización se mostrará al inicio. Para consultas, contacta a marcheloalbis@gmail.com.
+
+''';
 
   // === i18n consistency (hardcoded → l10n) ===
   @override

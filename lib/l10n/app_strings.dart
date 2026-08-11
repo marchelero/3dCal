@@ -361,6 +361,9 @@ abstract class AppStrings {
   String get localeLabel;
   String get localeEs;
   String get localeEn;
+  String get localePtBr;
+  String get localeDe;
+  String get localeFr;
 
   // === Onboarding ===
   String get onboardingTitle1;
@@ -508,6 +511,9 @@ abstract class AppStrings {
 
   /// Titulo de la seccion legal en settings page.
   String get settingsLegal;
+
+  String get legalPrivacyDocument;
+  String get legalTermsDocument;
 
   // === i18n consistency (hardcoded → l10n) ===
   /// Generic "Error" label (ej: "Error: `<detalle>`").

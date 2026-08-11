@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/backup/backup_models.dart';
 import '../../../../core/backup/backup_service.dart';
@@ -43,6 +42,7 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(localeProvider);
     final asyncSettings = ref.watch(settingsNotifierProvider);
     return Scaffold(
       body: SafeArea(
@@ -362,31 +362,19 @@ class _SettingsBody extends ConsumerWidget {
                   title: EsBO.settingsLegal.toUpperCase(),
                   accentColor: color.tertiary,
                   children: [
-                    GestureDetector(
-                      onTap: () => launchUrl(
-                        Uri.parse(kPrivacyPolicyUrl),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      child: Text(
-                        EsBO.paywallPrivacyPolicy,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: color.primary,
-                          decoration: TextDecoration.underline,
-                        ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => context.push('/legal/privacy'),
+                        child: Text(EsBO.paywallPrivacyPolicy),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    GestureDetector(
-                      onTap: () => launchUrl(
-                        Uri.parse(kTermsOfServiceUrl),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      child: Text(
-                        EsBO.paywallTermsOfService,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: color.primary,
-                          decoration: TextDecoration.underline,
-                        ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => context.push('/legal/terms'),
+                        child: Text(EsBO.paywallTermsOfService),
                       ),
                     ),
                   ],
@@ -1207,6 +1195,7 @@ class _LocalePicker extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final locale = ref.watch(localeProvider);
+    final strings = ref.watch(localeStringsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1218,24 +1207,44 @@ class _LocalePicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        SegmentedButton<AppLocale>(
-          segments: const [
-            ButtonSegment(
-              value: AppLocale.es,
-              label: Text('ES'),
-              icon: Icon(Icons.language, size: 18),
+        InputDecorator(
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.language),
+            border: OutlineInputBorder(),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<AppLocale>(
+              value: locale,
+              isExpanded: true,
+              items: [
+                DropdownMenuItem(
+                  value: AppLocale.es,
+                  child: Text(strings.localeEs),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.en,
+                  child: Text(strings.localeEn),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.ptBr,
+                  child: Text(strings.localePtBr),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.de,
+                  child: Text(strings.localeDe),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.fr,
+                  child: Text(strings.localeFr),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(localeProvider.notifier).setLocale(value);
+                }
+              },
             ),
-            ButtonSegment(
-              value: AppLocale.en,
-              label: Text('EN'),
-              icon: Icon(Icons.language, size: 18),
-            ),
-          ],
-          selected: {locale},
-          onSelectionChanged: (s) {
-            ref.read(localeProvider.notifier).setLocale(s.first);
-          },
-          showSelectedIcon: false,
+          ),
         ),
       ],
     );
@@ -1356,13 +1365,15 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
         final summary = backup.summary;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(AppSnackBar.success(
-            EsBO.settingsBackupImportSuccess(
-              summary.calculationCount,
-              summary.filamentCount,
-              summary.printerCount,
+          ..showSnackBar(
+            AppSnackBar.success(
+              EsBO.settingsBackupImportSuccess(
+                summary.calculationCount,
+                summary.filamentCount,
+                summary.printerCount,
+              ),
             ),
-          ));
+          );
       } else {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()

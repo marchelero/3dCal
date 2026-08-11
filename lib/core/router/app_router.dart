@@ -12,6 +12,7 @@ import '../../features/catalog/printers/presentation/pages/printer_form_page.dar
 import '../../features/catalog/printers/presentation/pages/printers_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/entitlement/presentation/pages/paywall_page.dart';
+import '../../features/legal/presentation/pages/legal_document_page.dart';
 import '../../features/onboarding/presentation/pages/initial_config_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
@@ -54,7 +55,7 @@ Page<void> _slideRight(Widget child) => CustomTransitionPage<void>(
 /// - `context.push('/ruta')` para sub-pantallas (preserva el shell debajo).
 /// - `context.pop()` para volver.
 /// - Datos no serializables (Calculation, Filament, PrinterProfile) se pasan
-///   via `state.extra` (no URL). Es valido porque la app es 100% local.
+///   via `state.extra` porque esos objetos no forman parte de la URL.
 final appRouter = GoRouter(
   initialLocation: '/splash',
   errorBuilder: (context, state) => const _RouterErrorPage(),
@@ -116,6 +117,16 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/paywall',
       pageBuilder: (context, state) => _slideRight(const PaywallPage()),
+    ),
+    GoRoute(
+      path: '/legal/privacy',
+      pageBuilder: (context, state) =>
+          _slideRight(const LegalDocumentPage(type: LegalDocumentType.privacy)),
+    ),
+    GoRoute(
+      path: '/legal/terms',
+      pageBuilder: (context, state) =>
+          _slideRight(const LegalDocumentPage(type: LegalDocumentType.terms)),
     ),
     GoRoute(
       path: '/calculator/prefill',

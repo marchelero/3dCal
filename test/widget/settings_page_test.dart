@@ -141,7 +141,7 @@ void main() {
   group('SettingsPage', () {
     testWidgets('renderiza secciones y defaults', (tester) async {
       // Viewport mas grande para que la seccion "Acerca de" (con el texto
-      // "100% local") entre en pantalla sin scrollear. Default es 800x600.
+      // El texto de privacidad debe entrar en pantalla sin scrollear.
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);

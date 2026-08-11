@@ -6,8 +6,11 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme_mode_provider.dart';
 import 'l10n/app_locale.dart';
+import 'l10n/de_de.dart';
 import 'l10n/en_us.dart';
 import 'l10n/es_bo.dart';
+import 'l10n/fr_fr.dart';
+import 'l10n/pt_br.dart';
 
 /// Widget raiz de tresdcal.
 ///
@@ -25,10 +28,10 @@ class TresdcalApp extends ConsumerWidget {
     // Escuchar locale para rebuild completo + actualizar EsBO estatico.
     final locale = ref.watch(localeProvider);
     ref.listen(localeProvider, (_, next) {
-      EsBO.setImpl(next == AppLocale.en ? const EnImpl() : const EsImpl());
+      EsBO.setImpl(_stringsFor(next));
     });
     // Inicializar EsBO en el locale actual (antes del primer render).
-    EsBO.setImpl(locale == AppLocale.en ? const EnImpl() : const EsImpl());
+    EsBO.setImpl(_stringsFor(locale));
 
     return MaterialApp.router(
       title: '3dcalc',
@@ -39,4 +42,12 @@ class TresdcalApp extends ConsumerWidget {
       routerConfig: appRouter,
     );
   }
+
+  AppStrings _stringsFor(AppLocale locale) => switch (locale) {
+    AppLocale.es => const EsImpl(),
+    AppLocale.en => const EnImpl(),
+    AppLocale.ptBr => const PtBrImpl(),
+    AppLocale.de => const DeImpl(),
+    AppLocale.fr => const FrImpl(),
+  };
 }

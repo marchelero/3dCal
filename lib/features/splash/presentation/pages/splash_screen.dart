@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _loadingController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(milliseconds: 2500),
     )..forward();
 
     _startLoading();
@@ -68,18 +69,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Gradiente y barra siguen el scheme (primaryContainer → surface): la
-    // splash responde a light/dark en vez de colores fijos fuera de paleta.
-    final cs = Theme.of(context).colorScheme;
+    // La splash mantiene una tonalidad fija para que el logo conserve
+    // contraste aunque la aplicación esté usando el tema claro.
+    const splashBackground = Color(0xFF101A2E);
+    const splashForeground = Color(0xFFF8FAFC);
     return Scaffold(
       body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [cs.primaryContainer, cs.surface],
-          ),
-        ),
+        decoration: BoxDecoration(color: splashBackground),
         child: Stack(
           children: [
             // Logo centrado con fade-in
@@ -88,21 +84,30 @@ class _SplashScreenState extends State<SplashScreen>
                 opacity: _fadeController,
                 child: Semantics(
                   label: EsBO.splashLogo,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.6,
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Semantics(
-                        label: EsBO.appName,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final preferredWidth = constraints.maxWidth * 0.6;
+                      final logoWidth = preferredWidth.clamp(
+                        180.0,
+                        kIsWeb ? 420.0 : 340.0,
+                      );
+                      return SizedBox(
+                        width: logoWidth,
                         child: Image.asset(
-                          'assets/images/3dlogo.png',
-                          width: 48,
-                          height: 48,
+                          'assets/images/logo.png',
                           fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => Semantics(
+                            label: EsBO.appName,
+                            child: Image.asset(
+                              'assets/images/3dlogo.png',
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -126,9 +131,11 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: _loadingController.value,
-                            backgroundColor: cs.primary.withValues(alpha: 0.12),
+                            backgroundColor: splashForeground.withValues(
+                              alpha: 0.24,
+                            ),
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              cs.primary,
+                              splashForeground,
                             ),
                             minHeight: 4,
                           ),
@@ -138,7 +145,7 @@ class _SplashScreenState extends State<SplashScreen>
                           EsBO.commonLoading.toUpperCase(),
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
-                                color: cs.primary.withValues(alpha: 0.5),
+                                color: splashForeground.withValues(alpha: 0.72),
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 4,
                               ),

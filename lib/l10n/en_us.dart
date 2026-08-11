@@ -61,7 +61,7 @@ class EnImpl implements AppStrings {
   @override
   String get settingsAbout => 'About';
   @override
-  String get settingsPrivacy => 'Privacy: 100% local, no telemetry';
+  String get settingsPrivacy => 'Privacy and data';
   @override
   String get settingsSaved => 'Saved';
   @override
@@ -535,6 +535,12 @@ class EnImpl implements AppStrings {
   @override
   String get localeEn => 'English';
   @override
+  String get localePtBr => 'Portuguese (Brazil)';
+  @override
+  String get localeDe => 'German';
+  @override
+  String get localeFr => 'French';
+  @override
   String get onboardingTitle1 => 'Welcome to 3dCalc';
   @override
   String get onboardingDesc1 =>
@@ -695,6 +701,52 @@ class EnImpl implements AppStrings {
 
   @override
   String get settingsLegal => 'Legal';
+
+  @override
+  String get legalPrivacyDocument => '''Last updated: August 11, 2026
+
+1. Scope
+This Privacy Policy explains how 3dCalc handles information when you use the application. The responsible operator is Juan Marcelo Albis Ortiz, based in Bolivia. An account is not required for the main features. The application is intended for people aged 10 or older. If you are a minor, you must use it with the authorization and supervision of a parent or legal guardian.
+
+2. Information stored
+Information you enter —such as settings, catalogs, and calculations— is stored on your device. Backup files are stored in the location you select.
+
+3. Purchases
+Purchases are processed through Google Play. 3dCalc does not receive or store your full card details. The application uses RevenueCat as a technical provider to manage purchases, restorations, and access status; these services may process technical identifiers, transaction data, and product data under their own policies.
+
+4. Information sharing
+We do not sell your data or share calculation content. The app store and purchase-processing provider may receive technical identifiers and transaction data needed to validate a purchase under their own policies.
+
+5. Deletion and control
+You can delete stored data from the application or by uninstalling it. Exported backup files must be deleted manually.
+
+6. Changes and contact
+We may update this policy when the application or its legal requirements change. For privacy questions, contact Juan Marcelo Albis Ortiz at marcheloalbis@gmail.com. Google Play and RevenueCat manage their own data under their respective policies and procedures.
+
+This policy is informational and should be reviewed with legal counsel before publishing in a specific jurisdiction.''';
+
+  @override
+  String get legalTermsDocument => '''Last updated: August 11, 2026
+
+1. Acceptance
+By installing or using 3dCalc, you agree to these Terms of Service. The provider is Juan Marcelo Albis Ortiz, Bolivia. If you do not agree, do not use the application.
+
+2. Permitted use
+You may use 3dCalc to perform calculations and manage work information for personal or commercial purposes. You must be at least 10 years old and use the application in accordance with applicable law. If you are a minor, you need the authorization and supervision of a parent or legal guardian.
+
+3. Results and liability
+Results are estimates and support tools. Verify inputs, costs, units, and results before making commercial, technical, or safety decisions. We do not guarantee results for a particular case.
+
+4. Purchases and restoration
+The Pro purchase is a one-time purchase, if configured that way in Google Play, and is not an automatic subscription. Purchases, restorations, prices, taxes, and refunds are subject to Google Play. RevenueCat provides technical services to validate purchase status.
+
+5. Intellectual property
+The application, its design, and its resources belong to their respective owners. You may not copy, redistribute, modify, or reverse engineer the application except where permitted by law.
+
+6. Availability and changes
+We may update, suspend, or remove application features. These terms may also change; the update date will be shown at the beginning. For questions, contact marcheloalbis@gmail.com.
+
+''';
 
   // === i18n consistency (hardcoded → l10n) ===
   @override

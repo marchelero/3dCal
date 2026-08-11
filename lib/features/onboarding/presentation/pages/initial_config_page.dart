@@ -697,24 +697,44 @@ class _Step1Content extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        SegmentedButton<AppLocale>(
-          segments: const [
-            ButtonSegment(
-              value: AppLocale.es,
-              label: Text('ES'),
-              icon: Icon(Icons.language),
+        InputDecorator(
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.language),
+            border: OutlineInputBorder(),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<AppLocale>(
+              value: ref.watch(localeProvider),
+              isExpanded: true,
+              items: [
+                DropdownMenuItem(
+                  value: AppLocale.es,
+                  child: Text(EsBO.localeEs),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.en,
+                  child: Text(EsBO.localeEn),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.ptBr,
+                  child: Text(EsBO.localePtBr),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.de,
+                  child: Text(EsBO.localeDe),
+                ),
+                DropdownMenuItem(
+                  value: AppLocale.fr,
+                  child: Text(EsBO.localeFr),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(localeProvider.notifier).setLocale(value);
+                }
+              },
             ),
-            ButtonSegment(
-              value: AppLocale.en,
-              label: Text('EN'),
-              icon: Icon(Icons.language),
-            ),
-          ],
-          selected: {ref.watch(localeProvider)},
-          onSelectionChanged: (s) {
-            ref.read(localeProvider.notifier).setLocale(s.first);
-          },
-          showSelectedIcon: false,
+          ),
         ),
         const SizedBox(height: AppSpacing.xxl),
         _StepSectionHeader(
@@ -988,7 +1008,14 @@ class _ConfigSummaryCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final locale = ref.watch(localeProvider);
-    final languageLabel = locale == AppLocale.en ? 'English' : 'Español';
+    final strings = ref.watch(localeStringsProvider);
+    final languageLabel = switch (locale) {
+      AppLocale.es => strings.localeEs,
+      AppLocale.en => strings.localeEn,
+      AppLocale.ptBr => strings.localePtBr,
+      AppLocale.de => strings.localeDe,
+      AppLocale.fr => strings.localeFr,
+    };
 
     final filamentLabel = filamentSkipped || filamentName == null
         ? EsBO.configFilamentSkipStatus
