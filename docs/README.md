@@ -15,6 +15,7 @@ Single landing for all project-generated documentation. Anything `.opencode/` pr
 | `sessions/` | Session-end snapshots (auto + manual via `/session-end`) | Resuming work |
 | `state/` | Recovery state for resumable flows (machine-local) | Mid-flow crash recovery |
 | `instincts/` | Learned project patterns (auto via `/learn`) | Pattern review |
+| `GUIA_PUBLICACION_PLAYSTORE.md` | Runbook en español para publicar `tresdcal` y validar RevenueCat/Play Console | Antes de generar o subir un release Android |
 
 ## Conventions
 
