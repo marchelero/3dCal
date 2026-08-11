@@ -353,6 +353,8 @@ class DeImpl implements AppStrings {
   @override
   String get calcFieldLabelHelper => 'Optional (z. B.: PLA-Basis)';
   @override
+  String get calcFieldFilament => 'Filament';
+  @override
   String get calcFieldWeight => 'Gewicht';
   @override
   String get calcFieldSpoolPrice => 'Spulenpreis';
@@ -484,7 +486,8 @@ class DeImpl implements AppStrings {
   @override
   String get calcTemplateUntitled => 'Ohne Namen';
   @override
-  String get calcTemplateDeleteError => 'Vorlage konnte nicht gel\u00f6scht werden';
+  String get calcTemplateDeleteError =>
+      'Vorlage konnte nicht gel\u00f6scht werden';
 
   @override
   String get calcEmptyHintPrefix => 'Geben Sie';

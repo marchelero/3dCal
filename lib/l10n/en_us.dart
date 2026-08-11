@@ -344,6 +344,8 @@ class EnImpl implements AppStrings {
   @override
   String get calcFieldLabelHelper => 'Optional (e.g.: PLA base)';
   @override
+  String get calcFieldFilament => 'Filament';
+  @override
   String get calcFieldWeight => 'Weight';
   @override
   String get calcFieldSpoolPrice => 'Spool price';

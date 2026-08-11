@@ -475,12 +475,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                           try {
                             final ok = await notifier.deleteTemplate(t.id);
                             if (!sheetCtx.mounted) return;
-                            ScaffoldMessenger.of(sheetCtx).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(
+                              sheetCtx,
+                            ).hideCurrentSnackBar();
                             if (!ok) {
                               ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                                AppSnackBar.error(
-                                  EsBO.calcTemplateDeleteError,
-                                ),
+                                AppSnackBar.error(EsBO.calcTemplateDeleteError),
                               );
                               return;
                             }
@@ -585,9 +585,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ).showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         AppSnackBar.success(
           EsBO.calcSavedWithId(id),
           actionLabel: EsBO.calcSavedViewAction,
@@ -779,15 +777,25 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               _ModeSelector(mode: state.mode, onChanged: _switchMode),
               const SizedBox(height: AppSpacing.xxl),
 
-              // Rubrica hero: Peso de la pieza. Es el dato que mas pesa en
-              // el total; por eso va primero, grande, con la etiqueta
-              // opcional de la pieza integrada abajo.
+              // Rubrica hero: Pieza. La etiqueta de la pieza va primero,
+              // y luego el peso — mismo orden que en el modo avanzado, para
+              // que el form no "salte" al cambiar de modo. El peso sigue
+              // siendo el dato hero (grande, clave).
               _RubricSection(
-                icon: Icons.scale_rounded,
-                title: EsBO.calcSectionWeight,
+                icon: Icons.category_rounded,
+                title: EsBO.calcSectionPiece,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    TextField(
+                      controller: _pieceLabelCtrl,
+                      decoration: InputDecoration(
+                        labelText: EsBO.calcLabelOptional,
+                        helperText: EsBO.calcLabelOptionalHelper,
+                        prefixIcon: Icon(Icons.label_outline),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     NumericInputField(
                       label: EsBO.calcFieldWeight,
                       controller: _weightCtrl,
@@ -798,15 +806,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                       isKey: true,
                       fontSize: 22,
                       showValidation: _showValidationErrors,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextField(
-                      controller: _pieceLabelCtrl,
-                      decoration: InputDecoration(
-                        labelText: EsBO.calcLabelOptional,
-                        helperText: EsBO.calcLabelOptionalHelper,
-                        prefixIcon: Icon(Icons.label_outline),
-                      ),
                     ),
                   ],
                 ),
@@ -1240,17 +1239,27 @@ class _ActionChip extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.maxWidth,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final double? maxWidth;
 
   @override
   Widget build(BuildContext context) {
     return ActionChip(
       avatar: Icon(icon, size: 16),
-      label: Text(label, style: Theme.of(context).textTheme.labelMedium),
+      label: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelMedium,
+        ),
+      ),
       onPressed: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 4),
     );
@@ -1482,7 +1491,9 @@ class _MaterialRowTile extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header: badge + titulo + Spacer + catalog chips + (opcional) delete
+            // Header: badge + titulo + Spacer + (opcional) delete.
+            // Los chips de filamento ya no viven aqui: con etiquetas largas
+            // desbordaban el Row. Ahora viven en el selector de la fila.
             Row(
               children: [
                 Semantics(
@@ -1516,29 +1527,6 @@ class _MaterialRowTile extends ConsumerWidget {
                   style: theme.textTheme.titleSmall,
                 ),
                 const Spacer(),
-                if (filaments.isNotEmpty) ...[
-                  if (defaultFilament != null)
-                    _ActionChip(
-                      icon: Icons.star_rounded,
-                      label: EsBO.calcMaterialUse(defaultFilament.name),
-                      onTap: () => _loadFromFilament(ref, defaultFilament),
-                    ),
-                  if (defaultFilament != null)
-                    const SizedBox(width: AppSpacing.xs),
-                  _ActionChip(
-                    icon: Icons.inventory_2_rounded,
-                    label: EsBO.calcMaterialCatalog,
-                    onTap: () async {
-                      final filament = await showFilamentSelectorDialog(
-                        context,
-                        ref,
-                        filaments: filaments,
-                      );
-                      if (filament != null) _loadFromFilament(ref, filament);
-                    },
-                  ),
-                  if (deletable) const SizedBox(width: AppSpacing.xs),
-                ],
                 if (deletable)
                   Semantics(
                     button: true,
@@ -1565,6 +1553,60 @@ class _MaterialRowTile extends ConsumerWidget {
                   prefixIcon: const Icon(Icons.label_outline, size: 18),
                 ),
                 onChanged: (v) => _emit(),
+              ),
+            ],
+            if (filaments.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  // Selector de filamento: campo linea de cota, una sola
+                  // linea con ellipsis (nunca desborda), toca para abrir
+                  // el catalogo. Mismo widget en Express y Avanzado.
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppRadii.xs),
+                      onTap: () async {
+                        final filament = await showFilamentSelectorDialog(
+                          context,
+                          ref,
+                          filaments: filaments,
+                        );
+                        if (filament != null) _loadFromFilament(ref, filament);
+                      },
+                      child: InputDecorator(
+                        isEmpty: labelCtrl.text.isEmpty,
+                        decoration: InputDecoration(
+                          labelText: EsBO.calcFieldFilament,
+                          hintText: EsBO.calcSelectFilament,
+                          prefixIcon: const Icon(
+                            Icons.inventory_2_rounded,
+                            size: 18,
+                          ),
+                          suffixIcon: const Icon(Icons.expand_more_rounded),
+                          isDense: true,
+                        ),
+                        child: Text(
+                          labelCtrl.text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // "Usar default" solo si el actual difiere del default.
+                  // Nombre truncado para que jamas desborde la fila.
+                  if (defaultFilament != null &&
+                      labelCtrl.text != defaultFilament.name) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    _ActionChip(
+                      icon: Icons.star_rounded,
+                      label: EsBO.calcMaterialUse(defaultFilament.name),
+                      maxWidth: 180,
+                      onTap: () => _loadFromFilament(ref, defaultFilament),
+                    ),
+                  ],
+                ],
               ),
             ],
             const SizedBox(height: AppSpacing.sm),
@@ -1785,10 +1827,7 @@ class _SaveDialogState extends State<_SaveDialog> {
               children: [
                 for (final client in widget.recentClients)
                   ActionChip(
-                    label: Text(
-                      client,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    label: Text(client, overflow: TextOverflow.ellipsis),
                     visualDensity: VisualDensity.compact,
                     onPressed: () => _clientCtrl.text = client,
                   ),

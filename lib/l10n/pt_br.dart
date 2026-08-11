@@ -352,6 +352,8 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcFieldLabelHelper => 'Opcional (ex.: PLA base)';
   @override
+  String get calcFieldFilament => 'Filamento';
+  @override
   String get calcFieldWeight => 'Peso';
   @override
   String get calcFieldSpoolPrice => 'Preço da bobina';
@@ -474,11 +476,13 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcTemplateSaveSuccess => 'Modelo salvo';
   @override
-  String get calcTemplateSaveError => 'N\u00e3o foi poss\u00edvel salvar o modelo';
+  String get calcTemplateSaveError =>
+      'N\u00e3o foi poss\u00edvel salvar o modelo';
   @override
   String get calcTemplateApplySuccess => 'Modelo aplicado ao formul\u00e1rio';
   @override
-  String get calcTemplateApplyError => 'N\u00e3o foi poss\u00edvel carregar o modelo';
+  String get calcTemplateApplyError =>
+      'N\u00e3o foi poss\u00edvel carregar o modelo';
   @override
   String get calcTemplateEmpty =>
       'Voc\u00ea ainda n\u00e3o tem modelos.\nSalve um trabalho frequente como modelo para reutiliz\u00e1-lo.';

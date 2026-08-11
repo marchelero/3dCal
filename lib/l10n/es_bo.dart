@@ -133,8 +133,7 @@ class EsBO {
       _impl.settingsBackupImportInvalidFile;
   static String get settingsBackupImportFutureVersion =>
       _impl.settingsBackupImportFutureVersion;
-  static String get settingsBackupLockedBody =>
-      _impl.settingsBackupLockedBody;
+  static String get settingsBackupLockedBody => _impl.settingsBackupLockedBody;
 
   // === Dashboard ===
   static String get dashboardTitle => _impl.dashboardTitle;
@@ -221,6 +220,7 @@ class EsBO {
       _impl.calcMaterialUse(filamentName);
   static String get calcFieldLabel => _impl.calcFieldLabel;
   static String get calcFieldLabelHelper => _impl.calcFieldLabelHelper;
+  static String get calcFieldFilament => _impl.calcFieldFilament;
   static String get calcFieldWeight => _impl.calcFieldWeight;
   static String get calcFieldSpoolPrice => _impl.calcFieldSpoolPrice;
   static String get calcFieldSpoolGrams => _impl.calcFieldSpoolGrams;
@@ -250,7 +250,8 @@ class EsBO {
   static String get costHelpWasteBody => _impl.costHelpWasteBody;
   static String get costHelpMinimumChargeTitle =>
       _impl.costHelpMinimumChargeTitle;
-  static String get costHelpMinimumChargeBody => _impl.costHelpMinimumChargeBody;
+  static String get costHelpMinimumChargeBody =>
+      _impl.costHelpMinimumChargeBody;
   static String get costHelpMarginTitle => _impl.costHelpMarginTitle;
   static String get costHelpMarginBody => _impl.costHelpMarginBody;
   static String get calcCloseAction => _impl.calcCloseAction;
@@ -943,6 +944,8 @@ class EsImpl implements AppStrings {
   String get calcFieldLabel => 'Etiqueta';
   @override
   String get calcFieldLabelHelper => 'Opcional (ej: PLA base)';
+  @override
+  String get calcFieldFilament => 'Filamento';
   @override
   String get calcFieldWeight => 'Peso';
   @override

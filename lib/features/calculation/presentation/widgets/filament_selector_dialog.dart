@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_settings_provider.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/default_badge.dart';
@@ -44,10 +45,11 @@ Future<Filament?> showFilamentSelectorDialog(
               ? theme.colorScheme.tertiary
               : theme.colorScheme.onSecondaryContainer,
         ),
-        title: Text(f.name),
+        title: Text(f.name, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
           '${f.pricePerBobbin.toStringAsFixed(0)} $sym · '
           '${f.gramsPerBobbin.toStringAsFixed(0)} g',
+          style: AppTheme.num(theme.textTheme.bodySmall ?? const TextStyle()),
         ),
         trailing: f.isDefault ? const DefaultBadge(size: 20) : null,
         onTap: select,

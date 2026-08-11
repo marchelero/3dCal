@@ -8,6 +8,8 @@
 /// cancela.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/es_bo.dart';
@@ -44,52 +46,57 @@ Future<T?> showSelectorDialog<T>({
       void select(T item) => Navigator.of(ctx).pop(item);
 
       return StatefulBuilder(
-        builder: (context, setInnerState) => AlertDialog(
-          title: Text(title),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: searchHint,
-                    prefixIcon: const Icon(Icons.search),
-                    isDense: true,
+        builder: (context, setInnerState) {
+          final viewport = MediaQuery.sizeOf(context);
+          return AlertDialog(
+            title: Text(title),
+            content: SizedBox(
+              width: math.min(560, viewport.width * 0.92),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: searchHint,
+                      prefixIcon: const Icon(Icons.search),
+                      isDense: true,
+                    ),
+                    onChanged: (v) => setInnerState(() => applyFilter(v)),
                   ),
-                  onChanged: (v) => setInnerState(() => applyFilter(v)),
-                ),
-                const SizedBox(height: 12),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 400),
-                  child: filtered.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Center(child: Text(EsBO.commonNoResults)),
-                        )
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: filtered.length,
-                          itemBuilder: (_, i) {
-                            final item = filtered[i];
-                            return itemBuilder(
-                              context,
-                              item,
-                              () => select(item),
-                            );
-                          },
-                        ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: math.min(480, viewport.height * 0.72),
+                    ),
+                    child: filtered.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(child: Text(EsBO.commonNoResults)),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final item = filtered[i];
+                              return itemBuilder(
+                                context,
+                                item,
+                                () => select(item),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(EsBO.commonCancel),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(EsBO.commonCancel),
+              ),
+            ],
+          );
+        },
       );
     },
   );

@@ -329,6 +329,8 @@ class FrImpl implements AppStrings {
   @override
   String get calcFieldLabelHelper => 'Facultatif (ex. : base PLA)';
   @override
+  String get calcFieldFilament => 'Filament';
+  @override
   String get calcFieldWeight => 'Poids';
   @override
   String get calcFieldSpoolPrice => 'Prix de la bobine';
@@ -445,9 +447,11 @@ class FrImpl implements AppStrings {
   @override
   String get calcTemplateSaveSuccess => 'Mod\u00e8le enregistr\u00e9';
   @override
-  String get calcTemplateSaveError => 'Impossible d\u2019enregistrer le mod\u00e8le';
+  String get calcTemplateSaveError =>
+      'Impossible d\u2019enregistrer le mod\u00e8le';
   @override
-  String get calcTemplateApplySuccess => 'Mod\u00e8le appliqu\u00e9 au formulaire';
+  String get calcTemplateApplySuccess =>
+      'Mod\u00e8le appliqu\u00e9 au formulaire';
   @override
   String get calcTemplateApplyError => 'Impossible de charger le mod\u00e8le';
   @override
@@ -456,7 +460,8 @@ class FrImpl implements AppStrings {
   @override
   String get calcTemplateUntitled => 'Sans nom';
   @override
-  String get calcTemplateDeleteError => 'Impossible de supprimer le mod\u00e8le';
+  String get calcTemplateDeleteError =>
+      'Impossible de supprimer le mod\u00e8le';
   @override
   String get calcEmptyHintPrefix => 'Renseignez';
   @override

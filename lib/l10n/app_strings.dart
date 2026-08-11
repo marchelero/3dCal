@@ -223,6 +223,7 @@ abstract class AppStrings {
   String calcMaterialUse(String filamentName);
   String get calcFieldLabel;
   String get calcFieldLabelHelper;
+  String get calcFieldFilament;
   String get calcFieldWeight;
   String get calcFieldSpoolPrice;
   String get calcFieldSpoolGrams;
