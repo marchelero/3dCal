@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs, no_leading_underscores_for_local_identifiers
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,19 +13,45 @@ import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/data/calculation_repository.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 import 'package:tresdcal/features/calculation/domain/entities/material_input.dart';
+import 'package:tresdcal/features/calculation/presentation/notifiers/calculations_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
+import 'package:tresdcal/features/entitlement/data/entitlement_repository.dart';
 import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
 
-/// Holder mutable para tests que necesitan cambiar `isPro` en runtime.
-///
-/// **Por que existe**: `ProviderContainer.updateOverrides` no permite
-/// cambiar el `length` de la lista (mismo overrides, solo updates de
-/// valores). Para simular un "upgrade mid-flight", el override de
-/// `isProProvider` lee de este holder; mutar el value + `invalidate`
-/// dispara el rebuild.
-class _MutableIsProHolder {
-  _MutableIsProHolder(this.value);
-  bool value;
+class _PendingEntitlementRepository implements EntitlementRepository {
+  final Completer<Entitlement?> _active = Completer<Entitlement?>();
+
+  void complete(Entitlement? entitlement) => _active.complete(entitlement);
+
+  @override
+  Future<Entitlement?> getActive() => _active.future;
+
+  @override
+  Future<int> save(EntitlementsCompanion entry) async => 1;
+
+  @override
+  Future<int> clear() async => 0;
+
+  @override
+  Stream<Entitlement?> watchActive() => const Stream<Entitlement?>.empty();
+}
+
+class _ResolvedEntitlementRepository implements EntitlementRepository {
+  _ResolvedEntitlementRepository(this.active);
+
+  Entitlement? active;
+
+  @override
+  Future<Entitlement?> getActive() async => active;
+
+  @override
+  Future<int> save(EntitlementsCompanion entry) async => 1;
+
+  @override
+  Future<int> clear() async => 0;
+
+  @override
+  Stream<Entitlement?> watchActive() => Stream.value(active);
 }
 
 /// Integration tests del history cap (T15 del plan de monetizacion).
@@ -59,13 +87,38 @@ void main() {
 
   /// Construye un container Riverpod con db + prefs + override de isPro.
   /// Si [isPro] es null, NO se override (default = free via SP vacio).
-  ProviderContainer _container({bool? isPro}) {
+  ProviderContainer _container({
+    bool? isPro,
+    EntitlementRepository? entitlementRepository,
+  }) {
     final overrides = [
       appDatabaseProvider.overrideWithValue(db),
       sharedPreferencesProvider.overrideWithValue(prefs),
     ];
     if (isPro != null) {
-      overrides.add(isProProvider.overrideWith((ref) => isPro));
+      if (isPro) {
+        overrides.add(
+          entitlementRepositoryProvider.overrideWithValue(
+            _ResolvedEntitlementRepository(
+              Entitlement(
+                id: 1,
+                source: kSourceLifetimePurchase,
+                productId: kProProductId,
+                purchasedAt: DateTime.utc(2026, 1, 1),
+                validatedAt: DateTime.utc(2026, 1, 1),
+                expiresAt: null,
+                receiptData: null,
+                isActive: true,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    if (entitlementRepository != null) {
+      overrides.add(
+        entitlementRepositoryProvider.overrideWithValue(entitlementRepository),
+      );
     }
     return ProviderContainer(overrides: overrides);
   }
@@ -112,6 +165,74 @@ void main() {
   }
 
   group('History cap (T15) — Free user', () {
+    test(
+      'entitlement loading no trata a Pro potencial como Free al duplicar',
+      () async {
+        final pending = _PendingEntitlementRepository();
+        final container = _container(entitlementRepository: pending);
+        addTearDown(container.dispose);
+
+        final ids = await _seedCalculations(container, kFreeHistoryCap);
+        container.read(entitlementNotifierProvider);
+        expect(container.read(entitlementNotifierProvider).isLoading, isTrue);
+
+        final copyFuture = container
+            .read(calculationsNotifierProvider.notifier)
+            .duplicate(ids.first, pieceNameSuffix: ' (copia)');
+        pending.complete(
+          Entitlement(
+            id: 1,
+            source: kSourceLifetimePurchase,
+            productId: kProProductId,
+            purchasedAt: DateTime.utc(2026, 1, 1),
+            validatedAt: DateTime.utc(2026, 1, 1),
+            expiresAt: null,
+            receiptData: null,
+            isActive: true,
+          ),
+        );
+        final copyId = await copyFuture;
+
+        expect(copyId, isPositive);
+        expect(
+          await db.select(db.calculations).get(),
+          hasLength(kFreeHistoryCap + 1),
+        );
+      },
+    );
+
+    test('entitlement loading no bloquea save() de un Pro potencial', () async {
+      final pending = _PendingEntitlementRepository();
+      final container = _container(entitlementRepository: pending);
+      addTearDown(container.dispose);
+
+      await _seedCalculations(container, kFreeHistoryCap);
+      container.read(entitlementNotifierProvider);
+      _fillValid(container);
+      final saveFuture = container
+          .read(calculatorNotifierProvider.notifier)
+          .save(pieceName: 'Pro durante loading');
+
+      pending.complete(
+        Entitlement(
+          id: 1,
+          source: kSourceLifetimePurchase,
+          productId: kProProductId,
+          purchasedAt: DateTime.utc(2026, 1, 1),
+          validatedAt: DateTime.utc(2026, 1, 1),
+          expiresAt: null,
+          receiptData: null,
+          isActive: true,
+        ),
+      );
+
+      expect(await saveFuture, isPositive);
+      expect(
+        await db.select(db.calculations).get(),
+        hasLength(kFreeHistoryCap + 1),
+      );
+    });
+
     test(
       'countAll < kFreeHistoryCap: save() exitoso, retorna id positivo',
       () async {
@@ -212,6 +333,25 @@ void main() {
 
   group('History cap (T15) — Pro user', () {
     test(
+      'duplicate() pro con countAll == kFreeHistoryCap no aplica cap',
+      () async {
+        final container = _container(isPro: true);
+        addTearDown(container.dispose);
+
+        final ids = await _seedCalculations(container, kFreeHistoryCap);
+        final copyId = await container
+            .read(calculationsNotifierProvider.notifier)
+            .duplicate(ids.first, pieceNameSuffix: ' (copia)');
+
+        expect(copyId, isPositive);
+        expect(
+          await db.select(db.calculations).get(),
+          hasLength(kFreeHistoryCap + 1),
+        );
+      },
+    );
+
+    test(
       'countAll == kFreeHistoryCap: pro puede guardar la #11 sin cap',
       () async {
         final container = _container(isPro: true);
@@ -253,12 +393,12 @@ void main() {
       () async {
         // Usamos un holder mutable para no chocar con la regla de
         // `updateOverrides` (mismo length, solo update de valores).
-        final isProHolder = _MutableIsProHolder(false);
+        final entitlementRepo = _ResolvedEntitlementRepository(null);
         final c = ProviderContainer(
           overrides: [
             appDatabaseProvider.overrideWithValue(db),
             sharedPreferencesProvider.overrideWithValue(prefs),
-            isProProvider.overrideWith((ref) => isProHolder.value),
+            entitlementRepositoryProvider.overrideWithValue(entitlementRepo),
           ],
         );
         addTearDown(c.dispose);
@@ -273,8 +413,18 @@ void main() {
         );
 
         // Upgrade mid-flight: flip + invalidar para que se relea.
-        isProHolder.value = true;
-        c.invalidate(isProProvider);
+        entitlementRepo.active = Entitlement(
+          id: 1,
+          source: kSourceLifetimePurchase,
+          productId: kProProductId,
+          purchasedAt: DateTime.utc(2026, 1, 1),
+          validatedAt: DateTime.utc(2026, 1, 1),
+          expiresAt: null,
+          receiptData: null,
+          isActive: true,
+        );
+        c.invalidate(entitlementNotifierProvider);
+        await c.read(entitlementNotifierProvider.future);
 
         // Ahora save funciona.
         final id = await c
@@ -327,6 +477,51 @@ void main() {
         await expectLater(
           container.read(calculatorNotifierProvider.notifier).save(),
           throwsA(isA<HistoryCapReachedException>()),
+        );
+      },
+    );
+
+    test(
+      'countAll == kFreeHistoryCap: duplicate() bloquea sin insertar',
+      () async {
+        final container = _container();
+        addTearDown(container.dispose);
+
+        final ids = await _seedCalculations(container, kFreeHistoryCap);
+        await container.read(entitlementNotifierProvider.future);
+        await expectLater(
+          container
+              .read(calculationsNotifierProvider.notifier)
+              .duplicate(ids.first, pieceNameSuffix: ' (copia)'),
+          throwsA(isA<HistoryCapReachedException>()),
+        );
+
+        expect(
+          await db.select(db.calculations).get(),
+          hasLength(kFreeHistoryCap),
+        );
+      },
+    );
+
+    test(
+      'duplicate() Free antes del limite conserva la copia y el sufijo',
+      () async {
+        final container = _container();
+        addTearDown(container.dispose);
+
+        final ids = await _seedCalculations(container, kFreeHistoryCap - 1);
+        await container.read(entitlementNotifierProvider.future);
+        final copyId = await container
+            .read(calculationsNotifierProvider.notifier)
+            .duplicate(ids.first, pieceNameSuffix: ' (copia)');
+
+        final copy = await (db.select(
+          db.calculations,
+        )..where((c) => c.id.equals(copyId))).getSingle();
+        expect(copy.pieceName, 'Seed #0 (copia)');
+        expect(
+          await db.select(db.calculations).get(),
+          hasLength(kFreeHistoryCap),
         );
       },
     );

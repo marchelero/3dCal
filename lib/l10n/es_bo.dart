@@ -98,10 +98,16 @@ class EsBO {
   static String get settingsBrandingLockedBody =>
       _impl.settingsBrandingLockedBody;
   static String get settingsGoProAction => _impl.settingsGoProAction;
+  static String get settingsProTitle => _impl.settingsProTitle;
+  static String get settingsProActive => _impl.settingsProActive;
+  static String get settingsProPurchaseType => _impl.settingsProPurchaseType;
+  static String get settingsProRestorePurchase =>
+      _impl.settingsProRestorePurchase;
 
   static String get settingsRestorePurchases => _impl.settingsRestorePurchases;
   static String get settingsRestoreSuccess => _impl.settingsRestoreSuccess;
   static String get settingsRestoreEmpty => _impl.settingsRestoreEmpty;
+  static String get settingsRestoreError => _impl.settingsRestoreError;
 
   // === Backup ===
   static String get settingsBackupTitle => _impl.settingsBackupTitle;
@@ -471,6 +477,7 @@ class EsBO {
       _impl.paywallUnlockButton(price);
   static String get paywallRestoreButton => _impl.paywallRestoreButton;
   static String get paywallErrorGeneric => _impl.paywallErrorGeneric;
+  static String get paywallUnavailable => _impl.paywallUnavailable;
   static String get paywallAlreadyPro => _impl.paywallAlreadyPro;
   static String get paywallClose => _impl.paywallClose;
 
@@ -724,7 +731,15 @@ class EsImpl implements AppStrings {
   String get settingsBrandingLockedBody =>
       'Desbloquea Pro para personalizar tu marca';
   @override
-  String get settingsGoProAction => 'Ir a Pro';
+  String get settingsGoProAction => 'Desbloquear PRO';
+  @override
+  String get settingsProTitle => '3D Cal PRO';
+  @override
+  String get settingsProActive => 'PRO activo';
+  @override
+  String get settingsProPurchaseType => 'Compra única';
+  @override
+  String get settingsProRestorePurchase => 'Restaurar compra';
 
   @override
   String get settingsRestorePurchases => 'Restaurar compras';
@@ -732,6 +747,8 @@ class EsImpl implements AppStrings {
   String get settingsRestoreSuccess => 'Compras restauradas correctamente!';
   @override
   String get settingsRestoreEmpty => 'No se encontraron compras previas';
+  @override
+  String get settingsRestoreError => 'No se pudieron restaurar las compras.';
 
   @override
   String get settingsBackupTitle => 'Copia de seguridad';
@@ -1376,7 +1393,7 @@ class EsImpl implements AppStrings {
   String get calculatorAdvancedLockedBody =>
       'Desbloquea Pro para cotizaciones multi-material';
   @override
-  String get calculatorGoProAction => 'Ir a Pro';
+  String get calculatorGoProAction => 'Desbloquear PRO';
 
   // === History cap gate (T15) ===
   @override
@@ -1417,6 +1434,9 @@ class EsImpl implements AppStrings {
   @override
   String get paywallErrorGeneric =>
       'No se pudo completar la compra. Intenta de nuevo.';
+  @override
+  String get paywallUnavailable =>
+      'Las compras no estan disponibles en esta plataforma.';
   @override
   String get paywallAlreadyPro => 'Ya tienes Pro. Gracias!';
   @override

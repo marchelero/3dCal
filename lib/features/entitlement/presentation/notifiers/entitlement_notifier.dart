@@ -75,8 +75,14 @@ class EntitlementPro extends EntitlementState {
 ///   reacciona al resultado.
 /// - [refresh] — re-consulta DB, actualiza state segun resultado.
 class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
+  /// Subscripción al [PaymentService.proRevocationStream]. Se cancela con
+  /// `ref.onDispose` (el notifier no es autoDispose: vive con la app).
+  StreamSubscription<void>? _revocationSub;
+
   @override
   Future<EntitlementState> build() async {
+    _subscribeToRevocations();
+
     final cache = ref.read(entitlementCacheProvider);
 
     if (cache.isPro) {
@@ -106,6 +112,27 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
       );
     }
     return const EntitlementFree();
+  }
+
+  /// Escucha revocaciones del entitlement (refund/cancel detectado por
+  /// RevenueCat mientras la app corre) para bajar a Free en tiempo real.
+  ///
+  /// **Race guard**: solo actuamos si el state actual es [EntitlementPro].
+  /// Asi un evento que llega durante el boot (loading), tras un cancel,
+  /// o mientras un purchase/restore esta en vuelo, es un no-op. La
+  /// desactivacion es idempotente ([deactivate] con state Free es no-op).
+  void _subscribeToRevocations() {
+    if (_revocationSub != null) return;
+    _revocationSub = ref
+        .read(paymentServiceProvider)
+        .proRevocationStream
+        .listen((_) {
+          final current = state.value;
+          if (current is EntitlementPro) {
+            unawaited(deactivate());
+          }
+        });
+    ref.onDispose(() => _revocationSub?.cancel());
   }
 
   /// Compra el [productId] via [PaymentService].

@@ -29,6 +29,8 @@ import 'package:tresdcal/features/entitlement/presentation/providers/entitlement
 /// Fake [PaymentService] in-memory. Sin platform channels, sin red.
 /// El test setea el resultado que va a retornar cada metodo.
 class _FakePaymentService implements PaymentService {
+  @override
+  bool get isAvailable => true;
   int configureCalls = 0;
   int purchaseCalls = 0;
   String? lastPurchaseProductId;
@@ -60,6 +62,12 @@ class _FakePaymentService implements PaymentService {
 
   @override
   Stream<PaymentResult> get purchaseStream => _purchaseStream.stream;
+
+  @override
+  Future<String?> getProPriceString() async => null;
+
+  @override
+  Stream<void> get proRevocationStream => const Stream.empty();
 }
 
 /// Fake [EntitlementRepository] in-memory.

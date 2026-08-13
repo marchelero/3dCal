@@ -243,7 +243,8 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     if (!isPro) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.warning(
+        AppSnackBar.info(
+          context,
           EsBO.csvExportLockedBody,
           actionLabel: EsBO.csvGoProAction,
           onAction: () {
@@ -538,6 +539,20 @@ class _PopupMenu extends StatelessWidget {
             context,
           ).showSnackBar(AppSnackBar.success(EsBO.calcDuplicateSuccess));
         } catch (e) {
+          if (e is HistoryCapReachedException) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                AppSnackBar.info(
+                  context,
+                  EsBO.historyCapReachedBody,
+                  actionLabel: EsBO.calculatorGoProAction,
+                  onAction: () => context.push('/paywall'),
+                ),
+              );
+            return;
+          }
           debugPrint('Duplicate quote failed: $e');
           if (!context.mounted) return;
           ScaffoldMessenger.of(

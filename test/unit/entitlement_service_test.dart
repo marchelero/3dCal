@@ -22,6 +22,7 @@ import 'package:tresdcal/features/entitlement/presentation/providers/entitlement
 class _FakeEntitlementRepository implements EntitlementRepository {
   Entitlement? _active;
   Completer<Entitlement?>? _getActiveCompleter;
+  Object? getActiveError;
   int getActiveCalls = 0;
   int saveCalls = 0;
   int clearCalls = 0;
@@ -54,6 +55,8 @@ class _FakeEntitlementRepository implements EntitlementRepository {
   @override
   Future<Entitlement?> getActive() {
     getActiveCalls++;
+    final error = getActiveError;
+    if (error != null) return Future<Entitlement?>.error(error);
     final completer = _getActiveCompleter;
     if (completer != null && !completer.isCompleted) {
       return completer.future;
@@ -94,6 +97,8 @@ class _FakeEntitlementRepository implements EntitlementRepository {
 /// Fake [PaymentService] in-memory. Minimo — solo lo que
 /// [EntitlementNotifier.build] necesita en el path stale.
 class _FakePaymentService implements PaymentService {
+  @override
+  bool get isAvailable => true;
   int configureCalls = 0;
   int purchaseCalls = 0;
   int restoreCalls = 0;
@@ -126,6 +131,12 @@ class _FakePaymentService implements PaymentService {
 
   @override
   Stream<PaymentResult> get purchaseStream => const Stream.empty();
+
+  @override
+  Future<String?> getProPriceString() async => null;
+
+  @override
+  Stream<void> get proRevocationStream => const Stream.empty();
 }
 
 void main() {
@@ -593,6 +604,76 @@ void main() {
           .activate(source: 'lifetime_purchase');
 
       expect(container!.read(isProProvider), isTrue);
+    });
+  });
+
+  // ---------- resolveIsPro ----------
+
+  group('resolveIsPro', () {
+    test(
+      'respeta el override de plataforma aunque el entitlement sea Free',
+      () async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final prefs = await SharedPreferences.getInstance();
+        final container = ProviderContainer(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            entitlementRepositoryProvider.overrideWithValue(
+              _FakeEntitlementRepository(),
+            ),
+            paymentServiceProvider.overrideWithValue(_FakePaymentService()),
+            // Simula el override web de main.dart sin depender de kIsWeb.
+            isProProvider.overrideWithValue(true),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final resolvedIsProProvider = FutureProvider<bool>(resolveIsPro);
+        expect(await container.read(resolvedIsProProvider.future), isTrue);
+        expect(
+          container.read(entitlementNotifierProvider).value,
+          isA<EntitlementFree>(),
+        );
+      },
+    );
+
+    test('timeout respeta el override efectivo Pro', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _FakeEntitlementRepository()..blockGetActive();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(_FakePaymentService()),
+          isProProvider.overrideWithValue(true),
+        ],
+      );
+      addTearDown(() {
+        repo.unblockGetActive();
+        container.dispose();
+      });
+
+      final resolvedIsProProvider = FutureProvider<bool>(resolveIsPro);
+      expect(await container.read(resolvedIsProProvider.future), isTrue);
+    });
+
+    test('error usa false como fallback efectivo por defecto', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _FakeEntitlementRepository()
+        ..getActiveError = StateError('storage unavailable');
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(_FakePaymentService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final resolvedIsProProvider = FutureProvider<bool>(resolveIsPro);
+      expect(await container.read(resolvedIsProProvider.future), isFalse);
     });
   });
 }

@@ -1,8 +1,26 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
+import '../../../entitlement/presentation/providers/entitlement_providers.dart';
+
+/// Thrown when a Free user tries to create a quote beyond the history cap.
+class HistoryCapReachedException implements Exception {
+  const HistoryCapReachedException({
+    required this.cap,
+    required this.currentCount,
+  });
+
+  final int cap;
+  final int currentCount;
+
+  @override
+  String toString() =>
+      'HistoryCapReachedException: $currentCount/$cap cotizaciones. '
+      'Upgrade a Pro para historial ilimitado.';
+}
 
 /// Notifier reactivo para la lista de cotizaciones con search/filter.
 ///
@@ -74,7 +92,24 @@ class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
   /// distinguir la copia (ej: ' (copia)').
   Future<int> duplicate(int id, {String? pieceNameSuffix}) async {
     final repo = ref.read(calculationRepositoryProvider);
-    final newId = await repo.duplicate(id, pieceNameSuffix: pieceNameSuffix);
+    final int newId;
+    final isPro = await resolveIsPro(ref);
+    if (isPro) {
+      newId = await repo.duplicate(id, pieceNameSuffix: pieceNameSuffix);
+    } else {
+      final limitedId = await repo.duplicateIfWithinLimit(
+        id,
+        limit: kFreeHistoryCap,
+        pieceNameSuffix: pieceNameSuffix,
+      );
+      if (limitedId == null) {
+        throw const HistoryCapReachedException(
+          cap: kFreeHistoryCap,
+          currentCount: kFreeHistoryCap,
+        );
+      }
+      newId = limitedId;
+    }
     await _reload();
     return newId;
   }

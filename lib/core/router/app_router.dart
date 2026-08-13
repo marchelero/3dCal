@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -116,6 +117,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/paywall',
+      redirect: (context, state) => kIsWeb ? '/settings' : null,
       pageBuilder: (context, state) => _slideRight(const PaywallPage()),
     ),
     GoRoute(

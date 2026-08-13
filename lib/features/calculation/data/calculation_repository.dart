@@ -66,6 +66,22 @@ class CalculationRepository {
     return _insert(draft, isTemplate: draft.isTemplate);
   }
 
+  /// Crea una cotizacion normal si aun queda espacio en el limite indicado.
+  ///
+  /// El conteo y la insercion comparten la misma transaccion para que dos
+  /// guardados concurrentes no puedan pasar ambos un limite Free.
+  /// Retorna `null` cuando el limite ya fue alcanzado.
+  Future<int?> createIfWithinLimit(
+    CalculationDraft draft, {
+    required int limit,
+  }) {
+    return _db.transaction(() async {
+      final count = await _countCalculations();
+      if (count >= limit) return null;
+      return _insertInTransaction(draft, isTemplate: false);
+    });
+  }
+
   /// Crea una plantilla de trabajo frecuente.
   ///
   /// Reusa la misma fila/snapshots que una cotizacion pero marcada como
@@ -77,59 +93,66 @@ class CalculationRepository {
 
   Future<int> _insert(CalculationDraft draft, {required bool isTemplate}) {
     return _db.transaction(() async {
-      final o = draft.output;
-      final calcId = await _db
-          .into(_db.calculations)
+      return _insertInTransaction(draft, isTemplate: isTemplate);
+    });
+  }
+
+  Future<int> _insertInTransaction(
+    CalculationDraft draft, {
+    required bool isTemplate,
+  }) async {
+    final o = draft.output;
+    final calcId = await _db
+        .into(_db.calculations)
+        .insert(
+          CalculationsCompanion.insert(
+            createdAt: DateTime.now().toUtc(),
+            pieceName: Value(draft.pieceName),
+            clientName: Value(draft.clientName),
+            notes: Value(draft.notes),
+            conditions: Value(draft.conditions),
+            printerId: const Value(null),
+            printerNameSnapshot: const Value(null),
+            printerWattsSnapshot: Value(0),
+            totalHours: draft.totalHours.toDouble(),
+            printMinutes: Value(draft.printMinutes),
+            discountPercentage: draft.discountPercentage.toDouble(),
+            kwhRateSnapshot: 0,
+            profitBaseSnapshot: 0,
+            materialCostSnapshot: o.materialCost.toDouble(),
+            electricCostSnapshot: o.electricCost.toDouble(),
+            laborCostSnapshot: o.laborCost.toDouble(),
+            postProcessCostSnapshot: o.postProcessCost.toDouble(),
+            baseCostSnapshot: o.baseCost.toDouble(),
+            failureCostSnapshot: o.failureCost.toDouble(),
+            markupCostSnapshot: o.markupCost.toDouble(),
+            profitAmountSnapshot: o.profitAmount.toDouble(),
+            minimumChargeAppliedSnapshot: 0,
+            effectiveTotalSnapshot: o.totalFinal.toDouble(),
+            totalPriceSnapshot: o.totalPrice.toDouble(),
+            laborRateSnapshot: 0,
+            postProcessRateSnapshot: 0,
+            failureRateSnapshot: 0,
+            minimumChargeSnapshot: 0,
+            markupOnMaterialsSnapshot: 0,
+            isTemplate: Value(isTemplate),
+          ),
+        );
+    for (final m in draft.materials) {
+      await _db
+          .into(_db.calculationMaterials)
           .insert(
-            CalculationsCompanion.insert(
-              createdAt: DateTime.now().toUtc(),
-              pieceName: Value(draft.pieceName),
-              clientName: Value(draft.clientName),
-              notes: Value(draft.notes),
-              conditions: Value(draft.conditions),
-              printerId: const Value(null),
-              printerNameSnapshot: const Value(null),
-              printerWattsSnapshot: Value(0),
-              totalHours: draft.totalHours.toDouble(),
-              printMinutes: Value(draft.printMinutes),
-              discountPercentage: draft.discountPercentage.toDouble(),
-              kwhRateSnapshot: 0,
-              profitBaseSnapshot: 0,
-              materialCostSnapshot: o.materialCost.toDouble(),
-              electricCostSnapshot: o.electricCost.toDouble(),
-              laborCostSnapshot: o.laborCost.toDouble(),
-              postProcessCostSnapshot: o.postProcessCost.toDouble(),
-              baseCostSnapshot: o.baseCost.toDouble(),
-              failureCostSnapshot: o.failureCost.toDouble(),
-              markupCostSnapshot: o.markupCost.toDouble(),
-              profitAmountSnapshot: o.profitAmount.toDouble(),
-              minimumChargeAppliedSnapshot: 0,
-              effectiveTotalSnapshot: o.totalFinal.toDouble(),
-              totalPriceSnapshot: o.totalPrice.toDouble(),
-              laborRateSnapshot: 0,
-              postProcessRateSnapshot: 0,
-              failureRateSnapshot: 0,
-              minimumChargeSnapshot: 0,
-              markupOnMaterialsSnapshot: 0,
-              isTemplate: Value(isTemplate),
+            CalculationMaterialsCompanion.insert(
+              calculationId: calcId,
+              filamentId: Value(_filamentIdFromLabel(m.label)),
+              label: m.label,
+              weightGrams: m.weightGrams.toDouble(),
+              pricePerBobbinSnapshot: m.pricePerBobbin.toDouble(),
+              gramsPerBobbinSnapshot: m.gramsPerBobbin.toDouble(),
             ),
           );
-      for (final m in draft.materials) {
-        await _db
-            .into(_db.calculationMaterials)
-            .insert(
-              CalculationMaterialsCompanion.insert(
-                calculationId: calcId,
-                filamentId: Value(_filamentIdFromLabel(m.label)),
-                label: m.label,
-                weightGrams: m.weightGrams.toDouble(),
-                pricePerBobbinSnapshot: m.pricePerBobbin.toDouble(),
-                gramsPerBobbinSnapshot: m.gramsPerBobbin.toDouble(),
-              ),
-            );
-      }
-      return calcId;
-    });
+    }
+    return calcId;
   }
 
   /// Duplica una cotizacion existente: copia todos los snapshots y
@@ -142,79 +165,109 @@ class CalculationRepository {
   /// Devuelve el id de la nueva cotizacion.
   Future<int> duplicate(int sourceId, {String? pieceNameSuffix}) {
     return _db.transaction(() async {
-      final source = await (_db.select(
-        _db.calculations,
-      )..where((c) => c.id.equals(sourceId))).getSingleOrNull();
-      if (source == null) {
-        throw StateError('Calculation $sourceId not found for duplicate');
-      }
-      final materials = await (_db.select(
-        _db.calculationMaterials,
-      )..where((m) => m.calculationId.equals(sourceId))).get();
+      return _duplicateInTransaction(
+        sourceId,
+        pieceNameSuffix: pieceNameSuffix,
+      );
+    });
+  }
 
-      final pieceName = source.pieceName == null
-          ? null
-          : source.pieceName! + (pieceNameSuffix ?? '');
+  /// Duplica una cotizacion solo si aun queda espacio en el limite indicado.
+  ///
+  /// El conteo y la copia comparten la misma transaccion, igual que
+  /// [createIfWithinLimit], para que una duplicacion concurrente no supere
+  /// el limite Free.
+  Future<int?> duplicateIfWithinLimit(
+    int sourceId, {
+    required int limit,
+    String? pieceNameSuffix,
+  }) {
+    return _db.transaction(() async {
+      final count = await _countCalculations();
+      if (count >= limit) return null;
+      return _duplicateInTransaction(
+        sourceId,
+        pieceNameSuffix: pieceNameSuffix,
+      );
+    });
+  }
 
-      final newId = await _db
-          .into(_db.calculations)
+  Future<int> _duplicateInTransaction(
+    int sourceId, {
+    String? pieceNameSuffix,
+  }) async {
+    final source = await (_db.select(
+      _db.calculations,
+    )..where((c) => c.id.equals(sourceId))).getSingleOrNull();
+    if (source == null) {
+      throw StateError('Calculation $sourceId not found for duplicate');
+    }
+    final materials = await (_db.select(
+      _db.calculationMaterials,
+    )..where((m) => m.calculationId.equals(sourceId))).get();
+
+    final pieceName = source.pieceName == null
+        ? null
+        : source.pieceName! + (pieceNameSuffix ?? '');
+
+    final newId = await _db
+        .into(_db.calculations)
+        .insert(
+          CalculationsCompanion.insert(
+            createdAt: DateTime.now().toUtc(),
+            pieceName: Value(pieceName),
+            clientName: Value(source.clientName),
+            notes: Value(source.notes),
+            conditions: Value(source.conditions),
+            printerId: Value(source.printerId),
+            printerNameSnapshot: Value(source.printerNameSnapshot),
+            printerWattsSnapshot: Value(source.printerWattsSnapshot),
+            totalHours: source.totalHours,
+            printMinutes: Value(source.printMinutes),
+            discountPercentage: source.discountPercentage,
+            kwhRateSnapshot: source.kwhRateSnapshot,
+            profitBaseSnapshot: source.profitBaseSnapshot,
+            materialCostSnapshot: source.materialCostSnapshot,
+            electricCostSnapshot: source.electricCostSnapshot,
+            laborCostSnapshot: source.laborCostSnapshot,
+            postProcessCostSnapshot: source.postProcessCostSnapshot,
+            baseCostSnapshot: source.baseCostSnapshot,
+            failureCostSnapshot: source.failureCostSnapshot,
+            markupCostSnapshot: source.markupCostSnapshot,
+            profitAmountSnapshot: source.profitAmountSnapshot,
+            minimumChargeAppliedSnapshot: source.minimumChargeAppliedSnapshot,
+            effectiveTotalSnapshot: source.effectiveTotalSnapshot,
+            totalPriceSnapshot: source.totalPriceSnapshot,
+            laborRateSnapshot: source.laborRateSnapshot,
+            postProcessRateSnapshot: source.postProcessRateSnapshot,
+            failureRateSnapshot: source.failureRateSnapshot,
+            minimumChargeSnapshot: source.minimumChargeSnapshot,
+            markupOnMaterialsSnapshot: source.markupOnMaterialsSnapshot,
+          ),
+        );
+    for (final m in materials) {
+      await _db
+          .into(_db.calculationMaterials)
           .insert(
-            CalculationsCompanion.insert(
-              createdAt: DateTime.now().toUtc(),
-              pieceName: Value(pieceName),
-              clientName: Value(source.clientName),
-              notes: Value(source.notes),
-              conditions: Value(source.conditions),
-              printerId: Value(source.printerId),
-              printerNameSnapshot: Value(source.printerNameSnapshot),
-              printerWattsSnapshot: Value(source.printerWattsSnapshot),
-              totalHours: source.totalHours,
-              printMinutes: Value(source.printMinutes),
-              discountPercentage: source.discountPercentage,
-              kwhRateSnapshot: source.kwhRateSnapshot,
-              profitBaseSnapshot: source.profitBaseSnapshot,
-              materialCostSnapshot: source.materialCostSnapshot,
-              electricCostSnapshot: source.electricCostSnapshot,
-              laborCostSnapshot: source.laborCostSnapshot,
-              postProcessCostSnapshot: source.postProcessCostSnapshot,
-              baseCostSnapshot: source.baseCostSnapshot,
-              failureCostSnapshot: source.failureCostSnapshot,
-              markupCostSnapshot: source.markupCostSnapshot,
-              profitAmountSnapshot: source.profitAmountSnapshot,
-              minimumChargeAppliedSnapshot: source.minimumChargeAppliedSnapshot,
-              effectiveTotalSnapshot: source.effectiveTotalSnapshot,
-              totalPriceSnapshot: source.totalPriceSnapshot,
-              laborRateSnapshot: source.laborRateSnapshot,
-              postProcessRateSnapshot: source.postProcessRateSnapshot,
-              failureRateSnapshot: source.failureRateSnapshot,
-              minimumChargeSnapshot: source.minimumChargeSnapshot,
-              markupOnMaterialsSnapshot: source.markupOnMaterialsSnapshot,
+            CalculationMaterialsCompanion.insert(
+              calculationId: newId,
+              filamentId: Value(m.filamentId),
+              label: m.label,
+              weightGrams: m.weightGrams,
+              pricePerBobbinSnapshot: m.pricePerBobbinSnapshot,
+              gramsPerBobbinSnapshot: m.gramsPerBobbinSnapshot,
             ),
           );
-      for (final m in materials) {
-        await _db
-            .into(_db.calculationMaterials)
-            .insert(
-              CalculationMaterialsCompanion.insert(
-                calculationId: newId,
-                filamentId: Value(m.filamentId),
-                label: m.label,
-                weightGrams: m.weightGrams,
-                pricePerBobbinSnapshot: m.pricePerBobbinSnapshot,
-                gramsPerBobbinSnapshot: m.gramsPerBobbinSnapshot,
-              ),
-            );
-      }
-      return newId;
-    });
+    }
+    return newId;
   }
 
   /// Lista todas las cotizaciones (no plantillas), mas recientes primero.
   Future<List<Calculation>> listAll() {
-    return (_db.select(
-      _db.calculations,
-    )..where((c) => c.isTemplate.equals(false))
-      ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])).get();
+    return (_db.select(_db.calculations)
+          ..where((c) => c.isTemplate.equals(false))
+          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
+        .get();
   }
 
   /// Busca cotizaciones por nombre de pieza o cliente (LIKE %query%).
@@ -232,26 +285,27 @@ class CalculationRepository {
   }
 
   Stream<List<Calculation>> watchAll() {
-    return (_db.select(
-      _db.calculations,
-    )..where((c) => c.isTemplate.equals(false))
-      ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])).watch();
+    return (_db.select(_db.calculations)
+          ..where((c) => c.isTemplate.equals(false))
+          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
+        .watch();
   }
 
   /// Lista las plantillas de trabajo, mas recientes primero.
   Future<List<Calculation>> listTemplates() {
-    return (_db.select(
-      _db.calculations,
-    )..where((c) => c.isTemplate.equals(true))
-      ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])).get();
+    return (_db.select(_db.calculations)
+          ..where((c) => c.isTemplate.equals(true))
+          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
+        .get();
   }
 
   /// Cantidad de plantillas guardadas.
   Future<int> countTemplates() async {
-    final result = await (_db.selectOnly(
-      _db.calculations,
-    )..addColumns([_db.calculations.id.count()])
-      ..where(_db.calculations.isTemplate.equals(true))).getSingle();
+    final result =
+        await (_db.selectOnly(_db.calculations)
+              ..addColumns([_db.calculations.id.count()])
+              ..where(_db.calculations.isTemplate.equals(true)))
+            .getSingle();
     return result.read(_db.calculations.id.count()) ?? 0;
   }
 
@@ -259,8 +313,9 @@ class CalculationRepository {
   /// de cada uno. Excluye plantillas y nombres vacíos. Pensado para el
   /// quick-pick del diálogo de guardado.
   Future<List<String>> recentClientNames({int limit = 8}) async {
-    final rows = await _db.customSelect(
-      '''
+    final rows = await _db
+        .customSelect(
+          '''
       SELECT client_name AS name
       FROM calculations
       WHERE is_template = 0
@@ -270,11 +325,10 @@ class CalculationRepository {
       ORDER BY MAX(created_at) DESC, MAX(id) DESC
       LIMIT ?
       ''',
-      variables: [Variable<int>(limit)],
-    ).get();
-    return [
-      for (final row in rows) row.read<String>('name'),
-    ];
+          variables: [Variable<int>(limit)],
+        )
+        .get();
+    return [for (final row in rows) row.read<String>('name')];
   }
 
   /// Obtiene los materiales de una cotizacion.
@@ -352,11 +406,17 @@ class CalculationRepository {
 
   /// Cantidad total de cotizaciones (excluye plantillas).
   Future<int> countAll() async {
-    final result = await (_db.selectOnly(
-      _db.calculations,
-    )..addColumns([_db.calculations.id.count()])
-      ..where(_db.calculations.isTemplate.equals(false))).getSingle();
-    return result.read(_db.calculations.id.count()) ?? 0;
+    return _countCalculations();
+  }
+
+  Future<int> _countCalculations() async {
+    final countExpression = _db.calculations.id.count();
+    final result =
+        await (_db.selectOnly(_db.calculations)
+              ..addColumns([countExpression])
+              ..where(_db.calculations.isTemplate.equals(false)))
+            .getSingle();
+    return result.read(countExpression) ?? 0;
   }
 
   /// Totales agrupados por mes (YYYY-MM).

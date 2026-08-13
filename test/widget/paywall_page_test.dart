@@ -33,12 +33,19 @@ import 'package:tresdcal/l10n/es_bo.dart';
 /// valida el wire entre el widget y el notifier real, no solo UI aislada.
 
 class _FakePaymentService implements PaymentService {
+  bool available = true;
+
+  @override
+  bool get isAvailable => available;
   int configureCalls = 0;
   int purchaseCalls = 0;
   int restoreCalls = 0;
   String? lastPurchaseProductId;
   PaymentResult purchaseResult = const PaymentCancelled();
   RestoreResult restoreResult = const RestoreEmpty();
+  /// Precio que reporta el "store" via [getProPriceString]. `null` = la
+  /// plataforma no tiene precio (fallback l10n).
+  String? storePrice;
   // ignore: close_sinks
   final StreamController<PaymentResult> _purchaseStream =
       StreamController<PaymentResult>.broadcast();
@@ -50,6 +57,9 @@ class _FakePaymentService implements PaymentService {
   Future<void> configure() async {
     configureCalls++;
   }
+
+  @override
+  Future<String?> getProPriceString() async => storePrice;
 
   @override
   Future<PaymentResult> purchase({required String productId}) async {
@@ -66,6 +76,9 @@ class _FakePaymentService implements PaymentService {
 
   @override
   Stream<PaymentResult> get purchaseStream => _purchaseStream.stream;
+
+  @override
+  Stream<void> get proRevocationStream => const Stream.empty();
 }
 
 class _FakeRepo implements EntitlementRepository {
@@ -121,10 +134,16 @@ class _ErrorNotifier extends EntitlementNotifier {
 /// fakados. Retorna el container + el payment service para que los tests
 /// inspeccionen side effects.
 Future<({ProviderContainer container, _FakePaymentService payment})>
-_pumpPaywall(WidgetTester tester) async {
+_pumpPaywall(
+  WidgetTester tester, {
+  bool paymentAvailable = true,
+  String? storePrice,
+}) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final payment = _FakePaymentService();
+  payment.available = paymentAvailable;
+  payment.storePrice = storePrice;
   final repo = _FakeRepo();
   final container = ProviderContainer(
     overrides: [
@@ -231,6 +250,21 @@ void main() {
   });
 
   group('PaywallPage — Free state', () {
+    testWidgets('plataforma sin compras conserva tarjeta y oculta CTAs', (
+      tester,
+    ) async {
+      final result = await _pumpPaywall(tester, paymentAvailable: false);
+
+      expect(find.text(EsBO.paywallUnavailable), findsOneWidget);
+      expect(find.text(EsBO.paywallRestoreButton), findsNothing);
+      expect(find.text(EsBO.paywallTitle), findsAtLeast(1));
+      for (final feature in EsBO.paywallFeatures) {
+        expect(find.text(feature), findsOneWidget);
+      }
+      expect(find.text(EsBO.paywallUnlockButton(_formatPrice())), findsNothing);
+      expect(result.payment.purchaseCalls, 0);
+    });
+
     testWidgets('renderiza titulo, precio, 5 features, Unlock y Restore', (
       tester,
     ) async {
@@ -320,6 +354,49 @@ void main() {
       );
       // No leak de purchase.
       expect(payment.purchaseCalls, 0);
+    });
+  });
+
+  group('PaywallPage — Precio de la store', () {
+    testWidgets('precio real de la store reemplaza al fallback l10n', (
+      tester,
+    ) async {
+      _useTallViewport(tester);
+      // El "store" reporta $6.99 (distinto del kProPriceUsd/l10n).
+      await _pumpPaywall(tester, storePrice: r'$6.99');
+
+      expect(
+        find.text(r'$6.99'),
+        findsOneWidget,
+        reason: 'El precio real del store debe mostrarse en el cuerpo.',
+      );
+      expect(
+        find.text(EsBO.paywallUnlockButton(r'$6.99')),
+        findsOneWidget,
+        reason: 'El boton Unlock debe usar el precio de la store.',
+      );
+      expect(
+        find.text(_formatPrice()),
+        findsNothing,
+        reason: 'Con precio de store disponible no debe caer al l10n.',
+      );
+    });
+
+    testWidgets('store sin precio (null) → fallback l10n exacto', (
+      tester,
+    ) async {
+      _useTallViewport(tester);
+      await _pumpPaywall(tester, storePrice: null);
+
+      expect(
+        find.text(_formatPrice()),
+        findsOneWidget,
+        reason: 'Sin precio de store, el fallback l10n es el que se muestra.',
+      );
+      expect(
+        find.text(EsBO.paywallUnlockButton(_formatPrice())),
+        findsOneWidget,
+      );
     });
   });
 

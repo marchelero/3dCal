@@ -85,6 +85,7 @@ class _SettingsBody extends ConsumerWidget {
     // cold start para un Pro real).
     final ent = ref.watch(entitlementNotifierProvider);
     final locked = !ent.isLoading && !ref.watch(isProProvider);
+    final canRestore = ref.watch(paymentServiceProvider).isAvailable;
 
     return MaxWidthScrollView(
       maxWidth: 960,
@@ -101,6 +102,10 @@ class _SettingsBody extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Column(
               children: [
+                if (ref.watch(isProProvider)) ...[
+                  _ProStatusCard(canRestore: canRestore),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
                 // ── Parametros globales ──
                 _SettingsSection(
                   icon: Icons.tune_rounded,
@@ -271,14 +276,16 @@ class _SettingsBody extends ConsumerWidget {
                 const _BackupSection(),
                 const SizedBox(height: AppSpacing.xl),
 
-                // ── Restaurar compras (T11) ──
-                _SettingsSection(
-                  icon: Icons.restore_rounded,
-                  title: EsBO.settingsRestorePurchases,
-                  accentColor: color.primary,
-                  children: [_RestoreButton()],
-                ),
-                const SizedBox(height: AppSpacing.xl),
+                if (canRestore) ...[
+                  // ── Restaurar compras (T11) ──
+                  _SettingsSection(
+                    icon: Icons.restore_rounded,
+                    title: EsBO.settingsRestorePurchases,
+                    accentColor: color.primary,
+                    children: [_RestoreButton()],
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
 
                 // ── Acerca de ──
                 _SettingsSection(
@@ -518,6 +525,85 @@ class _SettingsHeader extends StatelessWidget {
 ///
 /// El `accentColor` define el color de la barra, el icono, y el tint del
 /// icono. Cada seccion se ve distinta al instante.
+class _ProStatusCard extends StatelessWidget {
+  const _ProStatusCard({required this.canRestore});
+
+  final bool canRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: colors.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.workspace_premium_rounded, color: colors.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    EsBO.settingsProTitle,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                Chip(
+                  label: Text(EsBO.settingsProActive),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              EsBO.settingsProPurchaseType,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: colors.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ...EsBO.paywallFeatures.map(
+              (benefit) => Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.check_rounded, size: 18, color: colors.primary),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        benefit,
+                        style: TextStyle(color: colors.onPrimaryContainer),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (canRestore)
+              _RestoreButton(label: EsBO.settingsProRestorePurchase)
+            else
+              Text(
+                EsBO.paywallUnavailable,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colors.onPrimaryContainer,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SettingsSection extends StatelessWidget {
   const _SettingsSection({
     required this.icon,
@@ -766,7 +852,8 @@ class _CompanyNameFieldState extends ConsumerState<_CompanyNameField> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        AppSnackBar.warning(
+        AppSnackBar.info(
+          context,
           EsBO.settingsBrandingLockedBody,
           actionLabel: EsBO.settingsGoProAction,
           onAction: () => GoRouter.of(context).push('/paywall'),
@@ -875,7 +962,8 @@ class _LogoPicker extends ConsumerWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        AppSnackBar.warning(
+        AppSnackBar.info(
+          context,
           EsBO.settingsBrandingLockedBody,
           actionLabel: EsBO.settingsGoProAction,
           onAction: () => GoRouter.of(context).push('/paywall'),
@@ -1275,7 +1363,8 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        AppSnackBar.warning(
+        AppSnackBar.info(
+          context,
           EsBO.settingsBackupLockedBody,
           actionLabel: EsBO.settingsGoProAction,
           onAction: () => GoRouter.of(context).push('/paywall'),
@@ -1538,7 +1627,9 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
 // ─────────────────────────────────────────────────
 
 class _RestoreButton extends ConsumerStatefulWidget {
-  const _RestoreButton();
+  const _RestoreButton({this.label});
+
+  final String? label;
 
   @override
   ConsumerState<_RestoreButton> createState() => _RestoreButtonState();
@@ -1560,11 +1651,18 @@ class _RestoreButtonState extends ConsumerState<_RestoreButton> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(AppSnackBar.success(EsBO.settingsRestoreSuccess));
-      } else {
-        // RestoreEmpty y RestoreError comparten el mismo feedback.
+      } else if (result is RestoreEmpty) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(AppSnackBar.info(context, EsBO.settingsRestoreEmpty));
+      } else if (result is RestoreError) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            AppSnackBar.error(
+              '${EsBO.settingsRestoreError} ${EsBO.commonRetry}',
+            ),
+          );
       }
     } finally {
       if (mounted) setState(() => _isRestoring = false);
@@ -1587,7 +1685,7 @@ class _RestoreButtonState extends ConsumerState<_RestoreButton> {
                 ),
               )
             : const Icon(Icons.restore_rounded, size: 18),
-        label: Text(EsBO.settingsRestorePurchases),
+        label: Text(widget.label ?? EsBO.settingsRestorePurchases),
         onPressed: _isRestoring ? null : _handleRestore,
       ),
     );

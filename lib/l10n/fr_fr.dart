@@ -121,13 +121,23 @@ class FrImpl implements AppStrings {
   String get settingsBrandingLockedBody =>
       'Passez à la version Pro pour personnaliser votre marque';
   @override
-  String get settingsGoProAction => 'Passer à la version Pro';
+  String get settingsGoProAction => 'Débloquer PRO';
+  @override
+  String get settingsProTitle => '3D Cal PRO';
+  @override
+  String get settingsProActive => 'PRO actif';
+  @override
+  String get settingsProPurchaseType => 'Achat unique';
+  @override
+  String get settingsProRestorePurchase => 'Restaurer l’achat';
   @override
   String get settingsRestorePurchases => 'Restaurer les achats';
   @override
   String get settingsRestoreSuccess => 'Achats restaurés avec succès !';
   @override
   String get settingsRestoreEmpty => 'Aucun achat précédent trouvé';
+  @override
+  String get settingsRestoreError => 'Impossible de restaurer les achats.';
   @override
   String get settingsBackupTitle => 'Sauvegarde';
   @override
@@ -207,7 +217,7 @@ class FrImpl implements AppStrings {
   String get dashboardProTeaserBody =>
       'Obtenez le tableau de bord complet avec tendances des coûts, ventilation des matériaux et plus encore.';
   @override
-  String get dashboardGoProAction => 'Passer à la version Pro';
+  String get dashboardGoProAction => 'Débloquer PRO';
   @override
   String get homeActionNewCalc => 'Nouveau devis';
   @override
@@ -624,7 +634,7 @@ class FrImpl implements AppStrings {
   String get csvExportLockedBody =>
       'L’exportation au format CSV est une fonction de la version Pro';
   @override
-  String get csvGoProAction => 'Passer à la version Pro';
+  String get csvGoProAction => 'Débloquer PRO';
   @override
   String get localeLabel => 'Langue';
   @override
@@ -745,7 +755,7 @@ class FrImpl implements AppStrings {
   String get calculatorAdvancedLockedBody =>
       'Passez à la version Pro pour les calculs avec plusieurs matériaux';
   @override
-  String get calculatorGoProAction => 'Passer à la version Pro';
+  String get calculatorGoProAction => 'Débloquer PRO';
   @override
   String get historyCapReachedBody =>
       'Vous avez atteint la limite de l’historique gratuit. Passez à la version Pro pour un historique illimité.';
@@ -780,6 +790,9 @@ class FrImpl implements AppStrings {
   @override
   String get paywallErrorGeneric =>
       'Impossible de terminer l’achat. Réessayez.';
+  @override
+  String get paywallUnavailable =>
+      'Les achats ne sont pas disponibles sur cette plateforme.';
   @override
   String get paywallAlreadyPro => 'Vous disposez déjà de Pro. Merci !';
   @override

@@ -30,6 +30,10 @@ class RevenueCatPaymentService implements PaymentService {
   /// tiene su propio guard pero el wrapper lo hace explicito para que el
   /// comportamiento sea predecible.
   bool _configured = false;
+  bool _available = false;
+
+  @override
+  bool get isAvailable => _available;
 
   /// Stream controller para el [purchaseStream]. En la practica nunca
   /// emite para one-time unlock (no hay renovacion), pero el campo queda
@@ -37,6 +41,20 @@ class RevenueCatPaymentService implements PaymentService {
   // ignore: close_sinks
   final StreamController<PaymentResult> _purchaseController =
       StreamController<PaymentResult>.broadcast();
+
+  /// Stream controller del [proRevocationStream]. Se alimenta desde el
+  /// customer info update listener registrado en [configure].
+  // ignore: close_sinks
+  final StreamController<void> _revocationController =
+      StreamController<void>.broadcast();
+
+  /// Ultimo estado del entitlement `pro` reportado por RevenueCat. Se usa
+  /// para emitir [proRevocationStream] SOLO en la transicion active →
+  /// inactive (evita ruido en cada refresh de foreground de un user free).
+  bool _proEntitlementActive = false;
+
+  @override
+  Stream<void> get proRevocationStream => _revocationController.stream;
 
   @override
   Future<void> configure() async {
@@ -52,6 +70,7 @@ class RevenueCatPaymentService implements PaymentService {
         'Pasar --dart-define=REVENUECAT_GOOGLE_KEY=goog_XXX para activar.',
       );
       _configured = true;
+      _available = false;
       return;
     }
 
@@ -65,6 +84,17 @@ class RevenueCatPaymentService implements PaymentService {
           ..diagnosticsEnabled = kDebugMode,
       );
       _configured = true;
+      _available = true;
+
+      // Detectar refunds/cancelaciones en tiempo real. purchases_flutter
+      // 10.x NO expone un `purchaseStream` estatico; el mecanismo
+      // idiomatico para un non-subscription es el customer info update
+      // listener: el SDK lo invoca con la ultima customer info al
+      // registrarse y en cada cambio (foreground, restore, refund del
+      // dashboard de Google Play). El listener vive mientras la app (la
+      // instancia del servicio es un singleton provider) — su ciclo de
+      // vida es intencionalmente el de la app.
+      Purchases.addCustomerInfoUpdateListener(_onCustomerInfoChanged);
     } catch (e, st) {
       // No dejamos que un fallo de init rompa el boot. La app arranca
       // como free (gates cerrados, pero funcional). El user vera el
@@ -81,7 +111,10 @@ class RevenueCatPaymentService implements PaymentService {
   @override
   Future<PaymentResult> purchase({required String productId}) async {
     if (!_configured) {
-      return const PaymentError('PaymentService no configurado');
+      return const PaymentError('Payment unavailable');
+    }
+    if (!_available) {
+      return const PaymentError('Payment unavailable');
     }
 
     try {
@@ -145,7 +178,10 @@ class RevenueCatPaymentService implements PaymentService {
   @override
   Future<RestoreResult> restore() async {
     if (!_configured) {
-      return const RestoreError('PaymentService no configurado');
+      return const RestoreError('Payment unavailable');
+    }
+    if (!_available) {
+      return const RestoreError('Payment unavailable');
     }
 
     try {
@@ -168,6 +204,50 @@ class RevenueCatPaymentService implements PaymentService {
       return RestoreError('Restore failed: ${e.message ?? e.code}');
     } catch (e) {
       return RestoreError('Unexpected error: ${e.runtimeType}');
+    }
+  }
+
+  /// Callback de `Purchases.addCustomerInfoUpdateListener`.
+  ///
+  /// Detecta cuando el entitlement `pro` pasa de activo a inactivo
+  /// (refund/cancel) y lo propaga por [proRevocationStream] para que el
+  /// [EntitlementNotifier] downgradée a Free en tiempo real.
+  void _onCustomerInfoChanged(CustomerInfo customerInfo) {
+    final isActive = customerInfo.entitlements.all['pro']?.isActive ?? false;
+    if (!isActive && _proEntitlementActive) {
+      _revocationController.add(null);
+    }
+    _proEntitlementActive = isActive;
+  }
+
+  @override
+  Future<String?> getProPriceString() async {
+    if (!_configured || !_available) return null;
+
+    try {
+      // Precio real del store desde el offering actual de RevenueCat.
+      // Preferimos el package `lifetime` del offering (precio configurado
+      // en el dashboard); si el offering no esta configurado, fallback al
+      // SKU directo con el mismo productId + categoria del purchase path.
+      final offerings = await Purchases.getOfferings();
+      final lifetime = offerings.current?.lifetime;
+      if (lifetime != null) {
+        return lifetime.storeProduct.priceString;
+      }
+
+      final products = await Purchases.getProducts(
+        [kProProductId],
+        productCategory: ProductCategory.nonSubscription,
+      );
+      if (products.isEmpty) return null;
+      return products.first.priceString;
+    } catch (e) {
+      // Offline / SDK no inicializado / producto inexistente → fallback
+      // l10n en el paywall (el caller maneja null).
+      if (kDebugMode) {
+        debugPrint('[RevenueCat] getProPriceString fallo: $e');
+      }
+      return null;
     }
   }
 

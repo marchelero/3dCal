@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,6 +78,8 @@ class _FakeEntitlementRepository implements EntitlementRepository {
 }
 
 class _FakePaymentService implements PaymentService {
+  @override
+  bool get isAvailable => true;
   int configureCalls = 0;
   int purchaseCalls = 0;
   int restoreCalls = 0;
@@ -105,6 +108,12 @@ class _FakePaymentService implements PaymentService {
 
   @override
   Stream<PaymentResult> get purchaseStream => const Stream.empty();
+
+  @override
+  Future<String?> getProPriceString() async => null;
+
+  @override
+  Stream<void> get proRevocationStream => const Stream.empty();
 }
 
 /// Viewport alto (800x1600) para que los botones cerca del fondo
@@ -260,6 +269,25 @@ void main() {
   }
 
   group('Gates → /paywall (router real, no _RouterErrorPage)', () {
+    testWidgets('deep link web no expone paywall; mobile conserva la ruta', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+
+      appRouter.go('/paywall');
+      await tester.pumpAndSettle();
+
+      if (kIsWeb) {
+        expect(find.byType(PaywallPage), findsNothing);
+        expect(
+          appRouter.routerDelegate.currentConfiguration.uri.toString(),
+          '/settings',
+        );
+      } else {
+        expect(find.byType(PaywallPage), findsOneWidget);
+      }
+    });
+
     testWidgets(
       'Calculator: history cap save #11 → SnackBar Go Pro → PaywallPage',
       (tester) async {

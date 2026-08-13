@@ -129,7 +129,15 @@ class PtBrImpl implements AppStrings {
   String get settingsBrandingLockedBody =>
       'Desbloqueie o Pro para personalizar sua marca';
   @override
-  String get settingsGoProAction => 'Ir para o Pro';
+  String get settingsGoProAction => 'Desbloquear PRO';
+  @override
+  String get settingsProTitle => '3D Cal PRO';
+  @override
+  String get settingsProActive => 'PRO ativo';
+  @override
+  String get settingsProPurchaseType => 'Compra única';
+  @override
+  String get settingsProRestorePurchase => 'Restaurar compra';
 
   @override
   String get settingsRestorePurchases => 'Restaurar compras';
@@ -137,6 +145,8 @@ class PtBrImpl implements AppStrings {
   String get settingsRestoreSuccess => 'Compras restauradas com sucesso!';
   @override
   String get settingsRestoreEmpty => 'Nenhuma compra anterior encontrada';
+  @override
+  String get settingsRestoreError => 'Não foi possível restaurar as compras.';
 
   @override
   String get settingsBackupTitle => 'Backup';
@@ -223,7 +233,7 @@ class PtBrImpl implements AppStrings {
   String get dashboardProTeaserBody =>
       'Tenha acesso ao painel completo, com tendências de custos, detalhamento de materiais e muito mais.';
   @override
-  String get dashboardGoProAction => 'Ir para o Pro';
+  String get dashboardGoProAction => 'Desbloquear PRO';
 
   @override
   String get homeActionNewCalc => 'Novo orçamento';
@@ -662,7 +672,7 @@ class PtBrImpl implements AppStrings {
   @override
   String get csvExportLockedBody => 'A exportação CSV é um recurso Pro';
   @override
-  String get csvGoProAction => 'Ir para o Pro';
+  String get csvGoProAction => 'Desbloquear PRO';
 
   @override
   String get localeLabel => 'Idioma';
@@ -788,7 +798,7 @@ class PtBrImpl implements AppStrings {
   String get calculatorAdvancedLockedBody =>
       'Desbloqueie o Pro para cálculos com vários materiais';
   @override
-  String get calculatorGoProAction => 'Ir para o Pro';
+  String get calculatorGoProAction => 'Desbloquear PRO';
 
   // === Histórico cap gate (T15) ===
   @override
@@ -829,6 +839,9 @@ class PtBrImpl implements AppStrings {
   @override
   String get paywallErrorGeneric =>
       'Não foi possível concluir a compra. Tente novamente.';
+  @override
+  String get paywallUnavailable =>
+      'As compras não estão disponíveis nesta plataforma.';
   @override
   String get paywallAlreadyPro => 'Você já tem o Pro. Obrigado!';
   @override

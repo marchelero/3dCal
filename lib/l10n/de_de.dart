@@ -131,7 +131,15 @@ class DeImpl implements AppStrings {
   String get settingsBrandingLockedBody =>
       'Schalten Sie Pro frei, um Ihre Marke anzupassen';
   @override
-  String get settingsGoProAction => 'Pro freischalten';
+  String get settingsGoProAction => 'PRO freischalten';
+  @override
+  String get settingsProTitle => '3D Cal PRO';
+  @override
+  String get settingsProActive => 'PRO aktiv';
+  @override
+  String get settingsProPurchaseType => 'Einmaliger Kauf';
+  @override
+  String get settingsProRestorePurchase => 'Kauf wiederherstellen';
 
   @override
   String get settingsRestorePurchases => 'Käufe wiederherstellen';
@@ -139,6 +147,9 @@ class DeImpl implements AppStrings {
   String get settingsRestoreSuccess => 'Käufe erfolgreich wiederhergestellt!';
   @override
   String get settingsRestoreEmpty => 'Keine früheren Käufe gefunden';
+  @override
+  String get settingsRestoreError =>
+      'Käufe konnten nicht wiederhergestellt werden.';
 
   @override
   String get settingsBackupTitle => 'Sicherung';
@@ -227,7 +238,7 @@ class DeImpl implements AppStrings {
   String get dashboardProTeaserBody =>
       'Erhalten Sie die vollständige Übersicht mit Kostentrends, Materialaufteilungen und mehr.';
   @override
-  String get dashboardGoProAction => 'Pro freischalten';
+  String get dashboardGoProAction => 'PRO freischalten';
 
   @override
   String get homeActionNewCalc => 'Neues Angebot';
@@ -660,7 +671,7 @@ class DeImpl implements AppStrings {
   @override
   String get csvExportLockedBody => 'CSV-Export ist eine Pro-Funktion';
   @override
-  String get csvGoProAction => 'Pro freischalten';
+  String get csvGoProAction => 'PRO freischalten';
 
   @override
   String get localeLabel => 'Sprache';
@@ -785,7 +796,7 @@ class DeImpl implements AppStrings {
   String get calculatorAdvancedLockedBody =>
       'Pro für Berechnungen mit mehreren Materialien freischalten';
   @override
-  String get calculatorGoProAction => 'Pro freischalten';
+  String get calculatorGoProAction => 'PRO freischalten';
 
   // === History cap gate (T15) ===
   @override
@@ -826,6 +837,9 @@ class DeImpl implements AppStrings {
   @override
   String get paywallErrorGeneric =>
       'Der Kauf konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.';
+  @override
+  String get paywallUnavailable =>
+      'Käufe sind auf dieser Plattform nicht verfügbar.';
   @override
   String get paywallAlreadyPro => 'Sie haben Pro bereits. Vielen Dank!';
   @override

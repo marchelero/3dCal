@@ -20,7 +20,7 @@ import '../providers/entitlement_providers.dart';
 ///   + body de Free (asi el user puede reintentar via Unlock).
 /// - `AsyncValue.data(EntitlementPro)` → muestra UI "Ya tienes Pro" + Close.
 /// - `AsyncValue.data(EntitlementFree)` → muestra UI de compra completa
-///   (titulo, subtitulo, precio, 5 features, Unlock, Restore).
+///   (titulo, subtitulo, precio, 5 features y acciones disponibles).
 ///
 /// **Acciones**:
 /// - `Unlock` → `ref.read(entitlementNotifierProvider.notifier).purchase(...)`
@@ -112,7 +112,7 @@ class _PaywallPageState extends ConsumerState<PaywallPage> {
             return const _FreeBody();
           },
           data: (state) {
-            if (state is EntitlementPro) {
+            if (state is EntitlementPro || ref.read(isProProvider)) {
               return const _AlreadyProBody();
             }
             return const _FreeBody();
@@ -255,9 +255,13 @@ class _FreeBodyState extends ConsumerState<_FreeBody> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final price = EsBO.paywallPrice;
+    // Precio real de la store via RevenueCat offerings; fallback a la
+    // string l10n cuando no esta disponible (offline / dev / web).
+    final storePrice = ref.watch(proPriceProvider).value;
+    final price = storePrice ?? EsBO.paywallPrice;
     final features = EsBO.paywallFeatures;
     final unlockLabel = EsBO.paywallUnlockButton(price);
+    final paymentAvailable = ref.watch(paymentServiceProvider).isAvailable;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -323,30 +327,40 @@ class _FreeBodyState extends ConsumerState<_FreeBody> {
           ),
           const SizedBox(height: AppSpacing.xxl),
 
-          // ── CTA: Unlock ──
-          FilledButton(
-            onPressed: _busy ? null : _onUnlock,
-            child: _busy
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  )
-                : Text(unlockLabel),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+          if (paymentAvailable) ...[
+            // ── CTA: Unlock ──
+            FilledButton(
+              onPressed: _busy ? null : _onUnlock,
+              child: _busy
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : Text(unlockLabel),
+            ),
+            const SizedBox(height: AppSpacing.sm),
 
-          // ── Secondary: Restore ──
-          TextButton(
-            onPressed: _busy ? null : _onRestore,
-            child: _busy
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(EsBO.paywallRestoreButton),
-          ),
+            // ── Secondary: Restore ──
+            TextButton(
+              onPressed: _busy ? null : _onRestore,
+              child: _busy
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(EsBO.paywallRestoreButton),
+            ),
+          ] else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Text(
+                EsBO.paywallUnavailable,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
           const SizedBox(height: AppSpacing.lg),
 
           // ── Store compliance links (T22) ──

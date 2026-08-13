@@ -17,35 +17,8 @@ import '../../domain/entities/material_input.dart';
 import '../notifiers/calculations_notifier.dart';
 import 'calculator_state.dart';
 
-/// Thrown por [CalculatorNotifier.save] cuando un usuario free intenta
-/// guardar la cotizacion #N+1 (N = [kFreeHistoryCap]).
-///
-/// El cap es el gate de T15 (plan de monetizacion): free users pueden
-/// guardar hasta [kFreeHistoryCap] cotizaciones, despues de eso el save
-/// se bloquea con esta excepcion. La UI la distingue de errores
-/// genericos para mostrar un SnackBar con CTA "Go Pro" → /paywall.
-///
-/// **Por que typed exception en vez de sealed result**: la firma
-/// `Future<int?>` de `save()` se mantiene backwards-compat (null = form
-/// invalido, int = id). Throwing es no-breaking y permite al caller
-/// tipar el catch y dar UX especifica.
-class HistoryCapReachedException implements Exception {
-  const HistoryCapReachedException({
-    required this.cap,
-    required this.currentCount,
-  });
-
-  /// Limite aplicable al user free (kFreeHistoryCap).
-  final int cap;
-
-  /// Conteo de cotizaciones existentes al momento de intentar el save.
-  final int currentCount;
-
-  @override
-  String toString() =>
-      'HistoryCapReachedException: $currentCount/$cap cotizaciones. '
-      'Upgrade a Pro para historial ilimitado.';
-}
+export '../notifiers/calculations_notifier.dart'
+    show HistoryCapReachedException;
 
 /// Notifier reactivo para el formulario de cotizacion.
 ///
@@ -345,19 +318,48 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   }) async {
     if (!state.isValid || state.output == null) return null;
     final repo = ref.read(calculationRepositoryProvider);
-    // T15: cap check ANTES de delegar al repo. Solo aplica a free.
-    // Pro user (isPro=true): skip el check, save sin limite.
-    if (!ref.read(isProProvider)) {
-      final currentCount = await repo.countAll();
-      if (currentCount >= kFreeHistoryCap) {
+    final isPro = await resolveIsPro(ref);
+    // El repositorio hace conteo + insercion en una sola transaccion para
+    // evitar que dos guardados concurrentes superen el cap.
+    if (!isPro) {
+      final id = await repo.createIfWithinLimit(
+        _buildDraft(
+          pieceName: pieceName,
+          clientName: clientName,
+          notes: notes,
+          conditions: conditions,
+        ),
+        limit: kFreeHistoryCap,
+      );
+      if (id == null) {
         throw HistoryCapReachedException(
           cap: kFreeHistoryCap,
-          currentCount: currentCount,
+          currentCount: kFreeHistoryCap,
         );
       }
+      ref.invalidate(calculationsNotifierProvider);
+      return id;
     }
+    final id = await repo.create(
+      _buildDraft(
+        pieceName: pieceName,
+        clientName: clientName,
+        notes: notes,
+        conditions: conditions,
+      ),
+    );
+    ref.invalidate(calculationsNotifierProvider);
+    return id;
+  }
+
+  CalculationDraft _buildDraft({
+    String? pieceName,
+    String? clientName,
+    String? notes,
+    String? conditions,
+  }) {
     final input = _buildInput(state);
-    final draft = CalculationDraft(
+    return CalculationDraft(
       materials: input.materials,
       totalHours: input.totalHours,
       printMinutes:
@@ -381,9 +383,6 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           ? null
           : conditions.trim(),
     );
-    final id = await repo.create(draft);
-    ref.invalidate(calculationsNotifierProvider);
-    return id;
   }
 
   /// Guarda el form actual como plantilla de trabajo frecuente.
@@ -391,10 +390,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// A diferencia de [save], las plantillas NO cuentan contra el cap free
   /// (T15): se excluyen del historial y del dashboard. Reusan la misma
   /// fila de `calculations` con `isTemplate = true`.
-  Future<int?> saveAsTemplate({
-    String? pieceName,
-    String? clientName,
-  }) async {
+  Future<int?> saveAsTemplate({String? pieceName, String? clientName}) async {
     if (!state.isValid || state.output == null) return null;
     final repo = ref.read(calculationRepositoryProvider);
     final input = _buildInput(state);

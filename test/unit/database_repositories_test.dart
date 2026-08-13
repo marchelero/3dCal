@@ -182,6 +182,35 @@ void main() {
       expect(await calculations.countSold(), 1);
     });
 
+    test(
+      'createIfWithinLimit bloquea al alcanzar el limite sin insertar',
+      () async {
+        await calculations.create(_simpleDraft('P1'));
+
+        final blocked = await calculations.createIfWithinLimit(
+          _simpleDraft('P2'),
+          limit: 1,
+        );
+
+        expect(blocked, isNull);
+        expect(await calculations.countAll(), 1);
+      },
+    );
+
+    test(
+      'createIfWithinLimit permite una sola cotizacion concurrente',
+      () async {
+        final results = await Future.wait([
+          calculations.createIfWithinLimit(_simpleDraft('P1'), limit: 1),
+          calculations.createIfWithinLimit(_simpleDraft('P2'), limit: 1),
+        ]);
+
+        expect(results.whereType<int>(), hasLength(1));
+        expect(results.where((id) => id == null), hasLength(1));
+        expect(await calculations.countAll(), 1);
+      },
+    );
+
     test('updateMetadata cambia piece/client', () async {
       final id = await calculations.create(_simpleDraft('Old'));
       final ok = await calculations.updateMetadata(
@@ -278,33 +307,46 @@ void main() {
       expect(copy.conditions, 'Cond B');
     });
 
-    test('createTemplate guarda con isTemplate=true y listTemplates lo ve',
-        () async {
-      final id = await calculations.createTemplate(
-        _simpleDraft('Base de lampara'),
-      );
+    test(
+      'createTemplate guarda con isTemplate=true y listTemplates lo ve',
+      () async {
+        final id = await calculations.createTemplate(
+          _simpleDraft('Base de lampara'),
+        );
 
-      final templates = await calculations.listTemplates();
-      final t = templates.firstWhere((c) => c.id == id);
-      expect(t.isTemplate, isTrue);
-    });
+        final templates = await calculations.listTemplates();
+        final t = templates.firstWhere((c) => c.id == id);
+        expect(t.isTemplate, isTrue);
+      },
+    );
 
-    test('createTemplate NO aparece en historial ni dashboard ni cap',
-        () async {
-      await calculations.create(_simpleDraft('Cotizacion normal'));
-      await calculations.createTemplate(_simpleDraft('Plantilla oculta'));
+    test(
+      'createTemplate NO aparece en historial ni dashboard ni cap',
+      () async {
+        await calculations.create(_simpleDraft('Cotizacion normal'));
+        await calculations.createTemplate(_simpleDraft('Plantilla oculta'));
 
-      expect(await calculations.countAll(), 1,
-          reason: 'countAll (cap free) no debe contar plantillas.');
-      expect(await calculations.listAll(), hasLength(1));
-      expect(await calculations.search('oculta'), isEmpty);
-      expect(await calculations.totalQuoted(), _d('15'),
-          reason: 'totalQuoted solo debe sumar la cotizacion, no la plantilla.');
-      final totals = await calculations.monthlyTotals();
-      expect(totals, hasLength(1));
-      expect(totals.first.quoted, 15,
-          reason: 'monthlyTotals no debe incluir plantillas.');
-    });
+        expect(
+          await calculations.countAll(),
+          1,
+          reason: 'countAll (cap free) no debe contar plantillas.',
+        );
+        expect(await calculations.listAll(), hasLength(1));
+        expect(await calculations.search('oculta'), isEmpty);
+        expect(
+          await calculations.totalQuoted(),
+          _d('15'),
+          reason: 'totalQuoted solo debe sumar la cotizacion, no la plantilla.',
+        );
+        final totals = await calculations.monthlyTotals();
+        expect(totals, hasLength(1));
+        expect(
+          totals.first.quoted,
+          15,
+          reason: 'monthlyTotals no debe incluir plantillas.',
+        );
+      },
+    );
 
     test('create normal no aparece en listTemplates', () async {
       await calculations.create(_simpleDraft('Cotizacion A'));
@@ -320,29 +362,38 @@ void main() {
       expect((await calculations.listAll()).map((c) => c.id), contains(qId));
     });
 
-    test('duplicate de una plantilla produce cotizacion normal (no plantilla)',
-        () async {
-      final tId = await calculations.createTemplate(_simpleDraft('Plantilla'));
-      final copyId = await calculations.duplicate(tId);
+    test(
+      'duplicate de una plantilla produce cotizacion normal (no plantilla)',
+      () async {
+        final tId = await calculations.createTemplate(
+          _simpleDraft('Plantilla'),
+        );
+        final copyId = await calculations.duplicate(tId);
 
-      expect(await calculations.countAll(), 1,
-          reason: 'la copia debe ser una cotizacion normal (is_template=0).');
-      final copy = (await calculations.listAll()).firstWhere(
-        (c) => c.id == copyId,
-      );
-      expect(copy.isTemplate, isFalse);
-    });
+        expect(
+          await calculations.countAll(),
+          1,
+          reason: 'la copia debe ser una cotizacion normal (is_template=0).',
+        );
+        final copy = (await calculations.listAll()).firstWhere(
+          (c) => c.id == copyId,
+        );
+        expect(copy.isTemplate, isFalse);
+      },
+    );
 
-    test('recentClientNames devuelve clientes distintos, mas recientes primero',
-        () async {
-      await calculations.create(_simpleDraft('A', 'Ana'));
-      await calculations.create(_simpleDraft('B', 'Beto'));
-      // Ana aparece de nuevo: debe deduplicarse y quedar de primera.
-      await calculations.create(_simpleDraft('C', 'Ana'));
+    test(
+      'recentClientNames devuelve clientes distintos, mas recientes primero',
+      () async {
+        await calculations.create(_simpleDraft('A', 'Ana'));
+        await calculations.create(_simpleDraft('B', 'Beto'));
+        // Ana aparece de nuevo: debe deduplicarse y quedar de primera.
+        await calculations.create(_simpleDraft('C', 'Ana'));
 
-      final names = await calculations.recentClientNames();
-      expect(names, ['Ana', 'Beto']);
-    });
+        final names = await calculations.recentClientNames();
+        expect(names, ['Ana', 'Beto']);
+      },
+    );
 
     test('recentClientNames excluye plantillas y nombres vacios', () async {
       await calculations.createTemplate(_simpleDraft('T', 'Plantilla Cliente'));

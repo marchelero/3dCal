@@ -312,7 +312,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            AppSnackBar.warning(
+            AppSnackBar.info(
+              context,
               EsBO.calculatorAdvancedLockedBody,
               actionLabel: EsBO.calculatorGoProAction,
               onAction: () {
@@ -600,7 +601,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          AppSnackBar.warning(
+          AppSnackBar.info(
+            context,
             EsBO.historyCapReachedBody,
             actionLabel: EsBO.calculatorGoProAction,
             onAction: () {

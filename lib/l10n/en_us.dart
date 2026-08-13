@@ -126,7 +126,15 @@ class EnImpl implements AppStrings {
   @override
   String get settingsBrandingLockedBody => 'Unlock Pro to customize your brand';
   @override
-  String get settingsGoProAction => 'Go Pro';
+  String get settingsGoProAction => 'Unlock PRO';
+  @override
+  String get settingsProTitle => '3D Cal PRO';
+  @override
+  String get settingsProActive => 'PRO active';
+  @override
+  String get settingsProPurchaseType => 'One-time purchase';
+  @override
+  String get settingsProRestorePurchase => 'Restore purchase';
 
   @override
   String get settingsRestorePurchases => 'Restore purchases';
@@ -134,6 +142,8 @@ class EnImpl implements AppStrings {
   String get settingsRestoreSuccess => 'Purchases restored successfully!';
   @override
   String get settingsRestoreEmpty => 'No previous purchases found';
+  @override
+  String get settingsRestoreError => 'Could not restore purchases.';
 
   @override
   String get settingsBackupTitle => 'Backup';
@@ -220,7 +230,7 @@ class EnImpl implements AppStrings {
   String get dashboardProTeaserBody =>
       'Get the complete dashboard with cost trends, material breakdowns, and more.';
   @override
-  String get dashboardGoProAction => 'Go Pro';
+  String get dashboardGoProAction => 'Unlock PRO';
 
   @override
   String get homeActionNewCalc => 'New quotation';
@@ -646,7 +656,7 @@ class EnImpl implements AppStrings {
   @override
   String get csvExportLockedBody => 'CSV export is a Pro feature';
   @override
-  String get csvGoProAction => 'Go Pro';
+  String get csvGoProAction => 'Unlock PRO';
 
   @override
   String get localeLabel => 'Language';
@@ -772,7 +782,7 @@ class EnImpl implements AppStrings {
   String get calculatorAdvancedLockedBody =>
       'Unlock Pro for multi-material calculations';
   @override
-  String get calculatorGoProAction => 'Go Pro';
+  String get calculatorGoProAction => 'Unlock PRO';
 
   // === History cap gate (T15) ===
   @override
@@ -812,6 +822,9 @@ class EnImpl implements AppStrings {
   String get paywallRestoreButton => 'Restore purchase';
   @override
   String get paywallErrorGeneric => 'Could not complete purchase. Try again.';
+  @override
+  String get paywallUnavailable =>
+      'Purchases are not available on this platform.';
   @override
   String get paywallAlreadyPro => 'You already have Pro. Thank you!';
   @override

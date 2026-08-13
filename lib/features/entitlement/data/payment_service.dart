@@ -105,6 +105,10 @@ class RestoreError extends RestoreResult {
 /// `main.dart` despues de `ensureInitialized`. `purchase()` y `restore()`
 /// se llaman bajo demanda (paywall, settings restore button, boot stale).
 abstract class PaymentService {
+  /// Indica si la plataforma y la configuracion actual permiten comprar.
+  /// Fakes pueden conservar el valor por defecto para tests.
+  bool get isAvailable => true;
+
   /// Inicializa el SDK. Llamar una vez en `main.dart` despues de
   /// `WidgetsFlutterBinding.ensureInitialized()`.
   ///
@@ -144,4 +148,25 @@ abstract class PaymentService {
   /// background). Para one-time unlock (caso de tresdcal) normalmente
   /// no emite, pero el campo queda para futuro (suscripciones).
   Stream<PaymentResult> get purchaseStream;
+
+  /// Precio displayed del unlock Pro segun la store (e.g. `'$4.99'`),
+  /// tal como lo reporta RevenueCat via `getOfferings()`.
+  ///
+  /// Es la fuente de verdad del precio que ve el user en el paywall
+  /// (la store cobra el precio que muestra). `null` si el servicio no
+  /// esta disponible (offline, no configurado, web, dev mode) — el caller
+  /// cae al fallback l10n.
+  ///
+  /// Default: `null` (fakes y plataformas sin store no tienen precio).
+  Future<String?> getProPriceString() async => null;
+
+  /// Emite cuando el entitlement `pro` deja de estar activo en la store
+  /// mientras la app corre (refund / cancelacion de un non-subscription).
+  ///
+  /// El [EntitlementNotifier] se suscribe en `build()` para downgradear a
+  /// Free en tiempo real, sin esperar el restore stale de 7 dias del boot.
+  ///
+  /// Default: stream vacio (nunca emite). Fakes lo alimentan con un
+  /// [StreamController] para simular refunds en tests.
+  Stream<void> get proRevocationStream => const Stream.empty();
 }

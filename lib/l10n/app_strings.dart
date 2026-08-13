@@ -81,14 +81,22 @@ abstract class AppStrings {
   /// a `/paywall`.
   String get settingsGoProAction;
 
+  String get settingsProTitle;
+  String get settingsProActive;
+  String get settingsProPurchaseType;
+  String get settingsProRestorePurchase;
+
   /// Label del boton "Restaurar compras" en settings.
   String get settingsRestorePurchases;
 
   /// Mensaje de exito tras un restore que encontro compras previas.
   String get settingsRestoreSuccess;
 
-  /// Mensaje tras un restore que no encontro compras previas o dio error.
+  /// Mensaje tras un restore que no encontro compras previas.
   String get settingsRestoreEmpty;
+
+  /// Mensaje de error al restaurar compras, con accion de reintento.
+  String get settingsRestoreError;
 
   // === Backup / Restore (datos locales) ===
 
@@ -558,6 +566,7 @@ abstract class AppStrings {
 
   /// Mensaje de error generico si la compra falla.
   String get paywallErrorGeneric;
+  String get paywallUnavailable;
 
   /// Mensaje que ve un user Pro cuando abre el paywall.
   String get paywallAlreadyPro;

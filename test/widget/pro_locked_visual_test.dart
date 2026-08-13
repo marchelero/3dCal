@@ -99,6 +99,8 @@ class _DelayedEntitlementRepository implements EntitlementRepository {
 }
 
 class _FakePaymentService implements PaymentService {
+  @override
+  bool get isAvailable => true;
   int configureCalls = 0;
   int purchaseCalls = 0;
   int restoreCalls = 0;
@@ -127,6 +129,12 @@ class _FakePaymentService implements PaymentService {
 
   @override
   Stream<PaymentResult> get purchaseStream => const Stream.empty();
+
+  @override
+  Future<String?> getProPriceString() async => null;
+
+  @override
+  Stream<void> get proRevocationStream => const Stream.empty();
 }
 
 /// Inserta [count] cotizaciones via repo real (DB in-memory).

@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers.dart';
@@ -35,6 +36,16 @@ final paymentServiceProvider = Provider<PaymentService>((ref) {
   return RevenueCatPaymentService();
 });
 
+/// Precio real del unlock Pro segun la store (via RevenueCat offerings).
+///
+/// `null` mientras no este disponible (offline / no configurado / web,
+/// donde IAP no aplica) — la paywall cae al fallback l10n en ese caso.
+/// El fetch se cachea por el FutureProvider mientras el container viva.
+final proPriceProvider = FutureProvider<String?>((ref) {
+  final service = ref.watch(paymentServiceProvider);
+  return service.getProPriceString();
+});
+
 /// Async notifier reactivo con el estado de entitlement.
 ///
 /// **Uso**: la UI lo lee via `ref.watch(entitlementNotifierProvider)`
@@ -58,3 +69,24 @@ final entitlementNotifierProvider =
 final isProProvider = Provider<bool>((ref) {
   return ref.watch(entitlementNotifierProvider).value is EntitlementPro;
 });
+
+/// Resuelve el tier antes de ejecutar una operación protegida por cap.
+///
+/// El repositorio local puede quedar esperando en una plataforma offline o
+/// durante una recuperación de almacenamiento. El timeout evita que la
+/// operación se cuelgue; el provider efectivo conserva overrides como el Pro
+/// web y, por defecto, mantiene el fallback Free fail-safe de móvil.
+Future<bool> resolveIsPro(Ref ref) async {
+  try {
+    await ref
+        .read(entitlementNotifierProvider.future)
+        .timeout(const Duration(seconds: 1));
+    // Lee el provider efectivo para respetar overrides de plataforma, como
+    // el entitlement Pro declarado para web en main.dart.
+    return ref.read(isProProvider);
+  } on TimeoutException {
+    return ref.read(isProProvider);
+  } catch (_) {
+    return ref.read(isProProvider);
+  }
+}

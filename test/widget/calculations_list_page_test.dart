@@ -68,6 +68,8 @@ class _FakeEntitlementRepository implements EntitlementRepository {
 }
 
 class _FakePaymentService implements PaymentService {
+  @override
+  bool get isAvailable => true;
   int configureCalls = 0;
   int purchaseCalls = 0;
   int restoreCalls = 0;
@@ -102,6 +104,12 @@ class _FakePaymentService implements PaymentService {
 
   @override
   Stream<PaymentResult> get purchaseStream => _purchaseStream.stream;
+
+  @override
+  Future<String?> getProPriceString() async => null;
+
+  @override
+  Stream<void> get proRevocationStream => const Stream.empty();
 }
 
 /// Stub para destinos de navegacion (solo necesitamos el titulo para
@@ -149,8 +157,9 @@ Future<void> _seedOneCalculation(ProviderContainer container) async {
 /// minimal (incluye `/paywall` para verificar la navegacion del SnackBar
 /// action). Inserta 1 cotizacion dummy para que la lista no este vacia.
 Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
-  WidgetTester tester,
-) async {
+  WidgetTester tester, {
+  int seedCount = 1,
+}) async {
   SharedPreferences.setMockInitialValues(<String, Object>{});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -169,7 +178,9 @@ Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
     await db.close();
   });
 
-  await _seedOneCalculation(container);
+  for (var i = 0; i < seedCount; i++) {
+    await _seedOneCalculation(container);
+  }
 
   final router = _buildRouter();
   addTearDown(router.dispose);
@@ -281,6 +292,21 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('CalculationsListPage — CSV export gate en Free', () {
+    testWidgets('duplicar al alcanzar el cap muestra el gate de historial', (
+      tester,
+    ) async {
+      await _pumpPageFree(tester, seedCount: kFreeHistoryCap);
+
+      await tester.tap(find.byIcon(Icons.more_vert).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.calcDuplicateAction).last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text(EsBO.historyCapReachedBody), findsOneWidget);
+      expect(find.text(EsBO.calculatorGoProAction), findsOneWidget);
+    });
+
     testWidgets('muestra el IconButton "Exportar CSV" en la AppBar', (
       tester,
     ) async {

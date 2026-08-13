@@ -501,7 +501,10 @@ void main() {
       repo = _FakeRepo();
     });
 
-    Future<ProviderContainer> pumpForRestore(WidgetTester tester) async {
+    Future<ProviderContainer> pumpForRestore(
+      WidgetTester tester, {
+      bool isPro = false,
+    }) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -514,6 +517,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           entitlementRepositoryProvider.overrideWithValue(repo),
           paymentServiceProvider.overrideWithValue(payment),
+          isProProvider.overrideWith((ref) => isPro),
         ],
       );
       addTearDown(container.dispose);
@@ -539,6 +543,24 @@ void main() {
         find.byType(FilledButton),
         findsAtLeast(1),
         reason: 'Restore FilledButton debe estar visible.',
+      );
+    });
+
+    testWidgets('pagos no disponibles oculta restores y conserva tarjeta PRO', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      payment.available = false;
+
+      await pumpForRestore(tester, isPro: true);
+
+      expect(find.text(EsBO.settingsRestorePurchases), findsNothing);
+      expect(find.text(EsBO.paywallUnavailable), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, EsBO.settingsProRestorePurchase),
+        findsNothing,
       );
     });
 
@@ -572,53 +594,79 @@ void main() {
       },
     );
 
-    testWidgets(
-      'backup: free → tap Exportar muestra gate Pro sin exportar',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 2000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
+    testWidgets('backup: free → tap Exportar muestra gate Pro sin exportar', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-        await _pumpPageFreeWithRouter(tester);
+      await _pumpPageFreeWithRouter(tester);
 
-        final exportButton = find.widgetWithText(
-          FilledButton,
-          EsBO.settingsBackupExport,
-        );
-        await tester.ensureVisible(exportButton);
-        await tester.pumpAndSettle();
-        await tester.tap(exportButton);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      final exportButton = find.widgetWithText(
+        FilledButton,
+        EsBO.settingsBackupExport,
+      );
+      await tester.ensureVisible(exportButton);
+      await tester.pumpAndSettle();
+      await tester.tap(exportButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        expect(
-          find.text(EsBO.settingsBackupLockedBody),
-          findsOneWidget,
-          reason: 'Free: tap Exportar debe disparar SnackBar del gate Pro.',
-        );
-        expect(
-          find.text(EsBO.settingsGoProAction),
-          findsOneWidget,
-          reason: 'El snackbar debe ofrecer ir a Pro.',
-        );
+      expect(
+        find.text(EsBO.settingsBackupLockedBody),
+        findsOneWidget,
+        reason: 'Free: tap Exportar debe disparar SnackBar del gate Pro.',
+      );
+      expect(
+        find.text(EsBO.settingsGoProAction),
+        findsOneWidget,
+        reason: 'El snackbar debe ofrecer ir a Pro.',
+      );
 
-        // La accion "Go Pro" navega al paywall.
-        await tester.tap(find.text(EsBO.settingsGoProAction));
-        await tester.pumpAndSettle();
-        expect(
-          find.text('PAYWALL_STUB_T12'),
-          findsOneWidget,
-          reason: 'Action "Go Pro" del gate backup debe ir a /paywall.',
-        );
-      },
-    );
+      // La accion "Go Pro" navega al paywall.
+      await tester.tap(find.text(EsBO.settingsGoProAction));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('PAYWALL_STUB_T12'),
+        findsOneWidget,
+        reason: 'Action "Go Pro" del gate backup debe ir a /paywall.',
+      );
+    });
+
+    testWidgets('RestoreError muestra error localizado, no estado vacío', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      payment.restoreResult = const RestoreError('offline');
+
+      await pumpForRestore(tester);
+      final restoreButton = find.widgetWithText(
+        FilledButton,
+        EsBO.settingsRestorePurchases,
+      );
+      await tester.ensureVisible(restoreButton);
+      await tester.pumpAndSettle();
+      await tester.tap(restoreButton);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining(EsBO.settingsRestoreError), findsOneWidget);
+      expect(find.text(EsBO.settingsRestoreEmpty), findsNothing);
+    });
   });
 }
 
 class _FakePaymentService implements PaymentService {
+  bool available = true;
+
+  @override
+  bool get isAvailable => available;
   int configureCalls = 0;
   int purchaseCalls = 0;
   int restoreCalls = 0;
+  RestoreResult restoreResult = const RestoreEmpty();
 
   @override
   Future<void> configure() async {}
@@ -626,7 +674,7 @@ class _FakePaymentService implements PaymentService {
   @override
   Future<RestoreResult> restore() async {
     restoreCalls++;
-    return const RestoreEmpty();
+    return restoreResult;
   }
 
   @override
@@ -638,6 +686,12 @@ class _FakePaymentService implements PaymentService {
   @override
   Stream<PaymentResult> get purchaseStream =>
       const Stream<PaymentResult>.empty();
+
+  @override
+  Future<String?> getProPriceString() async => null;
+
+  @override
+  Stream<void> get proRevocationStream => const Stream.empty();
 }
 
 class _FakeRepo implements EntitlementRepository {
