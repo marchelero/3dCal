@@ -56,11 +56,13 @@ class EntitlementPro extends EntitlementState {
 ///
 /// **Boot path** (en [build]):
 /// 1. Lee [EntitlementCache] (sincrono — SharedPreferences es in-process).
-/// 2. Si el cache dice Pro, emite [EntitlementPro] inmediato. Si el
-///    `validatedAt` del cache tiene > [kEntitlementStaleThreshold] dias
-///    (o es null), dispara un [restore] fire-and-forget contra
-///    [PaymentService] (no bloquea el primer frame; el state visible
-///    sigue siendo Pro mientras corre).
+/// 2. Si el cache dice Pro, emite [EntitlementPro] inmediato y dispara
+///    [syncEntitlementWithStore] fire-and-forget: consulta la store como
+///    fuente de verdad (no bloquea el primer frame; el state visible
+///    sigue siendo Pro mientras corre). Si la store no puede determinar
+///    (offline/web) y ademas el cache esta stale
+///    (> [kEntitlementStaleThreshold] dias o validatedAt null), cae al
+///    fallback legacy [restore] async.
 /// 3. Si el cache esta vacio o dice Free, consulta
 ///    [EntitlementRepository.getActive]. Si retorna fila, hidrata el
 ///    cache + emite [EntitlementPro]. Si no, emite [EntitlementFree].
@@ -86,11 +88,12 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
     final cache = ref.read(entitlementCacheProvider);
 
     if (cache.isPro) {
-      if (_isStale(cache.validatedAt)) {
-        // Fire and forget — emite Pro desde cache, restore en background.
-        // El resultado puede downgradear a Free si el store dice empty.
-        unawaited(restore());
-      }
+      // Fire and forget — emite Pro desde cache (primer frame rapido) y
+      // valida contra la store en background. Asi un refund/revocacion que
+      // paso con la app cerrada no deja el cache mintiendo hasta el
+      // restore stale de 7 dias. El fallback legacy [restore] corre solo
+      // cuando la store no puede determinar (offline) y el cache esta stale.
+      unawaited(_syncEntitlementWithStore());
       return EntitlementPro(
         source: cache.source ?? kSourceLifetimePurchase,
         validatedAt: cache.validatedAt,
@@ -133,6 +136,109 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
           }
         });
     ref.onDispose(() => _revocationSub?.cancel());
+  }
+
+  /// Valida contra la store (fuente de verdad) que el entitlement `pro`
+  /// siga activo. Se dispara en cada boot con cache Pro (fire-and-forget,
+  /// no bloquea el primer frame).
+  ///
+  /// - `true` → refresh `validatedAt` (cache + repo) para espaciar futuros
+  ///   checks. Solo si el state actual es [EntitlementPro] y el validatedAt
+  ///   cacheado no es mas nuevo que este sync (una purchase/restore en
+  ///   vuelo gana con su propio timestamp).
+  /// - `false` → downgrade a Free via [deactivate], race-guardado igual que
+  ///   [proRevocationStream] (solo si el state actual es [EntitlementPro]).
+  /// - `null` → no se puede determinar (offline / web / no configurado). El
+  ///   cache local se mantiene como fallback; si ademas estaba stale, cae
+  ///   al legacy [restore] para que el user se re-valide eventualmente.
+  Future<void> _syncEntitlementWithStore() async {
+    // Momento del sync capturado ANTES del await: si durante la consulta a
+    // la store ocurre una purchase/restore, su validatedAt sera mas nuevo
+    // y este sync no lo pisara (regla "nunca sobrescribir timestamp nuevo").
+    final syncTime = DateTime.now().toUtc();
+    final storeActive = await ref
+        .read(paymentServiceProvider)
+        .isProActiveOnStore();
+
+    if (storeActive == null) {
+      // Offline / web / SDK no configurado → cache local como fallback.
+      // Si ademas el cache esta stale, revalidamos via el legacy restore.
+      final cache = ref.read(entitlementCacheProvider);
+      if (_isStale(cache.validatedAt)) {
+        unawaited(restore());
+      }
+      return;
+    }
+
+    // Si el build aun no emitió su primer state (posible solo cuando el
+    // chequeo a la store es instantaneo, e.g. fakes en tests), cedemos un
+    // tick del event loop: los microtasks del build (que setean
+    // `state.value` a Pro desde cache) se flush antes de cualquier timer,
+    // asi los race guards de abajo ven el state ya emitido.
+    if (state.value == null) {
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    if (storeActive) {
+      await _refreshValidatedAt(syncTime);
+      return;
+    }
+
+    // Store dice que `pro` NO esta activo (refund/revocado con la app
+    // cerrada). Race guard: solo actuamos si el state es Pro.
+    final current = state.value;
+    if (current is EntitlementPro) {
+      unawaited(deactivate());
+    }
+  }
+
+  /// Refresca el `validatedAt` de cache + repo (si hay fila activa) al
+  /// momento del sync. Non-throwing: cualquier fallo → debugPrint + no-op.
+  ///
+  /// Guards:
+  /// - El state actual debe ser [EntitlementPro] (mismo race guard que la
+  ///   revocacion en vivo).
+  /// - Nunca sobrescribir un validatedAt cacheado mas nuevo que [validatedAt]
+  ///   (una purchase/restore en vuelo gana con su propio timestamp).
+  Future<void> _refreshValidatedAt(DateTime validatedAt) async {
+    try {
+      final current = state.value;
+      if (current is! EntitlementPro) return;
+
+      final cache = ref.read(entitlementCacheProvider);
+      final cachedValidatedAt = cache.validatedAt;
+      if (cachedValidatedAt != null &&
+          cachedValidatedAt.isAfter(validatedAt)) {
+        return;
+      }
+
+      await cache.setActive(
+        source: cache.source ?? current.source,
+        validatedAt: validatedAt,
+      );
+
+      final repo = ref.read(entitlementRepositoryProvider);
+      final active = await repo.getActive();
+      if (active != null) {
+        await repo.save(
+          EntitlementsCompanion.insert(
+            source: active.source,
+            productId: active.productId,
+            purchasedAt: active.purchasedAt,
+            validatedAt: Value(validatedAt),
+          ),
+        );
+      }
+
+      // State consistente con el cache (solo si sigue siendo Pro).
+      if (state.value is EntitlementPro) {
+        state = AsyncData(
+          EntitlementPro(source: current.source, validatedAt: validatedAt),
+        );
+      }
+    } catch (e) {
+      debugPrint('[Entitlement] refresh validatedAt fallo: $e');
+    }
   }
 
   /// Compra el [productId] via [PaymentService].

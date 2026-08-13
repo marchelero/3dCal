@@ -137,7 +137,13 @@ class DeImpl implements AppStrings {
   @override
   String get settingsProActive => 'PRO aktiv';
   @override
-  String get settingsProPurchaseType => 'Einmaliger Kauf';
+  String get settingsProUnlocked => 'Alle PRO-Funktionen sind freigeschaltet';
+  @override
+  String get settingsProNoAdditionalPurchase =>
+      'Sie müssen nichts weiter kaufen';
+  @override
+  String get settingsProFutureUpdates =>
+      'Ihr Kauf umfasst künftige PRO-Verbesserungen ohne zusätzliche Kosten.';
   @override
   String get settingsProRestorePurchase => 'Kauf wiederherstellen';
 
@@ -954,7 +960,8 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
       'Das Bild konnte nicht gespeichert werden: $msg';
 
   @override
-  String get homeHeroTagline => '3D-Angebote · Schnell · Präzise · Offline';
+  String get homeHeroTagline =>
+      '3D-Angebote · Schnell · Präzise · Immer bereit';
 
   @override
   String get calcFormIncompleteWarning =>

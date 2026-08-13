@@ -280,7 +280,7 @@ class _SettingsBody extends ConsumerWidget {
                   // ── Restaurar compras (T11) ──
                   _SettingsSection(
                     icon: Icons.restore_rounded,
-                    title: EsBO.settingsRestorePurchases,
+                    title: EsBO.settingsProRestorePurchase,
                     accentColor: color.primary,
                     children: [_RestoreButton()],
                   ),
@@ -563,8 +563,23 @@ class _ProStatusCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              EsBO.settingsProPurchaseType,
-              style: theme.textTheme.labelLarge?.copyWith(
+              EsBO.settingsProUnlocked,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colors.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              EsBO.settingsProNoAdditionalPurchase,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              EsBO.settingsProFutureUpdates,
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.onPrimaryContainer,
               ),
             ),
@@ -1658,11 +1673,7 @@ class _RestoreButtonState extends ConsumerState<_RestoreButton> {
       } else if (result is RestoreError) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(
-            AppSnackBar.error(
-              '${EsBO.settingsRestoreError} ${EsBO.commonRetry}',
-            ),
-          );
+          ..showSnackBar(AppSnackBar.error(EsBO.settingsRestoreError));
       }
     } finally {
       if (mounted) setState(() => _isRestoring = false);
@@ -1685,7 +1696,7 @@ class _RestoreButtonState extends ConsumerState<_RestoreButton> {
                 ),
               )
             : const Icon(Icons.restore_rounded, size: 18),
-        label: Text(widget.label ?? EsBO.settingsRestorePurchases),
+        label: Text(widget.label ?? EsBO.settingsProRestorePurchase),
         onPressed: _isRestoring ? null : _handleRestore,
       ),
     );

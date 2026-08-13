@@ -132,7 +132,13 @@ class EnImpl implements AppStrings {
   @override
   String get settingsProActive => 'PRO active';
   @override
-  String get settingsProPurchaseType => 'One-time purchase';
+  String get settingsProUnlocked => 'You have all PRO features unlocked';
+  @override
+  String get settingsProNoAdditionalPurchase =>
+      'You do not need to make another purchase';
+  @override
+  String get settingsProFutureUpdates =>
+      'Your purchase includes future PRO improvements at no additional cost.';
   @override
   String get settingsProRestorePurchase => 'Restore purchase';
 
@@ -938,7 +944,8 @@ We may update, suspend, or remove application features. These terms may also cha
       'Could not save the image: $msg';
 
   @override
-  String get homeHeroTagline => '3D Quotes · Fast · Accurate · Offline';
+  String get homeHeroTagline =>
+      '3D Quotes · Fast · Accurate · Ready when you are';
 
   @override
   String get calcFormIncompleteWarning => 'Complete the form before saving.';

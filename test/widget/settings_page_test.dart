@@ -14,8 +14,11 @@ import 'package:tresdcal/features/entitlement/data/payment_service.dart';
 import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
 import 'package:tresdcal/features/settings/presentation/notifiers/settings_notifier.dart';
 import 'package:tresdcal/features/settings/presentation/pages/settings_page.dart';
+import 'package:tresdcal/l10n/de_de.dart';
 import 'package:tresdcal/l10n/en_us.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
+import 'package:tresdcal/l10n/fr_fr.dart';
+import 'package:tresdcal/l10n/pt_br.dart';
 
 /// Helper: monta [SettingsPage] dentro de un [ProviderScope] con DB in-memory
 /// + SharedPreferences mock (necesario para themeModeProvider que la pagina
@@ -141,6 +144,33 @@ Future<ProviderContainer> _pumpPagePro(WidgetTester tester) async {
 }
 
 void main() {
+  test('todos los idiomas localizan estado PRO y tagline positivo', () {
+    final locales = [
+      const EsImpl(),
+      const EnImpl(),
+      const PtBrImpl(),
+      const DeImpl(),
+      const FrImpl(),
+    ];
+
+    for (final strings in locales) {
+      expect(strings.settingsProUnlocked, isNotEmpty);
+      expect(strings.settingsProNoAdditionalPurchase, isNotEmpty);
+      expect(strings.settingsProFutureUpdates, isNotEmpty);
+      expect(
+        strings.homeHeroTagline.toLowerCase(),
+        isNot(
+          anyOf(
+            contains('sin internet'),
+            contains('offline'),
+            contains('hors ligne'),
+            contains('sem internet'),
+          ),
+        ),
+      );
+    }
+  });
+
   group('SettingsPage', () {
     testWidgets('renderiza secciones y defaults', (tester) async {
       // Viewport mas grande para que la seccion "Acerca de" (con el texto
@@ -556,12 +586,27 @@ void main() {
 
       await pumpForRestore(tester, isPro: true);
 
-      expect(find.text(EsBO.settingsRestorePurchases), findsNothing);
+      expect(find.text(EsBO.settingsProRestorePurchase), findsNothing);
       expect(find.text(EsBO.paywallUnavailable), findsOneWidget);
       expect(
         find.widgetWithText(FilledButton, EsBO.settingsProRestorePurchase),
         findsNothing,
       );
+    });
+
+    testWidgets('tarjeta PRO confirma acceso activo sin compra adicional', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await pumpForRestore(tester, isPro: true);
+
+      expect(find.text(EsBO.settingsProActive), findsOneWidget);
+      expect(find.text(EsBO.settingsProUnlocked), findsOneWidget);
+      expect(find.text(EsBO.settingsProNoAdditionalPurchase), findsOneWidget);
+      expect(find.text(EsBO.settingsProFutureUpdates), findsOneWidget);
     });
 
     testWidgets(
@@ -578,7 +623,7 @@ void main() {
         // final de la pagina: scrollear hasta que sea visible.
         final restoreButton = find.widgetWithText(
           FilledButton,
-          EsBO.settingsRestorePurchases,
+          EsBO.settingsProRestorePurchase,
         );
         await tester.ensureVisible(restoreButton);
         await tester.pumpAndSettle();
@@ -645,7 +690,7 @@ void main() {
       await pumpForRestore(tester);
       final restoreButton = find.widgetWithText(
         FilledButton,
-        EsBO.settingsRestorePurchases,
+        EsBO.settingsProRestorePurchase,
       );
       await tester.ensureVisible(restoreButton);
       await tester.pumpAndSettle();
@@ -653,6 +698,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining(EsBO.settingsRestoreError), findsOneWidget);
+      expect(find.text(EsBO.commonRetry), findsNothing);
       expect(find.text(EsBO.settingsRestoreEmpty), findsNothing);
     });
   });
@@ -689,6 +735,9 @@ class _FakePaymentService implements PaymentService {
 
   @override
   Future<String?> getProPriceString() async => null;
+
+  @override
+  Future<bool?> isProActiveOnStore() async => null;
 
   @override
   Stream<void> get proRevocationStream => const Stream.empty();

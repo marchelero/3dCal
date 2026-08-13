@@ -100,7 +100,10 @@ class EsBO {
   static String get settingsGoProAction => _impl.settingsGoProAction;
   static String get settingsProTitle => _impl.settingsProTitle;
   static String get settingsProActive => _impl.settingsProActive;
-  static String get settingsProPurchaseType => _impl.settingsProPurchaseType;
+  static String get settingsProUnlocked => _impl.settingsProUnlocked;
+  static String get settingsProNoAdditionalPurchase =>
+      _impl.settingsProNoAdditionalPurchase;
+  static String get settingsProFutureUpdates => _impl.settingsProFutureUpdates;
   static String get settingsProRestorePurchase =>
       _impl.settingsProRestorePurchase;
 
@@ -737,7 +740,14 @@ class EsImpl implements AppStrings {
   @override
   String get settingsProActive => 'PRO activo';
   @override
-  String get settingsProPurchaseType => 'Compra única';
+  String get settingsProUnlocked =>
+      'Ya tienes todas las funciones PRO desbloqueadas';
+  @override
+  String get settingsProNoAdditionalPurchase =>
+      'No necesitas realizar otra compra';
+  @override
+  String get settingsProFutureUpdates =>
+      'Tu compra incluye las mejoras futuras de PRO sin costo adicional.';
   @override
   String get settingsProRestorePurchase => 'Restaurar compra';
 
@@ -1551,7 +1561,7 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
 
   @override
   String get homeHeroTagline =>
-      'Cotizaciones 3D · Rápido · Preciso · Sin internet';
+      'Cotizaciones 3D · Rápido · Preciso · Siempre contigo';
 
   @override
   String get calcFormIncompleteWarning =>

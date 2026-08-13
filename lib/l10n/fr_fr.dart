@@ -127,7 +127,14 @@ class FrImpl implements AppStrings {
   @override
   String get settingsProActive => 'PRO actif';
   @override
-  String get settingsProPurchaseType => 'Achat unique';
+  String get settingsProUnlocked =>
+      'Toutes les fonctionnalités PRO sont débloquées';
+  @override
+  String get settingsProNoAdditionalPurchase =>
+      'Aucun autre achat n’est nécessaire';
+  @override
+  String get settingsProFutureUpdates =>
+      'Votre achat inclut les futures améliorations PRO sans frais supplémentaires.';
   @override
   String get settingsProRestorePurchase => 'Restaurer l’achat';
   @override
@@ -899,7 +906,8 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String shareErrorSaveWithMessage(String msg) =>
       'Impossible d’enregistrer l’image : $msg';
   @override
-  String get homeHeroTagline => 'Devis 3D · Rapide · Précis · Hors ligne';
+  String get homeHeroTagline =>
+      'Devis 3D · Rapide · Précis · Toujours à portée de main';
   @override
   String get calcFormIncompleteWarning =>
       'Complétez le formulaire avant de l’enregistrer.';

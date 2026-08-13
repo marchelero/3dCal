@@ -207,6 +207,23 @@ class RevenueCatPaymentService implements PaymentService {
     }
   }
 
+  @override
+  Future<bool?> isProActiveOnStore() async {
+    if (!_configured || !_available || kIsWeb) return null;
+
+    try {
+      final customerInfo = await Purchases.getCustomerInfo();
+      return customerInfo.entitlements.all['pro']?.isActive;
+    } catch (e) {
+      // Offline / SDK no inicializado / cualquier fallo de red → no se
+      // puede determinar. El caller mantiene el cache local como fallback.
+      if (kDebugMode) {
+        debugPrint('[RevenueCat] isProActiveOnStore fallo: $e');
+      }
+      return null;
+    }
+  }
+
   /// Callback de `Purchases.addCustomerInfoUpdateListener`.
   ///
   /// Detecta cuando el entitlement `pro` pasa de activo a inactivo

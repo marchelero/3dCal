@@ -135,7 +135,14 @@ class PtBrImpl implements AppStrings {
   @override
   String get settingsProActive => 'PRO ativo';
   @override
-  String get settingsProPurchaseType => 'Compra única';
+  String get settingsProUnlocked =>
+      'Você já tem todos os recursos PRO desbloqueados';
+  @override
+  String get settingsProNoAdditionalPurchase =>
+      'Você não precisa fazer outra compra';
+  @override
+  String get settingsProFutureUpdates =>
+      'Sua compra inclui futuras melhorias do PRO sem custo adicional.';
   @override
   String get settingsProRestorePurchase => 'Restaurar compra';
 
@@ -955,7 +962,8 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
       'Não foi possível salvar a imagem: $msg';
 
   @override
-  String get homeHeroTagline => 'Orçamentos 3D · Rápido · Preciso · Offline';
+  String get homeHeroTagline =>
+      'Orçamentos 3D · Rápido · Preciso · Sempre com você';
 
   @override
   String get calcFormIncompleteWarning =>

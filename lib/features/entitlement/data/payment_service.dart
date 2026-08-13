@@ -169,4 +169,22 @@ abstract class PaymentService {
   /// Default: stream vacio (nunca emite). Fakes lo alimentan con un
   /// [StreamController] para simular refunds en tests.
   Stream<void> get proRevocationStream => const Stream.empty();
+
+  /// Consulta a la store (fuente de verdad) si el entitlement `pro` esta
+  /// activo AHORA. **No es un restore**: no dispara UI nativa ni recompra,
+  /// solo lee el customer info cacheado por el SDK (o lo refresh si el SDK
+  /// lo decide internamente).
+  ///
+  /// Retorna:
+  /// - `true` → el entitlement `pro` esta activo en la store.
+  /// - `false` → el entitlement `pro` NO esta activo (refund/revocado).
+  /// - `null` → no se puede determinar (offline / SDK no configurado /
+  ///   web / exception).
+  ///
+  /// El [EntitlementNotifier] lo llama en cada boot (async, no bloquea el
+  /// primer frame) para no confiar ciegamente en el cache local cuando la
+  /// compra fue refundida/revocada con la app cerrada.
+  ///
+  /// Default: `null` (fakes y plataformas sin store no determinan nada).
+  Future<bool?> isProActiveOnStore() async => null;
 }

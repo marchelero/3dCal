@@ -63,6 +63,9 @@ class _FakePaymentService implements PaymentService {
   Future<String?> getProPriceString() async => null;
 
   @override
+  Future<bool?> isProActiveOnStore() async => null;
+
+  @override
   Stream<void> get proRevocationStream => _revocations.stream;
 }
 

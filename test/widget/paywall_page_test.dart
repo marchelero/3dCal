@@ -62,6 +62,9 @@ class _FakePaymentService implements PaymentService {
   Future<String?> getProPriceString() async => storePrice;
 
   @override
+  Future<bool?> isProActiveOnStore() async => null;
+
+  @override
   Future<PaymentResult> purchase({required String productId}) async {
     purchaseCalls++;
     lastPurchaseProductId = productId;

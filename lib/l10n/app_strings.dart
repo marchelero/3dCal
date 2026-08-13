@@ -83,7 +83,9 @@ abstract class AppStrings {
 
   String get settingsProTitle;
   String get settingsProActive;
-  String get settingsProPurchaseType;
+  String get settingsProUnlocked;
+  String get settingsProNoAdditionalPurchase;
+  String get settingsProFutureUpdates;
   String get settingsProRestorePurchase;
 
   /// Label del boton "Restaurar compras" en settings.
@@ -95,7 +97,7 @@ abstract class AppStrings {
   /// Mensaje tras un restore que no encontro compras previas.
   String get settingsRestoreEmpty;
 
-  /// Mensaje de error al restaurar compras, con accion de reintento.
+  /// Mensaje de error al restaurar compras.
   String get settingsRestoreError;
 
   // === Backup / Restore (datos locales) ===
