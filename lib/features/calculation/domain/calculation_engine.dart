@@ -103,9 +103,16 @@ class CalculationEngine {
   }
 
   /// Σ(weightGrams[i] * pricePerBobbin[i] / gramsPerBobbin[i]).
+  ///
+  /// BUG-009 fix: salta materiales con `gramsPerBobbin <= 0` o
+  /// `weightGrams <= 0` para evitar division por cero (NaN/Infinity)
+  /// cuando llega un material corrupto desde un draft legacy o un
+  /// backup malformado.
   static Decimal _sumMaterialCost(List<MaterialInput> materials) {
     var total = Decimal.zero;
     for (final m in materials) {
+      if (m.gramsPerBobbin <= Decimal.zero) continue;
+      if (m.weightGrams <= Decimal.zero) continue;
       total += m.weightGrams * m.pricePerGram;
     }
     return total;

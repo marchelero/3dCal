@@ -1,25 +1,27 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/providers.dart';
 import '../../../../l10n/es_bo.dart';
 
 /// Pantalla de carga inicial antes del home.
 ///
 /// Muestra el logo centrado con fade-in y una barra de progreso en la parte
-/// inferior. Despues de ~2.5s navega a `/` (o `/initial-config` si falta el
-/// onboarding) via go_router.
-class SplashScreen extends StatefulWidget {
+/// inferior. Navega a `/` (o `/initial-config` si falta el onboarding) cuando
+/// la animacion termina Y la DB esta lista.
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _loadingController;
@@ -42,8 +44,14 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startLoading() async {
-    // Esperar 2.5s para que la animacion se complete
-    await Future<void>.delayed(const Duration(milliseconds: 2500));
+    // BUG-014 fix: esperar la animacion Y la readiness de la DB en paralelo.
+    // Antes se navegaba a los 2.5s fijos, aunque la DB (drift) todavia
+    // estuviera abriendo — el primer frame del Home mostraba spinner/error.
+    final animation = Future<void>.delayed(
+      const Duration(milliseconds: 2500),
+    );
+    final dbReady = _ensureDbReady();
+    await Future.wait([animation, dbReady]);
 
     if (!mounted) return;
 
@@ -57,6 +65,16 @@ class _SplashScreenState extends State<SplashScreen>
       GoRouter.of(context).go('/');
     } else {
       GoRouter.of(context).go('/initial-config');
+    }
+  }
+
+  /// Ping a la DB para esperar a que drift abra la conexion antes de navegar.
+  Future<void> _ensureDbReady() async {
+    try {
+      final db = ref.read(appDatabaseProvider);
+      await db.customSelect('SELECT 1').get();
+    } catch (e) {
+      debugPrint('Splash: check de DB fallo: $e');
     }
   }
 

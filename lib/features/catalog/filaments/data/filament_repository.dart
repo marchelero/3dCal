@@ -38,22 +38,27 @@ class FilamentRepository {
     required Decimal pricePerBobbin,
     required Decimal gramsPerBobbin,
     bool asDefault = false,
-  }) async {
-    if (asDefault) {
-      await _clearDefault();
-    }
-    return _db
-        .into(_db.filaments)
-        .insert(
-          FilamentsCompanion.insert(
-            name: name,
-            brand: Value(brand),
-            pricePerBobbin: pricePerBobbin.toDouble(),
-            gramsPerBobbin: gramsPerBobbin.toDouble(),
-            isDefault: Value(asDefault),
-            createdAt: DateTime.now().toUtc(),
-          ),
-        );
+  }) {
+    // BUG-002 fix: envuelve _clearDefault + insert en transaccion para evitar
+    // race condition con inserts concurrentes (multi-tab web, autosave) que
+    // dejaban dos filas con isDefault=true.
+    return _db.transaction(() async {
+      if (asDefault) {
+        await _clearDefault();
+      }
+      return _db
+          .into(_db.filaments)
+          .insert(
+            FilamentsCompanion.insert(
+              name: name,
+              brand: Value(brand),
+              pricePerBobbin: pricePerBobbin.toDouble(),
+              gramsPerBobbin: gramsPerBobbin.toDouble(),
+              isDefault: Value(asDefault),
+              createdAt: DateTime.now().toUtc(),
+            ),
+          );
+    });
   }
 
   Future<bool> update({
@@ -63,23 +68,27 @@ class FilamentRepository {
     required Decimal pricePerBobbin,
     required Decimal gramsPerBobbin,
     bool? asDefault,
-  }) async {
-    if (asDefault == true) {
-      await _clearDefault();
-    }
-    final updated =
-        await (_db.update(_db.filaments)..where((f) => f.id.equals(id))).write(
-          FilamentsCompanion(
-            name: Value(name),
-            brand: Value(brand),
-            pricePerBobbin: Value(pricePerBobbin.toDouble()),
-            gramsPerBobbin: Value(gramsPerBobbin.toDouble()),
-            isDefault: asDefault == null
-                ? const Value.absent()
-                : Value(asDefault),
-          ),
-        );
-    return updated > 0;
+  }) {
+    // BUG-002 fix: misma proteccion transaccional que create().
+    return _db.transaction(() async {
+      if (asDefault == true) {
+        await _clearDefault();
+      }
+      final updated = await (_db.update(
+        _db.filaments,
+      )..where((f) => f.id.equals(id))).write(
+        FilamentsCompanion(
+          name: Value(name),
+          brand: Value(brand),
+          pricePerBobbin: Value(pricePerBobbin.toDouble()),
+          gramsPerBobbin: Value(gramsPerBobbin.toDouble()),
+          isDefault: asDefault == null
+              ? const Value.absent()
+              : Value(asDefault),
+        ),
+      );
+      return updated > 0;
+    });
   }
 
   Future<int> delete(int id) {

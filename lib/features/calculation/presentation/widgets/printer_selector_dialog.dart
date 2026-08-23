@@ -79,7 +79,9 @@ Future<void> _persistActivePrinterId(WidgetRef ref, int id) async {
   try {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setInt(kActivePrinterIdPrefsKey, id);
-  } catch (_) {
-    // Si la persistencia falla, la seleccion sigue valida en esta sesion.
+  } catch (e) {
+    // BUG-019 fix: loggear — la seleccion sigue valida en sesion, pero el
+    // usuario pierde la persistencia entre sesiones sin saberlo.
+    debugPrint('Fallo al persistir impresora activa ($id): $e');
   }
 }

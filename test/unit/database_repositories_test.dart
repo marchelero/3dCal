@@ -342,7 +342,7 @@ void main() {
         expect(totals, hasLength(1));
         expect(
           totals.first.quoted,
-          15,
+          Decimal.fromInt(15),
           reason: 'monthlyTotals no debe incluir plantillas.',
         );
       },

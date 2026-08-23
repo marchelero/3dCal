@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/export/pdf_export.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
@@ -65,209 +66,160 @@ class ResultBottomBar extends StatelessWidget {
     final isEmpty = emptyHint != null;
     return SafeArea(
       top: false,
-      child: Material(
-        elevation: 8,
-        color: color.surface,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Borde de arranque perforado: la hoja se desprende aqui.
-            const Perforation(),
-            Semantics(
-              button: true,
-              label: isEmpty ? emptyHint! : totalText,
-              child: InkWell(
-                onTap: onTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.md,
-                  ),
-                  child: Row(
-                    children: [
-                      // Icono cuadrado con tinta de plano (empty ↔ total)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadii.sm),
-                          border: Border.all(
-                            color: isEmpty
-                                ? color.outlineVariant
-                                : color.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) =>
-                              ScaleTransition(scale: animation, child: child),
-                          child: Icon(
-                            key: ValueKey(isEmpty),
-                            isEmpty
-                                ? Icons.info_outline_rounded
-                                : Icons.receipt_long_rounded,
-                            color: isEmpty
-                                ? color.onSurfaceVariant
-                                : color.primary,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: isEmpty
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    EsBO.calcResultBarEmptyHint.toUpperCase(),
-                                    style: AppTheme.num(
-                                      theme.textTheme.labelSmall?.copyWith(
-                                            letterSpacing: 1.2,
-                                          ) ??
-                                          const TextStyle(),
-                                      color: color.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    emptyHint!,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: color.onSurface,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    EsBO.calcResultBarTapHint.toUpperCase(),
-                                    style: AppTheme.num(
-                                      theme.textTheme.labelSmall?.copyWith(
-                                            letterSpacing: 1.2,
-                                          ) ??
-                                          const TextStyle(),
-                                      color: color.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  // Caja del total con doble regla: el momento
-                                  // de la venta.
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        top: BorderSide(
-                                          color: color.onSurface,
-                                          width: 2,
-                                        ),
-                                        bottom: BorderSide(
-                                          color: color.onSurface,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 2,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(
-                                            color: color.onSurface,
-                                            width: 1,
-                                          ),
-                                          bottom: BorderSide(
-                                            color: color.onSurface,
-                                            width: 1,
-                                          ),
-                                        ),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 2,
-                                      ),
-                                      child: AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 300,
-                                        ),
-                                        transitionBuilder: (child, animation) =>
-                                            SlideTransition(
-                                              position:
-                                                  Tween<Offset>(
-                                                    begin: const Offset(0, 0.3),
-                                                    end: Offset.zero,
-                                                  ).animate(
-                                                    CurvedAnimation(
-                                                      parent: animation,
-                                                      curve: Curves.easeOut,
-                                                    ),
-                                                  ),
-                                              child: FadeTransition(
-                                                opacity: animation,
-                                                child: child,
-                                              ),
-                                            ),
-                                        child: Text(
-                                          totalText,
-                                          key: ValueKey(totalText),
-                                          style: AppTheme.num(
-                                            theme.textTheme.titleLarge ??
-                                                const TextStyle(),
-                                            color: color.onSurface,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                      if (!isEmpty && hasDiscount) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        // Sello de descuento: correccion en tinta roja.
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: 2,
-                          ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: isEmpty ? color.surface : color.primaryContainer.withValues(alpha: 0.3),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Borde de arranque perforado: la hoja se desprende aqui.
+              const Perforation(),
+              Semantics(
+                button: true,
+                label: isEmpty ? emptyHint! : totalText,
+                child: InkWell(
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        // Icono cuadrado con tinta de plano (empty ↔ total)
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
-                            border: Border.all(color: color.error, width: 1.5),
-                            borderRadius: BorderRadius.circular(AppRadii.xs),
+                            borderRadius: BorderRadius.circular(AppRadii.sm),
+                            color: isEmpty
+                                ? Colors.transparent
+                                : color.primary.withValues(alpha: 0.15),
+                            border: Border.all(
+                              color: isEmpty
+                                  ? color.outlineVariant
+                                  : color.primary,
+                              width: 1.5,
+                            ),
                           ),
-                          child: Text(
-                            EsBO.calcToggleShowDetail,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: color.error,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            transitionBuilder: (child, animation) =>
+                                ScaleTransition(scale: animation, child: child),
+                            child: Icon(
+                              key: ValueKey(isEmpty),
+                              isEmpty
+                                  ? Icons.info_outline_rounded
+                                  : Icons.calculate_rounded,
+                              color: isEmpty
+                                  ? color.onSurfaceVariant
+                                  : color.primary,
+                              size: 20,
                             ),
                           ),
                         ),
-                      ],
-                      if (!isEmpty) ...[
-                        const SizedBox(width: AppSpacing.xs),
-                        Icon(
-                          Icons.keyboard_arrow_up_rounded,
-                          color: color.onSurfaceVariant,
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: isEmpty
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      EsBO.calcResultBarEmptyHint.toUpperCase(),
+                                      style: AppTheme.num(
+                                        theme.textTheme.labelSmall?.copyWith(
+                                          letterSpacing: 1.2,
+                                        ) ??
+                                            const TextStyle(),
+                                        color: color.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      emptyHint!,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: color.onSurfaceVariant,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      EsBO.calcResultBarTapHint.toUpperCase(),
+                                      style: AppTheme.num(
+                                        theme.textTheme.labelSmall?.copyWith(
+                                          letterSpacing: 1.2,
+                                        ) ??
+                                            const TextStyle(),
+                                        color: color.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    // Total con doble regla: el momento
+                                    // de la venta.
+                                    Text(
+                                      totalText,
+                                      style: AppTheme.num(
+                                        theme.textTheme.titleMedium ??
+                                            const TextStyle(),
+                                        color: color.onSurface,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
+                        if (!isEmpty && hasDiscount) ...[
+                          const SizedBox(width: AppSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: color.error, width: 1.5),
+                              borderRadius: BorderRadius.circular(AppRadii.xs),
+                            ),
+                            child: Text(
+                              EsBO.calcToggleShowDetail,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: color.error,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (!isEmpty) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 20,
+                            color: color.onSurfaceVariant,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -363,6 +315,14 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   bool _isBusy = false;
   int _quantity = 1;
 
+  /// BUG-008 fix: guard sincrono a nivel de closure contra doble-tap.
+  /// `_isBusy` (state) se desactiva visualmente en el siguiente frame,
+  /// pero un doble-tap rapido puede disparar el mismo handler dos veces
+  /// antes de que el rebuild llegue. `_inFlight` se chequea y se setea
+  /// SIN setState (sincronicamente), bloqueando la segunda llamada al
+  /// instante.
+  bool _inFlight = false;
+
   /// Foto de la pieza adjuntada (efimera: solo vive en este sheet, no se
   /// persiste). Se renderiza en el template (PNG) y viaja al PDF.
   Uint8List? _pieceImageBytes;
@@ -398,7 +358,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   }
 
   Future<void> _handlePickImage(ImageSource source) async {
-    if (_isBusy) return;
+    if (_inFlight) return; // BUG-008: guard sincrono anti-doble-tap.
+    _inFlight = true;
     setState(() => _isBusy = true);
     try {
       final bytes = await pickPieceImage(source: source);
@@ -414,6 +375,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         context,
       ).showSnackBar(AppSnackBar.error(EsBO.quoteImageError));
     } finally {
+      _inFlight = false;
       if (mounted) setState(() => _isBusy = false);
     }
   }
@@ -423,10 +385,11 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   }
 
   Future<void> _handleSharePdf() async {
-    if (_isBusy) return;
+    if (_inFlight) return; // BUG-008: guard sincrono anti-doble-tap.
     final state = widget.state;
     final output = state.output;
     if (output == null) return;
+    _inFlight = true;
     setState(() => _isBusy = true);
     try {
       await shareQuotePdf(
@@ -449,12 +412,14 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         context,
       ).showSnackBar(AppSnackBar.error(EsBO.commonPdfExportError));
     } finally {
+      _inFlight = false;
       if (mounted) setState(() => _isBusy = false);
     }
   }
 
   Future<void> _handleShare() async {
-    if (_isBusy) return;
+    if (_inFlight) return; // BUG-008: guard sincrono anti-doble-tap.
+    _inFlight = true;
     setState(() => _isBusy = true);
     try {
       final bytes = await captureQuoteImageBytes(_captureKey);
@@ -468,12 +433,14 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         context,
       ).showSnackBar(AppSnackBar.error('${EsBO.calcShareError}: $e'));
     } finally {
+      _inFlight = false;
       if (mounted) setState(() => _isBusy = false);
     }
   }
 
   Future<void> _handleSave() async {
-    if (_isBusy) return;
+    if (_inFlight) return; // BUG-008: guard sincrono anti-doble-tap.
+    _inFlight = true;
     setState(() => _isBusy = true);
     try {
       final bytes = await captureQuoteImageBytes(_captureKey);
@@ -493,6 +460,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         context,
       ).showSnackBar(AppSnackBar.error(EsBO.calcShareError));
     } finally {
+      _inFlight = false;
       if (mounted) setState(() => _isBusy = false);
     }
   }
@@ -767,8 +735,13 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                           ),
                           onChanged: (val) {
                             final parsed = int.tryParse(val) ?? 0;
+                            // BUG-013: clamp al maximo definido en constants
+                            // (antes hardcodeado a 100, permitia -50% del
+                            // total con valores intermedios).
                             widget.onDiscountChanged(
-                              parsed.clamp(0, 100).toString(),
+                              parsed
+                                  .clamp(0, kMaxDiscountPercentage)
+                                  .toString(),
                             );
                           },
                         ),

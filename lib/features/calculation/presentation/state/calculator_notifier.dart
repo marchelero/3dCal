@@ -84,7 +84,17 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   }
 
   void setDiscountPct(String value) {
-    state = _recompute(state.copyWith(discountPct: value));
+    // BUG-013 fix: clamp defensivo 0..kMaxDiscountPercentage en el punto
+    // unico de entrada. La UI ya clampa, pero draft-restore/loadFromCalc
+    // pueden traer valores fuera de rango que producian total negativo.
+    final parsed = CalculatorState.parseDecimal(value);
+    if (parsed == null) {
+      state = _recompute(state.copyWith(discountPct: value));
+      return;
+    }
+    final clamped = parsed
+        .clamp(Decimal.zero, Decimal.fromInt(kMaxDiscountPercentage));
+    state = _recompute(state.copyWith(discountPct: clamped.toString()));
   }
 
   void setLabel(String value) {
@@ -479,6 +489,13 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// Lee [Settings] y la impresora ACTIVA de los providers para pasar watts,
   /// kwhRate, profitBase y los 5 nuevos parametros F1 al engine. Se usa la
   /// activa (no la default) para que el calculo coincida con la UI.
+  ///
+  /// BUG-007 (NOTA): si settings esta en loading (cold start con DB lenta),
+  /// se usan [Settings.defaults] como fallback transitorio. El listener de
+  /// `settingsNotifierProvider` en build() (linea ~48) re-dispara _recompute
+  /// cuando los settings reales cargan, corrigiendo el total al vuelo.
+  /// No se retorna null aca: rompe save()/plantillas cuando settings no
+  /// cargaron a tiempo (caso tests + cold start rapido).
   CalculationInput _buildInput(CalculatorState s) {
     final asyncSettings = ref.read<AsyncValue<Settings>>(
       settingsNotifierProvider,

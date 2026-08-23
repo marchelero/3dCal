@@ -487,13 +487,18 @@ class _DetailState extends ConsumerState<_Detail> {
                               ),
                             ),
                             Text(
+                              // BUG-009-display fix: guard contra division
+                              // por cero (gramsPerBobbinSnapshot == 0 en datos
+                              // legacy/corruptos) que producia Infinity/NaN.
                               formatCurrency(
-                                Decimal.parse(
-                                  (ms[i].weightGrams *
-                                          ms[i].pricePerBobbinSnapshot /
-                                          ms[i].gramsPerBobbinSnapshot)
-                                      .toStringAsFixed(2),
-                                ),
+                                ms[i].gramsPerBobbinSnapshot <= 0
+                                    ? Decimal.zero
+                                    : Decimal.parse(
+                                        (ms[i].weightGrams *
+                                                ms[i].pricePerBobbinSnapshot /
+                                                ms[i].gramsPerBobbinSnapshot)
+                                            .toStringAsFixed(2),
+                                      ),
                                 currency,
                               ),
                               style: GoogleFonts.jetBrainsMono(
@@ -559,7 +564,13 @@ class _DetailState extends ConsumerState<_Detail> {
                             ),
                           ),
                           Text(
-                            '-${formatCurrency(Decimal.parse((calc.materialCostSnapshot * calc.discountPercentage / 100).toStringAsFixed(2)), currency)}',
+                            // BUG-001 fix: el descuento real se calcula sobre
+                            // totalFinal (no materialCost) — debe coincidir con
+                            // calculation_engine.dart:84 para que el cliente
+                            // vea el mismo numero en el detalle y en el PDF.
+                            // totalFinal = baseCost + failureCost + markupCost
+                            //              + profitAmount (ver F1 engine).
+                            '-${formatCurrency(Decimal.parse(((calc.baseCostSnapshot + calc.failureCostSnapshot + calc.markupCostSnapshot + calc.profitAmountSnapshot) * calc.discountPercentage / 100).toStringAsFixed(2)), currency)}',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: color.onErrorContainer,
                               fontWeight: FontWeight.w700,

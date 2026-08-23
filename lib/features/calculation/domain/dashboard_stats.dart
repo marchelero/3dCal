@@ -34,9 +34,14 @@ class DashboardStats {
 
   /// Porcentaje de cotizaciones vendidas (0.0 - 100.0).
   ///
-  /// Si `countAll == 0` (aun no hay cotizaciones), retorna 0.
-  double get conversionPct {
-    if (countAll == 0) return 0;
+  /// Retorna `null` si `countAll == 0` (aun no hay cotizaciones): "no
+  /// aplica" es semanticamente distinto de "0%". La UI debe mostrar "—".
+  /// (BUG-023 fix)
+  ///
+  /// NOTA (BUG-011): es un ratio no monetario, por eso se permite `double`
+  /// aca — excepcion documentada al non-negotiable "no doubles en dinero".
+  double? get conversionPct {
+    if (countAll == 0) return null;
     return (countSold / countAll) * 100;
   }
 }

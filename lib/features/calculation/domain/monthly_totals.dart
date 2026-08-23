@@ -2,7 +2,11 @@
 library;
 // ignore_for_file: public_member_api_docs
 
+import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart' show immutable;
+
 /// Totals de un mes especifico.
+@immutable
 class MonthlyTotal {
   const MonthlyTotal({
     required this.yearMonth,
@@ -14,10 +18,12 @@ class MonthlyTotal {
   final String yearMonth;
 
   /// Suma totalPriceSnapshot del mes (BOB).
-  final double quoted;
+  // BUG-003 fix: Decimal para respetar el non-negotiable "no doubles en
+  // dinero". La precision agregada importa con 50+ cotizaciones grandes.
+  final Decimal quoted;
 
   /// Suma totalPriceSnapshot del mes donde isSold=true (BOB).
-  final double sold;
+  final Decimal sold;
 }
 
 /// Material mas usado (top N para dashboard).
@@ -30,5 +36,7 @@ class TopMaterial {
 
   final String label;
   final int count;
-  final double totalWeightGrams;
+
+  /// Decimal para mantener precision consistente con el resto del motor.
+  final Decimal totalWeightGrams;
 }

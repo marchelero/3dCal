@@ -340,7 +340,9 @@ class _CalculationCard extends ConsumerWidget {
     return Semantics(
       container: true,
       label:
-          '${_title()}, ${formatCurrency(Decimal.parse(calc.totalPriceSnapshot.toString()), currency)}'
+          // BUG-017 fix: toStringAsFixed(2) evita notacion cientifica/NaN
+          // en Decimal.parse para snapshots corruptos.
+          '${_title()}, ${formatCurrency(Decimal.parse(calc.totalPriceSnapshot.toStringAsFixed(2)), currency)}'
           '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -441,8 +443,9 @@ class _CalculationCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
+                        // BUG-017 fix: idem, toStringAsFixed(2).
                         formatCurrency(
-                          Decimal.parse(calc.totalPriceSnapshot.toString()),
+                          Decimal.parse(calc.totalPriceSnapshot.toStringAsFixed(2)),
                           currency,
                         ),
                         // M2: precio en list item usa JetBrains Mono + tabular

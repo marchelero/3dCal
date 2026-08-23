@@ -21,6 +21,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:share_plus/share_plus.dart';
 
+import '../../l10n/es_bo.dart';
 import '../database/app_database.dart';
 import 'backup_models.dart';
 
@@ -65,7 +66,7 @@ class BackupService {
             name: fileName,
           ),
         ],
-        text: 'Backup 3dCal',
+        text: EsBO.settingsBackupTitle,
       ),
     );
 

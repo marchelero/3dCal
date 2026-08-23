@@ -2,6 +2,7 @@
 library;
 // ignore_for_file: public_member_api_docs
 
+import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -32,11 +33,16 @@ class MonthlyTrendChart extends StatelessWidget {
       );
     }
 
-    final maxVal = data.fold<double>(
-      0,
+    // BUG-003 fix: math en Decimal, conversion a double solo en la frontera
+    // con fl_chart (que requiere double para spots y axis values).
+    final maxVal = data.fold<Decimal>(
+      Decimal.zero,
       (max, m) => m.quoted > max ? m.quoted : max,
     );
-    final ceiling = maxVal == 0 ? 100.0 : (maxVal * 1.2);
+    final maxValDouble = maxVal.toDouble();
+    final ceilingDouble =
+        maxValDouble == 0 ? 100.0 : (maxValDouble * 1.2);
+    final horizontalInterval = ceilingDouble / 4;
 
     return Semantics(
       label: _chartSummary(),
@@ -47,7 +53,7 @@ class MonthlyTrendChart extends StatelessWidget {
             gridData: FlGridData(
               show: true,
               drawVerticalLine: false,
-              horizontalInterval: ceiling / 4,
+              horizontalInterval: horizontalInterval,
               getDrawingHorizontalLine: (value) => FlLine(
                 color: color.outlineVariant.withAlpha(80),
                 strokeWidth: 1,
@@ -99,7 +105,8 @@ class MonthlyTrendChart extends StatelessWidget {
                 spots: data
                     .asMap()
                     .entries
-                    .map((e) => FlSpot(e.key.toDouble(), e.value.quoted))
+                    .map((e) =>
+                        FlSpot(e.key.toDouble(), e.value.quoted.toDouble()))
                     .toList(),
                 isCurved: true,
                 color: color.primary,
@@ -115,7 +122,8 @@ class MonthlyTrendChart extends StatelessWidget {
                 spots: data
                     .asMap()
                     .entries
-                    .map((e) => FlSpot(e.key.toDouble(), e.value.sold))
+                    .map((e) =>
+                        FlSpot(e.key.toDouble(), e.value.sold.toDouble()))
                     .toList(),
                 isCurved: true,
                 color: color.tertiary,
@@ -128,7 +136,7 @@ class MonthlyTrendChart extends StatelessWidget {
               ),
             ],
             minY: 0,
-            maxY: ceiling,
+            maxY: ceilingDouble,
           ),
           duration: const Duration(milliseconds: 300),
         ),
@@ -143,7 +151,7 @@ class MonthlyTrendChart extends StatelessWidget {
       final month = pieces.length == 2
           ? _monthAbbr(int.parse(pieces[1]))
           : m.yearMonth;
-      return '$month ${_formatAxis(m.quoted)}';
+      return '$month ${_formatAxis(m.quoted.toDouble())}';
     });
     return '${EsBO.dashboardMonthlyTrend}: ${parts.join(', ')}';
   }

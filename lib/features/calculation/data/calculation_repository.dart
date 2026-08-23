@@ -57,6 +57,15 @@ class CalculationRepository {
 
   final AppDatabase _db;
 
+  /// BUG-010 fix: filtro base que excluye plantillas.
+  ///
+  /// Usar en TODAS las queries que NO deben incluir plantillas de trabajo
+  /// (historial, dashboard, busqueda, contadores). Centralizado aca para
+  /// que sea imposible olvidar al agregar un campo o una query nueva.
+  /// Para las plantillas, ver [listTemplates].
+  Expression<bool> excludeTemplatesFilter() =>
+      _db.calculations.isTemplate.equals(false);
+
   /// Crea una cotizacion con sus materiales.
   ///
   /// Devuelve el id de la cotizacion creada.
@@ -265,7 +274,7 @@ class CalculationRepository {
   /// Lista todas las cotizaciones (no plantillas), mas recientes primero.
   Future<List<Calculation>> listAll() {
     return (_db.select(_db.calculations)
-          ..where((c) => c.isTemplate.equals(false))
+          ..where((_) => excludeTemplatesFilter())
           ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
         .get();
   }
@@ -277,7 +286,7 @@ class CalculationRepository {
     return (_db.select(_db.calculations)
           ..where(
             (c) =>
-                c.isTemplate.equals(false) &
+                excludeTemplatesFilter() &
                 (c.pieceName.like(pattern) | c.clientName.like(pattern)),
           )
           ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
@@ -286,7 +295,7 @@ class CalculationRepository {
 
   Stream<List<Calculation>> watchAll() {
     return (_db.select(_db.calculations)
-          ..where((c) => c.isTemplate.equals(false))
+          ..where((_) => excludeTemplatesFilter())
           ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
         .watch();
   }
@@ -397,8 +406,7 @@ class CalculationRepository {
         await (_db.selectOnly(_db.calculations)
               ..addColumns([_db.calculations.id.count()])
               ..where(
-                _db.calculations.isSold.equals(true) &
-                    _db.calculations.isTemplate.equals(false),
+                _db.calculations.isSold.equals(true) & excludeTemplatesFilter(),
               ))
             .getSingle();
     return result.read(_db.calculations.id.count()) ?? 0;
@@ -414,7 +422,7 @@ class CalculationRepository {
     final result =
         await (_db.selectOnly(_db.calculations)
               ..addColumns([countExpression])
-              ..where(_db.calculations.isTemplate.equals(false)))
+              ..where(excludeTemplatesFilter()))
             .getSingle();
     return result.read(countExpression) ?? 0;
   }
@@ -435,8 +443,8 @@ class CalculationRepository {
     return rows.map((r) {
       return MonthlyTotal(
         yearMonth: r.read<String>('month'),
-        quoted: r.read<double>('quoted'),
-        sold: r.read<double>('sold'),
+        quoted: Decimal.parse(r.read<double>('quoted').toStringAsFixed(2)),
+        sold: Decimal.parse(r.read<double>('sold').toStringAsFixed(2)),
       );
     }).toList();
   }
@@ -461,7 +469,8 @@ class CalculationRepository {
       return TopMaterial(
         label: r.read<String>('label'),
         count: r.read<double>('cnt').round(),
-        totalWeightGrams: r.read<double>('total_g'),
+        totalWeightGrams:
+            Decimal.parse(r.read<double>('total_g').toStringAsFixed(2)),
       );
     }).toList();
   }

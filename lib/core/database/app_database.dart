@@ -48,11 +48,17 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (m, from, to) async {
-      if (from == 1) {
+      // BUG-004 fix: el patron `if (from <= N)` re-ejecutaba migraciones
+      // cuando un usuario venia de una version intermedia y un release
+      // futuro publicaba un schemaVersion < N. La convencion correcta es
+      // `if (from < N)`: cada bloque corre solo si la version actual del
+      // usuario es estrictamente menor que la version objetivo del bloque,
+      // lo cual garantiza que las migraciones se aplican en orden.
+      if (from < 2) {
         // v1→v2: agregar columna brand a printers
         await m.addColumn(printers, printers.brand);
       }
-      if (from <= 2) {
+      if (from < 3) {
         // v2→v3: agregar columnas F1 (mano de obra + post-procesado)
         await m.addColumn(calculations, calculations.laborCostSnapshot);
         await m.addColumn(calculations, calculations.postProcessCostSnapshot);
@@ -69,27 +75,27 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(calculations, calculations.minimumChargeSnapshot);
         await m.addColumn(calculations, calculations.markupOnMaterialsSnapshot);
       }
-      if (from <= 3) {
+      if (from < 4) {
         // v3→v4: persistir minutos del tiempo de impresion por separado.
         // Antes solo se guardaba `totalHours` como decimal, perdiendo el
         // split h+m. Para registros viejos, minutos=0 (default) y el
         // notifier los deriva del decimal al recargar (best-effort).
         await m.addColumn(calculations, calculations.printMinutes);
       }
-      if (from <= 4) {
+      if (from < 5) {
         // v4→v5: agregar tabla entitlements (T1 del plan de monetizacion).
         // Una sola fila activa a la vez (enforcement en
         // EntitlementRepository, no DB constraint).
         await m.createTable(entitlements);
       }
-      if (from <= 5) {
+      if (from < 6) {
         // v5→v6: notas y condiciones comerciales por cotizacion (se
         // imprimen en el PDF). Columnas opcionales: registros viejos
         // quedan null.
         await m.addColumn(calculations, calculations.notes);
         await m.addColumn(calculations, calculations.conditions);
       }
-      if (from <= 6) {
+      if (from < 7) {
         // v6→v7: plantillas de trabajo. Reusa la misma tabla
         // calculations con flag isTemplate (excluida de historial/
         // dashboard/cap). Registros viejos quedan isTemplate=false.

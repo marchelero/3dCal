@@ -114,6 +114,10 @@ class BackupData {
   final List<Map<String, dynamic>> settings;
 
   /// Serializa a JSON para escritura a archivo.
+  ///
+  /// Precondiciones de tipos (BUG-024): todas las colecciones deben contener
+  /// unicamente tipos JSON-serializables (String/int/bool/Map/List). Pasar
+  /// Decimal, DateTime o tipos custom hace fallar jsonEncode en runtime.
   Map<String, dynamic> toJson() => {
     'version': version,
     'schemaVersion': schemaVersion,

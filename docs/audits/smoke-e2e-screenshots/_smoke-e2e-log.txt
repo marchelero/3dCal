@@ -1,0 +1,83 @@
+[02:54:54] === PASS 1: FREE (perfil limpio) ===
+[02:54:56]   screenshot -> free_j0_splash.png
+[02:54:56] J0: URL inicial=http://localhost:8080/
+[02:55:01]   screenshot -> free_j1_initial-config.png
+[02:55:04] [free] moneda -> BOB
+[02:55:14]   screenshot -> free_j1_printer-saved.png
+[02:55:16]   screenshot -> free_j1_filament-skip.png
+[02:55:18]   screenshot -> free_j1_step3.png
+[02:55:25] [free] onboarding ok. URL=http://localhost:8080/
+[02:55:25]   screenshot -> free_j1_home.png
+[02:55:30]   screenshot -> free_j1_quoter-empty-catalog.png
+[02:55:30] J1: hint vacio: ["Cerrar y volver al menúCotizaciónCómo calibrar tus costosPlantillasRestablecerCOTIZACIÓN22/08/2026ExpressAvanzadoPIEZAEj: Soporte pared, Engranaje PETGClave: sin este dato no se puede cotizar Clave: sin este dato no se puede cotizarGramos del modeloTIEMPO DE IMPRESIONClave: define el costo de mano de obra y energia Clave: define el costo de mano de obra y energiaClave: completa el tiempo real de impresion Clave: completa el tiempo real de impresionFILAMENTOOpcional (ej: PLA base)IMPRESORAImpresora: Ender 3 Ender 3 220 WOTROSCompleta peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización. FALTA COMPLETAR Completa peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización.","Cerrar y volver al menúCotizaciónCómo calibrar tus costosPlantillasRestablecerCOTIZACIÓN22/08/2026ExpressAvanzadoPIEZAEj: Soporte pared, Engranaje PETGClave: sin este dato no se puede cotizar Clave: sin este dato no se puede cotizarGramos del modeloTIEMPO DE IMPRESIONClave: define el costo de mano de obra y energia Clave: define el costo de mano de obra y energiaClave: completa el tiempo real de impresion Clave: completa el tiempo real de impresionFILAMENTOOpcional (ej: PLA base)IMPRESORAImpresora: Ender 3 Ender 3 220 WOTROSCompleta peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización. FALTA COMPLETAR Completa peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización."]
+[02:56:05] [free] J2 total sin descuento: []
+[02:56:05]   screenshot -> free_j2_filled.png
+[02:56:05] [free] reintentando tipeo de campos...
+[02:56:23] [free] click barra fallo
+[02:56:25]   screenshot -> free_j2_sheet.png
+[02:56:26]   input sin label no encontrado
+[02:56:28] [free] J2 total con descuento=150: []
+[02:56:28]   screenshot -> free_j2_discount150.png
+[02:56:43]   clickButton fallo: /^Guardar cotizaci.n$/
+[02:56:58]   clickButton fallo: /^Guardar$/
+[02:57:13] [free] snackbar 'guardada': false
+[02:57:13]   screenshot -> free_save-snackbar.png
+[02:57:16] J3(free): gate presente: false
+[02:57:16]   screenshot -> free_j3_advanced-gated.png
+[02:57:21] J5a: dashboard: []
+[02:57:21]   screenshot -> free_j5_dashboard-0sold.png
+[02:57:25] J4: cards: []
+[02:57:25]   screenshot -> free_j4_history.png
+[02:57:33] J4: click card fallo
+[02:57:38]   screenshot -> free_j4_detail.png
+[02:57:50]   clickButton fallo: /^Marcar vendida$/
+[02:57:52]   screenshot -> free_j4_detail-sold.png
+[02:57:58] J5b: dashboard: []
+[02:57:58]   screenshot -> free_j5_dashboard-1sold.png
+[02:58:10] J6: click card fallo
+[02:58:15] J6: desglose: []
+[02:58:15]   screenshot -> free_j6_detail-breakdown.png
+[02:58:28]   clickButton fallo: /^Compartir imagen$/
+[02:58:33] J6: compartir imagen -> download? false
+[02:58:33]   screenshot -> free_j6_after-share.png
+[02:58:41] J7: tras reload URL=http://localhost:8080/#/history re-onboarding=false
+[02:58:41]   screenshot -> free_j7_after-reload.png
+[02:58:45] J7: cotizaciones tras reload: []
+[02:58:45]   screenshot -> free_j7_history-persisted.png
+[02:58:45] === PASS 2: PRO (perfil limpio + Pro) ===
+[02:58:52]   screenshot -> pro_j1_initial-config.png
+[02:58:54] [pro] moneda -> BOB
+[02:59:04]   screenshot -> pro_j1_printer-saved.png
+[02:59:06]   screenshot -> pro_j1_filament-skip.png
+[02:59:09]   screenshot -> pro_j1_step3.png
+[02:59:16] [pro] onboarding ok. URL=http://localhost:8080/
+[02:59:16]   screenshot -> pro_j1_home.png
+[02:59:50] [pro] J2 total sin descuento: []
+[02:59:50]   screenshot -> pro_j2_filled.png
+[02:59:50] [pro] reintentando tipeo de campos...
+[03:00:07] [pro] click barra fallo
+[03:00:09]   screenshot -> pro_j2_sheet.png
+[03:00:24]   clickButton fallo: /^Guardar cotizaci.n$/
+[03:00:38]   clickButton fallo: /^Guardar$/
+[03:00:53] [pro] snackbar 'guardada': false
+[03:00:54]   screenshot -> pro_save-snackbar.png
+[03:01:03] J3(pro): gate tras Avanzado: false (esperado NO)
+[03:01:03]   screenshot -> pro_j3_advanced-mode.png
+[03:01:38] J3(pro): total advanced: []
+[03:01:38]   screenshot -> pro_j3_advanced-filled.png
+[03:01:57]   clickButton fallo: /^Guardar cotizaci.n$/
+[03:02:11]   clickButton fallo: /^Guardar$/
+[03:02:26] [pro] snackbar 'guardada': false
+[03:02:26]   screenshot -> pro_save-snackbar.png
+[03:02:32] J4(pro): cards: []
+[03:02:32]   screenshot -> pro_j4_history-2.png
+[03:02:40] J4 pro: click card fallo
+[03:02:57]   clickButton fallo: /^Marcar vendida$/
+[03:02:59]   screenshot -> pro_j4_detail-sold.png
+[03:03:02] J5(pro): charts: []
+[03:03:02]   screenshot -> pro_j5_dashboard-charts.png
+[03:03:03] === RESUMEN ===
+[03:03:03] Console errors total=0 (no-app=0): []
+[03:03:03] Page errors: []
+[03:03:03] Journeys: {"J0":"http://localhost:8080/#/initial-config","J1":"ok"}
+[03:03:03] Notes: ["J1 empty hint: [\"Cerrar y volver al menúCotizaciónCómo calibrar tus costosPlantillasRestablecerCOTIZACIÓN22/08/2026ExpressAvanzadoPIEZAEj: Soporte pared, Engranaje PETGClave: sin este dato no se puede cotizar Clave: sin este dato no se puede cotizarGramos del modeloTIEMPO DE IMPRESIONClave: define el costo de mano de obra y energia Clave: define el costo de mano de obra y energiaClave: completa el tiempo real de impresion Clave: completa el tiempo real de impresionFILAMENTOOpcional (ej: PLA base)IMPRESORAImpresora: Ender 3 Ender 3 220 WOTROSCompleta peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización. FALTA COMPLETAR Completa peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización.\",\"Cerrar y volver al menúCotizaciónCómo calibrar tus costosPlantillasRestablecerCOTIZACIÓN22/08/2026ExpressAvanzadoPIEZAEj: Soporte pared, Engranaje PETGClave: sin este dato no se puede cotizar Clave: sin este dato no se puede cotizarGramos del modeloTIEMPO DE IMPRESIONClave: define el costo de mano de obra y energia Clave: define el costo de mano de obra y energiaClave: completa el tiempo real de impresion Clave: completa el tiempo real de impresionFILAMENTOOpcional (ej: PLA base)IMPRESORAImpresora: Ender 3 Ender 3 220 WOTROSCompleta peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización. FALTA COMPLETAR Completa peso de la pieza, precio del filamento y tiempo de impresion para ver la cotización.\"]","J2 totals free: {\"t0\":[]}","J3 free gate: false","J6 breakdown: []","J5 pro charts: []"]

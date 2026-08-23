@@ -114,7 +114,10 @@ class _DashboardBody extends StatelessWidget {
                 Expanded(
                   child: StatTile(
                     label: EsBO.dashboardStatConversion,
-                    value: '${stats.conversionPct.toStringAsFixed(0)}%',
+                    // BUG-023: null = "sin datos" → mostrar "—".
+                    value: stats.conversionPct == null
+                        ? '—'
+                        : '${stats.conversionPct!.toStringAsFixed(0)}%',
                     icon: Icons.trending_up_rounded,
                     color: color.secondary,
                   ),
@@ -302,7 +305,9 @@ class _MaterialRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grams = m.totalWeightGrams;
+    // BUG-003 fix: totalWeightGrams ahora es Decimal; convertir a double
+    // solo para el formateo visual.
+    final grams = m.totalWeightGrams.toDouble();
     final gramsStr = grams >= 1000
         ? '${(grams / 1000).toStringAsFixed(1)}kg'
         : '${grams.toStringAsFixed(0)}g';

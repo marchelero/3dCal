@@ -619,12 +619,43 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     }
   }
 
+  /// Abre el modal sheet de resultado (resumen + acciones).
+  void _openResultSheet() {
+    final state = ref.read(calculatorNotifierProvider);
+    if (state.isValid && state.output != null) {
+      showResultSheet(
+        context: context,
+        state: state,
+        onSave: _showSaveDialog,
+        onReset: _resetAll,
+        onToggleDetail: () =>
+            ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
+        onDiscountChanged: (value) {
+          ref
+              .read(calculatorNotifierProvider.notifier)
+              .setDiscountPct(value);
+          if (_discountCtrl.text != value) {
+            _discountCtrl.text = value;
+          }
+        },
+      );
+    } else {
+      setState(() => _showValidationErrors = true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calculatorNotifierProvider);
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     final currency = ref.watch(selectedCurrencyProvider);
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isValid = state.isValid && state.output != null;
+    final totalText = isValid
+        ? formatCurrency(state.output!.totalPrice, currency)
+        : null;
+
     return Scaffold(
       appBar: AppBar(
         // Salida explícita: con ruta push, el leading por defecto es una
@@ -644,6 +675,19 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           child: Text(ref.watch(localeStringsProvider).calcSheetTitle),
         ),
         actions: [
+          // Total chip: siempre visible en el AppBar (nunca se tapa con
+          // el teclado). Tap abre el sheet de resultado.
+          if (totalText != null)
+            Semantics(
+              button: true,
+              label: '${EsBO.calcResultBarTapHint}: $totalText',
+              child: _TotalChip(
+                totalText: totalText,
+                hasDiscount:
+                    state.output!.discountAmount > Decimal.zero,
+                onTap: _openResultSheet,
+              ),
+            ),
           Semantics(
             button: true,
             label: EsBO.costHelpTitle,
@@ -678,42 +722,17 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             ? _buildExpressForm(state, notifier, theme, currency)
             : _buildAdvancedForm(state, notifier, theme, currency),
       ),
-      // Sticky bottom bar: SIEMPRE visible (Fix #3). Cumplio doble proposito:
-      // - invalid → empty hint dinamico (lista campos faltantes).
-      // - valid → total formateado + tap abre modal con resumen + acciones.
+      // Bottom bar: ahora muestra hint de validación (cuando inválido) y
+      // también el total como recordatorio (tap abre el sheet). Ya NO es
+      // la única fuente del total — el AppBar lo muestra siempre.
       bottomNavigationBar: ResultBottomBar(
-        totalText: state.output != null
-            ? formatCurrency(state.output!.totalPrice, currency)
-            : '—',
+        totalText: totalText ?? '—',
         hasDiscount:
             state.output != null && state.output!.discountAmount > Decimal.zero,
         emptyHint: state.isValid
             ? null
             : _buildEmptyHint(state.missingRequiredFields),
-        onTap: () {
-          if (state.isValid && state.output != null) {
-            showResultSheet(
-              context: context,
-              state: state,
-              onSave: _showSaveDialog,
-              onReset: _resetAll,
-              onToggleDetail: () =>
-                  ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
-              onDiscountChanged: (value) {
-                ref
-                    .read(calculatorNotifierProvider.notifier)
-                    .setDiscountPct(value);
-                // Sync el controller oculto del form para que el draft
-                // persista el descuento (el listener agenda el save).
-                if (_discountCtrl.text != value) {
-                  _discountCtrl.text = value;
-                }
-              },
-            );
-          } else {
-            setState(() => _showValidationErrors = true);
-          }
-        },
+        onTap: _openResultSheet,
       ),
     );
   }
@@ -1230,6 +1249,137 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ],
       ),
     );
+  }
+}
+
+// === Total chip en AppBar ===
+
+/// Chip animado que muestra el total calculado en el AppBar.
+/// Siempre visible (no se tapa con el teclado). Tap abre el sheet
+/// de resultado con el desglose completo y acciones.
+class _TotalChip extends StatefulWidget {
+  const _TotalChip({
+    required this.totalText,
+    required this.hasDiscount,
+    required this.onTap,
+  });
+
+  final String totalText;
+  final bool hasDiscount;
+  final VoidCallback onTap;
+
+  @override
+  State<_TotalChip> createState() => _TotalChipState();
+}
+
+class _TotalChipState extends State<_TotalChip>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _pulseCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pulse sutil una sola vez cuando aparece el total por primera vez.
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward().then((_) {
+        _pulseCtrl?.dispose();
+        _pulseCtrl = null;
+      });
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final chip = Semantics(
+      button: true,
+      label: '${EsBO.calcResultBarTapHint}: ${widget.totalText}',
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: cs.primaryContainer,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(
+              color: cs.primary.withValues(alpha: 0.4),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.receipt_long_rounded,
+                size: 16,
+                color: cs.onPrimaryContainer,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                widget.totalText,
+                style: AppTheme.num(
+                  theme.textTheme.labelLarge ?? const TextStyle(),
+                  color: cs.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (widget.hasDiscount) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.error,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '%',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onError,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 9,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 2),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: cs.onPrimaryContainer.withValues(alpha: 0.7),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Pulse sutil al primer render.
+    if (_pulseCtrl != null) {
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+          CurvedAnimation(parent: _pulseCtrl!, curve: Curves.easeOutBack),
+        ),
+        child: chip,
+      );
+    }
+    return chip;
   }
 }
 

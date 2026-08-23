@@ -269,7 +269,9 @@ class HomePage extends ConsumerWidget {
   Uint8List _base64ToBytes(String base64) {
     try {
       return base64Decode(base64);
-    } catch (_) {
+    } catch (e) {
+      // BUG-020 fix: loggear — el logo corrupto se muestra vacio.
+      debugPrint('Logo base64 corrupto (home): $e');
       return Uint8List(0);
     }
   }
@@ -463,7 +465,10 @@ class HomePage extends ConsumerWidget {
             Expanded(
               child: StatTile(
                 label: EsBO.dashboardStatConversion,
-                value: '${stats.conversionPct.toStringAsFixed(0)}%',
+                // BUG-023: null = "sin datos" → mostrar "—".
+                value: stats.conversionPct == null
+                    ? '—'
+                    : '${stats.conversionPct!.toStringAsFixed(0)}%',
                 icon: Icons.trending_up_rounded,
                 color: color.secondary,
               ),

@@ -1,6 +1,5 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
-import 'package:drift/drift.dart' show Value;
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
@@ -58,31 +57,22 @@ class SettingsRepository {
     await _upsert(key, value.toString());
   }
 
-  /// Helper que hace upsert: insert si no existe, update si existe.
+  /// Helper que hace upsert atomico: insert si no existe, update si existe.
+  ///
+  /// BUG-005 fix: antes hacia SELECT + INSERT/UPDATE sin transaccion, lo que
+  /// causaba conflictos de PK cuando dos updates concurrentes (ej: blur doble
+  /// en initial_config_page) intentaban ambos hacer INSERT.
+  /// `insertOnConflictUpdate` es atómico a nivel de sentencia SQL.
   Future<void> _upsert(String key, String value) async {
-    final existing = await (_db.select(
-      _db.settingsTable,
-    )..where((s) => s.key.equals(key))).getSingleOrNull();
-    if (existing == null) {
-      await _db
-          .into(_db.settingsTable)
-          .insert(
-            SettingsTableCompanion.insert(
-              key: key,
-              value: value,
-              updatedAt: DateTime.now().toUtc(),
-            ),
-          );
-    } else {
-      await (_db.update(
-        _db.settingsTable,
-      )..where((s) => s.key.equals(key))).write(
-        SettingsTableCompanion(
-          value: Value(value),
-          updatedAt: Value(DateTime.now().toUtc()),
-        ),
-      );
-    }
+    await _db
+        .into(_db.settingsTable)
+        .insertOnConflictUpdate(
+          SettingsTableCompanion.insert(
+            key: key,
+            value: value,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
   }
 
   // -------- Typed accessors para settings comunes --------

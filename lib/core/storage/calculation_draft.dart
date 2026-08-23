@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 /// Estado serializable del formulario de cotizacion.
 ///
 /// Guarda todos los campos del calculator para restaurar al reabrir la app.
@@ -89,7 +91,10 @@ class CalculationDraft {
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       return CalculationDraft.fromJson(json);
-    } catch (_) {
+    } catch (e) {
+      // BUG-018 fix: loggear la causa para no perder silenciosamente el
+      // draft del usuario (el form abre vacio sin explicacion).
+      debugPrint('CalculationDraft.tryDecode fallo: $e');
       return null;
     }
   }

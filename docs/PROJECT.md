@@ -62,7 +62,13 @@ unspecified (a definir por el usuario — sugerir MIT para codigo abierto)
 ## Non-Negotiables
 - **No backend**: 100% local. Cero red. Cero auth. Privacidad absoluta.
 - **No doubles en dinero**: motor de calculo con `decimal` o `int` centavos. `double` solo en formateo final.
-- **No setState en vistas dinamicas**: solo Riverpod notifiers.
+- **No setState en vistas dinamicas**: solo Riverpod notifiers para estado
+  que afecta logica de negocio o persistencia (datos de cotizacion,
+  catalogo, settings, listas observables). Se **permite** `setState` para
+  estado puramente UI local y efimero que NO se persiste ni se comparte
+  entre widgets: busy/loading, focus, page index de stepper, dropdown
+  selection efimero, image bytes en captura, etc. El estado de negocio
+  siempre va por Riverpod; el flicker de UI local no. (BUG-006)
 - **Regla del 95%**: modo Express visible por defecto (3 inputs).
 - **No cloud sync**: cualquier feature de sync es out of scope MVP.
 - **License**: inherited from user project (no embedded license in starter)

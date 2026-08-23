@@ -41,21 +41,25 @@ class PrinterRepository {
     String? brand,
     required int averageWatts,
     bool asDefault = false,
-  }) async {
-    if (asDefault) {
-      await _clearDefault();
-    }
-    return _db
-        .into(_db.printers)
-        .insert(
-          PrintersCompanion.insert(
-            name: name,
-            brand: Value(brand),
-            averageWatts: averageWatts,
-            isDefault: Value(asDefault),
-            createdAt: DateTime.now().toUtc(),
-          ),
-        );
+  }) {
+    // BUG-002 fix: transaccion para evitar dos impresoras con isDefault=true
+    // en inserts concurrentes (multi-tab web, autosave).
+    return _db.transaction(() async {
+      if (asDefault) {
+        await _clearDefault();
+      }
+      return _db
+          .into(_db.printers)
+          .insert(
+            PrintersCompanion.insert(
+              name: name,
+              brand: Value(brand),
+              averageWatts: averageWatts,
+              isDefault: Value(asDefault),
+              createdAt: DateTime.now().toUtc(),
+            ),
+          );
+    });
   }
 
   /// Actualiza una impresora existente.
@@ -65,22 +69,25 @@ class PrinterRepository {
     String? brand,
     required int averageWatts,
     bool? asDefault,
-  }) async {
-    if (asDefault == true) {
-      await _clearDefault();
-    }
-    final updated =
-        await (_db.update(_db.printers)..where((p) => p.id.equals(id))).write(
-          PrintersCompanion(
-            name: Value(name),
-            brand: Value(brand),
-            averageWatts: Value(averageWatts),
-            isDefault: asDefault == null
-                ? const Value.absent()
-                : Value(asDefault),
-          ),
-        );
-    return updated > 0;
+  }) {
+    // BUG-002 fix: misma proteccion transaccional que create().
+    return _db.transaction(() async {
+      if (asDefault == true) {
+        await _clearDefault();
+      }
+      final updated =
+          await (_db.update(_db.printers)..where((p) => p.id.equals(id))).write(
+            PrintersCompanion(
+              name: Value(name),
+              brand: Value(brand),
+              averageWatts: Value(averageWatts),
+              isDefault: asDefault == null
+                  ? const Value.absent()
+                  : Value(asDefault),
+            ),
+          );
+      return updated > 0;
+    });
   }
 
   /// Elimina una impresora por id.

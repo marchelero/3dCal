@@ -169,14 +169,34 @@ void main() {
       totalSold: Decimal.fromInt(30000),
       countAll: 10,
       countSold: 6,
-      monthlyTotals: const [
-        MonthlyTotal(yearMonth: '2026-05', quoted: 10000, sold: 6000),
-        MonthlyTotal(yearMonth: '2026-06', quoted: 20000, sold: 12000),
-        MonthlyTotal(yearMonth: '2026-07', quoted: 20000, sold: 12000),
+      monthlyTotals: [
+        MonthlyTotal(
+          yearMonth: '2026-05',
+          quoted: Decimal.fromInt(10000),
+          sold: Decimal.fromInt(6000),
+        ),
+        MonthlyTotal(
+          yearMonth: '2026-06',
+          quoted: Decimal.fromInt(20000),
+          sold: Decimal.fromInt(12000),
+        ),
+        MonthlyTotal(
+          yearMonth: '2026-07',
+          quoted: Decimal.fromInt(20000),
+          sold: Decimal.fromInt(12000),
+        ),
       ],
-      topMaterials: const [
-        TopMaterial(label: 'PLA Negro', count: 5, totalWeightGrams: 800),
-        TopMaterial(label: 'PETG', count: 3, totalWeightGrams: 500),
+      topMaterials: [
+        TopMaterial(
+          label: 'PLA Negro',
+          count: 5,
+          totalWeightGrams: Decimal.fromInt(800),
+        ),
+        TopMaterial(
+          label: 'PETG',
+          count: 3,
+          totalWeightGrams: Decimal.fromInt(500),
+        ),
       ],
     );
 

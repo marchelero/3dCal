@@ -432,7 +432,9 @@ class QuoteImageTemplate extends StatelessWidget {
   Uint8List _base64ToBytes(String base64) {
     try {
       return base64Decode(base64);
-    } catch (_) {
+    } catch (e) {
+      // BUG-020 fix: loggear — el logo corrupto se muestra vacio.
+      debugPrint('Logo base64 corrupto (template): $e');
       return Uint8List(0);
     }
   }
