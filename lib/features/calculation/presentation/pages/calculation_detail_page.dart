@@ -307,6 +307,7 @@ class _DetailState extends ConsumerState<_Detail> {
                 borderRadius: BorderRadius.circular(AppRadii.xxxl),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -366,13 +367,15 @@ class _DetailState extends ConsumerState<_Detail> {
                         color: color.onPrimaryContainer.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        DateFormat(
-                          'dd MMM yyyy · HH:mm',
-                        ).format(calc.createdAt.toLocal()),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: color.onPrimaryContainer.withValues(
-                            alpha: 0.7,
+                      Flexible(
+                        child: Text(
+                          DateFormat(
+                            'dd MMM yyyy · HH:mm',
+                          ).format(calc.createdAt.toLocal()),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.onPrimaryContainer.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         ),
                       ),
@@ -459,9 +462,10 @@ class _DetailState extends ConsumerState<_Detail> {
                                   style: theme.textTheme.labelMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: color.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
+              ),
+            ),
+            ),
+          ),
                             ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
@@ -925,6 +929,7 @@ _recomputeOutput(
     totalFinal: totalFinal,
     discountAmount: discountOnTotalFinal,
     totalPrice: totalPrice,
+    totalOriginal: totalFinal,
   );
 
   // Meta

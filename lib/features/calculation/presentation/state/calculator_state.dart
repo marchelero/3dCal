@@ -133,6 +133,7 @@ class CalculatorState {
     this.extraPostProcessRate = '',
     this.extraFailureRate = '',
     this.extraMarkupOnMaterials = '',
+    this.quantity = 1,
     this.computeVersion = 0,
   });
 
@@ -211,6 +212,9 @@ class CalculatorState {
   /// Markup por desperdicio (% del costo de materiales).
   final String extraMarkupOnMaterials;
 
+  /// Cantidad de unidades. El total se multiplica por este valor.
+  final int quantity;
+
   /// Numero de version que incrementa en cada recomputo.
   /// Usado por la UI para animar "calculando..." cuando cambia el output.
   final int computeVersion;
@@ -244,6 +248,7 @@ class CalculatorState {
     String? extraPostProcessRate,
     String? extraFailureRate,
     String? extraMarkupOnMaterials,
+    int? quantity,
     int? computeVersion,
   }) => CalculatorState(
     mode: mode ?? this.mode,
@@ -292,6 +297,7 @@ class CalculatorState {
     extraFailureRate: extraFailureRate ?? this.extraFailureRate,
     extraMarkupOnMaterials:
         extraMarkupOnMaterials ?? this.extraMarkupOnMaterials,
+    quantity: quantity ?? this.quantity,
     computeVersion: computeVersion ?? this.computeVersion,
   );
 
@@ -409,6 +415,7 @@ class CalculatorState {
         extraPostProcessRate == other.extraPostProcessRate &&
         extraFailureRate == other.extraFailureRate &&
         extraMarkupOnMaterials == other.extraMarkupOnMaterials &&
+        quantity == other.quantity &&
         computeVersion == other.computeVersion;
   }
 
@@ -459,6 +466,7 @@ class CalculatorState {
     extraPostProcessRate,
     extraFailureRate,
     extraMarkupOnMaterials,
+    quantity,
     computeVersion,
   ]);
 }

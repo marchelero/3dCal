@@ -586,13 +586,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ).showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.success(
-          EsBO.calcSavedWithId(id),
-          actionLabel: EsBO.calcSavedViewAction,
-          onAction: () => context.push('/history/$id'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          AppSnackBar.success(
+            EsBO.calcSavedWithId(id),
+            actionLabel: EsBO.calcSavedViewAction,
+            onAction: () {
+              if (!mounted) return;
+              context.push('/history/$id');
+            },
+          ),
+        );
     } on HistoryCapReachedException catch (_) {
       // T15: free user intento guardar la #11. SnackBar dedicado con CTA
       // "Go Pro" (reusamos calculatorGoProAction — mismo destino /paywall
@@ -653,7 +658,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final cs = theme.colorScheme;
     final isValid = state.isValid && state.output != null;
     final totalText = isValid
-        ? formatCurrency(state.output!.totalPrice, currency)
+        ? formatCurrency(
+            state.output!.totalPrice * Decimal.fromInt(state.quantity),
+            currency,
+          )
         : null;
 
     return Scaffold(

@@ -650,6 +650,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                       GoRouter.of(ctx).push('/paywall');
                                     } else {
                                       setState(() => _quantity--);
+                                      ProviderScope.containerOf(ctx)
+                                          .read(calculatorNotifierProvider.notifier)
+                                          .setQuantity(_quantity);
                                     }
                                   }
                                 : null,
@@ -676,6 +679,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                 GoRouter.of(ctx).push('/paywall');
                               } else {
                                 setState(() => _quantity++);
+                                ProviderScope.containerOf(ctx)
+                                    .read(calculatorNotifierProvider.notifier)
+                                    .setQuantity(_quantity);
                               }
                             },
                           ),

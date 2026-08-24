@@ -38,15 +38,21 @@ class AppSnackBar extends SnackBar {
     required super.duration,
     SnackBarAction? action,
   }) : super(
-         content: Row(
-           children: [
-             Icon(icon, color: foregroundColor, size: 24),
-             SizedBox(width: AppSpacing.md),
-             Expanded(
-               child: Text(message, style: TextStyle(color: foregroundColor)),
-             ),
-           ],
-         ),
+        content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: foregroundColor, size: 24),
+              SizedBox(width: AppSpacing.md),
+              Flexible(
+                child: Text(
+                  message,
+                  style: TextStyle(color: foregroundColor),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
          backgroundColor: backgroundColor,
          // El `behavior` lo define el theme (snackBarTheme: floating).
          // No forzar aqui: en tests sin AppTheme quedaria floating y el

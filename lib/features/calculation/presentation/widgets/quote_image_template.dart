@@ -90,14 +90,11 @@ class QuoteImageTemplate extends StatelessWidget {
     final now = DateTime.now();
 
     // ── Cálculo del total: unitPrice × quantity ──
-    // El descuento ya viene aplicado por el engine en output.totalPrice
-    // (state.discountPct → engine → output.discountAmount/output.totalPrice).
-    // El descuento se aplica sobre el TOTAL (unitario × cantidad): todas las
-    // filas del cuadro se multiplican por quantity para que recalcule al
-    // cambiar la cantidad.
+    // El engine produce precio unitario; aqui se multiplica por quantity.
     final unitPrice = output.totalPrice;
     final qty = Decimal.fromInt(quantity);
     final totalFinal = unitPrice * qty;
+    final totalOriginal = output.totalOriginal ?? output.totalFinal;
 
     return Container(
       width: 400, // ancho fijo para consistencia en la imagen
@@ -231,7 +228,7 @@ class QuoteImageTemplate extends StatelessWidget {
 
           // ── Discount breakdown: correccion de recibo ──
           // El descuento se aplica sobre el total incluyendo la cantidad:
-          // unitario-sin-descuento × qty → descuento % → total con descuento.
+          // Desglose de descuento: totalOriginal → descuento % → totalFinal.
           if (hasDiscount) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
@@ -248,10 +245,7 @@ class QuoteImageTemplate extends StatelessWidget {
                 children: [
                   _discountRow(
                     EsBO.quoteNoDiscount,
-                    formatCurrency(
-                      (output.totalPrice + output.discountAmount) * qty,
-                      currency,
-                    ),
+                    formatCurrency(totalOriginal * qty, currency),
                     theme,
                     color.onSurface,
                   ),

@@ -13,6 +13,7 @@ import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../data/calculation_repository.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_input.dart';
+import '../../domain/entities/calculation_output.dart';
 import '../../domain/entities/material_input.dart';
 import '../notifiers/calculations_notifier.dart';
 import 'calculator_state.dart';
@@ -117,6 +118,13 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
   void setExtraMarkupOnMaterials(String value) {
     state = _recompute(state.copyWith(extraMarkupOnMaterials: value));
+  }
+
+  /// Actualiza la cantidad de unidades. El total se multiplica por
+  /// este valor en _recompute().
+  void setQuantity(int value) {
+    if (value < 1) return;
+    state = _recompute(state.copyWith(quantity: value));
   }
 
   // === Express material label ===
@@ -460,7 +468,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final input = _buildInput(next);
     final output = CalculationEngine.compute(input);
 
-    // Desglose de costo por material
+    // Desglose de costo por material (unitario, sin cantidad).
     final breakdown = input.materials
         .map((m) => MaterialCostBreakdown(label: m.label, cost: m.cost))
         .toList();

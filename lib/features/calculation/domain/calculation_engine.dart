@@ -99,6 +99,7 @@ class CalculationEngine {
       totalFinal: totalFinal,
       discountAmount: discountAmount,
       totalPrice: totalPrice,
+      totalOriginal: totalFinal,
     );
   }
 

@@ -32,6 +32,7 @@ class CalculationOutput {
     required this.totalFinal,
     required this.discountAmount,
     required this.totalPrice,
+    this.totalOriginal,
   });
 
   /// Crea un output simplificado cuando no hay parametros de settings
@@ -97,6 +98,10 @@ class CalculationOutput {
   /// Precio total final (BOB) = totalFinal - discountAmount.
   final Decimal totalPrice;
 
+  /// Total sin descuento (totalFinal * quantity). Usado por el template
+  /// para mostrar "Sin descuento: $X" correctamente con cantidad > 1.
+  final Decimal? totalOriginal;
+
   @override
   bool operator ==(Object other) =>
       other is CalculationOutput &&
@@ -112,7 +117,8 @@ class CalculationOutput {
       profitAmount == other.profitAmount &&
       totalFinal == other.totalFinal &&
       discountAmount == other.discountAmount &&
-      totalPrice == other.totalPrice;
+      totalPrice == other.totalPrice &&
+      totalOriginal == other.totalOriginal;
 
   @override
   int get hashCode => Object.hash(
@@ -129,6 +135,7 @@ class CalculationOutput {
     totalFinal,
     discountAmount,
     totalPrice,
+    totalOriginal,
   );
 
   @override
