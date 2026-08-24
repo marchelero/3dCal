@@ -976,6 +976,53 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get dashboardMonthlyTrend => 'Tendance mensuelle';
   @override
   String get dashboardTopMaterials => 'Matériaux les plus utilisés';
+
+  @override
+  String get dashboardProfitTitle => 'Rentabilité';
+  @override
+  String get dashboardStatEstimatedProfit => 'Profit estimé';
+  @override
+  String get dashboardMarginLabel => 'Marge moyenne';
+  @override
+  String get dashboardAvgTicketTitle => 'Ticket moyen';
+  @override
+  String get dashboardAvgTicketQuoted => 'Ticket moyen (devisé)';
+  @override
+  String get dashboardAvgTicketSold => 'Ticket moyen (vendu)';
+  @override
+  String get dashboardTopClients => 'Top clients';
+  @override
+  String get dashboardOperationalTitle => 'Métriques opérationnelles';
+  @override
+  String get dashboardPrintHours => 'Heures d\'impression';
+  @override
+  String get dashboardFilament => 'Filament';
+  @override
+  String get dashboardInsightsTitle => 'Insights';
+  @override
+  String get dashboardRange7d => '7j';
+  @override
+  String get dashboardRange30d => '30j';
+  @override
+  String get dashboardRange90d => '90j';
+  @override
+  String get dashboardRangeYtd => 'YTD';
+  @override
+  String get dashboardRangeAll => 'Tout';
+  @override
+  String insightConversion(int sold, int total, int pct) =>
+      'Vous avez vendu $sold sur $total devis ($pct%)';
+  @override
+  String insightAvgTicketSold(String amount) => 'Ticket moyen vendu : $amount';
+  @override
+  String insightBestMonth(String month, String amount) =>
+      'Meilleur mois : $month ($amount)';
+  @override
+  String insightTopClient(String name, String amount) =>
+      'Client top : $name ($amount)';
+  @override
+  String insightFilament(String amount) =>
+      'Vous avez devisé $amount de filament';
   @override
   String get historySearchHint => 'Rechercher par nom ou client...';
   @override

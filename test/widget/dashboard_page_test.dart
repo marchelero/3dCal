@@ -27,7 +27,7 @@ Future<void> _pumpPage(
     ProviderScope(
       overrides: [
         dashboardStatsProvider.overrideWith(
-          (ref) => Future<DashboardStats>.value(stats),
+          (ref, since) => Future<DashboardStats>.value(stats),
         ),
         sharedPreferencesProvider.overrideWithValue(prefs),
         dashboardIsProProvider.overrideWithValue(isPro),

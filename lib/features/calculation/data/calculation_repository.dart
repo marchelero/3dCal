@@ -379,50 +379,84 @@ class CalculationRepository {
   }
 
   /// Total cotizado (suma de totalPriceSnapshot de todas las cotizaciones,
-  /// excluye plantillas).
-  Future<Decimal> totalQuoted() async {
+  /// excluye plantillas). Opcionalmente filtrado por rango (`created_at`).
+  Future<Decimal> totalQuoted({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_template = 0',
+          'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
+          variables: _sinceVariables(since),
         )
         .getSingle();
     return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
   /// Total ganado (suma de totalPriceSnapshot donde isSold=true, excluye
-  /// plantillas).
-  Future<Decimal> totalSold() async {
+  /// plantillas). Opcionalmente filtrado por rango.
+  Future<Decimal> totalSold({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0',
+          'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
+          variables: _sinceVariables(since),
+        )
+        .getSingle();
+    return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
+  }
+
+  /// Ganancia total de cotizaciones vendidas (suma profitAmountSnapshot,
+  /// is_sold=1, excluye plantillas).
+  ///
+  /// NOTA (legacy): los registros historicos creados antes de que existiera
+  /// el snapshot guardan `profit_amount_snapshot` como 0, asi que la
+  /// ganancia puede subestimar si hay historicos viejos sin recalcular.
+  Future<Decimal> totalProfitSold({DateTime? since}) async {
+    final result = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(profit_amount_snapshot), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
+          variables: _sinceVariables(since),
+        )
+        .getSingle();
+    return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
+  }
+
+  /// Ganancia total cotizada (suma profitAmountSnapshot de todas las
+  /// cotizaciones, excluye plantillas).
+  ///
+  /// Misma NOTA legacy que [totalProfitSold]: 0 en registros antiguos.
+  Future<Decimal> totalProfitQuoted({DateTime? since}) async {
+    final result = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(profit_amount_snapshot), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
+          variables: _sinceVariables(since),
         )
         .getSingle();
     return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
   /// Cantidad de cotizaciones vendidas (excluye plantillas).
-  Future<int> countSold() async {
+  Future<int> countSold({DateTime? since}) async {
     final result =
         await (_db.selectOnly(_db.calculations)
               ..addColumns([_db.calculations.id.count()])
               ..where(
-                _db.calculations.isSold.equals(true) & excludeTemplatesFilter(),
+                _db.calculations.isSold.equals(true) &
+                    excludeTemplatesFilter() &
+                    _sinceExpression(since),
               ))
             .getSingle();
     return result.read(_db.calculations.id.count()) ?? 0;
   }
 
   /// Cantidad total de cotizaciones (excluye plantillas).
-  Future<int> countAll() async {
-    return _countCalculations();
+  Future<int> countAll({DateTime? since}) async {
+    return _countCalculations(since: since);
   }
 
-  Future<int> _countCalculations() async {
+  Future<int> _countCalculations({DateTime? since}) async {
     final countExpression = _db.calculations.id.count();
     final result =
         await (_db.selectOnly(_db.calculations)
               ..addColumns([countExpression])
-              ..where(excludeTemplatesFilter()))
+              ..where(excludeTemplatesFilter() & _sinceExpression(since)))
             .getSingle();
     return result.read(countExpression) ?? 0;
   }
@@ -430,16 +464,16 @@ class CalculationRepository {
   /// Totales agrupados por mes (YYYY-MM).
   /// Ordenados por mes ascendente. Maneja DB vacia (retorna []) y
   /// created_at null (filtra esos rows).
-  Future<List<MonthlyTotal>> monthlyTotals() async {
+  Future<List<MonthlyTotal>> monthlyTotals({DateTime? since}) async {
     final rows = await _db.customSelect('''
       SELECT COALESCE(strftime('%Y-%m', created_at), 'desconocido') AS month,
              COALESCE(SUM(total_price_snapshot), 0) AS quoted,
              COALESCE(SUM(CASE WHEN is_sold = 1 THEN total_price_snapshot ELSE 0 END), 0) AS sold
       FROM calculations
-      WHERE created_at IS NOT NULL AND is_template = 0
+      WHERE created_at IS NOT NULL AND is_template = 0${_sinceSql(since)}
       GROUP BY month
       ORDER BY month ASC
-      ''').get();
+      ''', variables: _sinceVariables(since)).get();
     return rows.map((r) {
       return MonthlyTotal(
         yearMonth: r.read<String>('month'),
@@ -450,32 +484,112 @@ class CalculationRepository {
   }
 
   /// Top materiales mas usados en cotizaciones.
-  Future<List<TopMaterial>> topMaterials({int limit = 5}) async {
+  Future<List<TopMaterial>> topMaterials({
+    int limit = 5,
+    DateTime? since,
+  }) async {
     final rows = await _db
         .customSelect(
           '''
       SELECT cm.label, COUNT(*) AS cnt, COALESCE(SUM(cm.weight_grams), 0) AS total_g
       FROM calculation_materials cm
       JOIN calculations c ON c.id = cm.calculation_id
-      WHERE cm.label IS NOT NULL AND cm.label != '' AND c.is_template = 0
+      WHERE cm.label IS NOT NULL AND cm.label != '' AND c.is_template = 0${_sinceSql(since, column: 'c.created_at')}
       GROUP BY cm.label
       ORDER BY cnt DESC
       LIMIT ?
       ''',
-          variables: [Variable<int>(limit)],
+          variables: [..._sinceVariables(since), Variable<int>(limit)],
         )
         .get();
     return rows.map((r) {
       return TopMaterial(
         label: r.read<String>('label'),
         count: r.read<double>('cnt').round(),
-        totalWeightGrams:
-            Decimal.parse(r.read<double>('total_g').toStringAsFixed(2)),
+        totalWeightGrams: Decimal.parse(
+          r.read<double>('total_g').toStringAsFixed(2),
+        ),
       );
     }).toList();
   }
 
+  /// Top clientes por total cotizado (excluye plantillas y nombres
+  /// vacios). Pro analytics.
+  Future<List<TopClient>> topClients({int limit = 5, DateTime? since}) async {
+    final rows = await _db
+        .customSelect(
+          '''
+      SELECT client_name AS label,
+             COALESCE(SUM(total_price_snapshot), 0) AS total,
+             COUNT(*) AS cnt
+      FROM calculations
+      WHERE is_template = 0
+        AND client_name IS NOT NULL
+        AND client_name != ''${_sinceSql(since)}
+      GROUP BY client_name
+      ORDER BY total DESC
+      LIMIT ?
+      ''',
+          variables: [..._sinceVariables(since), Variable<int>(limit)],
+        )
+        .get();
+    return rows.map((r) {
+      return TopClient(
+        label: r.read<String>('label'),
+        total: Decimal.parse(r.read<double>('total').toStringAsFixed(2)),
+        count: r.read<double>('cnt').round(),
+      );
+    }).toList();
+  }
+
+  /// Horas totales de impresion cotizadas (excluye plantillas).
+  ///
+  /// Horas NO es dinero, asi que se permite `double` aca (mismo criterio
+  /// que [monthlyTotals] usa para horas, excepcion al non-negotiable).
+  Future<double> totalPrintHours({DateTime? since}) async {
+    final result = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(total_hours), 0) AS hours FROM calculations WHERE is_template = 0${_sinceSql(since)}',
+          variables: _sinceVariables(since),
+        )
+        .getSingle();
+    return result.read<double>('hours');
+  }
+
+  /// Gramos totales de filamento cotizado (suma weight_grams de materiales
+  /// de cotizaciones no plantilla). Pro analytics.
+  Future<Decimal> totalFilamentGrams({DateTime? since}) async {
+    final result = await _db.customSelect('''
+      SELECT COALESCE(SUM(cm.weight_grams), 0) AS total_g
+      FROM calculation_materials cm
+      JOIN calculations c ON c.id = cm.calculation_id
+      WHERE c.is_template = 0${_sinceSql(since, column: 'c.created_at')}
+      ''', variables: _sinceVariables(since)).getSingle();
+    return Decimal.parse(result.read<double>('total_g').toStringAsFixed(2));
+  }
+
   // -------- Helpers --------
+
+  /// Fragmento SQL de rango de fechas: ` AND <column> >= ?` si [since] no
+  /// es null. Se usa para filtrar stats del dashboard por 7d/30d/90d/YTD.
+  String _sinceSql(DateTime? since, {String column = 'created_at'}) {
+    return since == null ? '' : ' AND $column >= ?';
+  }
+
+  /// Variables de rango de fechas a pasar a customSelect (en el mismo
+  /// orden que los `?` de [_sinceSql]).
+  List<Variable<DateTime>> _sinceVariables(DateTime? since) {
+    return since == null ? [] : [Variable<DateTime>(since)];
+  }
+
+  /// Expression de rango para las queries tipadas (selectOnly). Devuelve
+  /// la condicion `created_at >= since` o un vacio (sin filtro).
+  Expression<bool> _sinceExpression(DateTime? since) {
+    if (since == null) {
+      return const Constant<bool>(true);
+    }
+    return _db.calculations.createdAt.isBiggerOrEqualValue(since);
+  }
 
   /// Extrae filamentId numerico del label si tiene formato "id:N".
   /// En caso contrario, devuelve null (proforma rapida).

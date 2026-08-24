@@ -578,6 +578,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (!mounted) return;
       if (id != null) {
         await ref.read(draftStorageProvider).clear();
+        // Limpiar el formulario y el estado en memoria al guardar: sin esto
+        // los valores quedan "cacheados" en el notifier y solo desaparecen
+        // al salir y volver a entrar. El reset dispara listeners que
+        // re-agendarían el draft; lo cancelamos para no re-persistir un
+        // draft vacío.
+        _saveTimer?.cancel();
+        _resetAll();
         if (!mounted) return;
       }
       if (id == null) {

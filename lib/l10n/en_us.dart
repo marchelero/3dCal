@@ -1020,6 +1020,52 @@ We may update, suspend, or remove application features. These terms may also cha
   String get dashboardTopMaterials => 'Most used materials';
 
   @override
+  String get dashboardProfitTitle => 'Profitability';
+  @override
+  String get dashboardStatEstimatedProfit => 'Estimated profit';
+  @override
+  String get dashboardMarginLabel => 'Average margin';
+  @override
+  String get dashboardAvgTicketTitle => 'Average ticket';
+  @override
+  String get dashboardAvgTicketQuoted => 'Average ticket (quoted)';
+  @override
+  String get dashboardAvgTicketSold => 'Average ticket (sold)';
+  @override
+  String get dashboardTopClients => 'Top clients';
+  @override
+  String get dashboardOperationalTitle => 'Operational metrics';
+  @override
+  String get dashboardPrintHours => 'Print hours';
+  @override
+  String get dashboardFilament => 'Filament';
+  @override
+  String get dashboardInsightsTitle => 'Insights';
+  @override
+  String get dashboardRange7d => '7d';
+  @override
+  String get dashboardRange30d => '30d';
+  @override
+  String get dashboardRange90d => '90d';
+  @override
+  String get dashboardRangeYtd => 'YTD';
+  @override
+  String get dashboardRangeAll => 'All';
+  @override
+  String insightConversion(int sold, int total, int pct) =>
+      'You sold $sold of $total quotes ($pct%)';
+  @override
+  String insightAvgTicketSold(String amount) => 'Average sold ticket: $amount';
+  @override
+  String insightBestMonth(String month, String amount) =>
+      'Best month: $month ($amount)';
+  @override
+  String insightTopClient(String name, String amount) =>
+      'Top client: $name ($amount)';
+  @override
+  String insightFilament(String amount) => 'You quoted $amount of filament';
+
+  @override
   String get historySearchHint => 'Search by name or customer...';
   @override
   String get historyFilterAll => 'All';

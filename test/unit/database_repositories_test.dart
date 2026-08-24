@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/core/database/app_database.dart';
@@ -411,6 +412,87 @@ void main() {
       expect(await calculations.recentClientNames(limit: 1), ['Cliente B']);
     });
   });
+
+  group('CalculationRepository — Pro analytics', () {
+    test('totalProfitQuoted/Sold suman profit_amount_snapshot', () async {
+      final id = await calculations.create(_profitDraft('P1', 'Ana'));
+      await calculations.create(_profitDraft('P2', 'Beto'));
+      await calculations.toggleSold(id, true);
+
+      // draft con profitBase 50: profit = 7.50, totalPrice = 22.50.
+      expect(await calculations.totalProfitQuoted(), _d('15.00'));
+      expect(await calculations.totalProfitSold(), _d('7.50'));
+    });
+
+    test('topClients agrupa por cliente, ordena por total, limita', () async {
+      await calculations.create(_simpleDraft('A', 'Ana'));
+      await calculations.create(_simpleDraft('B', 'Beto'));
+      await calculations.create(_simpleDraft('C', 'Ana'));
+
+      final clients = await calculations.topClients();
+      expect(clients, hasLength(2));
+      expect(clients.first.label, 'Ana');
+      expect(clients.first.count, 2);
+      expect(clients.first.total, _d('30'));
+      expect(clients[1].label, 'Beto');
+
+      expect(await calculations.topClients(limit: 1), hasLength(1));
+    });
+
+    test('topClients excluye cotizaciones sin cliente', () async {
+      await calculations.create(_simpleDraft('Sin cliente'));
+      await calculations.create(_simpleDraft('Real', 'Carla'));
+
+      final clients = await calculations.topClients();
+      expect(clients, hasLength(1));
+      expect(clients.first.label, 'Carla');
+    });
+
+    test('totalPrintHours y totalFilamentGrams suman horas y gramos', () async {
+      await calculations.create(_simpleDraft('P1'));
+      await calculations.create(_simpleDraft('P2'));
+
+      // draft: 2.5h y 100g PLA por cotizacion.
+      expect(await calculations.totalPrintHours(), closeTo(5.0, 0.0001));
+      expect(await calculations.totalFilamentGrams(), _d('200'));
+    });
+
+    test('queries Pro excluyen plantillas', () async {
+      await calculations.create(_simpleDraft('Normal', 'Ana'));
+      await calculations.createTemplate(_simpleDraft('Plantilla oculta'));
+
+      expect(await calculations.totalProfitQuoted(), _d('0'));
+      expect(await calculations.totalPrintHours(), closeTo(2.5, 0.0001));
+      expect(await calculations.totalFilamentGrams(), _d('100'));
+      final clients = await calculations.topClients();
+      expect(clients, hasLength(1));
+      expect(clients.first.label, 'Ana');
+    });
+
+    test('since filtra por rango de fechas (created_at >= since)', () async {
+      final oldId = await calculations.create(_simpleDraft('Vieja'));
+      // Backdate la primera a hace 10 dias.
+      await (db.update(
+        db.calculations,
+      )..where((c) => c.id.equals(oldId))).write(
+        CalculationsCompanion(
+          createdAt: Value(
+            DateTime.now().toUtc().subtract(const Duration(days: 10)),
+          ),
+        ),
+      );
+      await calculations.create(_simpleDraft('Nueva'));
+
+      final since = DateTime.now().toUtc().subtract(const Duration(days: 5));
+      expect(await calculations.countAll(since: since), 1);
+      expect(await calculations.totalQuoted(since: since), _d('15'));
+      expect(await calculations.totalQuoted(), _d('30'));
+      expect(
+        await calculations.totalPrintHours(since: since),
+        closeTo(2.5, 0.0001),
+      );
+    });
+  });
 }
 
 // ---------- Helpers ----------
@@ -453,5 +535,39 @@ CalculationDraft _simpleDraft(
     clientName: clientName,
     notes: notes,
     conditions: conditions,
+  );
+}
+
+/// Igual que [_simpleDraft] pero con profitBase 50: genera
+/// profitAmountSnapshot != 0 (7.50) y totalPrice 22.50.
+CalculationDraft _profitDraft(String pieceName, [String? clientName]) {
+  final materials = [
+    MaterialInput(
+      label: 'PLA',
+      weightGrams: _d('100'),
+      pricePerBobbin: _d('150'),
+      gramsPerBobbin: _d('1000'),
+    ),
+  ];
+  final input = CalculationInput(
+    materials: materials,
+    totalHours: _d('2.5'),
+    discountPercentage: Decimal.zero,
+    printerWatts: 0,
+    kwhRate: Decimal.zero,
+    profitBase: _d('50'),
+    laborRate: Decimal.zero,
+    postProcessRate: Decimal.zero,
+    failureRate: Decimal.zero,
+    markupOnMaterials: Decimal.zero,
+  );
+  final output = CalculationEngine.compute(input);
+  return CalculationDraft(
+    materials: materials,
+    totalHours: input.totalHours,
+    discountPercentage: input.discountPercentage,
+    output: output,
+    pieceName: pieceName,
+    clientName: clientName,
   );
 }

@@ -761,6 +761,69 @@ abstract class AppStrings {
   /// "Materiales más usados" / "Most used materials".
   String get dashboardTopMaterials;
 
+  /// "Rentabilidad" / "Profitability" — card Pro de ganancia + margen.
+  String get dashboardProfitTitle;
+
+  /// "Ganancia estimada" / "Estimated profit" (StatTile Pro).
+  String get dashboardStatEstimatedProfit;
+
+  /// "Margen promedio" / "Average margin".
+  String get dashboardMarginLabel;
+
+  /// "Ticket promedio" / "Average ticket" (card Pro).
+  String get dashboardAvgTicketTitle;
+
+  /// "Ticket promedio (cotizado)" / "Average ticket (quoted)".
+  String get dashboardAvgTicketQuoted;
+
+  /// "Ticket promedio (vendido)" / "Average ticket (sold)".
+  String get dashboardAvgTicketSold;
+
+  /// "Top clientes" / "Top clients" (card Pro).
+  String get dashboardTopClients;
+
+  /// "Métricas operativas" / "Operational metrics" (card Pro).
+  String get dashboardOperationalTitle;
+
+  /// "Horas de impresión" / "Print hours".
+  String get dashboardPrintHours;
+
+  /// "Filamento" / "Filament".
+  String get dashboardFilament;
+
+  /// "Insights" / "Insights" (card Pro).
+  String get dashboardInsightsTitle;
+
+  /// Filtro de rango "7d".
+  String get dashboardRange7d;
+
+  /// Filtro de rango "30d".
+  String get dashboardRange30d;
+
+  /// Filtro de rango "90d".
+  String get dashboardRange90d;
+
+  /// Filtro de rango "YTD".
+  String get dashboardRangeYtd;
+
+  /// Filtro de rango "Todo" (sin filtro).
+  String get dashboardRangeAll;
+
+  /// Insight de conversion: "Vendiste 6 de 10 cotizaciones (60%)".
+  String insightConversion(int sold, int total, int pct);
+
+  /// Insight de ticket vendido: "Ticket promedio vendido: Bs. 1.234,56".
+  String insightAvgTicketSold(String amount);
+
+  /// Insight de mejor mes: "Mejor mes: Jul 2026 (Bs. 20.000,00)".
+  String insightBestMonth(String month, String amount);
+
+  /// Insight de cliente top: "Cliente top: Juan (Bs. 15.000,00)".
+  String insightTopClient(String name, String amount);
+
+  /// Insight de filamento: "Has cotizado 1,2 kg de filamento".
+  String insightFilament(String amount);
+
   /// Hint de busqueda del historial.
   String get historySearchHint;
 

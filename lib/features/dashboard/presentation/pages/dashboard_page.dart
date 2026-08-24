@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +29,9 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
-    final asyncStats = ref.watch(dashboardStatsProvider);
+    // Rango de fechas activo (7d/30d/90d/YTD/Todo). null = sin filtro.
+    final since = ref.watch(dashboardRangeProvider);
+    final asyncStats = ref.watch(dashboardStatsProvider(since));
     final currency = ref.watch(selectedCurrencyProvider);
     final isPro = ref.watch(dashboardIsProProvider);
     return Scaffold(
@@ -39,7 +42,7 @@ class DashboardPage extends ConsumerWidget {
           error: (e, _) => ErrorView(
             message: EsBO.dashboardErrorLoad,
             details: e.toString(),
-            onRetry: () => ref.invalidate(dashboardStatsProvider),
+            onRetry: () => ref.invalidate(dashboardStatsProvider(since)),
           ),
           data: (stats) {
             if (stats.countAll == 0) {
@@ -53,11 +56,15 @@ class DashboardPage extends ConsumerWidget {
               );
             }
             return RefreshIndicator(
-              onRefresh: () => ref.refresh(dashboardStatsProvider.future),
+              onRefresh: () =>
+                  ref.refresh(dashboardStatsProvider(since).future),
               child: _DashboardBody(
                 stats: stats,
                 currency: currency,
                 isPro: isPro,
+                since: since,
+                onRangeSelected: (s) =>
+                    ref.read(dashboardRangeProvider.notifier).state = s,
               ),
             );
           },
@@ -72,16 +79,26 @@ class _DashboardBody extends StatelessWidget {
     required this.stats,
     required this.currency,
     required this.isPro,
+    required this.since,
+    required this.onRangeSelected,
   });
 
   final DashboardStats stats;
   final WorldCurrency currency;
   final bool isPro;
 
+  /// Rango activo (para marcar el ChoiceChip seleccionado).
+  final DateTime? since;
+
+  /// Callback cuando el user toca un chip de rango.
+  final ValueChanged<DateTime?> onRangeSelected;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    // Insights solo se calculan para Pro (free no los ve).
+    final insights = isPro ? _buildInsights(stats, currency) : const <String>[];
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -150,6 +167,10 @@ class _DashboardBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
 
             if (isPro) ...[
+              // Filtro de rango de fechas (solo Pro analytics).
+              _RangeChips(selected: since, onSelected: onRangeSelected),
+              const SizedBox(height: AppSpacing.md),
+
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
@@ -208,6 +229,136 @@ class _DashboardBody extends StatelessWidget {
                 ),
               const SizedBox(height: AppSpacing.md),
 
+              // Rentabilidad: ganancia estimada + margen promedio.
+              Row(
+                children: [
+                  Expanded(
+                    child: StatTile(
+                      label: EsBO.dashboardStatEstimatedProfit,
+                      value: formatCurrency(stats.profitQuoted, currency),
+                      icon: Icons.savings_rounded,
+                      color: color.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: StatTile(
+                      label: EsBO.dashboardMarginLabel,
+                      // marginPct null = "no aplica" (sin total cotizado).
+                      value: stats.marginPct == null
+                          ? '—'
+                          : '${stats.marginPct!.toStringAsFixed(1)}%',
+                      icon: Icons.percent_rounded,
+                      color: color.secondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Ticket promedio (cotizado / vendido), derivado de totales.
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    children: [
+                      MoneyRow(
+                        label: EsBO.dashboardAvgTicketQuoted,
+                        value: stats.avgTicketQuoted == null
+                            ? '—'
+                            : formatCurrency(stats.avgTicketQuoted!, currency),
+                        valueColor: color.onSurface,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      MoneyRow(
+                        label: EsBO.dashboardAvgTicketSold,
+                        value: stats.avgTicketSold == null
+                            ? '—'
+                            : formatCurrency(stats.avgTicketSold!, currency),
+                        valueColor: color.tertiary,
+                        isBold: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              if (stats.topClients.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SectionHeader(
+                          icon: Icons.group_rounded,
+                          title: EsBO.dashboardTopClients,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        ...stats.topClients.asMap().entries.map(
+                          (e) => _ClientRow(
+                            rank: e.key + 1,
+                            client: e.value,
+                            currency: currency,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Metricas operativas: horas de impresion + filamento.
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        icon: Icons.timer_outlined,
+                        title: EsBO.dashboardOperationalTitle,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      MoneyRow(
+                        label: EsBO.dashboardPrintHours,
+                        value: '${stats.printHours.toStringAsFixed(1)}h',
+                        valueColor: color.onSurface,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      MoneyRow(
+                        label: EsBO.dashboardFilament,
+                        value: _formatGrams(stats.filamentGrams),
+                        valueColor: color.secondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Insights automaticos (frases derivadas de datos existentes).
+              // Solo se muestran para Pro (free no los ve).
+              if (insights.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SectionHeader(
+                          icon: Icons.lightbulb_rounded,
+                          title: EsBO.dashboardInsightsTitle,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        ...insights.map((i) => _InsightRow(text: i)),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.md),
+
               if (stats.topMaterials.isNotEmpty)
                 Card(
                   child: Padding(
@@ -234,6 +385,70 @@ class _DashboardBody extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Genera las frases de insights (max 5) a partir de datos ya cargados.
+/// Guarda contra datos vacios: cada insight solo aparece si aplica.
+List<String> _buildInsights(DashboardStats stats, WorldCurrency currency) {
+  final insights = <String>[];
+  final pct = stats.conversionPct;
+  if (pct != null) {
+    insights.add(
+      EsBO.insightConversion(stats.countSold, stats.countAll, pct.round()),
+    );
+  }
+  final avgSold = stats.avgTicketSold;
+  if (avgSold != null) {
+    insights.add(EsBO.insightAvgTicketSold(formatCurrency(avgSold, currency)));
+  }
+  final best = _bestMonth(stats.monthlyTotals);
+  if (best != null) {
+    insights.add(
+      EsBO.insightBestMonth(
+        _monthLabel(best.yearMonth),
+        formatCurrency(best.quoted, currency),
+      ),
+    );
+  }
+  if (stats.topClients.isNotEmpty) {
+    final top = stats.topClients.first;
+    insights.add(
+      EsBO.insightTopClient(top.label, formatCurrency(top.total, currency)),
+    );
+  }
+  if (stats.filamentGrams > Decimal.zero) {
+    insights.add(EsBO.insightFilament(_formatKg(stats.filamentGrams)));
+  }
+  return insights;
+}
+
+MonthlyTotal? _bestMonth(List<MonthlyTotal> totals) {
+  MonthlyTotal? best;
+  for (final m in totals) {
+    if (best == null || m.quoted > best.quoted) best = m;
+  }
+  return best;
+}
+
+/// "2026-07" → "Jul 2026" (reusa los meses cortos de l10n).
+String _monthLabel(String yearMonth) {
+  final parts = yearMonth.split('-');
+  if (parts.length != 2) return yearMonth;
+  final month = int.tryParse(parts[1]);
+  if (month == null || month < 1 || month > 12) return yearMonth;
+  return '${EsBO.chartShortMonths[month - 1]} ${parts[0]}';
+}
+
+/// Formatea gramos g→kg igual que [_MaterialRow]: >=1000 → "X,Xkg".
+String _formatGrams(Decimal grams) {
+  final g = grams.toDouble();
+  if (g >= 1000) return '${(g / 1000).toStringAsFixed(1)}kg';
+  return '${g.toStringAsFixed(0)}g';
+}
+
+/// Siempre en kg (para el insight de filamento, 0 gramos → "0,0kg").
+String _formatKg(Decimal grams) {
+  return '${(grams.toDouble() / 1000).toStringAsFixed(1)}kg';
 }
 
 class _ProAnalyticsTeaser extends StatelessWidget {
@@ -275,6 +490,84 @@ class _ProAnalyticsTeaser extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Chips de rango de fechas del dashboard Pro.
+///
+/// Los cutoffs se calculan UNA vez en [initState] (no por build) para que
+/// el valor guardado en [dashboardRangeProvider] sea exactamente el mismo
+/// que el comparado en [selected] — el highlight del chip activo es estable.
+/// Se usan fechas UTC porque `created_at` se persiste como UTC en la DB
+/// (de lo contrario el cutoff local desplazaria los bordes del rango).
+class _RangeChips extends StatefulWidget {
+  const _RangeChips({required this.selected, required this.onSelected});
+
+  final DateTime? selected;
+  final ValueChanged<DateTime?> onSelected;
+
+  @override
+  State<_RangeChips> createState() => _RangeChipsState();
+}
+
+class _RangeChipsState extends State<_RangeChips> {
+  late final List<_RangeOption> _options;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now().toUtc();
+    _options = [
+      _RangeOption(
+        EsBO.dashboardRange7d,
+        now.subtract(const Duration(days: 7)),
+      ),
+      _RangeOption(
+        EsBO.dashboardRange30d,
+        now.subtract(const Duration(days: 30)),
+      ),
+      _RangeOption(
+        EsBO.dashboardRange90d,
+        now.subtract(const Duration(days: 90)),
+      ),
+      _RangeOption(EsBO.dashboardRangeYtd, DateTime.utc(now.year)),
+      _RangeOption(EsBO.dashboardRangeAll, null),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final o in _options)
+          ChoiceChip(
+            label: Text(
+              o.label,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            selected: _sameRange(widget.selected, o.since),
+            onSelected: (_) => widget.onSelected(o.since),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+      ],
+    );
+  }
+}
+
+class _RangeOption {
+  const _RangeOption(this.label, this.since);
+  final String label;
+  final DateTime? since;
+}
+
+/// Compara dos cutoffs de rango. Ambos null = "Todo" (iguales). Para
+/// fechas usa tolerancia de 1s (los cutoffs se recomputan por build).
+bool _sameRange(DateTime? a, DateTime? b) {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return a.difference(b).inSeconds.abs() <= 1;
 }
 
 class _LegendDot extends StatelessWidget {
@@ -335,6 +628,83 @@ class _MaterialRow extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Fila del ranking de clientes: rank + nombre + total + N cotizaciones.
+class _ClientRow extends StatelessWidget {
+  const _ClientRow({
+    required this.rank,
+    required this.client,
+    required this.currency,
+  });
+
+  final int rank;
+  final TopClient client;
+  final WorldCurrency currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            child: Text(
+              '$rank',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: color.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              client.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+          Text(
+            '${client.count}x · ${formatCurrency(client.total, currency)}',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: color.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bullet de insight: lightbulb + frase.
+class _InsightRow extends StatelessWidget {
+  const _InsightRow({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.lightbulb_outline_rounded,
+            size: 16,
+            color: theme.colorScheme.tertiary,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
         ],
       ),
     );

@@ -1546,7 +1546,12 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
         // seguirían mostrando el estado viejo hasta el próximo refresh.
         ref
           ..invalidate(calculationsNotifierProvider)
-          ..invalidate(dashboardStatsProvider)
+          // dashboardStatsProvider es family: invalidar la instancia default
+          // (null = todo) cubre la home/dashboard en rango "Todo". Ademas
+          // reseteamos el rango activo para que un filtro previo del
+          // dashboard no tape los datos re-importados.
+          ..invalidate(dashboardRangeProvider)
+          ..invalidate(dashboardStatsProvider(null))
           ..invalidate(filamentsNotifierProvider)
           ..invalidate(printersNotifierProvider)
           ..invalidate(settingsNotifierProvider);

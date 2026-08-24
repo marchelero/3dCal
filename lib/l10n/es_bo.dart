@@ -558,6 +558,35 @@ class EsBO {
   static String get dashboardMonthlyTrend => _impl.dashboardMonthlyTrend;
   static String get dashboardTopMaterials => _impl.dashboardTopMaterials;
 
+  // === Dashboard Pro analytics ===
+  static String get dashboardProfitTitle => _impl.dashboardProfitTitle;
+  static String get dashboardStatEstimatedProfit =>
+      _impl.dashboardStatEstimatedProfit;
+  static String get dashboardMarginLabel => _impl.dashboardMarginLabel;
+  static String get dashboardAvgTicketTitle => _impl.dashboardAvgTicketTitle;
+  static String get dashboardAvgTicketQuoted => _impl.dashboardAvgTicketQuoted;
+  static String get dashboardAvgTicketSold => _impl.dashboardAvgTicketSold;
+  static String get dashboardTopClients => _impl.dashboardTopClients;
+  static String get dashboardOperationalTitle =>
+      _impl.dashboardOperationalTitle;
+  static String get dashboardPrintHours => _impl.dashboardPrintHours;
+  static String get dashboardFilament => _impl.dashboardFilament;
+  static String get dashboardInsightsTitle => _impl.dashboardInsightsTitle;
+  static String get dashboardRange7d => _impl.dashboardRange7d;
+  static String get dashboardRange30d => _impl.dashboardRange30d;
+  static String get dashboardRange90d => _impl.dashboardRange90d;
+  static String get dashboardRangeYtd => _impl.dashboardRangeYtd;
+  static String get dashboardRangeAll => _impl.dashboardRangeAll;
+  static String insightConversion(int sold, int total, int pct) =>
+      _impl.insightConversion(sold, total, pct);
+  static String insightAvgTicketSold(String amount) =>
+      _impl.insightAvgTicketSold(amount);
+  static String insightBestMonth(String month, String amount) =>
+      _impl.insightBestMonth(month, amount);
+  static String insightTopClient(String name, String amount) =>
+      _impl.insightTopClient(name, amount);
+  static String insightFilament(String amount) => _impl.insightFilament(amount);
+
   static String get historySearchHint => _impl.historySearchHint;
   static String get historyFilterAll => _impl.historyFilterAll;
   static String get historyFilterSold => _impl.historyFilterSold;
@@ -1635,6 +1664,53 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String get dashboardMonthlyTrend => 'Tendencia mensual';
   @override
   String get dashboardTopMaterials => 'Materiales más usados';
+
+  @override
+  String get dashboardProfitTitle => 'Rentabilidad';
+  @override
+  String get dashboardStatEstimatedProfit => 'Ganancia estimada';
+  @override
+  String get dashboardMarginLabel => 'Margen promedio';
+  @override
+  String get dashboardAvgTicketTitle => 'Ticket promedio';
+  @override
+  String get dashboardAvgTicketQuoted => 'Ticket promedio (cotizado)';
+  @override
+  String get dashboardAvgTicketSold => 'Ticket promedio (vendido)';
+  @override
+  String get dashboardTopClients => 'Top clientes';
+  @override
+  String get dashboardOperationalTitle => 'Métricas operativas';
+  @override
+  String get dashboardPrintHours => 'Horas de impresión';
+  @override
+  String get dashboardFilament => 'Filamento';
+  @override
+  String get dashboardInsightsTitle => 'Insights';
+  @override
+  String get dashboardRange7d => '7d';
+  @override
+  String get dashboardRange30d => '30d';
+  @override
+  String get dashboardRange90d => '90d';
+  @override
+  String get dashboardRangeYtd => 'YTD';
+  @override
+  String get dashboardRangeAll => 'Todo';
+  @override
+  String insightConversion(int sold, int total, int pct) =>
+      'Vendiste $sold de $total cotizaciones ($pct%)';
+  @override
+  String insightAvgTicketSold(String amount) =>
+      'Ticket promedio vendido: $amount';
+  @override
+  String insightBestMonth(String month, String amount) =>
+      'Mejor mes: $month ($amount)';
+  @override
+  String insightTopClient(String name, String amount) =>
+      'Cliente top: $name ($amount)';
+  @override
+  String insightFilament(String amount) => 'Has cotizado $amount de filamento';
 
   @override
   String get historySearchHint => 'Buscar por nombre o cliente...';

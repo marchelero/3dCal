@@ -1038,6 +1038,52 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String get dashboardTopMaterials => 'Materiais mais usados';
 
   @override
+  String get dashboardProfitTitle => 'Rentabilidade';
+  @override
+  String get dashboardStatEstimatedProfit => 'Lucro estimado';
+  @override
+  String get dashboardMarginLabel => 'Margem média';
+  @override
+  String get dashboardAvgTicketTitle => 'Ticket médio';
+  @override
+  String get dashboardAvgTicketQuoted => 'Ticket médio (orçado)';
+  @override
+  String get dashboardAvgTicketSold => 'Ticket médio (vendido)';
+  @override
+  String get dashboardTopClients => 'Top clientes';
+  @override
+  String get dashboardOperationalTitle => 'Métricas operacionais';
+  @override
+  String get dashboardPrintHours => 'Horas de impressão';
+  @override
+  String get dashboardFilament => 'Filamento';
+  @override
+  String get dashboardInsightsTitle => 'Insights';
+  @override
+  String get dashboardRange7d => '7d';
+  @override
+  String get dashboardRange30d => '30d';
+  @override
+  String get dashboardRange90d => '90d';
+  @override
+  String get dashboardRangeYtd => 'YTD';
+  @override
+  String get dashboardRangeAll => 'Tudo';
+  @override
+  String insightConversion(int sold, int total, int pct) =>
+      'Você vendeu $sold de $total orçamentos ($pct%)';
+  @override
+  String insightAvgTicketSold(String amount) => 'Ticket médio vendido: $amount';
+  @override
+  String insightBestMonth(String month, String amount) =>
+      'Melhor mês: $month ($amount)';
+  @override
+  String insightTopClient(String name, String amount) =>
+      'Cliente top: $name ($amount)';
+  @override
+  String insightFilament(String amount) => 'Você orçou $amount de filamento';
+
+  @override
   String get historySearchHint => 'Pesquisar por nome ou cliente...';
   @override
   String get historyFilterAll => 'Todas';

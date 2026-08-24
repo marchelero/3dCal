@@ -356,26 +356,23 @@ class _CalculationCard extends ConsumerWidget {
                 children: [
                   // Leading icon (decorative — sale status already in label)
                   ExcludeSemantics(
-                    child: Hero(
-                      tag: 'calc-hero-${calc.id}',
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: calc.isSold
-                              ? color.tertiaryContainer
-                              : color.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(AppRadii.lg),
-                        ),
-                        child: Icon(
-                          calc.isSold
-                              ? Icons.check_circle_rounded
-                              : Icons.receipt_long_rounded,
-                          color: calc.isSold
-                              ? color.tertiary
-                              : color.onSurfaceVariant,
-                          size: 22,
-                        ),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: calc.isSold
+                            ? color.tertiaryContainer
+                            : color.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppRadii.lg),
+                      ),
+                      child: Icon(
+                        calc.isSold
+                            ? Icons.check_circle_rounded
+                            : Icons.receipt_long_rounded,
+                        color: calc.isSold
+                            ? color.tertiary
+                            : color.onSurfaceVariant,
+                        size: 22,
                       ),
                     ),
                   ),

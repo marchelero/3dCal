@@ -290,11 +290,12 @@ class _DetailState extends ConsumerState<_Detail> {
         shrinkWrap: true,
         children: [
           // === Header card (hero) ===
-          Hero(
-            tag: 'calc-hero-${calc.id}',
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.xl),
+          // Sin Hero: el vuelo desde el icono 44x44 de la lista hacia este
+          // card grande encajaba el contenido en el frame inicial del flight
+          // y producia RenderFlex overflow al entrar al detalle.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -403,10 +404,9 @@ class _DetailState extends ConsumerState<_Detail> {
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
 
-          // === Materiales ===
+            // === Materiales ===
           Text(
             EsBO.calcSectionMaterials,
             style: theme.textTheme.titleMedium?.copyWith(
@@ -463,10 +463,9 @@ class _DetailState extends ConsumerState<_Detail> {
                                     fontWeight: FontWeight.w600,
                                     color: color.onPrimaryContainer,
               ),
-            ),
+),
             ),
           ),
-                            ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: Column(

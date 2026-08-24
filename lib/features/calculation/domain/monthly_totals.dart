@@ -40,3 +40,24 @@ class TopMaterial {
   /// Decimal para mantener precision consistente con el resto del motor.
   final Decimal totalWeightGrams;
 }
+
+/// Cliente top por total cotizado (top N para dashboard Pro).
+@immutable
+class TopClient {
+  const TopClient({
+    required this.label,
+    required this.total,
+    required this.count,
+  });
+
+  /// Nombre del cliente (client_name, ya filtrado de null/vacio).
+  final String label;
+
+  /// Suma totalPriceSnapshot de sus cotizaciones (BOB).
+  // BUG-003 fix: Decimal para respetar el non-negotiable "no doubles en
+  // dinero", igual que [MonthlyTotal.quoted].
+  final Decimal total;
+
+  /// Cantidad de cotizaciones del cliente.
+  final int count;
+}

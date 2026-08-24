@@ -1037,6 +1037,56 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   String get dashboardTopMaterials => 'Am häufigsten verwendete Materialien';
 
   @override
+  String get dashboardProfitTitle => 'Rentabilität';
+  @override
+  String get dashboardStatEstimatedProfit => 'Geschätzter Gewinn';
+  @override
+  String get dashboardMarginLabel => 'Durchschnittliche Marge';
+  @override
+  String get dashboardAvgTicketTitle => 'Durchschnittlicher Auftragswert';
+  @override
+  String get dashboardAvgTicketQuoted =>
+      'Durchschnittlicher Auftragswert (kalkuliert)';
+  @override
+  String get dashboardAvgTicketSold =>
+      'Durchschnittlicher Auftragswert (verkauft)';
+  @override
+  String get dashboardTopClients => 'Top-Kunden';
+  @override
+  String get dashboardOperationalTitle => 'Betriebskennzahlen';
+  @override
+  String get dashboardPrintHours => 'Druckstunden';
+  @override
+  String get dashboardFilament => 'Filament';
+  @override
+  String get dashboardInsightsTitle => 'Insights';
+  @override
+  String get dashboardRange7d => '7d';
+  @override
+  String get dashboardRange30d => '30d';
+  @override
+  String get dashboardRange90d => '90d';
+  @override
+  String get dashboardRangeYtd => 'YTD';
+  @override
+  String get dashboardRangeAll => 'Alle';
+  @override
+  String insightConversion(int sold, int total, int pct) =>
+      'Sie haben $sold von $total Angeboten verkauft ($pct%)';
+  @override
+  String insightAvgTicketSold(String amount) =>
+      'Durchschnittlicher Verkaufswert: $amount';
+  @override
+  String insightBestMonth(String month, String amount) =>
+      'Bester Monat: $month ($amount)';
+  @override
+  String insightTopClient(String name, String amount) =>
+      'Top-Kunde: $name ($amount)';
+  @override
+  String insightFilament(String amount) =>
+      'Sie haben $amount Filament kalkuliert';
+
+  @override
   String get historySearchHint => 'Nach Name oder Kunde suchen ...';
   @override
   String get historyFilterAll => 'Alle';

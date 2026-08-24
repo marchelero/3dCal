@@ -30,7 +30,8 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
-    final asyncStats = ref.watch(dashboardStatsProvider);
+    // null = sin filtro de rango: la home muestra siempre el total global.
+    final asyncStats = ref.watch(dashboardStatsProvider(null));
     final asyncSettings = ref.watch(settingsNotifierProvider);
     final settings = asyncSettings.value;
     final theme = Theme.of(context);
@@ -370,7 +371,7 @@ class HomePage extends ConsumerWidget {
       error: (e, _) => ErrorView(
         message: EsBO.homeErrorLoadStats,
         details: e.toString(),
-        onRetry: () => ref.invalidate(dashboardStatsProvider),
+        onRetry: () => ref.invalidate(dashboardStatsProvider(null)),
       ),
       data: (stats) {
         if (stats.countAll == 0) {
