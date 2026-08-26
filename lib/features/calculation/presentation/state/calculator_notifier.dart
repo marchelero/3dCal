@@ -13,7 +13,6 @@ import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../data/calculation_repository.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_input.dart';
-import '../../domain/entities/calculation_output.dart';
 import '../../domain/entities/material_input.dart';
 import '../notifiers/calculations_notifier.dart';
 import 'calculator_state.dart';
@@ -120,8 +119,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     state = _recompute(state.copyWith(extraMarkupOnMaterials: value));
   }
 
-  /// Actualiza la cantidad de unidades. El total se multiplica por
-  /// este valor en _recompute().
+  /// Actualiza la cantidad de unidades del lote (>= 1).
+  ///
+  /// El engine produce precios UNITARIOS; el total efectivo
+  /// (`unitario x quantity`) se calcula en la capa de presentacion
+  /// (`calculator_page`, `quote_image_template`) y al agregar queries.
   void setQuantity(int value) {
     if (value < 1) return;
     state = _recompute(state.copyWith(quantity: value));
@@ -291,6 +293,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
               : m.gramsPerBobbinSnapshot.toStringAsFixed(0),
           materials: const <MaterialRow>[],
           output: null,
+          quantity: calc.quantity < 1 ? 1 : calc.quantity,
         ),
       );
       return;
@@ -318,6 +321,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         filamentGrams: '',
         materials: rows,
         output: null,
+        quantity: calc.quantity < 1 ? 1 : calc.quantity,
       ),
     );
   }
@@ -388,6 +392,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       discountPercentage: input.discountPercentage,
       output: state.output!,
       filamentLabel: state.filamentLabel,
+      quantity: state.quantity,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
           : (pieceName == null || pieceName.trim().isEmpty
@@ -423,6 +428,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       discountPercentage: input.discountPercentage,
       output: state.output!,
       filamentLabel: state.filamentLabel,
+      quantity: state.quantity,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
           : (pieceName == null || pieceName.trim().isEmpty

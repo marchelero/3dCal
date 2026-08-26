@@ -98,8 +98,9 @@ class CalculationOutput {
   /// Precio total final (BOB) = totalFinal - discountAmount.
   final Decimal totalPrice;
 
-  /// Total sin descuento (totalFinal * quantity). Usado por el template
-  /// para mostrar "Sin descuento: $X" correctamente con cantidad > 1.
+  /// Total sin descuento, UNITARIO (el engine no conoce quantity).
+  /// Usado por el template de imagen: se multiplica por la cantidad ahi
+  /// para mostrar "Sin descuento: $X" correcto con cantidad > 1.
   final Decimal? totalOriginal;
 
   @override

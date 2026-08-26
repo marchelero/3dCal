@@ -70,7 +70,9 @@ class ResultBottomBar extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          color: isEmpty ? color.surface : color.primaryContainer.withValues(alpha: 0.3),
+          color: isEmpty
+              ? color.surface
+              : color.primaryContainer.withValues(alpha: 0.3),
         ),
         child: Material(
           color: Colors.transparent,
@@ -136,8 +138,8 @@ class ResultBottomBar extends StatelessWidget {
                                       EsBO.calcResultBarEmptyHint.toUpperCase(),
                                       style: AppTheme.num(
                                         theme.textTheme.labelSmall?.copyWith(
-                                          letterSpacing: 1.2,
-                                        ) ??
+                                              letterSpacing: 1.2,
+                                            ) ??
                                             const TextStyle(),
                                         color: color.onSurfaceVariant,
                                         fontWeight: FontWeight.w600,
@@ -146,9 +148,10 @@ class ResultBottomBar extends StatelessWidget {
                                     const SizedBox(height: 2),
                                     Text(
                                       emptyHint!,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: color.onSurfaceVariant,
-                                      ),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: color.onSurfaceVariant,
+                                          ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -162,8 +165,8 @@ class ResultBottomBar extends StatelessWidget {
                                       EsBO.calcResultBarTapHint.toUpperCase(),
                                       style: AppTheme.num(
                                         theme.textTheme.labelSmall?.copyWith(
-                                          letterSpacing: 1.2,
-                                        ) ??
+                                              letterSpacing: 1.2,
+                                            ) ??
                                             const TextStyle(),
                                         color: color.onSurfaceVariant,
                                         fontWeight: FontWeight.w600,
@@ -192,7 +195,10 @@ class ResultBottomBar extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              border: Border.all(color: color.error, width: 1.5),
+                              border: Border.all(
+                                color: color.error,
+                                width: 1.5,
+                              ),
                               borderRadius: BorderRadius.circular(AppRadii.xs),
                             ),
                             child: Text(
@@ -606,88 +612,96 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
               const SizedBox(height: AppSpacing.sm),
               Builder(
                 builder: (ctx) {
-                  final isPro = ProviderScope.containerOf(
-                    ctx,
-                  ).read(isProProvider);
-                  final entState = ProviderScope.containerOf(
-                    ctx,
-                  ).read(entitlementNotifierProvider);
-                  final locked = !entState.isLoading && !isPro;
-                  return Card(
-                    margin: EdgeInsets.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                const Icon(Icons.layers_rounded, size: 18),
-                                const SizedBox(width: AppSpacing.xs),
-                                Text(
-                                  'Cantidad',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                  // Consumer: reactivo — si el entitlement resuelve mientras
+                  // el sheet esta abierto, el gate se actualiza solo.
+                  return Consumer(
+                    builder: (ctx, ref, _) {
+                      final isPro = ref.watch(isProProvider);
+                      final entState = ref.watch(entitlementNotifierProvider);
+                      final locked = !entState.isLoading && !isPro;
+                      return Card(
+                        margin: EdgeInsets.zero,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.sm,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.layers_rounded, size: 18),
+                                    const SizedBox(width: AppSpacing.xs),
+                                    Text(
+                                      EsBO.resultQuantityLabel,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    if (locked) ...[
+                                      const SizedBox(width: AppSpacing.xs),
+                                      const ProBadge(),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              IconButton.outlined(
+                                icon: const Icon(Icons.remove_rounded),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: _quantity > 1
+                                    ? () {
+                                        if (locked) {
+                                          Navigator.of(ctx).pop();
+                                          GoRouter.of(ctx).push('/paywall');
+                                        } else {
+                                          setState(() => _quantity--);
+                                          ref
+                                              .read(
+                                                calculatorNotifierProvider
+                                                    .notifier,
+                                              )
+                                              .setQuantity(_quantity);
+                                        }
+                                      }
+                                    : null,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.md,
+                                ),
+                                child: Text(
+                                  '$_quantity',
+                                  style: AppTheme.num(
+                                    theme.textTheme.titleMedium ??
+                                        const TextStyle(),
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                if (locked) ...[
-                                  const SizedBox(width: AppSpacing.xs),
-                                  const ProBadge(),
-                                ],
-                              ],
-                            ),
-                          ),
-                          IconButton.outlined(
-                            icon: const Icon(Icons.remove_rounded),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: _quantity > 1
-                                ? () {
-                                    if (locked) {
-                                      Navigator.of(ctx).pop();
-                                      GoRouter.of(ctx).push('/paywall');
-                                    } else {
-                                      setState(() => _quantity--);
-                                      ProviderScope.containerOf(ctx)
-                                          .read(calculatorNotifierProvider.notifier)
-                                          .setQuantity(_quantity);
-                                    }
-                                  }
-                                : null,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                            ),
-                            child: Text(
-                              '$_quantity',
-                              style: AppTheme.num(
-                                theme.textTheme.titleMedium ??
-                                    const TextStyle(),
-                                fontWeight: FontWeight.bold,
                               ),
-                            ),
+                              IconButton.outlined(
+                                icon: const Icon(Icons.add_rounded),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () {
+                                  if (locked) {
+                                    Navigator.of(ctx).pop();
+                                    GoRouter.of(ctx).push('/paywall');
+                                  } else {
+                                    setState(() => _quantity++);
+                                    ref
+                                        .read(
+                                          calculatorNotifierProvider.notifier,
+                                        )
+                                        .setQuantity(_quantity);
+                                  }
+                                },
+                              ),
+                            ],
                           ),
-                          IconButton.outlined(
-                            icon: const Icon(Icons.add_rounded),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () {
-                              if (locked) {
-                                Navigator.of(ctx).pop();
-                                GoRouter.of(ctx).push('/paywall');
-                              } else {
-                                setState(() => _quantity++);
-                                ProviderScope.containerOf(ctx)
-                                    .read(calculatorNotifierProvider.notifier)
-                                    .setQuantity(_quantity);
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),

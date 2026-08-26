@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -100,6 +100,11 @@ class AppDatabase extends _$AppDatabase {
         // calculations con flag isTemplate (excluida de historial/
         // dashboard/cap). Registros viejos quedan isTemplate=false.
         await m.addColumn(calculations, calculations.isTemplate);
+      }
+      if (from < 8) {
+        // v7→v8: cantidad por cotizacion (lotes). Aditiva: registros
+        // viejos quedan quantity=1 (comportamiento identico al actual).
+        await m.addColumn(calculations, calculations.quantity);
       }
     },
   );

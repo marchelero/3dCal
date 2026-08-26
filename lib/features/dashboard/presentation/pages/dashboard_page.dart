@@ -417,7 +417,7 @@ List<String> _buildInsights(DashboardStats stats, WorldCurrency currency) {
     );
   }
   if (stats.filamentGrams > Decimal.zero) {
-    insights.add(EsBO.insightFilament(_formatKg(stats.filamentGrams)));
+    insights.add(EsBO.insightFilament(_formatGrams(stats.filamentGrams)));
   }
   return insights;
 }
@@ -444,11 +444,6 @@ String _formatGrams(Decimal grams) {
   final g = grams.toDouble();
   if (g >= 1000) return '${(g / 1000).toStringAsFixed(1)}kg';
   return '${g.toStringAsFixed(0)}g';
-}
-
-/// Siempre en kg (para el insight de filamento, 0 gramos → "0,0kg").
-String _formatKg(Decimal grams) {
-  return '${(grams.toDouble() / 1000).toStringAsFixed(1)}kg';
 }
 
 class _ProAnalyticsTeaser extends StatelessWidget {
@@ -598,12 +593,9 @@ class _MaterialRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // BUG-003 fix: totalWeightGrams ahora es Decimal; convertir a double
-    // solo para el formateo visual.
-    final grams = m.totalWeightGrams.toDouble();
-    final gramsStr = grams >= 1000
-        ? '${(grams / 1000).toStringAsFixed(1)}kg'
-        : '${grams.toStringAsFixed(0)}g';
+    // BUG-003 fix: totalWeightGrams es Decimal; convertir a double solo
+    // para el formateo visual (helper compartido con insights).
+    final gramsStr = _formatGrams(m.totalWeightGrams);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

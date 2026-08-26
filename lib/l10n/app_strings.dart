@@ -213,6 +213,11 @@ abstract class AppStrings {
   String get calcDetailProfit;
   String get calcDetailMinimumCharge;
   String get calcDetailTotal;
+
+  // === Cantidad / lotes ===
+  String get detailQuantityLabel;
+  String get detailQuantitySubtitle;
+  String get resultQuantityLabel;
   String get calcSectionMaterials;
   String get calcSectionPrinter;
   String get calcNoPrinter;

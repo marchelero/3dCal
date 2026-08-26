@@ -127,18 +127,31 @@ final dashboardStatsProvider = FutureProvider.autoDispose
     .family<DashboardStats, DateTime?>((ref, since) async {
       ref.watch(calculationsNotifierProvider);
       final repo = ref.watch(calculationRepositoryProvider);
+      // Las 11 queries son independientes entre si: se disparan todas
+      // primero y se esperan despues, para no encadenar sus latencias.
+      final quotedF = repo.totalQuoted(since: since);
+      final soldF = repo.totalSold(since: since);
+      final countAllF = repo.countAll(since: since);
+      final countSoldF = repo.countSold(since: since);
+      final profitQuotedF = repo.totalProfitQuoted(since: since);
+      final profitSoldF = repo.totalProfitSold(since: since);
+      final monthlyF = repo.monthlyTotals(since: since);
+      final materialsF = repo.topMaterials(since: since);
+      final clientsF = repo.topClients(since: since);
+      final hoursF = repo.totalPrintHours(since: since);
+      final gramsF = repo.totalFilamentGrams(since: since);
       return DashboardStats(
-        totalQuoted: await repo.totalQuoted(since: since),
-        totalSold: await repo.totalSold(since: since),
-        countAll: await repo.countAll(since: since),
-        countSold: await repo.countSold(since: since),
-        profitQuoted: await repo.totalProfitQuoted(since: since),
-        profitSold: await repo.totalProfitSold(since: since),
-        monthlyTotals: await repo.monthlyTotals(since: since),
-        topMaterials: await repo.topMaterials(since: since),
-        topClients: await repo.topClients(since: since),
-        printHours: await repo.totalPrintHours(since: since),
-        filamentGrams: await repo.totalFilamentGrams(since: since),
+        totalQuoted: await quotedF,
+        totalSold: await soldF,
+        countAll: await countAllF,
+        countSold: await countSoldF,
+        profitQuoted: await profitQuotedF,
+        profitSold: await profitSoldF,
+        monthlyTotals: await monthlyF,
+        topMaterials: await materialsF,
+        topClients: await clientsF,
+        printHours: await hoursF,
+        filamentGrams: await gramsF,
         since: since,
       );
     });

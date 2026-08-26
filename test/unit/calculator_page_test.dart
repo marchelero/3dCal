@@ -132,7 +132,9 @@ void main() {
       expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
 
       // El campo Descuento vive en el result sheet (ya no en el form).
-      await tester.tap(find.text(r'$ 36,00'));
+      // El total aparece 2x (chip del AppBar + ResultBottomBar); ambos
+      // abren el sheet, asi que tapamos la primera instancia.
+      await tester.tap(find.text(r'$ 36,00').first);
       await tester.pumpAndSettle();
 
       // Aplicar descuento 25% en el field del sheet. Escribe en el notifier

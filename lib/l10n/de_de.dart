@@ -332,6 +332,12 @@ class DeImpl implements AppStrings {
   @override
   String get calcDetailTotal => 'Gesamtbetrag';
   @override
+  String get detailQuantityLabel => 'Anzahl der Teile';
+  @override
+  String get detailQuantitySubtitle => 'Angebot nach Menge / Volumen';
+  @override
+  String get resultQuantityLabel => 'Menge';
+  @override
   String get calcEmptyHint =>
       'Geben Sie Gewicht, Filament und Zeit ein, um den Preis zu sehen';
   @override

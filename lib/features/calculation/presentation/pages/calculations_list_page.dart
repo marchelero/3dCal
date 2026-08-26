@@ -269,23 +269,23 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     final buf = StringBuffer();
     // Header
     buf.writeln(
-      'Fecha,Pieza,Cliente,Total,Vendido,Materiales,Horas,Descuento,'
-      'CostoMat,Elect,Profit',
+      'Fecha,Pieza,Cliente,Cantidad,Total,Vendido,Materiales,Horas,'
+      'Descuento,CostoMat,Elect,Profit',
     );
-    // Rows
+    // Rows (valores efectivos = unitario x cantidad)
     for (final c in calcs) {
       final date = DateFormat('yyyy-MM-dd HH:mm').format(c.createdAt.toLocal());
       final piece = _escapeCsv(c.pieceName ?? '');
       final client = _escapeCsv(c.clientName ?? '');
-      final total = formatRaw(c.totalPriceSnapshot);
+      final total = formatRaw(c.totalPriceSnapshot * c.quantity);
       final sold = c.isSold ? 'Si' : 'No';
-      final hours = c.totalHours.toStringAsFixed(2);
+      final hours = (c.totalHours * c.quantity).toStringAsFixed(2);
       final discount = c.discountPercentage.toStringAsFixed(1);
-      final matCost = formatRaw(c.materialCostSnapshot);
-      final elect = formatRaw(c.electricCostSnapshot);
-      final profit = formatRaw(c.profitAmountSnapshot);
+      final matCost = formatRaw(c.materialCostSnapshot * c.quantity);
+      final elect = formatRaw(c.electricCostSnapshot * c.quantity);
+      final profit = formatRaw(c.profitAmountSnapshot * c.quantity);
       buf.writeln(
-        '$date,$piece,$client,$total,$sold,$hours,$discount,'
+        '$date,$piece,$client,${c.quantity},$total,$sold,$hours,$discount,'
         '$matCost,$elect,$profit',
       );
     }
@@ -320,6 +320,12 @@ class _CalculationCard extends ConsumerWidget {
   final Calculation calc;
   final CalculationsNotifier notifier;
 
+  /// Total efectivo de la cotizacion: `unitario x cantidad`.
+  /// Los snapshots se guardan unitarios; la cantidad vive en su columna.
+  Decimal _effectiveTotal(Calculation c) =>
+      Decimal.parse(c.totalPriceSnapshot.toStringAsFixed(2)) *
+      Decimal.fromInt(c.quantity < 1 ? 1 : c.quantity);
+
   String _title() {
     final piece = calc.pieceName;
     if (piece != null && piece.isNotEmpty) return piece;
@@ -341,8 +347,9 @@ class _CalculationCard extends ConsumerWidget {
       container: true,
       label:
           // BUG-017 fix: toStringAsFixed(2) evita notacion cientifica/NaN
-          // en Decimal.parse para snapshots corruptos.
-          '${_title()}, ${formatCurrency(Decimal.parse(calc.totalPriceSnapshot.toStringAsFixed(2)), currency)}'
+          // en Decimal.parse para snapshots corruptos. Total efectivo =
+          // unitario x cantidad (lotes).
+          '${_title()}, ${formatCurrency(_effectiveTotal(calc), currency)}'
           '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -441,10 +448,8 @@ class _CalculationCard extends ConsumerWidget {
                     children: [
                       Text(
                         // BUG-017 fix: idem, toStringAsFixed(2).
-                        formatCurrency(
-                          Decimal.parse(calc.totalPriceSnapshot.toStringAsFixed(2)),
-                          currency,
-                        ),
+                        // Total efectivo = unitario x cantidad (lotes).
+                        formatCurrency(_effectiveTotal(calc), currency),
                         // M2: precio en list item usa JetBrains Mono + tabular
                         // para alineacion vertical de cifras en el listado.
                         style: GoogleFonts.jetBrainsMono(
@@ -455,6 +460,14 @@ class _CalculationCard extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(height: AppSpacing.xs),
+                      if (calc.quantity > 1)
+                        Text(
+                          '${calc.quantity} u.',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: color.onSurfaceVariant,
+                          ),
+                        ),
                       const SizedBox(height: AppSpacing.xs),
                       _PopupMenu(calc: calc, notifier: notifier),
                     ],

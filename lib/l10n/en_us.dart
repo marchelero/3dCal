@@ -324,6 +324,12 @@ class EnImpl implements AppStrings {
   @override
   String get calcDetailTotal => 'Total';
   @override
+  String get detailQuantityLabel => 'Piece Quantity';
+  @override
+  String get detailQuantitySubtitle => 'Quote by batch / volume';
+  @override
+  String get resultQuantityLabel => 'Quantity';
+  @override
   String get calcEmptyHint =>
       'Fill in weight, filament and time to see the price';
   @override

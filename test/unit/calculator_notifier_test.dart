@@ -554,6 +554,7 @@ void main() {
           totalHours: 1.55,
           printMinutes: 0, // v3: siempre 0
           isTemplate: false,
+          quantity: 1,
           discountPercentage: 0,
           kwhRateSnapshot: 0.6,
           profitBaseSnapshot: 200,

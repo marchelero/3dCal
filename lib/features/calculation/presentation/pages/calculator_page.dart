@@ -662,7 +662,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     final currency = ref.watch(selectedCurrencyProvider);
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
     final isValid = state.isValid && state.output != null;
     final totalText = isValid
         ? formatCurrency(
@@ -1388,7 +1387,7 @@ class _TotalChipState extends State<_TotalChip>
     // Pulse sutil al primer render.
     if (_pulseCtrl != null) {
       return ScaleTransition(
-        scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+        scale: Tween<double>(begin: 0.92, end: 1).animate(
           CurvedAnimation(parent: _pulseCtrl!, curve: Curves.easeOutBack),
         ),
         child: chip,

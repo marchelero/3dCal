@@ -137,7 +137,10 @@ class _DetailState extends ConsumerState<_Detail> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
   bool _showDetail = false;
-  int _quantity = 1;
+
+  /// Cantidad mostrada/editable. Arranca con la cantidad guardada de la
+  /// cotizacion (lotes, v8) para que preview/export coincidan con lo saved.
+  late int _quantity = widget.calc.quantity < 1 ? 1 : widget.calc.quantity;
 
   Future<void> _handleShare() async {
     if (_isBusy) return;
@@ -192,7 +195,14 @@ class _DetailState extends ConsumerState<_Detail> {
       final settingsAsync = ref.read(settingsNotifierProvider);
       final settings = settingsAsync.value ?? Settings.defaults;
       final printer = ref.read(activePrinterProvider);
-      final result = _recomputeOutput(calc, materials, settings, printer);
+      // PDF con totales efectivos (unitario x cantidad guardada).
+      final result = _recomputeOutput(
+        calc,
+        materials,
+        settings,
+        printer,
+        quantity: calc.quantity,
+      );
       if (result == null) return;
       await shareQuotePdf(
         isPro: ref.read(isProProvider),
@@ -234,7 +244,14 @@ class _DetailState extends ConsumerState<_Detail> {
       final settingsAsync = ref.read(settingsNotifierProvider);
       final settings = settingsAsync.value ?? Settings.defaults;
       final printer = ref.read(activePrinterProvider);
-      final result = _recomputeOutput(calc, materials, settings, printer);
+      // PDF con totales efectivos (unitario x cantidad guardada).
+      final result = _recomputeOutput(
+        calc,
+        materials,
+        settings,
+        printer,
+        quantity: calc.quantity,
+      );
       if (result == null) return;
       final pdfBytes = await buildQuotePdfBytes(
         isPro: ref.read(isProProvider),
@@ -542,7 +559,8 @@ class _DetailState extends ConsumerState<_Detail> {
                     value: formatCurrency(
                       Decimal.parse(
                         calc.materialCostSnapshot.toStringAsFixed(2),
-                      ),
+                      ) *
+                      Decimal.fromInt(calc.quantity),
                       currency,
                     ),
                   ),
@@ -573,7 +591,8 @@ class _DetailState extends ConsumerState<_Detail> {
                             // vea el mismo numero en el detalle y en el PDF.
                             // totalFinal = baseCost + failureCost + markupCost
                             //              + profitAmount (ver F1 engine).
-                            '-${formatCurrency(Decimal.parse(((calc.baseCostSnapshot + calc.failureCostSnapshot + calc.markupCostSnapshot + calc.profitAmountSnapshot) * calc.discountPercentage / 100).toStringAsFixed(2)), currency)}',
+                            // Monto efectivo: unitario x cantidad (lotes).
+                            '-${formatCurrency(Decimal.parse(((calc.baseCostSnapshot + calc.failureCostSnapshot + calc.markupCostSnapshot + calc.profitAmountSnapshot) * calc.discountPercentage / 100).toStringAsFixed(2)) * Decimal.fromInt(calc.quantity), currency)}',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: color.onErrorContainer,
                               fontWeight: FontWeight.w700,
@@ -589,19 +608,25 @@ class _DetailState extends ConsumerState<_Detail> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        EsBO.calcDetailTotal,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        Text(
+                          // Con lote > 1 se explicita para que el total
+                          // efectivo no confunda frente al unitario.
+                          calc.quantity > 1
+                              ? '${EsBO.calcDetailTotal} (${calc.quantity} u.)'
+                              : EsBO.calcDetailTotal,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
+                          // Total efectivo = unitario x cantidad (lotes).
                           formatCurrency(
                             Decimal.parse(
                               calc.totalPriceSnapshot.toStringAsFixed(2),
-                            ),
+                            ) *
+                            Decimal.fromInt(calc.quantity),
                             currency,
                           ),
                           style: GoogleFonts.jetBrainsMono(
@@ -639,7 +664,7 @@ class _DetailState extends ConsumerState<_Detail> {
                         Row(
                           children: [
                             Text(
-                              'Cantidad de Piezas',
+                              EsBO.detailQuantityLabel,
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -650,7 +675,7 @@ class _DetailState extends ConsumerState<_Detail> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Cotizar por lote / volumen',
+                          EsBO.detailQuantitySubtitle,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: color.onSurfaceVariant,
                           ),
@@ -833,6 +858,11 @@ class _DetailState extends ConsumerState<_Detail> {
 /// Usa current settings para electricidad/ganancia — mismo approach que
 /// [CalculatorNotifier._recompute] y el prefill de CalculatorPage.
 ///
+/// [quantity]: multiplica todos los montos y las metricas (gramos/tiempo)
+/// para reportar valores EFECTIVOS del lote (default 1 = unitario). La ruta
+/// de preview-imagen llama con 1 porque QuoteImageTemplate ya escala por su
+/// quantity editable.
+///
 /// Retorna null si materials aun no cargaron.
 ({
   CalculationOutput output,
@@ -852,9 +882,12 @@ _recomputeOutput(
   Calculation calc,
   List<CalculationMaterial> materials,
   Settings settings,
-  PrinterProfile? printer,
-) {
+  PrinterProfile? printer, {
+  int quantity = 1,
+}) {
   if (materials.isEmpty && calc.materialCostSnapshot <= 0) return null;
+  final qty = quantity < 1 ? 1 : quantity;
+  final qtyD = Decimal.fromInt(qty);
 
   final materialCost = Decimal.parse(
     calc.materialCostSnapshot.toStringAsFixed(2),
@@ -874,8 +907,8 @@ _recomputeOutput(
     final cost = grams > Decimal.zero
         ? (weight * price / grams).toDecimal(scaleOnInfinitePrecision: 12)
         : Decimal.zero;
-    breakdown.add(MaterialCostBreakdown(label: m.label, cost: cost));
-    totalGrams += weight;
+    breakdown.add(MaterialCostBreakdown(label: m.label, cost: cost * qtyD));
+    totalGrams += weight * qtyD;
   }
 
   // F1 formula with current settings + snapshots
@@ -915,24 +948,24 @@ _recomputeOutput(
   final totalPrice = totalFinal - discountOnTotalFinal;
 
   final output = CalculationOutput(
-    materialCost: materialCost,
-    electricCost: electricCost,
-    laborCost: laborCost,
-    postProcessCost: postProcessCost,
-    baseCost: baseCost,
-    failureCost: failureCost,
-    costWithFailure: costWithFailure,
-    markupCost: markupCost,
-    totalBeforeProfit: totalBeforeProfit,
-    profitAmount: profitAmount,
-    totalFinal: totalFinal,
-    discountAmount: discountOnTotalFinal,
-    totalPrice: totalPrice,
-    totalOriginal: totalFinal,
+    materialCost: materialCost * qtyD,
+    electricCost: electricCost * qtyD,
+    laborCost: laborCost * qtyD,
+    postProcessCost: postProcessCost * qtyD,
+    baseCost: baseCost * qtyD,
+    failureCost: failureCost * qtyD,
+    costWithFailure: costWithFailure * qtyD,
+    markupCost: markupCost * qtyD,
+    totalBeforeProfit: totalBeforeProfit * qtyD,
+    profitAmount: profitAmount * qtyD,
+    totalFinal: totalFinal * qtyD,
+    discountAmount: discountOnTotalFinal * qtyD,
+    totalPrice: totalPrice * qtyD,
+    totalOriginal: totalFinal * qtyD,
   );
 
   // Meta
-  final totalMinutes = (hours * Decimal.fromInt(60)).toBigInt();
+  final totalMinutes = (hours * qtyD * Decimal.fromInt(60)).toBigInt();
   String? timeStr;
   if (totalMinutes > BigInt.zero) {
     final hh = totalMinutes ~/ BigInt.from(60);
@@ -946,14 +979,14 @@ _recomputeOutput(
   return (
     output: output,
     breakdown: breakdown,
-    electricCost: electricCost,
-    laborCost: laborCost,
-    postProcessCost: postProcessCost,
-    baseCost: baseCost,
-    failureCost: failureCost,
-    markupCost: markupCost,
-    profitAmount: profitAmount,
-    totalFinal: totalFinal,
+    electricCost: electricCost * qtyD,
+    laborCost: laborCost * qtyD,
+    postProcessCost: postProcessCost * qtyD,
+    baseCost: baseCost * qtyD,
+    failureCost: failureCost * qtyD,
+    markupCost: markupCost * qtyD,
+    profitAmount: profitAmount * qtyD,
+    totalFinal: totalFinal * qtyD,
     metaGrams: gramsStr,
     metaTime: timeStr,
   );

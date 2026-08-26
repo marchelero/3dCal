@@ -94,7 +94,11 @@ class QuoteImageTemplate extends StatelessWidget {
     final unitPrice = output.totalPrice;
     final qty = Decimal.fromInt(quantity);
     final totalFinal = unitPrice * qty;
-    final totalOriginal = output.totalOriginal ?? output.totalFinal;
+    // Base "sin descuento": el engine la setea (totalFinal + descuento);
+    // si viene null (p.ej. CalculationOutput.simple en previews), se deriva
+    // del precio final + descuento — siempre unitaria, se escala abajo.
+    final totalOriginal =
+        output.totalOriginal ?? (output.totalPrice + output.discountAmount);
 
     return Container(
       width: 400, // ancho fijo para consistencia en la imagen
@@ -297,16 +301,25 @@ class QuoteImageTemplate extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
 
             DetailSection(
-              materialCost: output.materialCost,
-              materialBreakdown: detailMaterialBreakdown,
-              electricCost: detailElectricCost ?? Decimal.zero,
-              laborCost: detailLaborCost ?? Decimal.zero,
-              postProcessCost: detailPostProcessCost ?? Decimal.zero,
-              baseCost: detailBaseCost ?? Decimal.zero,
-              failureCost: detailFailureCost ?? Decimal.zero,
-              markupCost: detailMarkupCost ?? Decimal.zero,
-              profitAmount: detailProfitAmount ?? Decimal.zero,
-              totalFinal: detailTotalFinal ?? Decimal.zero,
+              // Desglose efectivo: los valores llegan unitarios (el engine
+              // no conoce quantity) y aqui se escalan igual que el total,
+              // para que desglose y total cuadren con cantidad > 1.
+              materialCost: output.materialCost * qty,
+              materialBreakdown: [
+                for (final b in detailMaterialBreakdown)
+                  MaterialCostBreakdown(
+                    label: b.label,
+                    cost: b.cost * qty,
+                  ),
+              ],
+              electricCost: (detailElectricCost ?? Decimal.zero) * qty,
+              laborCost: (detailLaborCost ?? Decimal.zero) * qty,
+              postProcessCost: (detailPostProcessCost ?? Decimal.zero) * qty,
+              baseCost: (detailBaseCost ?? Decimal.zero) * qty,
+              failureCost: (detailFailureCost ?? Decimal.zero) * qty,
+              markupCost: (detailMarkupCost ?? Decimal.zero) * qty,
+              profitAmount: (detailProfitAmount ?? Decimal.zero) * qty,
+              totalFinal: (detailTotalFinal ?? Decimal.zero) * qty,
               textColor: color.onSurface,
             ),
           ],

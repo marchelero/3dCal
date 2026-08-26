@@ -330,6 +330,12 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcDetailTotal => 'Total';
   @override
+  String get detailQuantityLabel => 'Quantidade de Peças';
+  @override
+  String get detailQuantitySubtitle => 'Cotar por lote / volume';
+  @override
+  String get resultQuantityLabel => 'Quantidade';
+  @override
   String get calcEmptyHint =>
       'Preencha peso, filamento e tempo para ver o preço';
   @override

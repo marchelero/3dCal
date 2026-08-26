@@ -1060,6 +1060,18 @@ class $CalculationsTable extends Calculations
         type: DriftSqlType.double,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _isSoldMeta = const VerificationMeta('isSold');
   @override
   late final GeneratedColumn<bool> isSold = GeneratedColumn<bool>(
@@ -1282,6 +1294,7 @@ class $CalculationsTable extends Calculations
     discountPercentage,
     kwhRateSnapshot,
     profitBaseSnapshot,
+    quantity,
     isSold,
     isTemplate,
     materialCostSnapshot,
@@ -1421,6 +1434,12 @@ class $CalculationsTable extends Calculations
       );
     } else if (isInserting) {
       context.missing(_profitBaseSnapshotMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
     }
     if (data.containsKey('is_sold')) {
       context.handle(
@@ -1675,6 +1694,10 @@ class $CalculationsTable extends Calculations
         DriftSqlType.double,
         data['${effectivePrefix}profit_base_snapshot'],
       )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
       isSold: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_sold'],
@@ -1808,6 +1831,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// Snapshot de la ganancia base al guardar.
   final double profitBaseSnapshot;
 
+  /// Cantidad de unidades cotizadas (lote). Default 1.
+  ///
+  /// Los snapshots financieros y los materiales se guardan **unitarios**; el
+  /// total efectivo de la cotizacion es `unitario x quantity` (multiplicacion
+  /// aplicada en lectura: UI, exports y queries agregadas del dashboard).
+  final int quantity;
+
   /// Marca como vendida (alimenta dashboard).
   final bool isSold;
 
@@ -1852,6 +1882,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.discountPercentage,
     required this.kwhRateSnapshot,
     required this.profitBaseSnapshot,
+    required this.quantity,
     required this.isSold,
     required this.isTemplate,
     required this.materialCostSnapshot,
@@ -1900,6 +1931,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     map['discount_percentage'] = Variable<double>(discountPercentage);
     map['kwh_rate_snapshot'] = Variable<double>(kwhRateSnapshot);
     map['profit_base_snapshot'] = Variable<double>(profitBaseSnapshot);
+    map['quantity'] = Variable<int>(quantity);
     map['is_sold'] = Variable<bool>(isSold);
     map['is_template'] = Variable<bool>(isTemplate);
     map['material_cost_snapshot'] = Variable<double>(materialCostSnapshot);
@@ -1957,6 +1989,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       discountPercentage: Value(discountPercentage),
       kwhRateSnapshot: Value(kwhRateSnapshot),
       profitBaseSnapshot: Value(profitBaseSnapshot),
+      quantity: Value(quantity),
       isSold: Value(isSold),
       isTemplate: Value(isTemplate),
       materialCostSnapshot: Value(materialCostSnapshot),
@@ -2006,6 +2039,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       profitBaseSnapshot: serializer.fromJson<double>(
         json['profitBaseSnapshot'],
       ),
+      quantity: serializer.fromJson<int>(json['quantity']),
       isSold: serializer.fromJson<bool>(json['isSold']),
       isTemplate: serializer.fromJson<bool>(json['isTemplate']),
       materialCostSnapshot: serializer.fromJson<double>(
@@ -2070,6 +2104,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'discountPercentage': serializer.toJson<double>(discountPercentage),
       'kwhRateSnapshot': serializer.toJson<double>(kwhRateSnapshot),
       'profitBaseSnapshot': serializer.toJson<double>(profitBaseSnapshot),
+      'quantity': serializer.toJson<int>(quantity),
       'isSold': serializer.toJson<bool>(isSold),
       'isTemplate': serializer.toJson<bool>(isTemplate),
       'materialCostSnapshot': serializer.toJson<double>(materialCostSnapshot),
@@ -2116,6 +2151,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     double? discountPercentage,
     double? kwhRateSnapshot,
     double? profitBaseSnapshot,
+    int? quantity,
     bool? isSold,
     bool? isTemplate,
     double? materialCostSnapshot,
@@ -2151,6 +2187,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     discountPercentage: discountPercentage ?? this.discountPercentage,
     kwhRateSnapshot: kwhRateSnapshot ?? this.kwhRateSnapshot,
     profitBaseSnapshot: profitBaseSnapshot ?? this.profitBaseSnapshot,
+    quantity: quantity ?? this.quantity,
     isSold: isSold ?? this.isSold,
     isTemplate: isTemplate ?? this.isTemplate,
     materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
@@ -2209,6 +2246,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       profitBaseSnapshot: data.profitBaseSnapshot.present
           ? data.profitBaseSnapshot.value
           : this.profitBaseSnapshot,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
       isSold: data.isSold.present ? data.isSold.value : this.isSold,
       isTemplate: data.isTemplate.present
           ? data.isTemplate.value
@@ -2281,6 +2319,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('discountPercentage: $discountPercentage, ')
           ..write('kwhRateSnapshot: $kwhRateSnapshot, ')
           ..write('profitBaseSnapshot: $profitBaseSnapshot, ')
+          ..write('quantity: $quantity, ')
           ..write('isSold: $isSold, ')
           ..write('isTemplate: $isTemplate, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
@@ -2321,6 +2360,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     discountPercentage,
     kwhRateSnapshot,
     profitBaseSnapshot,
+    quantity,
     isSold,
     isTemplate,
     materialCostSnapshot,
@@ -2358,6 +2398,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.discountPercentage == this.discountPercentage &&
           other.kwhRateSnapshot == this.kwhRateSnapshot &&
           other.profitBaseSnapshot == this.profitBaseSnapshot &&
+          other.quantity == this.quantity &&
           other.isSold == this.isSold &&
           other.isTemplate == this.isTemplate &&
           other.materialCostSnapshot == this.materialCostSnapshot &&
@@ -2394,6 +2435,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<double> discountPercentage;
   final Value<double> kwhRateSnapshot;
   final Value<double> profitBaseSnapshot;
+  final Value<int> quantity;
   final Value<bool> isSold;
   final Value<bool> isTemplate;
   final Value<double> materialCostSnapshot;
@@ -2427,6 +2469,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.discountPercentage = const Value.absent(),
     this.kwhRateSnapshot = const Value.absent(),
     this.profitBaseSnapshot = const Value.absent(),
+    this.quantity = const Value.absent(),
     this.isSold = const Value.absent(),
     this.isTemplate = const Value.absent(),
     this.materialCostSnapshot = const Value.absent(),
@@ -2461,6 +2504,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     required double discountPercentage,
     required double kwhRateSnapshot,
     required double profitBaseSnapshot,
+    this.quantity = const Value.absent(),
     this.isSold = const Value.absent(),
     this.isTemplate = const Value.absent(),
     required double materialCostSnapshot,
@@ -2515,6 +2559,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<double>? discountPercentage,
     Expression<double>? kwhRateSnapshot,
     Expression<double>? profitBaseSnapshot,
+    Expression<int>? quantity,
     Expression<bool>? isSold,
     Expression<bool>? isTemplate,
     Expression<double>? materialCostSnapshot,
@@ -2552,6 +2597,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       if (kwhRateSnapshot != null) 'kwh_rate_snapshot': kwhRateSnapshot,
       if (profitBaseSnapshot != null)
         'profit_base_snapshot': profitBaseSnapshot,
+      if (quantity != null) 'quantity': quantity,
       if (isSold != null) 'is_sold': isSold,
       if (isTemplate != null) 'is_template': isTemplate,
       if (materialCostSnapshot != null)
@@ -2601,6 +2647,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<double>? discountPercentage,
     Value<double>? kwhRateSnapshot,
     Value<double>? profitBaseSnapshot,
+    Value<int>? quantity,
     Value<bool>? isSold,
     Value<bool>? isTemplate,
     Value<double>? materialCostSnapshot,
@@ -2635,6 +2682,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       discountPercentage: discountPercentage ?? this.discountPercentage,
       kwhRateSnapshot: kwhRateSnapshot ?? this.kwhRateSnapshot,
       profitBaseSnapshot: profitBaseSnapshot ?? this.profitBaseSnapshot,
+      quantity: quantity ?? this.quantity,
       isSold: isSold ?? this.isSold,
       isTemplate: isTemplate ?? this.isTemplate,
       materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
@@ -2710,6 +2758,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     }
     if (profitBaseSnapshot.present) {
       map['profit_base_snapshot'] = Variable<double>(profitBaseSnapshot.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
     }
     if (isSold.present) {
       map['is_sold'] = Variable<bool>(isSold.value);
@@ -2807,6 +2858,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('discountPercentage: $discountPercentage, ')
           ..write('kwhRateSnapshot: $kwhRateSnapshot, ')
           ..write('profitBaseSnapshot: $profitBaseSnapshot, ')
+          ..write('quantity: $quantity, ')
           ..write('isSold: $isSold, ')
           ..write('isTemplate: $isTemplate, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
@@ -4648,6 +4700,7 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       required double discountPercentage,
       required double kwhRateSnapshot,
       required double profitBaseSnapshot,
+      Value<int> quantity,
       Value<bool> isSold,
       Value<bool> isTemplate,
       required double materialCostSnapshot,
@@ -4683,6 +4736,7 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<double> discountPercentage,
       Value<double> kwhRateSnapshot,
       Value<double> profitBaseSnapshot,
+      Value<int> quantity,
       Value<bool> isSold,
       Value<bool> isTemplate,
       Value<double> materialCostSnapshot,
@@ -4809,6 +4863,11 @@ class $$CalculationsTableFilterComposer
 
   ColumnFilters<double> get profitBaseSnapshot => $composableBuilder(
     column: $table.profitBaseSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5007,6 +5066,11 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isSold => $composableBuilder(
     column: $table.isSold,
     builder: (column) => ColumnOrderings(column),
@@ -5168,6 +5232,9 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
   GeneratedColumn<bool> get isSold =>
       $composableBuilder(column: $table.isSold, builder: (column) => column);
 
@@ -5326,6 +5393,7 @@ class $$CalculationsTableTableManager
                 Value<double> discountPercentage = const Value.absent(),
                 Value<double> kwhRateSnapshot = const Value.absent(),
                 Value<double> profitBaseSnapshot = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
                 Value<bool> isSold = const Value.absent(),
                 Value<bool> isTemplate = const Value.absent(),
                 Value<double> materialCostSnapshot = const Value.absent(),
@@ -5360,6 +5428,7 @@ class $$CalculationsTableTableManager
                 discountPercentage: discountPercentage,
                 kwhRateSnapshot: kwhRateSnapshot,
                 profitBaseSnapshot: profitBaseSnapshot,
+                quantity: quantity,
                 isSold: isSold,
                 isTemplate: isTemplate,
                 materialCostSnapshot: materialCostSnapshot,
@@ -5395,6 +5464,7 @@ class $$CalculationsTableTableManager
                 required double discountPercentage,
                 required double kwhRateSnapshot,
                 required double profitBaseSnapshot,
+                Value<int> quantity = const Value.absent(),
                 Value<bool> isSold = const Value.absent(),
                 Value<bool> isTemplate = const Value.absent(),
                 required double materialCostSnapshot,
@@ -5428,6 +5498,7 @@ class $$CalculationsTableTableManager
                 discountPercentage: discountPercentage,
                 kwhRateSnapshot: kwhRateSnapshot,
                 profitBaseSnapshot: profitBaseSnapshot,
+                quantity: quantity,
                 isSold: isSold,
                 isTemplate: isTemplate,
                 materialCostSnapshot: materialCostSnapshot,

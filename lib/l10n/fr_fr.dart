@@ -311,6 +311,12 @@ class FrImpl implements AppStrings {
   @override
   String get calcDetailTotal => 'Total';
   @override
+  String get detailQuantityLabel => 'Quantité de pièces';
+  @override
+  String get detailQuantitySubtitle => 'Coter par lot / volume';
+  @override
+  String get resultQuantityLabel => 'Quantité';
+  @override
   String get calcSectionMaterials => 'Matériaux';
   @override
   String get calcSectionPrinter => 'Imprimante';

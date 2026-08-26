@@ -23,6 +23,7 @@ class CalculationDraft {
     this.notes,
     this.conditions,
     this.isTemplate = false,
+    this.quantity = 1,
   });
 
   final List<MaterialInput> materials;
@@ -46,12 +47,28 @@ class CalculationDraft {
   /// True si el registro es una plantilla de trabajo frecuente (reusada para
   /// cargar configuraciones, nunca aparece en historial/dashboard).
   final bool isTemplate;
+
+  /// Cantidad de unidades del lote (>= 1). Los snapshots financieros de
+  /// [output] son UNITARIOS; el total efectivo es `unitario x quantity`.
+  final int quantity;
 }
 
 /// CRUD + queries de cotizaciones.
 ///
 /// **Atomicidad**: `create` usa una transaccion para insertar el padre
 /// (calculation) y los hijos (materials) en una sola operacion.
+///
+/// **Precision monetaria (decisión documentada)**: drift persiste los
+/// snapshots como REAL (`double`). El motor y el dominio usan `Decimal`;
+/// el redondeo solo ocurre en la frontera de persistencia y en lectura se
+/// normaliza con `toStringAsFixed(2)` antes del `Decimal.parse`. Con los
+/// rangos de la app (miles de Bs por cotizacion) el error de double es
+/// < 0.005 — indetectable a 2 decimales. Migrar a TEXT/centavos es la
+/// salida si algún día se suman >10^11 Bs acumulados.
+///
+/// **Cantidad (lotes, v8)**: `quantity` >= 1. Los snapshots financieros y
+/// de materiales son UNITARIOS; todas las queries agregadas multiplican
+/// por `quantity` para reportar totales efectivos.
 class CalculationRepository {
   const CalculationRepository(this._db);
 
@@ -139,6 +156,7 @@ class CalculationRepository {
             minimumChargeAppliedSnapshot: 0,
             effectiveTotalSnapshot: o.totalFinal.toDouble(),
             totalPriceSnapshot: o.totalPrice.toDouble(),
+            quantity: Value(draft.quantity < 1 ? 1 : draft.quantity),
             laborRateSnapshot: 0,
             postProcessRateSnapshot: 0,
             failureRateSnapshot: 0,
@@ -247,6 +265,7 @@ class CalculationRepository {
             minimumChargeAppliedSnapshot: source.minimumChargeAppliedSnapshot,
             effectiveTotalSnapshot: source.effectiveTotalSnapshot,
             totalPriceSnapshot: source.totalPriceSnapshot,
+            quantity: Value(source.quantity),
             laborRateSnapshot: source.laborRateSnapshot,
             postProcessRateSnapshot: source.postProcessRateSnapshot,
             failureRateSnapshot: source.failureRateSnapshot,
@@ -378,32 +397,33 @@ class CalculationRepository {
     return (_db.delete(_db.calculations)..where((c) => c.id.equals(id))).go();
   }
 
-  /// Total cotizado (suma de totalPriceSnapshot de todas las cotizaciones,
-  /// excluye plantillas). Opcionalmente filtrado por rango (`created_at`).
+  /// Total cotizado efectivo (suma `totalPriceSnapshot * quantity` de todas
+  /// las cotizaciones, excluye plantillas). Opcionalmente filtrado por rango
+  /// (`created_at`).
   Future<Decimal> totalQuoted({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
+          'SELECT COALESCE(SUM(total_price_snapshot * quantity), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
           variables: _sinceVariables(since),
         )
         .getSingle();
     return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
-  /// Total ganado (suma de totalPriceSnapshot donde isSold=true, excluye
-  /// plantillas). Opcionalmente filtrado por rango.
+  /// Total ganado efectivo (`totalPriceSnapshot * quantity` donde
+  /// isSold=true, excluye plantillas). Opcionalmente filtrado por rango.
   Future<Decimal> totalSold({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(total_price_snapshot), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
+          'SELECT COALESCE(SUM(total_price_snapshot * quantity), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
           variables: _sinceVariables(since),
         )
         .getSingle();
     return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
-  /// Ganancia total de cotizaciones vendidas (suma profitAmountSnapshot,
-  /// is_sold=1, excluye plantillas).
+  /// Ganancia total de cotizaciones vendidas (suma
+  /// `profit_amount_snapshot * quantity`, is_sold=1, excluye plantillas).
   ///
   /// NOTA (legacy): los registros historicos creados antes de que existiera
   /// el snapshot guardan `profit_amount_snapshot` como 0, asi que la
@@ -411,21 +431,21 @@ class CalculationRepository {
   Future<Decimal> totalProfitSold({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(profit_amount_snapshot), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
+          'SELECT COALESCE(SUM(profit_amount_snapshot * quantity), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
           variables: _sinceVariables(since),
         )
         .getSingle();
     return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
-  /// Ganancia total cotizada (suma profitAmountSnapshot de todas las
-  /// cotizaciones, excluye plantillas).
+  /// Ganancia total cotizada (suma `profit_amount_snapshot * quantity`,
+  /// excluye plantillas).
   ///
   /// Misma NOTA legacy que [totalProfitSold]: 0 en registros antiguos.
   Future<Decimal> totalProfitQuoted({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(profit_amount_snapshot), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
+          'SELECT COALESCE(SUM(profit_amount_snapshot * quantity), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
           variables: _sinceVariables(since),
         )
         .getSingle();
@@ -461,14 +481,15 @@ class CalculationRepository {
     return result.read(countExpression) ?? 0;
   }
 
-  /// Totales agrupados por mes (YYYY-MM).
+  /// Totales efectivos agrupados por mes (YYYY-MM): `total_price_snapshot *
+  /// quantity` (cotizado) y lo mismo donde is_sold=1 (vendido).
   /// Ordenados por mes ascendente. Maneja DB vacia (retorna []) y
   /// created_at null (filtra esos rows).
   Future<List<MonthlyTotal>> monthlyTotals({DateTime? since}) async {
     final rows = await _db.customSelect('''
       SELECT COALESCE(strftime('%Y-%m', created_at), 'desconocido') AS month,
-             COALESCE(SUM(total_price_snapshot), 0) AS quoted,
-             COALESCE(SUM(CASE WHEN is_sold = 1 THEN total_price_snapshot ELSE 0 END), 0) AS sold
+             COALESCE(SUM(total_price_snapshot * quantity), 0) AS quoted,
+             COALESCE(SUM(CASE WHEN is_sold = 1 THEN total_price_snapshot * quantity ELSE 0 END), 0) AS sold
       FROM calculations
       WHERE created_at IS NOT NULL AND is_template = 0${_sinceSql(since)}
       GROUP BY month
@@ -491,7 +512,7 @@ class CalculationRepository {
     final rows = await _db
         .customSelect(
           '''
-      SELECT cm.label, COUNT(*) AS cnt, COALESCE(SUM(cm.weight_grams), 0) AS total_g
+      SELECT cm.label, COUNT(*) AS cnt, COALESCE(SUM(cm.weight_grams * c.quantity), 0) AS total_g
       FROM calculation_materials cm
       JOIN calculations c ON c.id = cm.calculation_id
       WHERE cm.label IS NOT NULL AND cm.label != '' AND c.is_template = 0${_sinceSql(since, column: 'c.created_at')}
@@ -520,7 +541,7 @@ class CalculationRepository {
         .customSelect(
           '''
       SELECT client_name AS label,
-             COALESCE(SUM(total_price_snapshot), 0) AS total,
+             COALESCE(SUM(total_price_snapshot * quantity), 0) AS total,
              COUNT(*) AS cnt
       FROM calculations
       WHERE is_template = 0
@@ -542,25 +563,27 @@ class CalculationRepository {
     }).toList();
   }
 
-  /// Horas totales de impresion cotizadas (excluye plantillas).
+  /// Horas totales de impresion cotizadas, efectivas
+  /// (`total_hours * quantity`, excluye plantillas).
   ///
   /// Horas NO es dinero, asi que se permite `double` aca (mismo criterio
   /// que [monthlyTotals] usa para horas, excepcion al non-negotiable).
   Future<double> totalPrintHours({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(total_hours), 0) AS hours FROM calculations WHERE is_template = 0${_sinceSql(since)}',
+          'SELECT COALESCE(SUM(total_hours * quantity), 0) AS hours FROM calculations WHERE is_template = 0${_sinceSql(since)}',
           variables: _sinceVariables(since),
         )
         .getSingle();
     return result.read<double>('hours');
   }
 
-  /// Gramos totales de filamento cotizado (suma weight_grams de materiales
-  /// de cotizaciones no plantilla). Pro analytics.
+  /// Gramos totales de filamento cotizado (suma
+  /// `weight_grams * quantity` de materiales de cotizaciones no plantilla).
+  /// Pro analytics.
   Future<Decimal> totalFilamentGrams({DateTime? since}) async {
     final result = await _db.customSelect('''
-      SELECT COALESCE(SUM(cm.weight_grams), 0) AS total_g
+      SELECT COALESCE(SUM(cm.weight_grams * c.quantity), 0) AS total_g
       FROM calculation_materials cm
       JOIN calculations c ON c.id = cm.calculation_id
       WHERE c.is_template = 0${_sinceSql(since, column: 'c.created_at')}
@@ -593,6 +616,11 @@ class CalculationRepository {
 
   /// Extrae filamentId numerico del label si tiene formato "id:N".
   /// En caso contrario, devuelve null (proforma rapida).
+  ///
+  /// Protocolo interno: el selector de catalogo construye el label como
+  /// `id:<filamentId>`. Un material manual cuyo nombre empiece por "id:"
+  /// seguido de digits colisionaria con este protocolo — caso aceptado,
+  /// el efecto es solo un filamentId soft-FK incorrecto en la fila.
   int? _filamentIdFromLabel(String label) {
     if (label.startsWith('id:')) {
       final idStr = label.substring(3);

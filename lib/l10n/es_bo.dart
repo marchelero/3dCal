@@ -207,6 +207,9 @@ class EsBO {
   static String get calcDetailProfit => _impl.calcDetailProfit;
   static String get calcDetailMinimumCharge => _impl.calcDetailMinimumCharge;
   static String get calcDetailTotal => _impl.calcDetailTotal;
+  static String get detailQuantityLabel => _impl.detailQuantityLabel;
+  static String get detailQuantitySubtitle => _impl.detailQuantitySubtitle;
+  static String get resultQuantityLabel => _impl.resultQuantityLabel;
   static String get calcEmptyHint => _impl.calcEmptyHint;
   static String get calcSectionMaterials => _impl.calcSectionMaterials;
   static String get calcSectionPrinter => _impl.calcSectionPrinter;
@@ -962,6 +965,12 @@ class EsImpl implements AppStrings {
   String get calcDetailMinimumCharge => 'Cargo minimo';
   @override
   String get calcDetailTotal => 'Total';
+  @override
+  String get detailQuantityLabel => 'Cantidad de Piezas';
+  @override
+  String get detailQuantitySubtitle => 'Cotizar por lote / volumen';
+  @override
+  String get resultQuantityLabel => 'Cantidad';
   @override
   String get calcEmptyHint =>
       'Completa peso, filamento y horas para ver el precio';

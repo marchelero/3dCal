@@ -64,6 +64,13 @@ class Calculations extends Table {
   /// Snapshot de la ganancia base al guardar.
   RealColumn get profitBaseSnapshot => real()();
 
+  /// Cantidad de unidades cotizadas (lote). Default 1.
+  ///
+  /// Los snapshots financieros y los materiales se guardan **unitarios**; el
+  /// total efectivo de la cotizacion es `unitario x quantity` (multiplicacion
+  /// aplicada en lectura: UI, exports y queries agregadas del dashboard).
+  IntColumn get quantity => integer().withDefault(const Constant(1))();
+
   /// Marca como vendida (alimenta dashboard).
   BoolColumn get isSold => boolean().withDefault(const Constant(false))();
 

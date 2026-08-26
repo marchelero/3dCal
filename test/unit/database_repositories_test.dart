@@ -492,6 +492,63 @@ void main() {
         closeTo(2.5, 0.0001),
       );
     });
+
+    group('CalculationRepository - Cantidad (lotes N)', () {
+      test('quantity se persiste y countAll cuenta 1 fila', () async {
+        await calculations.create(_simpleDraft('Lote', null, null, null, 3));
+        expect(await calculations.countAll(), 1);
+        final row = (await calculations.listAll()).single;
+        expect(row.quantity, 3);
+      });
+
+      test(
+        'totalQuoted multiplica por cantidad (unitario 15 x 3 = 45)',
+        () async {
+          await calculations.create(_simpleDraft('Lote', null, null, null, 3));
+          expect(await calculations.totalQuoted(), _d('45'));
+        },
+      );
+
+      test('stats Pro escalan por cantidad', () async {
+        await calculations.create(
+          _simpleDraft('Lote', 'Cliente Lote', null, null, 3),
+        );
+
+        // Horas: 2.5 unitarias x 3 = 7.5
+        expect(await calculations.totalPrintHours(), closeTo(7.5, 0.0001));
+        // Gramos: 100g x 3 = 300 (Decimal)
+        expect(await calculations.totalFilamentGrams(), _d('300'));
+
+        final clients = await calculations.topClients();
+        expect(clients, hasLength(1));
+        expect(clients.first.label, 'Cliente Lote');
+        expect(clients.first.total, _d('45'));
+
+        final materials = await calculations.topMaterials();
+        expect(materials, hasLength(1));
+        expect(materials.first.count, 1); // 1 fila, no 3
+        expect(materials.first.totalWeightGrams, _d('300'));
+
+        final months = await calculations.monthlyTotals();
+        expect(months, hasLength(1));
+        expect(months.first.quoted, _d('45'));
+      });
+
+      test('duplicate conserva la quantity del original', () async {
+        await calculations.create(
+          _simpleDraft('Original', null, null, null, 4),
+        );
+        final dup = (await calculations.listAll()).last;
+        expect(dup.quantity, 4);
+      });
+
+      test('quantity < 1 se clampea a 1 al insertar', () async {
+        await calculations.create(_simpleDraft('Cero', null, null, null, 0));
+        final row = (await calculations.listAll()).single;
+        expect(row.quantity, 1);
+        expect(await calculations.totalQuoted(), _d('15')); // unitario
+      });
+    });
   });
 }
 
@@ -504,6 +561,7 @@ CalculationDraft _simpleDraft(
   String? clientName,
   String? notes,
   String? conditions,
+  int quantity = 1,
 ]) {
   final materials = [
     MaterialInput(
@@ -535,6 +593,7 @@ CalculationDraft _simpleDraft(
     clientName: clientName,
     notes: notes,
     conditions: conditions,
+    quantity: quantity,
   );
 }
 

@@ -97,9 +97,9 @@ void main() {
 
       expect(find.text('FALTA COMPLETAR'), findsOneWidget);
       expect(find.textContaining('Completa peso'), findsOneWidget);
-      // No muestra chevron up ni "Ver cotizacion" en estado empty.
+      // No muestra chevron ni "Ver cotizacion" en estado empty.
       expect(find.text('VER COTIZACIÓN'), findsNothing);
-      expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsNothing);
+      expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
     });
 
     testWidgets('muestra total + chevron cuando onTap provisto', (
@@ -118,7 +118,8 @@ void main() {
 
       expect(find.text(r'$ 36,00'), findsOneWidget);
       expect(find.text('VER COTIZACIÓN'), findsOneWidget);
-      expect(find.byIcon(Icons.keyboard_arrow_up_rounded), findsOneWidget);
+      // Redesign: chevron right (no arrow up).
+      expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
       // Empty hint no presente.
       expect(find.text('FALTA COMPLETAR'), findsNothing);
 
