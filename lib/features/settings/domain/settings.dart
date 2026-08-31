@@ -80,8 +80,8 @@ class Settings {
 
   /// Defaults del MVP. Usado cuando la tabla `settings` esta vacia.
   static final Settings defaults = Settings(
-    profitBase: Decimal.fromInt(200),
-    kwhRate: Decimal.parse('0.7'),
+    profitBase: Decimal.zero,
+    kwhRate: Decimal.zero,
     companyName: '3dCalc',
     companyLogoBase64: null,
     laborRate: Decimal.zero,

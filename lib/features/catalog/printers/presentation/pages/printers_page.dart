@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../../core/database/app_database.dart';
 import '../../../../../core/theme/app_radii.dart';
 import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../features/entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
@@ -15,6 +16,9 @@ import '../../../../../shared/widgets/empty_view.dart';
 import '../../../../../shared/widgets/error_view.dart';
 import '../../../../../shared/widgets/skeleton_widget.dart';
 import '../notifiers/printers_notifier.dart';
+
+/// Límite de impresoras para usuarios Free.
+const int _kFreePrinterLimit = 2;
 
 /// Catalogo de impresoras con busqueda y cards.
 class PrintersPage extends ConsumerStatefulWidget {
@@ -38,15 +42,26 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
   Widget build(BuildContext context) {
     ref.watch(localeProvider);
     final async = ref.watch(printersNotifierProvider);
+    final isPro = ref.watch(isProProvider);
+    final printerCount = async.value?.length ?? 0;
+    final atLimit = !isPro && printerCount >= _kFreePrinterLimit;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(EsBO.printerTitle),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: EsBO.printerNewTooltip,
-            onPressed: () => context.push('/settings/printers/new'),
-          ),
+          if (atLimit)
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Límite Free ($_kFreePrinterLimit impresoras)',
+              onPressed: () => _showLimitSnack(context),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: EsBO.printerNewTooltip,
+              onPressed: () => context.push('/settings/printers/new'),
+            ),
         ],
       ),
       body: Column(
@@ -126,6 +141,18 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
         ],
       ),
     );
+  }
+
+  void _showLimitSnack(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        AppSnackBar.info(
+          context,
+          'Límite de $_kFreePrinterLimit impresoras en modo Free. '
+          'Desbloquea Pro para agregar más.',
+        ),
+      );
   }
 }
 

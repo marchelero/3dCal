@@ -525,7 +525,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                       Text(
                         EsBO.calcSheetTitle.toUpperCase(),
                         style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 2,
                           color: theme.colorScheme.onSurface,
                         ),

@@ -20,6 +20,7 @@ import '../../../../l10n/es_bo.dart';
 /// - [matches]: retorna `true` si el item matchea el query (ya en lowercase).
 /// - [itemBuilder]: construye el ListTile del item. Recibe `select` para
 ///   elegir el item (hace pop con el valor) y `context`.
+/// - [footer]: widget opcional al final de la lista (ej: botón "Crear nuevo").
 Future<T?> showSelectorDialog<T>({
   required BuildContext context,
   required String title,
@@ -28,6 +29,7 @@ Future<T?> showSelectorDialog<T>({
   required bool Function(T item, String query) matches,
   required Widget Function(BuildContext context, T item, void Function() select)
   itemBuilder,
+  Widget? footer,
 }) {
   return showDialog<T>(
     context: context,
@@ -68,21 +70,25 @@ Future<T?> showSelectorDialog<T>({
                     constraints: BoxConstraints(
                       maxHeight: math.min(480, viewport.height * 0.72),
                     ),
-                    child: filtered.isEmpty
+                    child: filtered.isEmpty && footer == null
                         ? Padding(
                             padding: const EdgeInsets.all(24),
                             child: Center(child: Text(EsBO.commonNoResults)),
                           )
                         : ListView.builder(
                             shrinkWrap: true,
-                            itemCount: filtered.length,
+                            itemCount: filtered.length + (footer != null ? 1 : 0),
                             itemBuilder: (_, i) {
-                              final item = filtered[i];
-                              return itemBuilder(
-                                context,
-                                item,
-                                () => select(item),
-                              );
+                              if (i < filtered.length) {
+                                final item = filtered[i];
+                                return itemBuilder(
+                                  context,
+                                  item,
+                                  () => select(item),
+                                );
+                              }
+                              // Footer item (botón crear nuevo, etc.)
+                              return footer!;
                             },
                           ),
                   ),

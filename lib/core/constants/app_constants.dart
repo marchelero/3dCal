@@ -25,13 +25,11 @@ const String kThousandsSeparator = '.';
 /// Separador decimal: "," (formato es_BO).
 const String kDecimalSeparator = ',';
 
-/// Ganancia base global por defecto (200%).
-/// Cada 1% de descuento comercial reduce este margen en 2 puntos.
-const double kDefaultProfitBasePercentage = 200;
+/// Ganancia base global por defecto (vacia para que el usuario la defina).
+const double kDefaultProfitBasePercentage = 0;
 
-/// Tarifa electrica por defecto en BOB/kWh.
-/// Rango residencial Bolivia: 0.60 - 0.80 BOB/kWh.
-const double kDefaultKwhRate = 0.7;
+/// Tarifa electrica por defecto (vacia para que el usuario la defina).
+const double kDefaultKwhRate = 0;
 
 /// Tarifa de mano de obra por defecto (BOB/hora).
 /// Costo de operador/tecnico por hora de impresion.
@@ -53,9 +51,9 @@ const double kDefaultMarkupOnMaterials = 0;
 /// Defensive limit (no es limitacion del motor).
 const int kMaxMaterialsPerCalculation = 10;
 
-/// Limite maximo de descuento permitido (50%).
-/// Por encima de esto la penalizacion 2x vaciaria la ganancia.
-const int kMaxDiscountPercentage = 50;
+/// Limite maximo de descuento permitido (100%).
+/// Un descuento de 100% deja el total en 0 (gratis).
+const int kMaxDiscountPercentage = 100;
 
 /// Precision decimal para formateo final (2 lugares).
 const int kCurrencyDecimalPlaces = 2;

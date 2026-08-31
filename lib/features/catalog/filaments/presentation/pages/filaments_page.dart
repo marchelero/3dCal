@@ -8,6 +8,7 @@ import '../../../../../core/database/app_database.dart';
 import '../../../../../core/money/currency_settings_provider.dart';
 import '../../../../../core/theme/app_radii.dart';
 import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../features/entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
@@ -17,6 +18,9 @@ import '../../../../../shared/widgets/empty_view.dart';
 import '../../../../../shared/widgets/error_view.dart';
 import '../../../../../shared/widgets/skeleton_widget.dart';
 import '../notifiers/filaments_notifier.dart';
+
+/// Límite de filamentos para usuarios Free.
+const int _kFreeFilamentLimit = 5;
 
 /// Catalogo de filamentos con busqueda y cards.
 class FilamentsPage extends ConsumerStatefulWidget {
@@ -40,15 +44,26 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
   Widget build(BuildContext context) {
     ref.watch(localeProvider);
     final async = ref.watch(filamentsNotifierProvider);
+    final isPro = ref.watch(isProProvider);
+    final filamentCount = async.value?.length ?? 0;
+    final atLimit = !isPro && filamentCount >= _kFreeFilamentLimit;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(EsBO.filamentTitle),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: EsBO.filamentNewTooltip,
-            onPressed: () => context.push('/settings/filaments/new'),
-          ),
+          if (atLimit)
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Límite Free ($_kFreeFilamentLimit filamentos)',
+              onPressed: () => _showLimitSnack(context),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: EsBO.filamentNewTooltip,
+              onPressed: () => context.push('/settings/filaments/new'),
+            ),
         ],
       ),
       body: Column(
@@ -128,6 +143,18 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
         ],
       ),
     );
+  }
+
+  void _showLimitSnack(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        AppSnackBar.info(
+          context,
+          'Límite de $_kFreeFilamentLimit filamentos en modo Free. '
+          'Desbloquea Pro para agregar más.',
+        ),
+      );
   }
 }
 

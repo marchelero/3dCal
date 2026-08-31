@@ -24,10 +24,13 @@ import '../notifiers/filaments_notifier.dart';
 /// - Switch "Marcar como default". En modo edicion, refleja estado actual.
 /// - Save: valida localmente (no vacio, > 0) y delega al notifier.
 class FilamentFormPage extends ConsumerStatefulWidget {
-  const FilamentFormPage({super.key, this.existing});
+  const FilamentFormPage({super.key, this.existing, this.onSaved});
 
   /// Si se pasa, la pagina entra en modo edicion y pre-rellena los campos.
   final Filament? existing;
+  
+  /// Callback opcional que se ejecuta al guardar con exito. Si es null, hace pop.
+  final VoidCallback? onSaved;
 
   @override
   ConsumerState<FilamentFormPage> createState() => _FilamentFormPageState();
@@ -126,7 +129,13 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
           asDefault: _isDefault,
         );
       }
-      if (mounted) context.pop();
+      if (mounted) {
+        if (widget.onSaved != null) {
+          widget.onSaved!.call();
+        } else {
+          context.pop();
+        }
+      }
     } catch (e) {
       debugPrint('Filament save failed: $e');
       if (mounted) {

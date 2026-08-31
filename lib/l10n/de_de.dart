@@ -490,6 +490,14 @@ class DeImpl implements AppStrings {
   @override
   String get calcDialogConditionsHelper =>
       'G\u00fcltigkeit, Zahlung, Garantie\u2026';
+  @override
+  String get calcDialogSaveAsTemplate =>
+      'Auch als Vorlage speichern, um sie wiederzuverwenden';
+  @override
+  String get calcDialogSaveSubtitle =>
+      'Fülle die optionalen Angaben für dein Angebot aus.';
+  @override
+  String get calcDialogDetails => 'Angebotsdetails';
 
   @override
   String get calcTemplatesTitle => 'Vorlagen';
@@ -584,8 +592,7 @@ class DeImpl implements AppStrings {
   @override
   String get brandSelectorOther => 'Andere ...';
   @override
-  String get brandSelectorHint =>
-      'Marke auswählen oder Andere wählen, um sie einzugeben';
+  String get brandSelectorHint => 'Marke auswählen';
   @override
   String get brandSelectorManualHelper => 'Markennamen eingeben';
   @override
@@ -802,6 +809,12 @@ class DeImpl implements AppStrings {
   String get configPrinterSaved => 'Drucker registriert';
   @override
   String get configFilamentSaved => 'Filament hinzugefügt';
+  @override
+  String get configRequirementPending =>
+      'Registriere mindestens einen Drucker und ein Filament, um fortzufahren.';
+  @override
+  String get configRequirementDone =>
+      'Fertig. Drucker und Filament konfiguriert.';
 
   // === Feature gates (T14) ===
   @override
@@ -983,11 +996,11 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   @override
   String get calcPrinterPrefix => 'Drucker: ';
   @override
-  String get calcChangePrinter => 'Drucker ändern';
+  String get calcChangePrinter => 'Drucker';
   @override
   String get calcSearchPrinter => 'Drucker suchen ...';
   @override
-  String get calcSelectFilament => 'Filament auswählen';
+  String get calcSelectFilament => 'Filament';
   @override
   String get calcSearchFilament => 'Filament suchen ...';
 

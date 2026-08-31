@@ -22,7 +22,6 @@ import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
-import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
@@ -93,7 +92,7 @@ class _SettingsBody extends ConsumerWidget {
         padding: EdgeInsets.zero,
         shrinkWrap: true,
         children: [
-          // ── HEADER HEROICO (full width) ──
+          // ── CABECERA (bloque de titulo del plano) ──
           const _SettingsHeader(),
           const SizedBox(height: AppSpacing.xxl),
 
@@ -101,115 +100,24 @@ class _SettingsBody extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (ref.watch(isProProvider)) ...[
-                  _ProStatusCard(canRestore: canRestore),
-                  const SizedBox(height: AppSpacing.xl),
+                  _ProBadgePill(canRestore: canRestore),
+                  const SizedBox(height: AppSpacing.xxl),
                 ],
-                // ── Parametros globales ──
-                _SettingsSection(
-                  icon: Icons.tune_rounded,
-                  title: EsBO.settingsGlobalParams,
-                  accentColor: color.primary,
-                  children: [
-                    _AutoSaveField(
-                      label: EsBO.settingsProfitBase,
-                      helper: EsBO.settingsProfitBaseHelper,
-                      initialValue: settings.profitBase.toString(),
-                      allowDecimals: false,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return EsBO.commonRequired;
-                        }
-                        final n = int.tryParse(v.trim());
-                        if (n == null) return EsBO.commonInvalidNumber;
-                        if (n < 0 || n > 1000) {
-                          return EsBO.settingsProfitBaseRange;
-                        }
-                        return null;
-                      },
-                      onSave: (v) {
-                        ref
-                            .read(settingsNotifierProvider.notifier)
-                            .updateProfitBase(v);
-                        _showSavedSnack(context);
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _AutoSaveField(
-                      label: EsBO.settingsKwhRate(currency.symbol),
-                      helper: EsBO.settingsKwhRateHelper,
-                      initialValue: settings.kwhRate.toString(),
-                      allowDecimals: true,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return EsBO.commonRequired;
-                        }
-                        final n = Decimal.tryParse(
-                          v.trim().replaceAll(',', '.'),
-                        );
-                        if (n == null) return EsBO.commonInvalidNumber;
-                        if (n < Decimal.parse('0.10') ||
-                            n > Decimal.parse('5.00')) {
-                          return EsBO.settingsKwhRateRange;
-                        }
-                        return null;
-                      },
-                      onSave: (v) {
-                        ref
-                            .read(settingsNotifierProvider.notifier)
-                            .updateKwhRate(v);
-                        _showSavedSnack(context);
-                      },
-                    ),
-                  ],
-                ),
-                // ── Apariencia ──
-                _SettingsSection(
-                  icon: Icons.palette_rounded,
-                  title: EsBO.settingsAppearance,
-                  accentColor: color.secondary,
-                  children: [
-                    Text(
-                      EsBO.settingsTheme,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ThemeModeSelector(),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
 
-                // ── Moneda ──
-                _SettingsSection(
-                  icon: Icons.attach_money_rounded,
-                  title: EsBO.settingsCurrency,
-                  accentColor: color.primary,
-                  children: [
-                    _CurrencyPicker(),
-                    const SizedBox(height: AppSpacing.lg),
-                    _LocalePicker(),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
-
-                // ── Empresa ──
-                _SettingsSection(
+                // ── Empresa (arriba) ──
+                _GroupLabel(
                   icon: Icons.business_rounded,
-                  title: EsBO.settingsCompany,
+                  title: EsBO.settingsCompany.toUpperCase(),
+                  trailing: locked ? ProBadge(accentColor: color.tertiary) : null,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _SettingsCard(
                   accentColor: color.tertiary,
+                  divider: true,
                   children: [
-                    // T12 gate: badge "PRO" visible cuando el tier es
-                    // free y el entitlement esta resuelto. ProBadge
-                    // compartido (lib/shared/widgets/pro_badge.dart),
-                    // color tertiary (mismo accent de la seccion Empresa).
-                    if (locked)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: ProBadge(accentColor: color.tertiary),
-                      ),
                     _CompanyNameField(
                       initialValue: settings.companyName,
                       onSave: (value) {
@@ -223,170 +131,241 @@ class _SettingsBody extends ConsumerWidget {
                     _LogoPicker(currentLogoBase64: settings.companyLogoBase64),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // ── Costos y parametros (Ganancia + Electricidad) ──
+                _GroupLabel(
+                  icon: Icons.tune_rounded,
+                  title: EsBO.settingsGlobalParams,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _StatParamTile(
+                  icon: Icons.percent_rounded,
+                  title: EsBO.settingsProfitBase,
+                  helper: EsBO.settingsProfitBaseHelper,
+                  accent: color.primary,
+                  initialValue: settings.profitBase == Decimal.zero
+                      ? ''
+                      : settings.profitBase.toString(),
+                  allowDecimals: false,
+                  sliderMin: 0,
+                  sliderMax: 500,
+                  sliderDivisions: 50,
+                  suffix: '%',
+                  sliderLeadingIcon: Icons.trending_down_rounded,
+                  sliderTrailingIcon: Icons.trending_up_rounded,
+                  showProfitPreview: true,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return EsBO.commonRequired;
+                    }
+                    final n = int.tryParse(v.trim());
+                    if (n == null) return EsBO.commonInvalidNumber;
+                    if (n < 0 || n > 1000) {
+                      return EsBO.settingsProfitBaseRange;
+                    }
+                    return null;
+                  },
+                  onSave: (v) {
+                    ref
+                        .read(settingsNotifierProvider.notifier)
+                        .updateProfitBase(v);
+                    _showSavedSnack(context);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                _StatParamTile(
+                  icon: Icons.bolt_rounded,
+                  title: EsBO.settingsKwhRate(currency.symbol),
+                  helper: EsBO.settingsKwhRateHelper,
+                  accent: color.tertiary,
+                  initialValue: settings.kwhRate == Decimal.zero
+                      ? ''
+                      : settings.kwhRate.toString(),
+                  allowDecimals: true,
+                  sliderMin: 0,
+                  sliderMax: 5,
+                  sliderDivisions: 50,
+                  suffix: '${currency.symbol}/kWh',
+                  sliderLeadingIcon: Icons.eco_rounded,
+                  sliderTrailingIcon: Icons.bolt,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return EsBO.commonRequired;
+                    }
+                    final n = Decimal.tryParse(
+                      v.trim().replaceAll(',', '.'),
+                    );
+                    if (n == null) return EsBO.commonInvalidNumber;
+                    if (n < Decimal.zero ||
+                        n > Decimal.parse('5.00')) {
+                      return EsBO.settingsKwhRateRange;
+                    }
+                    return null;
+                  },
+                  onSave: (v) {
+                    ref
+                        .read(settingsNotifierProvider.notifier)
+                        .updateKwhRate(v);
+                    _showSavedSnack(context);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xxl),
 
                 // ── Catalogos ──
-                _SettingsSection(
+                const _GroupLabel(
                   icon: Icons.inventory_2_rounded,
-                  title: EsBO.settingsCatalogos,
+                  titleKey: 'CATÁLOGOS',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _SettingsCard(
                   accentColor: color.secondary,
                   children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: AvatarIcon(
-                          icon: Icons.label_rounded,
-                          background: color.secondaryContainer,
-                          foreground: color.onSecondaryContainer,
-                        ),
-                        title: Text(EsBO.settingsFilamentos),
-                        subtitle: Text(EsBO.settingsManageFilaments),
-                        trailing: Icon(
-                          Icons.chevron_right_rounded,
-                          color: color.onSurfaceVariant,
-                        ),
-                        onTap: () => context.push('/settings/filaments'),
-                      ),
+                    Builder(
+                      builder: (ctx) {
+                        final filaments = ref.watch(filamentsNotifierProvider).value ?? [];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: _IconBadge(
+                            icon: Icons.label_rounded,
+                            background: color.secondaryContainer,
+                            foreground: color.onSecondaryContainer,
+                          ),
+                          title: Text(EsBO.settingsFilamentos),
+                          subtitle: Text('${filaments.length} filamentos'),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: color.onSurfaceVariant,
+                          ),
+                          onTap: () => context.push('/settings/filaments'),
+                        );
+                      },
                     ),
-                    const Divider(height: 1, indent: 52),
-                    Material(
-                      color: Colors.transparent,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: AvatarIcon(
-                          icon: Icons.print_rounded,
-                          background: color.tertiaryContainer,
-                          foreground: color.onTertiaryContainer,
-                        ),
-                        title: Text(EsBO.settingsImpresoras),
-                        subtitle: Text(EsBO.settingsManagePrinters),
-                        trailing: Icon(
-                          Icons.chevron_right_rounded,
-                          color: color.onSurfaceVariant,
-                        ),
-                        onTap: () => context.push('/settings/printers'),
-                      ),
+                    const _CardDivider(),
+                    Builder(
+                      builder: (ctx) {
+                        final printers = ref.watch(printersNotifierProvider).value ?? [];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: _IconBadge(
+                            icon: Icons.print_rounded,
+                            background: color.tertiaryContainer,
+                            foreground: color.onTertiaryContainer,
+                          ),
+                          title: Text(EsBO.settingsImpresoras),
+                          subtitle: Text('${printers.length} impresoras'),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: color.onSurfaceVariant,
+                          ),
+                          onTap: () => context.push('/settings/printers'),
+                        );
+                      },
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xxl),
 
-                // ── Backup ──
-                const _BackupSection(),
-                const SizedBox(height: AppSpacing.xl),
-
-                if (canRestore) ...[
-                  // ── Restaurar compras (T11) ──
-                  _SettingsSection(
-                    icon: Icons.restore_rounded,
-                    title: EsBO.settingsProRestorePurchase,
-                    accentColor: color.primary,
-                    children: [_RestoreButton()],
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
-
-                // ── Acerca de ──
-                _SettingsSection(
-                  icon: Icons.info_outline_rounded,
-                  title: EsBO.settingsAbout,
-                  accentColor: color.tertiary,
+                // ── Moneda e idioma ──
+                const _GroupLabel(
+                  icon: Icons.attach_money_rounded,
+                  titleKey: 'MONEDA E IDIOMA',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _SettingsCard(
+                  accentColor: color.primary,
+                  divider: true,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                color.primary,
-                                color.primary.withValues(alpha: 0.7),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(AppRadii.xl),
-                            boxShadow: [
-                              BoxShadow(
-                                color: color.primary.withValues(alpha: 0.25),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Image.asset(
-                            'assets/images/3dlogo.png',
-                            width: 26,
-                            height: 26,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              EsBO.appName,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'v$kAppVersion',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: color.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    _CurrencyPicker(),
                     const SizedBox(height: AppSpacing.lg),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lock_outline_rounded,
-                          size: 16,
-                          color: color.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            EsBO.settingsPrivacy,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: color.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _LocalePicker(),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xxl),
 
-                // ── Legal (T22) ──
-                _SettingsSection(
-                  icon: Icons.gavel_rounded,
-                  title: EsBO.settingsLegal.toUpperCase(),
-                  accentColor: color.tertiary,
+                // ── Apariencia ──
+                const _GroupLabel(
+                  icon: Icons.palette_rounded,
+                  titleKey: 'APARIENCIA',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _SettingsCard(
+                  accentColor: color.secondary,
+                  divider: true,
                   children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: () => context.push('/legal/privacy'),
-                        child: Text(EsBO.paywallPrivacyPolicy),
+                    Text(
+                      EsBO.settingsTheme,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: () => context.push('/legal/terms'),
-                        child: Text(EsBO.paywallTermsOfService),
+                    _ThemeModeSelector(),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // ── Datos (backup) ──
+                const _GroupLabel(
+                  icon: Icons.backup_rounded,
+                  titleKey: 'TUS DATOS',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const _BackupSection(),
+                const SizedBox(height: AppSpacing.xxl),
+
+                if (canRestore) ...[
+                  // ── Restaurar compras (T11) ──
+                  const _GroupLabel(
+                    icon: Icons.restore_rounded,
+                    titleKey: 'CUENTA',
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _SettingsCard(
+                    accentColor: color.primary,
+                    children: [_RestoreButton()],
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+                ],
+
+                // ── Acerca de + Legal ──
+                const _GroupLabel(
+                  icon: Icons.info_outline_rounded,
+                  titleKey: 'ACERCA DE',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _SettingsCard(
+                  accentColor: color.tertiary,
+                  divider: true,
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: _IconBadge(
+                        icon: Icons.privacy_tip_rounded,
+                        background: color.primaryContainer,
+                        foreground: color.onPrimaryContainer,
                       ),
+                      title: Text(EsBO.paywallPrivacyPolicy),
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: color.onSurfaceVariant,
+                      ),
+                      onTap: () => context.push('/legal/privacy'),
+                    ),
+                    const _CardDivider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: _IconBadge(
+                        icon: Icons.gavel_rounded,
+                        background: color.secondaryContainer,
+                        foreground: color.onSecondaryContainer,
+                      ),
+                      title: Text(EsBO.paywallTermsOfService),
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: color.onSurfaceVariant,
+                      ),
+                      onTap: () => context.push('/legal/terms'),
                     ),
                   ],
                 ),
@@ -408,9 +387,11 @@ void _showSavedSnack(BuildContext context) {
 }
 
 // ─────────────────────────────────────────────────
-// HEADER — gradiente heroico full-width, sin AppBar
+// HEADER — bloque de titulo del plano
 // ─────────────────────────────────────────────────
 
+/// Cabecera de ajustes al estilo "bloque de titulo" del plano tecnico:
+/// banda de cota superior, sello de engranaje y titulo AJUSTES en caps.
 class _SettingsHeader extends StatelessWidget {
   const _SettingsHeader();
 
@@ -419,99 +400,110 @@ class _SettingsHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xxl,
-        AppSpacing.xl,
-        AppSpacing.xxl,
-        AppSpacing.xxl,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.primaryContainer,
-            color.primaryContainer.withValues(alpha: 0.6),
-            color.primaryContainer.withValues(alpha: 0.15),
-            Colors.transparent,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Container(
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: color.surface,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          border: Border.all(color: color.outlineVariant, width: 0.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.onSurface.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
           ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: const [0.0, 0.3, 0.7, 1.0],
         ),
-      ),
-      child: Row(
-        children: [
-          // Icono app grande con sombra
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color.primary, color.primary.withValues(alpha: 0.7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Banda de cota superior
+            Container(height: 4, decoration: BoxDecoration(color: color.primary)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xxl,
+                AppSpacing.xl,
+                AppSpacing.xxl,
+                AppSpacing.xxl,
               ),
-              borderRadius: BorderRadius.circular(AppRadii.xxl),
-              boxShadow: [
-                BoxShadow(
-                  color: color.primary.withValues(alpha: 0.35),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Image.asset(
-              'assets/images/3dlogo.png',
-              width: 34,
-              height: 34,
-              fit: BoxFit.contain,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          // Texto
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  EsBO.appName,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                    color: color.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'v$kAppVersion',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: color.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.lock_outline_rounded,
-                      size: 14,
-                      color: color.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        EsBO.settingsPrivacy,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: color.onSurfaceVariant,
-                        ),
+              child: Row(
+                children: [
+                  // Sello de engranaje
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [color.primary, color.primary.withValues(alpha: 0.7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
+                      borderRadius: BorderRadius.circular(AppRadii.xxl),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.primary.withValues(alpha: 0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                    child: Icon(
+                      Icons.tune_rounded,
+                      color: color.onPrimary,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  // Titulo
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'AJUSTES',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                            color: color.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${EsBO.appName} · v$kAppVersion',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: color.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.lock_outline_rounded,
+                              size: 14,
+                              color: color.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                EsBO.settingsPrivacy,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: color.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -525,112 +517,311 @@ class _SettingsHeader extends StatelessWidget {
 ///
 /// El `accentColor` define el color de la barra, el icono, y el tint del
 /// icono. Cada seccion se ve distinta al instante.
-class _ProStatusCard extends StatelessWidget {
-  const _ProStatusCard({required this.canRestore});
+class _ProBadgePill extends StatelessWidget {
+  const _ProBadgePill({required this.canRestore});
 
   final bool canRestore;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Card(
-      margin: EdgeInsets.zero,
-      color: colors.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final color = theme.colorScheme;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          onTap: () => _showProSheet(context, canRestore: canRestore),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: color.primaryContainer,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              border: Border.all(
+                color: color.primary.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.workspace_premium_rounded, color: colors.primary),
+                Icon(Icons.workspace_premium_rounded, color: color.primary),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    EsBO.settingsProTitle,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.onPrimaryContainer,
-                    ),
+                Text(
+                  EsBO.settingsProActive,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                    color: color.onPrimaryContainer,
                   ),
                 ),
-                Chip(
-                  label: Text(EsBO.settingsProActive),
-                  visualDensity: VisualDensity.compact,
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  Icons.verified_rounded,
+                  size: 16,
+                  color: color.primary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: color.onPrimaryContainer,
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              EsBO.settingsProUnlocked,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colors.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              EsBO.settingsProNoAdditionalPurchase,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              EsBO.settingsProFutureUpdates,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ...EsBO.paywallFeatures.map(
-              (benefit) => Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.xs),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.check_rounded, size: 18, color: colors.primary),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        benefit,
-                        style: TextStyle(color: colors.onPrimaryContainer),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (canRestore)
-              _RestoreButton(label: EsBO.settingsProRestorePurchase)
-            else
-              Text(
-                EsBO.paywallUnavailable,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colors.onPrimaryContainer,
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({
+/// Abre el modal con toda la info de los beneficios de Pro.
+void _showProSheet(BuildContext context, {required bool canRestore}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (ctx) => _ProSheetBody(canRestore: canRestore),
+  );
+}
+
+/// Contenido del modal de Pro: titulo, estado activo y lista de beneficios.
+class _ProSheetBody extends StatelessWidget {
+  const _ProSheetBody({required this.canRestore});
+
+  final bool canRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: color.outlineVariant,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: color.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                    child: Icon(
+                      Icons.workspace_premium_rounded,
+                      color: color.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      EsBO.settingsProTitle,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: color.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                EsBO.settingsProUnlocked,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: color.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                EsBO.settingsProNoAdditionalPurchase,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: color.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                EsBO.settingsProFutureUpdates,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: color.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ...EsBO.paywallFeatures.map(
+                (benefit) => Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: color.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          benefit,
+                          style: TextStyle(color: color.onSurface),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (canRestore)
+                _RestoreButton(label: EsBO.settingsProRestorePurchase)
+              else
+                Text(
+                  EsBO.paywallUnavailable,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: color.onSurface,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Etiqueta de grupo que subdivide el menu de ajustes.
+///
+/// Titulo en MAYUSCULAS con tracking + icono en caja tintada + trailing
+/// opcional (ej: badge PRO). Una regla corta de acento cierra el titulo,
+/// como la linea pautada de un formulario.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel({required this.icon, this.title, this.titleKey, this.trailing});
+
+  final IconData icon;
+  final String? title;
+  final String? titleKey;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final text = title ?? titleKey ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSpacing.xs, right: AppSpacing.xs),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(AppRadii.sm),
+            ),
+            child: Icon(icon, size: 16, color: color.onSurfaceVariant),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Flexible(
+            child: Text(
+              text.toUpperCase(),
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+                color: color.onSurfaceVariant,
+              ),
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: AppSpacing.sm),
+            trailing!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Icono de badge reutilizable para filas (leading de ListTile).
+class _IconBadge extends StatelessWidget {
+  const _IconBadge({
     required this.icon,
-    required this.title,
-    required this.accentColor,
-    required this.children,
+    required this.background,
+    required this.foreground,
   });
 
   final IconData icon;
-  final String title;
+  final Color background;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+      ),
+      child: Icon(icon, size: 20, color: foreground),
+    );
+  }
+}
+
+/// Divisor horizontal de una card.
+class _CardDivider extends StatelessWidget {
+  const _CardDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: color.outlineVariant.withValues(alpha: 0.5),
+    );
+  }
+}
+
+/// Card contenedora de un grupo de ajustes.
+///
+/// Reemplaza el patron de barra lateral: una card limpia y redondeada con
+/// contenido separado por hairlines ([_CardDivider]) si `divider` es true.
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({
+    required this.accentColor,
+    required this.children,
+    this.divider = false,
+  });
+
   final Color accentColor;
   final List<Widget> children;
+
+  /// Aplica un borde superior de acento y separa los hijos con hairlines.
+  final bool divider;
 
   @override
   Widget build(BuildContext context) {
@@ -647,59 +838,21 @@ class _SettingsSection extends StatelessWidget {
           width: 0.5,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── BARRA DE ACENTO IZQUIERDA (4dp) ──
-          Container(width: 4, color: accentColor),
-          // ── CONTENIDO ──
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(icon, size: 20, color: accentColor),
-                      const SizedBox(width: AppSpacing.sm),
-                      Text(
-                        title.toUpperCase(),
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: accentColor,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Divider
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                  ),
-                  child: Divider(
-                    height: 1,
-                    color: color.outlineVariant.withValues(alpha: 0.4),
-                  ),
-                ),
-                // Content
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: children,
-                  ),
-                ),
-              ],
+          if (divider)
+            Container(height: 3, color: accentColor),
+          // Material transparente para que ListTile/InkWell dibujen su
+          // ink splash sobre la DecoratedBox de la card.
+          Material(
+            color: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
+              ),
             ),
           ),
         ],
@@ -743,32 +896,55 @@ class _ThemeModeSelector extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────
-// AutoSaveField — campo numerico con auto-save
+// StatParamTile — tarjeta de parametro estilo "stat"
 // ─────────────────────────────────────────────────
 
-/// TextField con auto-save on blur.
-class _AutoSaveField extends StatefulWidget {
-  const _AutoSaveField({
-    required this.label,
+/// Tarjeta editable presentada igual que los KPIs de la home ([StatTile]):
+/// icono en caja tintada + titulo arriba y un valor numerico grande en mono
+/// tabular debajo. Auto-save on blur.
+///
+/// Internamente usa [NumericInputField] para mantener el filtrado numerico,
+/// la validacion y el comportamiento de [TextField] (requerido por tests).
+class _StatParamTile extends StatefulWidget {
+  const _StatParamTile({
+    required this.icon,
+    required this.title,
     required this.helper,
+    required this.accent,
     required this.initialValue,
     required this.validator,
     required this.onSave,
     required this.allowDecimals,
+    required this.sliderMin,
+    required this.sliderMax,
+    required this.sliderDivisions,
+    this.suffix = '',
+    this.sliderLeadingIcon,
+    this.sliderTrailingIcon,
+    this.showProfitPreview = false,
   });
 
-  final String label;
+  final IconData icon;
+  final String title;
   final String helper;
+  final Color accent;
   final String initialValue;
   final FormFieldValidator<String> validator;
   final ValueChanged<Decimal> onSave;
   final bool allowDecimals;
+  final double sliderMin;
+  final double sliderMax;
+  final int sliderDivisions;
+  final String suffix;
+  final IconData? sliderLeadingIcon;
+  final IconData? sliderTrailingIcon;
+  final bool showProfitPreview;
 
   @override
-  State<_AutoSaveField> createState() => _AutoSaveFieldState();
+  State<_StatParamTile> createState() => _StatParamTileState();
 }
 
-class _AutoSaveFieldState extends State<_AutoSaveField> {
+class _StatParamTileState extends State<_StatParamTile> {
   late final TextEditingController _ctrl;
 
   @override
@@ -778,7 +954,7 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
   }
 
   @override
-  void didUpdateWidget(covariant _AutoSaveField oldWidget) {
+  void didUpdateWidget(covariant _StatParamTile oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialValue != widget.initialValue) {
       _ctrl.text = widget.initialValue;
@@ -800,15 +976,225 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
     widget.onSave(parsed);
   }
 
+  double get _current {
+    return double.tryParse(_ctrl.text.trim().replaceAll(',', '.')) ??
+        widget.sliderMin;
+  }
+
+  void _onSliderChange(double v) {
+    setState(() {
+      _ctrl.text = widget.allowDecimals
+          ? v.toStringAsFixed(2)
+          : v.round().toString();
+    });
+  }
+
+  void _onSliderEnd(double v) {
+    if (!widget.allowDecimals) {
+      widget.onSave(Decimal.fromInt(v.round()));
+    } else {
+      widget.onSave(Decimal.parse(v.toStringAsFixed(2)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return NumericInputField(
-      label: widget.label,
-      controller: _ctrl,
-      allowDecimals: widget.allowDecimals,
-      helperText: widget.helper,
-      validator: widget.validator,
-      onBlur: _handleBlur,
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final raw = _current;
+    final value = raw < widget.sliderMin
+        ? widget.sliderMin
+        : (raw > widget.sliderMax ? widget.sliderMax : raw);
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: color.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
+        border: Border.all(
+          color: color.outlineVariant.withValues(alpha: 0.6),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Barra de acento izquierda (formato del config inicial) ──
+          Container(width: 4, color: widget.accent),
+          // ── Contenido ──
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: icon chip + titulo
+                  Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: widget.accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          widget.icon,
+                          size: 18,
+                          color: widget.accent,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  // Helper
+                  Text(
+                    widget.helper,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  // Slider con iconos de tendencia (igual al paso 2)
+                  Row(
+                    children: [
+                      if (widget.sliderLeadingIcon != null) ...[
+                        Icon(
+                          widget.sliderLeadingIcon,
+                          size: 16,
+                          color: color.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                      Expanded(
+                        child: SliderTheme(
+                          data: SliderThemeData(
+                            trackHeight: 6,
+                            activeTrackColor: widget.accent,
+                            inactiveTrackColor: widget.accent.withValues(
+                              alpha: 0.25,
+                            ),
+                            thumbColor: widget.accent,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 10,
+                            ),
+                            overlayColor: widget.accent.withValues(alpha: 0.15),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 20,
+                            ),
+                          ),
+                          child: Slider(
+                            value: value,
+                            min: widget.sliderMin,
+                            max: widget.sliderMax,
+                            divisions: widget.sliderDivisions,
+                            label: widget.allowDecimals
+                                ? value.toStringAsFixed(2)
+                                : value.round().toString(),
+                            onChanged: _onSliderChange,
+                            onChangeEnd: _onSliderEnd,
+                          ),
+                        ),
+                      ),
+                      if (widget.sliderTrailingIcon != null) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        Icon(
+                          widget.sliderTrailingIcon,
+                          size: 16,
+                          color: color.onSurfaceVariant,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  // Valor + input (con preview si aplica)
+                  if (widget.showProfitPreview)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: NumericInputField(
+                            label: widget.title,
+                            controller: _ctrl,
+                            allowDecimals: widget.allowDecimals,
+                            suffix: widget.suffix,
+                            validator: widget.validator,
+                            onBlur: _handleBlur,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        // Flexible: evita overflow cuando la fuente es
+                        // grande y el preview no cabe junto al input.
+                        Flexible(child: _GainPreview(value: _current, accent: widget.accent)),
+                      ],
+                    )
+                  else
+                    NumericInputField(
+                      label: widget.title,
+                      controller: _ctrl,
+                      allowDecimals: widget.allowDecimals,
+                      suffix: widget.suffix,
+                      validator: widget.validator,
+                      onBlur: _handleBlur,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Preview visual del porcentaje de ganancia (igual al paso 2 del config
+/// inicial): muestra cuánto se multiplica sobre el costo.
+class _GainPreview extends StatelessWidget {
+  const _GainPreview({required this.value, required this.accent});
+
+  final double value;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final multiplier = 1 + (value / 100);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'x${multiplier.toStringAsFixed(1)}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: accent,
+            ),
+          ),
+          Text(
+            'sobre costo',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1037,34 +1423,38 @@ class _LogoPicker extends ConsumerWidget {
             // Buttons. Gate visual (UX): cuando el tier es free resuelto
             // se atenuan (kLockedOpacity) para reforzar que son Pro. El
             // comportamiento (SnackBar Go Pro en tap) no cambia.
-            Opacity(
-              opacity: locked ? kLockedOpacity : 1.0,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextButton.icon(
-                    icon: const Icon(Icons.image_rounded, size: 18),
-                    label: Text(EsBO.settingsCompanyLogoPick),
-                    onPressed: isPro
-                        ? () => _pickLogo(context, ref)
-                        : () => _showLockedSnack(context),
-                  ),
-                  if (hasLogo)
+            // Expanded: evita overflow de la columna de botones cuando la
+            // fuente del dispositivo es grande (los labels envuelven).
+            Expanded(
+              child: Opacity(
+                opacity: locked ? kLockedOpacity : 1.0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     TextButton.icon(
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 18,
-                        color: color.error,
-                      ),
-                      label: Text(
-                        EsBO.settingsCompanyLogoRemove,
-                        style: TextStyle(color: color.error),
-                      ),
+                      icon: const Icon(Icons.image_rounded, size: 18),
+                      label: Text(EsBO.settingsCompanyLogoPick),
                       onPressed: isPro
-                          ? () => _removeLogo(context, ref)
+                          ? () => _pickLogo(context, ref)
                           : () => _showLockedSnack(context),
                     ),
-                ],
+                    if (hasLogo)
+                      TextButton.icon(
+                        icon: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                          color: color.error,
+                        ),
+                        label: Text(
+                          EsBO.settingsCompanyLogoRemove,
+                          style: TextStyle(color: color.error),
+                        ),
+                        onPressed: isPro
+                            ? () => _removeLogo(context, ref)
+                            : () => _showLockedSnack(context),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1584,9 +1974,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     final isPro = ref.watch(isProProvider);
     final locked = !ent.isLoading && !isPro;
 
-    return _SettingsSection(
-      icon: Icons.backup_rounded,
-      title: EsBO.settingsBackupTitle,
+    return _SettingsCard(
       accentColor: color.primary,
       children: [
         Text(

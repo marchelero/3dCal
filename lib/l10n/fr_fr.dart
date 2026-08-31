@@ -1,4 +1,4 @@
-// ignore_for_file: public_member_api_docs
+﻿// ignore_for_file: public_member_api_docs
 import 'app_strings.dart';
 
 /// Chaînes localisées en français (fr_FR).
@@ -386,7 +386,7 @@ class FrImpl implements AppStrings {
   String get costHelpEnergyBody =>
       'Énergie utilisée à l’impression : heures d’impression × puissance '
       '(kW) × tarif (\$/kWh). Ex. : 6 h × 0,15 kW × 1,2 \$/kWh ≈ 1,08 \$. '
-      'Ajouté seulement si l’imprimante a une puissance enregistrée.';
+      'Ajouté seulement si lImprimante a une puissance enregistrée.';
 
   @override
   String get costHelpLaborTitle => 'Main-d’œuvre';
@@ -394,7 +394,7 @@ class FrImpl implements AppStrings {
   @override
   String get costHelpLaborBody =>
       'Votre temps : heures de travail × taux horaire (\$/h). Inclut la '
-      'préparation de l’imprimante, le suivi et la finition.';
+      'préparation de lImprimante, le suivi et la finition.';
 
   @override
   String get costHelpPostTitle => 'Post-traitement';
@@ -418,7 +418,7 @@ class FrImpl implements AppStrings {
   @override
   String get costHelpWasteBody =>
       'Pourcentage supplémentaire sur les matériaux : supports, purge de '
-      'buse, filament de test et usure de l’imprimante.';
+      'buse, filament de test et usure de lImprimante.';
 
   @override
   String get costHelpMinimumChargeTitle => 'Montant minimum';
@@ -427,7 +427,7 @@ class FrImpl implements AppStrings {
   String get costHelpMinimumChargeBody =>
       'Prix plancher. Si le total calculé est inférieur, ce montant minimum '
       'est facturé. Idéal pour les petites pièces qui demandent quand même '
-      'la préparation de l’imprimante.';
+      'la préparation de lImprimante.';
 
   @override
   String get costHelpMarginTitle => 'Marge (profit)';
@@ -462,6 +462,14 @@ class FrImpl implements AppStrings {
   @override
   String get calcDialogConditionsHelper =>
       'Validit\u00e9, paiement, garantie\u2026';
+  @override
+  String get calcDialogSaveAsTemplate =>
+      'Enregistrer aussi comme mod\u00e8le pour r\u00e9utiliser';
+  @override
+  String get calcDialogSaveSubtitle =>
+      'Renseignez les donn\u00e9es facultatives de votre devis.';
+  @override
+  String get calcDialogDetails => 'D\u00e9tails du devis';
 
   @override
   String get calcTemplatesTitle => 'Mod\u00e8les';
@@ -553,7 +561,7 @@ class FrImpl implements AppStrings {
   @override
   String get brandSelectorOther => 'Autre...';
   @override
-  String get brandSelectorHint => 'Choisissez une marque ou sélectionnez Autre';
+  String get brandSelectorHint => 'Sélectionnez une marque';
   @override
   String get brandSelectorManualHelper => 'Saisissez le nom de la marque';
   @override
@@ -586,7 +594,7 @@ class FrImpl implements AppStrings {
   @override
   String get printerNew => 'Nouvelle imprimante';
   @override
-  String get printerEdit => 'Modifier l’imprimante';
+  String get printerEdit => 'Modifier lImprimante';
   @override
   String get printerModel => 'Modèle';
   @override
@@ -603,7 +611,7 @@ class FrImpl implements AppStrings {
   @override
   String get printerNewTooltip => 'Nouvelle imprimante';
   @override
-  String get printerDeleteTitle => 'Supprimer l’imprimante';
+  String get printerDeleteTitle => 'Supprimer lImprimante';
   @override
   String get printerMustBeNonNegative => 'Doit être >= 0';
   @override
@@ -713,7 +721,7 @@ class FrImpl implements AppStrings {
   String get configStepSubtitle1 => 'Commençons par les bases.';
   @override
   String get configStepSubtitle2 =>
-      'Commençons par ce que vous utilisez pour imprimer. L’imprimante est nécessaire pour le coût de l’énergie.';
+      'Commençons par ce que vous utilisez pour imprimer. LImprimante est nécessaire pour le coût de l’énergie.';
   @override
   String get configStepSubtitle3 =>
       'Ces valeurs s’appliquent à chaque devis. Vous pourrez les modifier plus tard.';
@@ -764,6 +772,12 @@ class FrImpl implements AppStrings {
   String get configPrinterSaved => 'Imprimante enregistrée';
   @override
   String get configFilamentSaved => 'Filament ajouté';
+  @override
+  String get configRequirementPending =>
+      'Enregistrez au moins une imprimante et un filament pour continuer.';
+  @override
+  String get configRequirementDone =>
+      'Terminé. Imprimante et filament configurés.';
   @override
   String get calculatorAdvancedLockedBody =>
       'Passez à la version Pro pour les calculs avec plusieurs matériaux';
@@ -928,11 +942,11 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   @override
   String get calcPrinterPrefix => 'Imprimante : ';
   @override
-  String get calcChangePrinter => 'Changer d’imprimante';
+  String get calcChangePrinter => 'Imprimante';
   @override
   String get calcSearchPrinter => 'Rechercher une imprimante...';
   @override
-  String get calcSelectFilament => 'Sélectionner un filament';
+  String get calcSelectFilament => 'Filament';
   @override
   String get calcSearchFilament => 'Rechercher un filament...';
   @override

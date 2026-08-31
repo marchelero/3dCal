@@ -16,9 +16,10 @@ import '../notifiers/printers_notifier.dart';
 
 /// Form de impresora. Espejo de [FilamentFormPage] sin `brand` ni Decimal.
 class PrinterFormPage extends ConsumerStatefulWidget {
-  const PrinterFormPage({super.key, this.existing});
+  const PrinterFormPage({super.key, this.existing, this.onSaved});
 
   final PrinterProfile? existing;
+  final VoidCallback? onSaved;
 
   @override
   ConsumerState<PrinterFormPage> createState() => _PrinterFormPageState();
@@ -98,7 +99,13 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
           asDefault: _isDefault,
         );
       }
-      if (mounted) context.pop();
+      if (mounted) {
+        if (widget.onSaved != null) {
+          widget.onSaved!.call();
+        } else {
+          context.pop();
+        }
+      }
     } catch (e) {
       debugPrint('Printer save failed: $e');
       if (mounted) {

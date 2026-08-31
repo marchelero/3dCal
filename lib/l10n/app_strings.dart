@@ -292,6 +292,15 @@ abstract class AppStrings {
   String get calcDialogConditions;
   String get calcDialogConditionsHelper;
 
+  /// Checkbox del diálogo de guardado: reutilizar también como plantilla.
+  String get calcDialogSaveAsTemplate;
+
+  /// Subtítulo del modal de guardado (debajo del título).
+  String get calcDialogSaveSubtitle;
+
+  /// Etiqueta de la sección "Detalles" del modal de guardado.
+  String get calcDialogDetails;
+
   // === Plantillas de trabajo frecuente ===
   String get calcTemplatesTitle;
   String get calcTemplateSaveAsAction;
@@ -522,6 +531,12 @@ abstract class AppStrings {
   String get configPrinterSaved;
   String get configFilamentSaved;
 
+  /// Hint de requisito mínimo en el Paso 2: todo pendiente.
+  String get configRequirementPending;
+
+  /// Hint de requisito mínimo en el Paso 2: todo listo.
+  String get configRequirementDone;
+
   // === Feature gates (T14 — multi-material calculator gate) ===
   /// Body del SnackBar que se muestra cuando un Free user intenta
   /// cambiar a CalculatorMode.advanced.
@@ -685,13 +700,13 @@ abstract class AppStrings {
   /// Prefijo de la Semantics label de la impresora activa.
   String get calcPrinterPrefix;
 
-  /// "Cambiar impresora" / "Change printer".
+  /// "Impresora" / "Printer".
   String get calcChangePrinter;
 
   /// "Buscar impresora..." / "Search printer...".
   String get calcSearchPrinter;
 
-  /// "Seleccionar filamento" / "Select filament".
+  /// "Filamento" / "Filament".
   String get calcSelectFilament;
 
   /// "Buscar filamento..." / "Search filament...".

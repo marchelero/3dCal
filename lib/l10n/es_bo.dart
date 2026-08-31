@@ -285,6 +285,9 @@ class EsBO {
   static String get calcDialogConditions => _impl.calcDialogConditions;
   static String get calcDialogConditionsHelper =>
       _impl.calcDialogConditionsHelper;
+  static String get calcDialogSaveAsTemplate => _impl.calcDialogSaveAsTemplate;
+  static String get calcDialogSaveSubtitle => _impl.calcDialogSaveSubtitle;
+  static String get calcDialogDetails => _impl.calcDialogDetails;
 
   // === Plantillas de trabajo frecuente ===
   static String get calcTemplatesTitle => _impl.calcTemplatesTitle;
@@ -458,6 +461,8 @@ class EsBO {
   static String get configFilamentSkipHint => _impl.configFilamentSkipHint;
   static String get configPrinterSaved => _impl.configPrinterSaved;
   static String get configFilamentSaved => _impl.configFilamentSaved;
+  static String get configRequirementPending => _impl.configRequirementPending;
+  static String get configRequirementDone => _impl.configRequirementDone;
 
   // === Feature gates (T14) ===
   static String get calculatorAdvancedLockedBody =>
@@ -1124,6 +1129,14 @@ class EsImpl implements AppStrings {
   String get calcDialogConditions => 'Condiciones comerciales (opcional)';
   @override
   String get calcDialogConditionsHelper => 'Validez, pago, garant\u00eda\u2026';
+  @override
+  String get calcDialogSaveAsTemplate =>
+      'Guardar también como plantilla para reutilizar';
+  @override
+  String get calcDialogSaveSubtitle =>
+      'Completa los datos opcionales para tu cotización.';
+  @override
+  String get calcDialogDetails => 'Detalles de la cotización';
 
   @override
   String get calcTemplatesTitle => 'Plantillas';
@@ -1216,8 +1229,7 @@ class EsImpl implements AppStrings {
   @override
   String get brandSelectorOther => 'Otro...';
   @override
-  String get brandSelectorHint =>
-      'Elegí una marca o seleccioná Otro para escribirla';
+  String get brandSelectorHint => 'Seleccioná una marca';
   @override
   String get brandSelectorManualHelper => 'Escribí el nombre de la marca';
   @override
@@ -1382,8 +1394,8 @@ class EsImpl implements AppStrings {
   String get configStepSubtitle1 => 'Empecemos por lo básico.';
   @override
   String get configStepSubtitle2 =>
-      'Empecemos por lo que usás para imprimir. La impresora es necesaria '
-      'para el costo de energía.';
+      'Contanos qué imprimís y con qué material. '
+      'Necesitamos al menos una impresora y un filamento.';
   @override
   String get configStepSubtitle3 =>
       'Estos valores se usan en cada cotización. Los podés cambiar después.';
@@ -1400,8 +1412,8 @@ class EsImpl implements AppStrings {
       'La necesitamos para calcular el costo de energía de cada impresión.';
   @override
   String get configFilamentSectionHelper =>
-      'Si tenés el rollo a mano, anotalo ahora. Si no, podés agregarlo desde '
-      'Ajustes → Catálogos.';
+      'La necesitamos para calcular el costo del material de cada pieza. '
+      'Registrá al menos uno para poder cotizar.';
   @override
   String get configProfitHelper =>
       'Margen sobre el costo base. 200% duplica el costo. Típico: 100%–300%.';
@@ -1423,7 +1435,7 @@ class EsImpl implements AppStrings {
   @override
   String get configPrinterRequired => 'Impresora (requerida)';
   @override
-  String get configFilamentOptional => 'Filamento (opcional)';
+  String get configFilamentOptional => 'Filamento (requerido)';
   @override
   String get configAddFilament => 'Agregar filamento';
   @override
@@ -1435,6 +1447,12 @@ class EsImpl implements AppStrings {
   String get configPrinterSaved => 'Impresora registrada';
   @override
   String get configFilamentSaved => 'Filamento agregado';
+  @override
+  String get configRequirementPending =>
+      'Registrá al menos una impresora y un filamento para continuar.';
+  @override
+  String get configRequirementDone =>
+      'Listo. Impresora y filamento configurados.';
 
   // === Feature gates (T14) ===
   @override
@@ -1615,11 +1633,11 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String get calcPrinterPrefix => 'Impresora: ';
   @override
-  String get calcChangePrinter => 'Cambiar impresora';
+  String get calcChangePrinter => 'Impresora';
   @override
   String get calcSearchPrinter => 'Buscar impresora...';
   @override
-  String get calcSelectFilament => 'Seleccionar filamento';
+  String get calcSelectFilament => 'Filamento';
   @override
   String get calcSearchFilament => 'Buscar filamento...';
 

@@ -480,6 +480,14 @@ class EnImpl implements AppStrings {
   @override
   String get calcDialogConditionsHelper => 'Validity, payment, warranty\u2026';
   @override
+  String get calcDialogSaveAsTemplate =>
+      'Also save as a template to reuse it later';
+  @override
+  String get calcDialogSaveSubtitle =>
+      'Fill in the optional data for your quotation.';
+  @override
+  String get calcDialogDetails => 'Quotation details';
+  @override
   String get calcTemplatesTitle => 'Templates';
   @override
   String get calcTemplateSaveAsAction => 'Save as template';
@@ -570,7 +578,7 @@ class EnImpl implements AppStrings {
   @override
   String get brandSelectorOther => 'Other...';
   @override
-  String get brandSelectorHint => 'Choose a brand or select Other to type it';
+  String get brandSelectorHint => 'Select a brand';
   @override
   String get brandSelectorManualHelper => 'Type the brand name';
   @override
@@ -788,6 +796,11 @@ class EnImpl implements AppStrings {
   String get configPrinterSaved => 'Printer registered';
   @override
   String get configFilamentSaved => 'Filament added';
+  @override
+  String get configRequirementPending =>
+      'Register at least one printer and one filament to continue.';
+  @override
+  String get configRequirementDone => 'Done. Printer and filament configured.';
 
   // === Feature gates (T14) ===
   @override
@@ -966,11 +979,11 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String get calcPrinterPrefix => 'Printer: ';
   @override
-  String get calcChangePrinter => 'Change printer';
+  String get calcChangePrinter => 'Printer';
   @override
   String get calcSearchPrinter => 'Search printer...';
   @override
-  String get calcSelectFilament => 'Select filament';
+  String get calcSelectFilament => 'Filament';
   @override
   String get calcSearchFilament => 'Search filament...';
 

@@ -1,7 +1,7 @@
 name: tresdcal
 description: "Calculadora de precios para impresiones 3D. 100% local, mobile + web."
 publish_to: 'none'
-version: 0.1.0+2
+version: 0.2.0+2
 
 environment:
   sdk: ^3.12.0

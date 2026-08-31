@@ -245,8 +245,8 @@ void main() {
       expect(kMaxMaterialsPerCalculation, 10);
     });
 
-    test('kMaxDiscountPercentage <= 50%', () {
-      expect(kMaxDiscountPercentage, lessThanOrEqualTo(50));
+    test('kMaxDiscountPercentage = 100%', () {
+      expect(kMaxDiscountPercentage, 100);
     });
 
     test(

@@ -395,7 +395,7 @@ class QuoteImageTemplate extends StatelessWidget {
                 EsBO.calcSheetTitle.toUpperCase(),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: color.primary,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 2,
                 ),
               ),

@@ -491,6 +491,14 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcDialogConditionsHelper =>
       'Validade, pagamento, garantia\u2026';
+  @override
+  String get calcDialogSaveAsTemplate =>
+      'Salvar também como modelo para reutilizar';
+  @override
+  String get calcDialogSaveSubtitle =>
+      'Preencha os dados opcionais do seu orçamento.';
+  @override
+  String get calcDialogDetails => 'Detalhes do orçamento';
 
   @override
   String get calcTemplatesTitle => 'Modelos';
@@ -586,8 +594,7 @@ class PtBrImpl implements AppStrings {
   @override
   String get brandSelectorOther => 'Outro...';
   @override
-  String get brandSelectorHint =>
-      'Escolha uma marca ou selecione Outro para digitá-la';
+  String get brandSelectorHint => 'Selecione uma marca';
   @override
   String get brandSelectorManualHelper => 'Digite o nome da marca';
   @override
@@ -805,6 +812,12 @@ class PtBrImpl implements AppStrings {
   String get configPrinterSaved => 'Impressora cadastrada';
   @override
   String get configFilamentSaved => 'Filamento adicionado';
+  @override
+  String get configRequirementPending =>
+      'Registre pelo menos uma impressora e um filamento para continuar.';
+  @override
+  String get configRequirementDone =>
+      'Pronto. Impressora e filamento configurados.';
 
   // === Feature gates (T14) ===
   @override
@@ -985,11 +998,11 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   @override
   String get calcPrinterPrefix => 'Impressora: ';
   @override
-  String get calcChangePrinter => 'Alterar impressora';
+  String get calcChangePrinter => 'Impressora';
   @override
   String get calcSearchPrinter => 'Pesquisar impressora...';
   @override
-  String get calcSelectFilament => 'Selecionar filamento';
+  String get calcSelectFilament => 'Filamento';
   @override
   String get calcSearchFilament => 'Pesquisar filamento...';
 

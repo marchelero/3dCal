@@ -586,6 +586,10 @@ void main() {
 
       await pumpForRestore(tester, isPro: true);
 
+      // Abrir el modal de Pro tocando el pill "PRO".
+      await tester.tap(find.text(EsBO.settingsProActive));
+      await tester.pumpAndSettle();
+
       expect(find.text(EsBO.settingsProRestorePurchase), findsNothing);
       expect(find.text(EsBO.paywallUnavailable), findsOneWidget);
       expect(
@@ -602,6 +606,10 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await pumpForRestore(tester, isPro: true);
+
+      // Abrir el modal de Pro tocando el pill "PRO".
+      await tester.tap(find.text(EsBO.settingsProActive));
+      await tester.pumpAndSettle();
 
       expect(find.text(EsBO.settingsProActive), findsOneWidget);
       expect(find.text(EsBO.settingsProUnlocked), findsOneWidget);

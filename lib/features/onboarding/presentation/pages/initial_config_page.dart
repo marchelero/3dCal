@@ -57,7 +57,6 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
   final _filamentPriceCtrl = TextEditingController();
   final _filamentGramsCtrl = TextEditingController(text: '1000');
   bool _filamentSaving = false;
-  bool _filamentSkipped = false;
   bool _filamentSaved = false;
   String? _filamentSavedName;
 
@@ -70,8 +69,15 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
     super.initState();
     final settings =
         ref.read(settingsNotifierProvider).value ?? Settings.defaults;
-    _profitCtrl = TextEditingController(text: settings.profitBase.toString());
-    _kwhCtrl = TextEditingController(text: settings.kwhRate.toString());
+    // Show empty fields when value is 0 (user hasn't configured yet)
+    final profitText = settings.profitBase == Decimal.zero
+        ? ''
+        : settings.profitBase.toString();
+    final kwhText = settings.kwhRate == Decimal.zero
+        ? ''
+        : settings.kwhRate.toString();
+    _profitCtrl = TextEditingController(text: profitText);
+    _kwhCtrl = TextEditingController(text: kwhText);
   }
 
   @override
@@ -211,7 +217,8 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
   // ── Navegación del stepper ──
 
   bool get _canContinue {
-    if (_step == 1) return _printerSaved;
+    // Paso 2: se requiere al menos una impresora y un filamento.
+    if (_step == 1) return _printerSaved && _filamentSaved;
     return true;
   }
 
@@ -378,168 +385,157 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
     }
   }
 
-  // ── Paso 2: impresora (requerida) + filamento (opcional) ──
+  // ── Paso 2: impresora (requerida) + filamento (requerido) ──
 
   Widget _buildStep2(ThemeData theme, ColorScheme color) {
     final currency = ref.watch(selectedCurrencyProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Impresora
-        _StepSectionHeader(
+        // ── Impresora ──
+        _DeviceSetupCard(
+          accentColor: color.primary,
           icon: Icons.print_rounded,
           title: EsBO.configPrinterRequired,
-          color: color.primary,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          EsBO.configPrinterSectionHelper,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: color.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        if (_printerSaved)
-          _SavedCard(
-            icon: Icons.print_rounded,
-            title: _printerSavedName ?? '',
-            subtitle: EsBO.configPrinterSaved,
-            onEdit: _resetPrinter,
-          )
-        else
-          Form(
-            key: _printerFormKey,
-            child: Column(
-              children: [
-                BrandSelectorField(
-                  domain: BrandDomain.printer,
-                  controller: _printerBrandCtrl,
-                  label: EsBO.filamentBrand,
-                  helperText: EsBO.printerBrandHelper,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: _printerNameCtrl,
-                  decoration: InputDecoration(
-                    labelText: EsBO.printerModel,
-                    helperText: EsBO.printerModelHelper,
+          helper: EsBO.configPrinterSectionHelper,
+          isSaved: _printerSaved,
+          savedName: _printerSavedName,
+          onEdit: _printerSaved ? _resetPrinter : null,
+          child: _printerSaved
+              ? null
+              : Form(
+                  key: _printerFormKey,
+                  child: Column(
+                    children: [
+                      BrandSelectorField(
+                        domain: BrandDomain.printer,
+                        controller: _printerBrandCtrl,
+                        label: EsBO.filamentBrand,
+                        helperText: EsBO.printerBrandHelper,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _printerNameCtrl,
+                        decoration: InputDecoration(
+                          labelText: EsBO.printerModel,
+                          helperText: EsBO.printerModelHelper,
+                        ),
+                        textInputAction: TextInputAction.next,
+                        validator: _requiredText,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      NumericInputField(
+                        label: EsBO.printerWatts,
+                        controller: _printerWattsCtrl,
+                        allowDecimals: false,
+                        helperText: EsBO.printerWattsHelper,
+                        textInputAction: TextInputAction.done,
+                        validator: _requiredWatts,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          icon: _printerSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check),
+                          label: Text(EsBO.commonSave),
+                          onPressed: _printerSaving ? null : _savePrinter,
+                        ),
+                      ),
+                    ],
                   ),
-                  textInputAction: TextInputAction.next,
-                  validator: _requiredText,
                 ),
-                const SizedBox(height: AppSpacing.md),
-                NumericInputField(
-                  label: EsBO.printerWatts,
-                  controller: _printerWattsCtrl,
-                  allowDecimals: false,
-                  helperText: EsBO.printerWattsHelper,
-                  textInputAction: TextInputAction.done,
-                  validator: _requiredWatts,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                FilledButton.icon(
-                  icon: _printerSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check),
-                  label: Text(EsBO.commonSave),
-                  onPressed: _printerSaving ? null : _savePrinter,
-                ),
-              ],
-            ),
-          ),
+        ),
         const SizedBox(height: AppSpacing.xxl),
-        // Filamento (opcional)
-        _StepSectionHeader(
+
+        // ── Filamento ──
+        _DeviceSetupCard(
+          accentColor: color.secondary,
           icon: Icons.label_rounded,
           title: EsBO.configFilamentOptional,
-          color: color.secondary,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          EsBO.configFilamentSectionHelper,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: color.onSurfaceVariant,
-          ),
+          helper: EsBO.configFilamentSectionHelper,
+          isSaved: _filamentSaved,
+          savedName: _filamentSavedName,
+          onEdit: _filamentSaved ? _resetFilament : null,
+          child: _filamentSaved
+              ? null
+              : Form(
+                  key: _filamentFormKey,
+                  child: Column(
+                    children: [
+                      BrandSelectorField(
+                        domain: BrandDomain.filament,
+                        controller: _filamentBrandCtrl,
+                        label: EsBO.filamentBrand,
+                        helperText: EsBO.filamentBrandHelper,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _filamentNameCtrl,
+                        decoration: InputDecoration(
+                          labelText: EsBO.filamentName,
+                          helperText: EsBO.filamentNameHelper,
+                        ),
+                        textInputAction: TextInputAction.next,
+                        validator: _requiredText,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _filamentPriceCtrl,
+                        decoration: InputDecoration(
+                          labelText: EsBO.filamentPrice(currency.symbol),
+                          helperText: EsBO.filamentPriceHelper,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textInputAction: TextInputAction.next,
+                        validator: _requiredNumber,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      NumericInputField(
+                        label: EsBO.filamentGrams,
+                        controller: _filamentGramsCtrl,
+                        allowDecimals: false,
+                        helperText: EsBO.filamentGramsHelper,
+                        textInputAction: TextInputAction.done,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          icon: _filamentSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check),
+                          label: Text(EsBO.commonSave),
+                          onPressed: _filamentSaving ? null : _saveFilament,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
         ),
         const SizedBox(height: AppSpacing.md),
-        if (_filamentSaved)
-          _SavedCard(
-            icon: Icons.label_rounded,
-            title: _filamentSavedName ?? '',
-            subtitle: EsBO.configFilamentSaved,
-            onEdit: _resetFilament,
-          )
-        else if (_filamentSkipped)
-          _FilamentSkipCard(
-            onAdd: () => setState(() => _filamentSkipped = false),
-          )
-        else
-          Form(
-            key: _filamentFormKey,
-            child: Column(
-              children: [
-                BrandSelectorField(
-                  domain: BrandDomain.filament,
-                  controller: _filamentBrandCtrl,
-                  label: EsBO.filamentBrand,
-                  helperText: EsBO.filamentBrandHelper,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: _filamentNameCtrl,
-                  decoration: InputDecoration(
-                    labelText: EsBO.filamentName,
-                    helperText: EsBO.filamentNameHelper,
-                  ),
-                  textInputAction: TextInputAction.next,
-                  validator: _requiredText,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: _filamentPriceCtrl,
-                  decoration: InputDecoration(
-                    labelText: EsBO.filamentPrice(currency.symbol),
-                    helperText: EsBO.filamentPriceHelper,
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  textInputAction: TextInputAction.next,
-                  validator: _requiredNumber,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                NumericInputField(
-                  label: EsBO.filamentGrams,
-                  controller: _filamentGramsCtrl,
-                  allowDecimals: false,
-                  helperText: EsBO.filamentGramsHelper,
-                  textInputAction: TextInputAction.done,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                FilledButton.icon(
-                  icon: _filamentSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check),
-                  label: Text(EsBO.commonSave),
-                  onPressed: _filamentSaving ? null : _saveFilament,
-                ),
-                TextButton(
-                  onPressed: _filamentSaving
-                      ? null
-                      : () => setState(() => _filamentSkipped = true),
-                  child: Text(EsBO.configFilamentLater),
-                ),
-              ],
-            ),
-          ),
+        // Hint de requisito mínimo
+        _RequirementHint(
+          printerDone: _printerSaved,
+          filamentDone: _filamentSaved,
+          accent: color.primary,
+        ),
       ],
     );
   }
@@ -548,72 +544,169 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
 
   Widget _buildStep3(ThemeData theme, ColorScheme color) {
     final currency = ref.watch(selectedCurrencyProvider);
+
+    // Parse profit value for slider
+    final profitValue = double.tryParse(_profitCtrl.text.trim()) ?? 0;
+    final kwhValue =
+        double.tryParse(_kwhCtrl.text.trim().replaceAll(',', '.')) ?? 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _StepSectionHeader(
+        // ── Ganancia Base ──
+        _ParameterCard(
+          accentColor: color.primary,
           icon: Icons.percent_rounded,
           title: EsBO.settingsProfitBase,
-          color: color.primary,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          EsBO.configProfitHelper,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: color.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: NumericInputField(
-                label: EsBO.settingsProfitBase,
-                controller: _profitCtrl,
-                allowDecimals: false,
-                suffix: '%',
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
-                  final n = int.tryParse(v.trim());
-                  if (n == null) return EsBO.commonInvalidNumber;
-                  if (n < 0 || n > 1000) return EsBO.settingsProfitBaseRange;
-                  return null;
-                },
-                onBlur: (raw) {
-                  final n = int.tryParse(raw.trim());
-                  if (n == null || n < 0 || n > 1000) return;
-                  ref
-                      .read(settingsNotifierProvider.notifier)
-                      .updateProfitBase(Decimal.fromInt(n));
-                },
+          helper: EsBO.configProfitHelper,
+          child: Column(
+            children: [
+              // Slider visual
+              Row(
+                children: [
+                  Icon(
+                    Icons.trending_down_rounded,
+                    size: 16,
+                    color: color.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 6,
+                        activeTrackColor: color.primary,
+                        inactiveTrackColor: color.primaryContainer,
+                        thumbColor: color.primary,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 10,
+                        ),
+                        overlayColor: color.primary.withValues(alpha: 0.15),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 20,
+                        ),
+                      ),
+                      child: Slider(
+                        value: profitValue.clamp(0.0, 500.0),
+                        min: 0,
+                        max: 500,
+                        divisions: 50,
+                        label: '${profitValue.round()}%',
+                        onChanged: (v) {
+                          _profitCtrl.text = v.round().toString();
+                          setState(() {});
+                        },
+                        onChangeEnd: (v) {
+                          ref
+                              .read(settingsNotifierProvider.notifier)
+                              .updateProfitBase(Decimal.fromInt(v.round()));
+                        },
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.trending_up_rounded,
+                    size: 16,
+                    color: color.onSurfaceVariant,
+                  ),
+                ],
               ),
-            ),
-            _TypicalTag(
-              controller: _profitCtrl,
-              defaultValue: Settings.defaults.profitBase.toString(),
-            ),
-          ],
+              // Value display + input
+              Row(
+                children: [
+                  Expanded(
+                    child: NumericInputField(
+                      label: EsBO.settingsProfitBase,
+                      controller: _profitCtrl,
+                      allowDecimals: false,
+                      suffix: '%',
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return EsBO.commonRequired;
+                        }
+                        final n = int.tryParse(v.trim());
+                        if (n == null) return EsBO.commonInvalidNumber;
+                        if (n < 0 || n > 1000) {
+                          return EsBO.settingsProfitBaseRange;
+                        }
+                        return null;
+                      },
+                      onBlur: (raw) {
+                        final n = int.tryParse(raw.trim());
+                        if (n == null || n < 0 || n > 1000) return;
+                        ref
+                            .read(settingsNotifierProvider.notifier)
+                            .updateProfitBase(Decimal.fromInt(n));
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  _ProfitPreview(value: profitValue, color: color),
+                ],
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: AppSpacing.xxl),
-        _StepSectionHeader(
+
+        // ── Tarifa Eléctrica ──
+        _ParameterCard(
+          accentColor: color.secondary,
           icon: Icons.bolt_rounded,
           title: EsBO.settingsKwhRate(currency.symbol),
-          color: color.secondary,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          EsBO.configKwhHelper,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: color.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: NumericInputField(
+          helper: EsBO.configKwhHelper,
+          child: Column(
+            children: [
+              // Slider visual
+              Row(
+                children: [
+                  Icon(
+                    Icons.eco_rounded,
+                    size: 16,
+                    color: color.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 6,
+                        activeTrackColor: color.secondary,
+                        inactiveTrackColor: color.secondaryContainer,
+                        thumbColor: color.secondary,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 10,
+                        ),
+                        overlayColor: color.secondary.withValues(alpha: 0.15),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 20,
+                        ),
+                      ),
+                      child: Slider(
+                        value: kwhValue.clamp(0.0, 5.0),
+                        min: 0,
+                        max: 5,
+                        divisions: 50,
+                        label:
+                            '${kwhValue.toStringAsFixed(2)} ${currency.symbol}',
+                        onChanged: (v) {
+                          _kwhCtrl.text = v.toStringAsFixed(2);
+                          setState(() {});
+                        },
+                        onChangeEnd: (v) {
+                          ref
+                              .read(settingsNotifierProvider.notifier)
+                              .updateKwhRate(
+                                Decimal.parse(v.toStringAsFixed(2)),
+                              );
+                        },
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.bolt, size: 16, color: color.onSurfaceVariant),
+                ],
+              ),
+              // Value display + input
+              NumericInputField(
                 label: EsBO.settingsKwhRate(currency.symbol),
                 controller: _kwhCtrl,
                 allowDecimals: true,
@@ -622,7 +715,7 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
                   if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
                   final n = Decimal.tryParse(v.trim().replaceAll(',', '.'));
                   if (n == null) return EsBO.commonInvalidNumber;
-                  if (n < Decimal.parse('0.10') || n > Decimal.parse('5.00')) {
+                  if (n < Decimal.zero || n > Decimal.parse('5.00')) {
                     return EsBO.settingsKwhRateRange;
                   }
                   return null;
@@ -630,32 +723,29 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
                 onBlur: (raw) {
                   final n = Decimal.tryParse(raw.trim().replaceAll(',', '.'));
                   if (n == null ||
-                      n < Decimal.parse('0.10') ||
+                      n < Decimal.zero ||
                       n > Decimal.parse('5.00')) {
                     return;
                   }
                   ref.read(settingsNotifierProvider.notifier).updateKwhRate(n);
+                  setState(() {});
                 },
               ),
-            ),
-            _TypicalTag(
-              controller: _kwhCtrl,
-              defaultValue: Settings.defaults.kwhRate.toString(),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: AppSpacing.xxl),
-        // Resumen de lo configurado (reemplaza el onboarding marketing).
+
+        // ── Resumen de lo configurado ──
         _ConfigSummaryCard(
           currency: currency,
           printerName: _printerSavedName,
           filamentName: _filamentSavedName,
-          filamentSkipped: _filamentSkipped,
           profitCtrl: _profitCtrl,
           kwhCtrl: _kwhCtrl,
         ),
         const SizedBox(height: AppSpacing.lg),
-        // Slide motivacional breve (reemplaza las 4 slides de OnboardingPage).
+        // Slide motivacional breve
         Center(
           child: Column(
             children: [
@@ -789,6 +879,342 @@ class _CurrencyDropdown extends ConsumerWidget {
   }
 }
 
+/// Card con barra de acento lateral para parametros globales.
+/// Agrupa titulo, helper, slider y campo de entrada en un diseño visual limpio.
+class _ParameterCard extends StatelessWidget {
+  const _ParameterCard({
+    required this.accentColor,
+    required this.icon,
+    required this.title,
+    required this.helper,
+    required this.child,
+  });
+
+  final Color accentColor;
+  final IconData icon;
+  final String title;
+  final String helper;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: color.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.outlineVariant.withValues(alpha: 0.6),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Barra de acento izquierda ──
+          Container(width: 4, color: accentColor),
+          // ── Contenido ──
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: icon chip + titulo
+                  Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(icon, size: 18, color: accentColor),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  // Helper text
+                  Text(
+                    helper,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  // Child content (slider + input)
+                  child,
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Preview visual del porcentaje de ganancia: muestra cuánto se gana sobre el costo.
+class _ProfitPreview extends StatelessWidget {
+  const _ProfitPreview({required this.value, required this.color});
+
+  final double value;
+  final ColorScheme color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Si el costo base es 100, la ganancia es X%, el total es 100 + (100 * X/100)
+    final multiplier = 1 + (value / 100);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: color.primaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'x${multiplier.toStringAsFixed(1)}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color.primary,
+            ),
+          ),
+          Text(
+            'sobre costo',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Card de setup de dispositivo (impresora o filamento) con barra de acento.
+/// Muestra formulario o estado guardado segun el contexto.
+class _DeviceSetupCard extends StatelessWidget {
+  const _DeviceSetupCard({
+    required this.accentColor,
+    required this.icon,
+    required this.title,
+    required this.helper,
+    required this.isSaved,
+    required this.child,
+    this.savedName,
+    this.onEdit,
+  });
+
+  final Color accentColor;
+  final IconData icon;
+  final String title;
+  final String helper;
+  final bool isSaved;
+  final String? savedName;
+  final VoidCallback? onEdit;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: color.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSaved
+              ? accentColor.withValues(alpha: 0.3)
+              : color.outlineVariant.withValues(alpha: 0.6),
+          width: isSaved ? 1.5 : 0.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Barra de acento izquierda ──
+          Container(width: 4, color: accentColor),
+          // ── Contenido ──
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: isSaved
+                  ? _buildSavedState(theme, color)
+                  : _buildFormState(theme, color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSavedState(ThemeData theme, ColorScheme color) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(Icons.check_circle_rounded, size: 24, color: accentColor),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                savedName ?? '',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                EsBO.configPrinterSaved,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: accentColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (onEdit != null)
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            tooltip: EsBO.filamentEdit,
+            onPressed: onEdit,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFormState(ThemeData theme, ColorScheme color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: accentColor),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          helper,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        // Form content
+        ?child,
+      ],
+    );
+  }
+}
+
+/// Hint del requisito minimo (Paso 2): muestra ambos pendientes/completos.
+/// Cambia de color y aviso a medida que se completa cada dispositivo.
+class _RequirementHint extends StatelessWidget {
+  const _RequirementHint({
+    required this.printerDone,
+    required this.filamentDone,
+    required this.accent,
+  });
+
+  final bool printerDone;
+  final bool filamentDone;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final both = printerDone && filamentDone;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: both
+            ? color.primaryContainer.withValues(alpha: 0.4)
+            : color.errorContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: both
+              ? color.primary.withValues(alpha: 0.4)
+              : color.error.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            both ? Icons.check_circle_rounded : Icons.info_rounded,
+            size: 20,
+            color: both ? color.primary : color.error,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              both ? EsBO.configRequirementDone : EsBO.configRequirementPending,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: both ? color.onPrimaryContainer : color.onErrorContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Shared step pieces ──────────────────────────────
 
 /// Header de sección dentro de un paso: icono en chip + título.
@@ -831,161 +1257,6 @@ class _StepSectionHeader extends StatelessWidget {
   }
 }
 
-/// Card con check de confirmación + botón para volver a editar.
-class _SavedCard extends StatelessWidget {
-  const _SavedCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onEdit,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: color.primaryContainer,
-              child: Icon(icon, size: 20, color: color.onPrimaryContainer),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: EsBO.filamentEdit,
-              onPressed: onEdit,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Card para el filamento cuando el usuario eligió "lo agrego después".
-class _FilamentSkipCard extends StatelessWidget {
-  const _FilamentSkipCard({required this.onAdd});
-
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule_rounded,
-                  size: 20,
-                  color: color.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    EsBO.configFilamentSkipHint,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextButton.icon(
-              icon: const Icon(Icons.add),
-              label: Text(EsBO.configFilamentAddAction),
-              onPressed: onAdd,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Badge "Típico" junto a un campo numerico: aparece solo cuando el texto
-/// del [controller] coincide con [defaultValue]. Desaparece al editar.
-class _TypicalTag extends StatelessWidget {
-  const _TypicalTag({required this.controller, required this.defaultValue});
-
-  final TextEditingController controller;
-  final String defaultValue;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
-    return ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) {
-        final isDefault = controller.text.trim() == defaultValue.trim();
-        if (!isDefault) return const SizedBox(width: 8);
-        return Padding(
-          padding: const EdgeInsets.only(left: AppSpacing.sm, top: 8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.xxs,
-            ),
-            decoration: BoxDecoration(
-              color: color.tertiaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              EsBO.settingsDefaultTypical,
-              style: themeTextSmall(context).copyWith(
-                color: color.onTertiaryContainer,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  TextStyle themeTextSmall(BuildContext context) =>
-      Theme.of(context).textTheme.labelSmall ?? const TextStyle();
-}
-
 /// Resumen de lo configurado (paso 3): muestra los 6 valores en una card.
 /// Reemplaza el onboarding marketing (OnboardingPage 4 slides).
 class _ConfigSummaryCard extends ConsumerWidget {
@@ -993,7 +1264,6 @@ class _ConfigSummaryCard extends ConsumerWidget {
     required this.currency,
     required this.printerName,
     required this.filamentName,
-    required this.filamentSkipped,
     required this.profitCtrl,
     required this.kwhCtrl,
   });
@@ -1001,7 +1271,6 @@ class _ConfigSummaryCard extends ConsumerWidget {
   final WorldCurrency currency;
   final String? printerName;
   final String? filamentName;
-  final bool filamentSkipped;
   final TextEditingController profitCtrl;
   final TextEditingController kwhCtrl;
 
@@ -1019,9 +1288,7 @@ class _ConfigSummaryCard extends ConsumerWidget {
       AppLocale.fr => strings.localeFr,
     };
 
-    final filamentLabel = filamentSkipped || filamentName == null
-        ? EsBO.configFilamentSkipStatus
-        : filamentName!;
+    final filamentLabel = filamentName ?? '—';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1073,12 +1340,16 @@ class _ConfigSummaryCard extends ConsumerWidget {
                 _SummaryRow(
                   icon: Icons.percent_rounded,
                   label: EsBO.settingsProfitBase,
-                  value: '${profitCtrl.text.trim()} %',
+                  value: profitCtrl.text.trim().isEmpty
+                      ? '—'
+                      : '${profitCtrl.text.trim()} %',
                 ),
                 _SummaryRow(
                   icon: Icons.bolt_rounded,
                   label: EsBO.settingsKwhRate(currency.symbol),
-                  value: '${kwhCtrl.text.trim()} ${currency.symbol}/kWh',
+                  value: kwhCtrl.text.trim().isEmpty
+                      ? '—'
+                      : '${kwhCtrl.text.trim()} ${currency.symbol}/kWh',
                 ),
               ],
             ),

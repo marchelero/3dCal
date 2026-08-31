@@ -11,14 +11,21 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../features/entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/default_badge.dart';
 import 'selector_dialog_shell.dart';
+
+/// Límite de impresoras para usuarios Free.
+const int kFreePrinterLimit = 2;
 
 /// Abre el selector de impresoras. Retorna `true` si el usuario eligio una.
 Future<bool> showPrinterSelectorDialog(
@@ -27,6 +34,8 @@ Future<bool> showPrinterSelectorDialog(
   required List<PrinterProfile> printers,
 }) async {
   final activeId = ref.read(activePrinterIdProvider);
+  final isPro = ref.read(isProProvider);
+  final atLimit = !isPro && printers.length >= kFreePrinterLimit;
 
   final selected = await showSelectorDialog<PrinterProfile>(
     context: context,
@@ -66,6 +75,21 @@ Future<bool> showPrinterSelectorDialog(
         onTap: select,
       );
     },
+    footer: atLimit
+        ? _FreeLimitHint(
+            current: printers.length,
+            limit: kFreePrinterLimit,
+            label: 'impresoras',
+          )
+        : ListTile(
+            leading: const Icon(Icons.add_rounded),
+            title: const Text('Crear nuevo'),
+            subtitle: const Text('Agregar al catálogo'),
+            onTap: () {
+              Navigator.of(context).pop(); // cerrar dialog
+              context.push('/settings/printers/new');
+            },
+          ),
   );
 
   if (selected == null) return false;
@@ -83,5 +107,55 @@ Future<void> _persistActivePrinterId(WidgetRef ref, int id) async {
     // BUG-019 fix: loggear — la seleccion sigue valida en sesion, pero el
     // usuario pierde la persistencia entre sesiones sin saberlo.
     debugPrint('Fallo al persistir impresora activa ($id): $e');
+  }
+}
+
+/// Hint sutil cuando el usuario Free alcanza el límite del catálogo.
+class _FreeLimitHint extends StatelessWidget {
+  const _FreeLimitHint({
+    required this.current,
+    required this.limit,
+    required this.label,
+  });
+
+  final int current;
+  final int limit;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+        border: Border.all(
+          color: cs.tertiary.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock_outline_rounded, size: 16, color: cs.tertiary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              '$current/$limit $label — desbloquea Pro para más',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: cs.onTertiaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
