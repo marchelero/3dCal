@@ -56,7 +56,8 @@ class SettingsPage extends ConsumerWidget {
             details: e.toString(),
             onRetry: () => ref.invalidate(settingsNotifierProvider),
           ),
-          data: (settings) => _SettingsBody(settings: settings),
+          data: (settings) =>
+              _SettingsBody(settings: settings, showBack: ModalRoute.of(context)?.canPop ?? false),
         ),
       ),
     );
@@ -68,9 +69,10 @@ class SettingsPage extends ConsumerWidget {
 // ─────────────────────────────────────────────────
 
 class _SettingsBody extends ConsumerWidget {
-  const _SettingsBody({required this.settings});
+  const _SettingsBody({required this.settings, this.showBack = false});
 
   final Settings settings;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -93,7 +95,7 @@ class _SettingsBody extends ConsumerWidget {
         shrinkWrap: true,
         children: [
           // ── CABECERA (bloque de titulo del plano) ──
-          const _SettingsHeader(),
+          _SettingsHeader(showBack: showBack),
           const SizedBox(height: AppSpacing.xxl),
 
           // ── CONTENIDO CON PADDING LATERAL ──
@@ -121,9 +123,7 @@ class _SettingsBody extends ConsumerWidget {
                     _CompanyNameField(
                       initialValue: settings.companyName,
                       onSave: (value) {
-                        ref
-                            .read(settingsNotifierProvider.notifier)
-                            .updateCompanyName(value);
+                        ref.read(settingsNotifierProvider.notifier).updateCompanyName(value);
                         _showSavedSnack(context);
                       },
                     ),
@@ -134,10 +134,7 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Costos y parametros (Ganancia + Electricidad) ──
-                _GroupLabel(
-                  icon: Icons.tune_rounded,
-                  title: EsBO.settingsGlobalParams,
-                ),
+                _GroupLabel(icon: Icons.tune_rounded, title: EsBO.settingsGlobalParams),
                 const SizedBox(height: AppSpacing.sm),
                 _StatParamTile(
                   icon: Icons.percent_rounded,
@@ -167,9 +164,7 @@ class _SettingsBody extends ConsumerWidget {
                     return null;
                   },
                   onSave: (v) {
-                    ref
-                        .read(settingsNotifierProvider.notifier)
-                        .updateProfitBase(v);
+                    ref.read(settingsNotifierProvider.notifier).updateProfitBase(v);
                     _showSavedSnack(context);
                   },
                 ),
@@ -179,9 +174,7 @@ class _SettingsBody extends ConsumerWidget {
                   title: EsBO.settingsKwhRate(currency.symbol),
                   helper: EsBO.settingsKwhRateHelper,
                   accent: color.tertiary,
-                  initialValue: settings.kwhRate == Decimal.zero
-                      ? ''
-                      : settings.kwhRate.toString(),
+                  initialValue: settings.kwhRate == Decimal.zero ? '' : settings.kwhRate.toString(),
                   allowDecimals: true,
                   sliderMin: 0,
                   sliderMax: 5,
@@ -193,30 +186,22 @@ class _SettingsBody extends ConsumerWidget {
                     if (v == null || v.trim().isEmpty) {
                       return EsBO.commonRequired;
                     }
-                    final n = Decimal.tryParse(
-                      v.trim().replaceAll(',', '.'),
-                    );
+                    final n = Decimal.tryParse(v.trim().replaceAll(',', '.'));
                     if (n == null) return EsBO.commonInvalidNumber;
-                    if (n < Decimal.zero ||
-                        n > Decimal.parse('5.00')) {
+                    if (n < Decimal.zero || n > Decimal.parse('5.00')) {
                       return EsBO.settingsKwhRateRange;
                     }
                     return null;
                   },
                   onSave: (v) {
-                    ref
-                        .read(settingsNotifierProvider.notifier)
-                        .updateKwhRate(v);
+                    ref.read(settingsNotifierProvider.notifier).updateKwhRate(v);
                     _showSavedSnack(context);
                   },
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Catalogos ──
-                const _GroupLabel(
-                  icon: Icons.inventory_2_rounded,
-                  titleKey: 'CATÁLOGOS',
-                ),
+                const _GroupLabel(icon: Icons.inventory_2_rounded, titleKey: 'CATÁLOGOS'),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.secondary,
@@ -267,10 +252,7 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Moneda e idioma ──
-                const _GroupLabel(
-                  icon: Icons.attach_money_rounded,
-                  titleKey: 'MONEDA E IDIOMA',
-                ),
+                const _GroupLabel(icon: Icons.attach_money_rounded, titleKey: 'MONEDA E IDIOMA'),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.primary,
@@ -284,10 +266,7 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Apariencia ──
-                const _GroupLabel(
-                  icon: Icons.palette_rounded,
-                  titleKey: 'APARIENCIA',
-                ),
+                const _GroupLabel(icon: Icons.palette_rounded, titleKey: 'APARIENCIA'),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.secondary,
@@ -295,9 +274,7 @@ class _SettingsBody extends ConsumerWidget {
                   children: [
                     Text(
                       EsBO.settingsTheme,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _ThemeModeSelector(),
@@ -306,33 +283,21 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Datos (backup) ──
-                const _GroupLabel(
-                  icon: Icons.backup_rounded,
-                  titleKey: 'TUS DATOS',
-                ),
+                const _GroupLabel(icon: Icons.backup_rounded, titleKey: 'TUS DATOS'),
                 const SizedBox(height: AppSpacing.sm),
                 const _BackupSection(),
                 const SizedBox(height: AppSpacing.xxl),
 
                 if (canRestore) ...[
                   // ── Restaurar compras (T11) ──
-                  const _GroupLabel(
-                    icon: Icons.restore_rounded,
-                    titleKey: 'CUENTA',
-                  ),
+                  const _GroupLabel(icon: Icons.restore_rounded, titleKey: 'CUENTA'),
                   const SizedBox(height: AppSpacing.sm),
-                  _SettingsCard(
-                    accentColor: color.primary,
-                    children: [_RestoreButton()],
-                  ),
+                  _SettingsCard(accentColor: color.primary, children: [_RestoreButton()]),
                   const SizedBox(height: AppSpacing.xxl),
                 ],
 
                 // ── Acerca de + Legal ──
-                const _GroupLabel(
-                  icon: Icons.info_outline_rounded,
-                  titleKey: 'ACERCA DE',
-                ),
+                const _GroupLabel(icon: Icons.info_outline_rounded, titleKey: 'ACERCA DE'),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.tertiary,
@@ -346,10 +311,7 @@ class _SettingsBody extends ConsumerWidget {
                         foreground: color.onPrimaryContainer,
                       ),
                       title: Text(EsBO.paywallPrivacyPolicy),
-                      trailing: Icon(
-                        Icons.chevron_right_rounded,
-                        color: color.onSurfaceVariant,
-                      ),
+                      trailing: Icon(Icons.chevron_right_rounded, color: color.onSurfaceVariant),
                       onTap: () => context.push('/legal/privacy'),
                     ),
                     const _CardDivider(),
@@ -361,10 +323,7 @@ class _SettingsBody extends ConsumerWidget {
                         foreground: color.onSecondaryContainer,
                       ),
                       title: Text(EsBO.paywallTermsOfService),
-                      trailing: Icon(
-                        Icons.chevron_right_rounded,
-                        color: color.onSurfaceVariant,
-                      ),
+                      trailing: Icon(Icons.chevron_right_rounded, color: color.onSurfaceVariant),
                       onTap: () => context.push('/legal/terms'),
                     ),
                   ],
@@ -393,7 +352,9 @@ void _showSavedSnack(BuildContext context) {
 /// Cabecera de ajustes al estilo "bloque de titulo" del plano tecnico:
 /// banda de cota superior, sello de engranaje y titulo AJUSTES en caps.
 class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader();
+  const _SettingsHeader({this.showBack = false});
+
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -431,6 +392,21 @@ class _SettingsHeader extends StatelessWidget {
               ),
               child: Row(
                 children: [
+                  // Flecha de retorno — solo cuando la pagina fue empujada
+                  // encima de otra (standalone). Dentro del tab del shell
+                  // `canPop == false` y no se muestra.
+                  if (showBack) ...[
+                    IconButton(
+                      tooltip: EsBO.configBack,
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        }
+                      },
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
                   // Sello de engranaje
                   Container(
                     width: 60,
@@ -450,11 +426,7 @@ class _SettingsHeader extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(
-                      Icons.tune_rounded,
-                      color: color.onPrimary,
-                      size: 28,
-                    ),
+                    child: Icon(Icons.tune_rounded, color: color.onPrimary, size: 28),
                   ),
                   const SizedBox(width: AppSpacing.lg),
                   // Titulo
@@ -534,16 +506,11 @@ class _ProBadgePill extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.pill),
           onTap: () => _showProSheet(context, canRestore: canRestore),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             decoration: BoxDecoration(
               color: color.primaryContainer,
               borderRadius: BorderRadius.circular(AppRadii.pill),
-              border: Border.all(
-                color: color.primary.withValues(alpha: 0.25),
-              ),
+              border: Border.all(color: color.primary.withValues(alpha: 0.25)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -559,17 +526,9 @@ class _ProBadgePill extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Icon(
-                  Icons.verified_rounded,
-                  size: 16,
-                  color: color.primary,
-                ),
+                Icon(Icons.verified_rounded, size: 16, color: color.primary),
                 const SizedBox(width: AppSpacing.xs),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: color.onPrimaryContainer,
-                ),
+                Icon(Icons.chevron_right_rounded, size: 18, color: color.onPrimaryContainer),
               ],
             ),
           ),
@@ -632,10 +591,7 @@ class _ProSheetBody extends StatelessWidget {
                       color: color.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
-                    child: Icon(
-                      Icons.workspace_premium_rounded,
-                      color: color.primary,
-                    ),
+                    child: Icon(Icons.workspace_premium_rounded, color: color.primary),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
@@ -660,16 +616,12 @@ class _ProSheetBody extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 EsBO.settingsProNoAdditionalPurchase,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: color.onSurface,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: color.onSurface),
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 EsBO.settingsProFutureUpdates,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: color.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: color.onSurfaceVariant),
               ),
               const SizedBox(height: AppSpacing.sm),
               ...EsBO.paywallFeatures.map(
@@ -678,17 +630,10 @@ class _ProSheetBody extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        size: 18,
-                        color: color.primary,
-                      ),
+                      Icon(Icons.check_circle_rounded, size: 18, color: color.primary),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: Text(
-                          benefit,
-                          style: TextStyle(color: color.onSurface),
-                        ),
+                        child: Text(benefit, style: TextStyle(color: color.onSurface)),
                       ),
                     ],
                   ),
@@ -700,9 +645,7 @@ class _ProSheetBody extends StatelessWidget {
               else
                 Text(
                   EsBO.paywallUnavailable,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: color.onSurface,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: color.onSurface),
                 ),
             ],
           ),
@@ -755,10 +698,7 @@ class _GroupLabel extends StatelessWidget {
               ),
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: AppSpacing.sm),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: AppSpacing.sm), trailing!],
         ],
       ),
     );
@@ -767,11 +707,7 @@ class _GroupLabel extends StatelessWidget {
 
 /// Icono de badge reutilizable para filas (leading de ListTile).
 class _IconBadge extends StatelessWidget {
-  const _IconBadge({
-    required this.icon,
-    required this.background,
-    required this.foreground,
-  });
+  const _IconBadge({required this.icon, required this.background, required this.foreground});
 
   final IconData icon;
   final Color background;
@@ -798,11 +734,7 @@ class _CardDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: color.outlineVariant.withValues(alpha: 0.5),
-    );
+    return Divider(height: 1, thickness: 1, color: color.outlineVariant.withValues(alpha: 0.5));
   }
 }
 
@@ -811,11 +743,7 @@ class _CardDivider extends StatelessWidget {
 /// Reemplaza el patron de barra lateral: una card limpia y redondeada con
 /// contenido separado por hairlines ([_CardDivider]) si `divider` es true.
 class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({
-    required this.accentColor,
-    required this.children,
-    this.divider = false,
-  });
+  const _SettingsCard({required this.accentColor, required this.children, this.divider = false});
 
   final Color accentColor;
   final List<Widget> children;
@@ -833,26 +761,19 @@ class _SettingsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadii.xxl),
-        border: Border.all(
-          color: color.outlineVariant.withValues(alpha: 0.6),
-          width: 0.5,
-        ),
+        border: Border.all(color: color.outlineVariant.withValues(alpha: 0.6), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (divider)
-            Container(height: 3, color: accentColor),
+          if (divider) Container(height: 3, color: accentColor),
           // Material transparente para que ListTile/InkWell dibujen su
           // ink splash sobre la DecoratedBox de la card.
           Material(
             color: Colors.transparent,
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: children,
-              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
             ),
           ),
         ],
@@ -977,15 +898,12 @@ class _StatParamTileState extends State<_StatParamTile> {
   }
 
   double get _current {
-    return double.tryParse(_ctrl.text.trim().replaceAll(',', '.')) ??
-        widget.sliderMin;
+    return double.tryParse(_ctrl.text.trim().replaceAll(',', '.')) ?? widget.sliderMin;
   }
 
   void _onSliderChange(double v) {
     setState(() {
-      _ctrl.text = widget.allowDecimals
-          ? v.toStringAsFixed(2)
-          : v.round().toString();
+      _ctrl.text = widget.allowDecimals ? v.toStringAsFixed(2) : v.round().toString();
     });
   }
 
@@ -1011,10 +929,7 @@ class _StatParamTileState extends State<_StatParamTile> {
       decoration: BoxDecoration(
         color: color.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadii.xxl),
-        border: Border.all(
-          color: color.outlineVariant.withValues(alpha: 0.6),
-          width: 0.5,
-        ),
+        border: Border.all(color: color.outlineVariant.withValues(alpha: 0.6), width: 0.5),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1038,19 +953,13 @@ class _StatParamTileState extends State<_StatParamTile> {
                           color: widget.accent.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(
-                          widget.icon,
-                          size: 18,
-                          color: widget.accent,
-                        ),
+                        child: Icon(widget.icon, size: 18, color: widget.accent),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           widget.title,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -1059,20 +968,14 @@ class _StatParamTileState extends State<_StatParamTile> {
                   // Helper
                   Text(
                     widget.helper,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(color: color.onSurfaceVariant),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   // Slider con iconos de tendencia (igual al paso 2)
                   Row(
                     children: [
                       if (widget.sliderLeadingIcon != null) ...[
-                        Icon(
-                          widget.sliderLeadingIcon,
-                          size: 16,
-                          color: color.onSurfaceVariant,
-                        ),
+                        Icon(widget.sliderLeadingIcon, size: 16, color: color.onSurfaceVariant),
                         const SizedBox(width: AppSpacing.sm),
                       ],
                       Expanded(
@@ -1080,17 +983,11 @@ class _StatParamTileState extends State<_StatParamTile> {
                           data: SliderThemeData(
                             trackHeight: 6,
                             activeTrackColor: widget.accent,
-                            inactiveTrackColor: widget.accent.withValues(
-                              alpha: 0.25,
-                            ),
+                            inactiveTrackColor: widget.accent.withValues(alpha: 0.25),
                             thumbColor: widget.accent,
-                            thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 10,
-                            ),
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
                             overlayColor: widget.accent.withValues(alpha: 0.15),
-                            overlayShape: const RoundSliderOverlayShape(
-                              overlayRadius: 20,
-                            ),
+                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
                           ),
                           child: Slider(
                             value: value,
@@ -1107,11 +1004,7 @@ class _StatParamTileState extends State<_StatParamTile> {
                       ),
                       if (widget.sliderTrailingIcon != null) ...[
                         const SizedBox(width: AppSpacing.sm),
-                        Icon(
-                          widget.sliderTrailingIcon,
-                          size: 16,
-                          color: color.onSurfaceVariant,
-                        ),
+                        Icon(widget.sliderTrailingIcon, size: 16, color: color.onSurfaceVariant),
                       ],
                     ],
                   ),
@@ -1134,7 +1027,9 @@ class _StatParamTileState extends State<_StatParamTile> {
                         const SizedBox(width: AppSpacing.md),
                         // Flexible: evita overflow cuando la fuente es
                         // grande y el preview no cabe junto al input.
-                        Flexible(child: _GainPreview(value: _current, accent: widget.accent)),
+                        Flexible(
+                          child: _GainPreview(value: _current, accent: widget.accent),
+                        ),
                       ],
                     )
                   else
@@ -1169,10 +1064,7 @@ class _GainPreview extends StatelessWidget {
     final theme = Theme.of(context);
     final multiplier = 1 + (value / 100);
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
@@ -1189,9 +1081,7 @@ class _GainPreview extends StatelessWidget {
           ),
           Text(
             'sobre costo',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -1273,9 +1163,7 @@ class _CompanyNameFieldState extends ConsumerState<_CompanyNameField> {
       children: [
         Text(
           EsBO.settingsCompanyName,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: AppSpacing.sm),
         // Gate visual (UX): cuando el tier es free resuelto el field
@@ -1332,9 +1220,7 @@ class _LogoPicker extends ConsumerWidget {
       final bytes = await image.readAsBytes();
       final base64 = base64Encode(bytes);
       if (!context.mounted) return;
-      unawaited(
-        ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64),
-      );
+      unawaited(ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64));
       _showSavedSnack(context);
     } catch (e) {
       if (!context.mounted) return;
@@ -1345,9 +1231,7 @@ class _LogoPicker extends ConsumerWidget {
   }
 
   Future<void> _removeLogo(BuildContext context, WidgetRef ref) async {
-    unawaited(
-      ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(null),
-    );
+    unawaited(ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(null));
     _showSavedSnack(context);
   }
 
@@ -1386,9 +1270,7 @@ class _LogoPicker extends ConsumerWidget {
       children: [
         Text(
           EsBO.settingsCompanyLogo,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: AppSpacing.sm),
         Row(
@@ -1407,11 +1289,8 @@ class _LogoPicker extends ConsumerWidget {
                   ? Image.memory(
                       _base64ToBytes(currentLogoBase64!),
                       fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Icon(
-                        Icons.broken_image_rounded,
-                        color: color.onSurfaceVariant,
-                        size: 32,
-                      ),
+                      errorBuilder: (_, _, _) =>
+                          Icon(Icons.broken_image_rounded, color: color.onSurfaceVariant, size: 32),
                     )
                   : Icon(
                       Icons.add_photo_alternate_rounded,
@@ -1440,11 +1319,7 @@ class _LogoPicker extends ConsumerWidget {
                     ),
                     if (hasLogo)
                       TextButton.icon(
-                        icon: Icon(
-                          Icons.delete_outline_rounded,
-                          size: 18,
-                          color: color.error,
-                        ),
+                        icon: Icon(Icons.delete_outline_rounded, size: 18, color: color.error),
                         label: Text(
                           EsBO.settingsCompanyLogoRemove,
                           style: TextStyle(color: color.error),
@@ -1483,8 +1358,7 @@ class _CurrencyPicker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final settings =
-        ref.watch(settingsNotifierProvider).value ?? Settings.defaults;
+    final settings = ref.watch(settingsNotifierProvider).value ?? Settings.defaults;
     final current = WorldCurrency.fromCode(settings.currencyCode);
 
     return Column(
@@ -1492,16 +1366,12 @@ class _CurrencyPicker extends ConsumerWidget {
       children: [
         Text(
           EsBO.settingsCurrency,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           EsBO.settingsCurrencyHelper,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: AppSpacing.sm),
         InkWell(
@@ -1536,11 +1406,7 @@ class _CurrencyPicker extends ConsumerWidget {
       builder: (_) => _CurrencySearchDialog(initial: current),
     );
     if (selected != null && context.mounted) {
-      unawaited(
-        ref
-            .read(settingsNotifierProvider.notifier)
-            .updateCurrency(selected.code),
-      );
+      unawaited(ref.read(settingsNotifierProvider.notifier).updateCurrency(selected.code));
       _showSavedSnack(context);
     }
   }
@@ -1581,8 +1447,7 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
         ? all
         : all.where((c) {
             final q = _query.toLowerCase();
-            return c.code.toLowerCase().contains(q) ||
-                c.name.toLowerCase().contains(q);
+            return c.code.toLowerCase().contains(q) || c.name.toLowerCase().contains(q);
           }).toList();
 
     return Dialog.fullscreen(
@@ -1630,9 +1495,7 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                   ? Center(
                       child: Text(
                         EsBO.settingsCurrencyNoResults(_query),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: color.onSurfaceVariant,
-                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(color: color.onSurfaceVariant),
                       ),
                     )
                   : ListView.separated(
@@ -1644,23 +1507,15 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                         final isSelected = c.code == widget.initial.code;
                         return ListTile(
                           selected: isSelected,
-                          selectedTileColor: color.primaryContainer.withValues(
-                            alpha: 0.4,
-                          ),
+                          selectedTileColor: color.primaryContainer.withValues(alpha: 0.4),
                           leading: Icon(
-                            isSelected
-                                ? Icons.check_circle
-                                : Icons.circle_outlined,
-                            color: isSelected
-                                ? color.primary
-                                : color.onSurfaceVariant,
+                            isSelected ? Icons.check_circle : Icons.circle_outlined,
+                            color: isSelected ? color.primary : color.onSurfaceVariant,
                           ),
                           title: Text(
                             '${c.code} — ${c.name}',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             ),
                           ),
                           subtitle: Text(
@@ -1699,9 +1554,7 @@ class _LocalePicker extends ConsumerWidget {
       children: [
         Text(
           EsBO.localeLabel,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: AppSpacing.sm),
         InputDecorator(
@@ -1714,26 +1567,11 @@ class _LocalePicker extends ConsumerWidget {
               value: locale,
               isExpanded: true,
               items: [
-                DropdownMenuItem(
-                  value: AppLocale.es,
-                  child: Text(strings.localeEs),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.en,
-                  child: Text(strings.localeEn),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.ptBr,
-                  child: Text(strings.localePtBr),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.de,
-                  child: Text(strings.localeDe),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.fr,
-                  child: Text(strings.localeFr),
-                ),
+                DropdownMenuItem(value: AppLocale.es, child: Text(strings.localeEs)),
+                DropdownMenuItem(value: AppLocale.en, child: Text(strings.localeEn)),
+                DropdownMenuItem(value: AppLocale.ptBr, child: Text(strings.localePtBr)),
+                DropdownMenuItem(value: AppLocale.de, child: Text(strings.localeDe)),
+                DropdownMenuItem(value: AppLocale.fr, child: Text(strings.localeFr)),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -1887,9 +1725,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          AppSnackBar.error(EsBO.settingsBackupImportFutureVersion),
-        );
+        ..showSnackBar(AppSnackBar.error(EsBO.settingsBackupImportFutureVersion));
       return;
     }
 
@@ -1902,9 +1738,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
       // sacar la ultima pagina del branch y go_router lanza assertion.
       builder: (dialogContext) => AlertDialog(
         title: Text(EsBO.settingsBackupImportConfirmTitle),
-        content: Text(
-          EsBO.settingsBackupImportConfirmBody(backup.summary.describe()),
-        ),
+        content: Text(EsBO.settingsBackupImportConfirmBody(backup.summary.describe())),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1979,9 +1813,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
       children: [
         Text(
           EsBO.settingsBackupHelper,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: color.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodySmall?.copyWith(color: color.onSurfaceVariant),
         ),
         const SizedBox(height: AppSpacing.lg),
         Opacity(
@@ -1993,10 +1825,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
                   ? SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: color.onPrimary,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: color.onPrimary),
                     )
                   : const Icon(Icons.upload_rounded, size: 18),
               label: Text(EsBO.settingsBackupExport),
@@ -2014,10 +1843,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
                   ? SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: color.primary,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: color.primary),
                     )
                   : const Icon(Icons.download_rounded, size: 18),
               label: Text(EsBO.settingsBackupImport),
@@ -2051,9 +1877,7 @@ class _RestoreButtonState extends ConsumerState<_RestoreButton> {
     setState(() => _isRestoring = true);
 
     try {
-      final result = await ref
-          .read(entitlementNotifierProvider.notifier)
-          .restore();
+      final result = await ref.read(entitlementNotifierProvider.notifier).restore();
       if (!mounted) return;
       if (result is RestoreActive) {
         ScaffoldMessenger.of(context)

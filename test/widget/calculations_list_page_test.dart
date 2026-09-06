@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
@@ -131,7 +133,10 @@ class _ScaffoldWithText extends StatelessWidget {
 /// Helper: inserta una cotizacion "dummy" via el [CalculationRepository]
 /// real (contra DB in-memory). Asi el page no se renderiza en empty state
 /// y el export button es visible.
-Future<void> _seedOneCalculation(ProviderContainer container) async {
+Future<void> _seedOneCalculation(
+  ProviderContainer container, {
+  Uint8List? pieceImageBytes,
+}) async {
   final repo = container.read(calculationRepositoryProvider);
   await repo.create(
     CalculationDraft(
@@ -152,6 +157,7 @@ Future<void> _seedOneCalculation(ProviderContainer container) async {
       ),
       pieceName: 'Test piece',
       clientName: 'Test client',
+      pieceImageBytes: pieceImageBytes,
     ),
   );
 }
@@ -162,6 +168,7 @@ Future<void> _seedOneCalculation(ProviderContainer container) async {
 Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
   WidgetTester tester, {
   int seedCount = 1,
+  Uint8List? pieceImageBytes,
 }) async {
   SharedPreferences.setMockInitialValues(<String, Object>{});
   final prefs = await SharedPreferences.getInstance();
@@ -182,7 +189,7 @@ Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
   });
 
   for (var i = 0; i < seedCount; i++) {
-    await _seedOneCalculation(container);
+    await _seedOneCalculation(container, pieceImageBytes: pieceImageBytes);
   }
 
   final router = _buildRouter();
@@ -446,6 +453,52 @@ void main() {
       // El share va a throw MissingPluginException (no hay platform
       // channel en test), pero eso no rompe el assert: lo que importa
       // es que el gate NO se disparo.
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // F2 — thumbnail de la foto persistida en cada card del historial
+  // ─────────────────────────────────────────────────────────────
+
+  group('CalculationsListPage — thumbnail de foto persistida (F2)', () {
+    // 1x1 PNG transparente valido (mismo asset de result_sheet_test).
+    const tinyPngBase64 =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=';
+    Uint8List tinyPng() => base64Decode(tinyPngBase64);
+
+    testWidgets('con foto: muestra un thumbnail Image.memory 44x44', (
+      tester,
+    ) async {
+      // runAsync: el engine real de decode necesita el event loop real.
+      await tester.runAsync(() async {
+        await _pumpPageFree(tester, pieceImageBytes: tinyPng());
+        await tester.pumpAndSettle();
+
+        final imageFinder = find.byType(Image);
+        expect(
+          imageFinder,
+          findsOneWidget,
+          reason: 'Con foto persistida debe renderizar un thumbnail.',
+        );
+        final image = tester.widget<Image>(imageFinder);
+        expect(image.width, 44);
+        expect(image.height, 44);
+        expect(image.fit, BoxFit.cover);
+      });
+    });
+
+    testWidgets('sin foto: NO renderiza Image, mantiene el icono', (
+      tester,
+    ) async {
+      await _pumpPageFree(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Image), findsNothing);
+      expect(
+        find.byIcon(Icons.receipt_long_rounded),
+        findsOneWidget,
+        reason: 'Sin foto el card mantiene el leading icono de siempre.',
+      );
     });
   });
 }

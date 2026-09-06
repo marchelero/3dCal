@@ -22,6 +22,7 @@ import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
@@ -41,7 +42,8 @@ class CalculationDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
-    final calc = ref.watch(_calculationByIdProvider(calcId));
+    final calcAsync = ref.watch(_calculationByIdProvider(calcId));
+    final calc = calcAsync.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -108,9 +110,16 @@ class CalculationDetailPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: calc == null
-          ? const Center(child: CircularProgressIndicator())
-          : _Detail(calc: calc),
+      body: calcAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => ErrorView(
+          message: EsBO.historyErrorLoad,
+          details: e.toString(),
+          onRetry: () => ref.invalidate(_calculationByIdProvider(calcId)),
+        ),
+        data: (c) =>
+            c == null ? const Center(child: Text('—')) : _Detail(calc: c),
+      ),
       floatingActionButton: calc == null
           ? null
           : FloatingActionButton.extended(
@@ -222,6 +231,7 @@ class _DetailState extends ConsumerState<_Detail> {
         ),
         notes: calc.notes,
         conditions: calc.conditions,
+        pieceImageBytes: calc.pieceImageBlob,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -271,6 +281,7 @@ class _DetailState extends ConsumerState<_Detail> {
         ),
         notes: calc.notes,
         conditions: calc.conditions,
+        pieceImageBytes: calc.pieceImageBlob,
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
     } catch (e) {
@@ -313,117 +324,113 @@ class _DetailState extends ConsumerState<_Detail> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.xl),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color.primaryContainer,
-                    color.primaryContainer.withValues(alpha: 0.6),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(AppRadii.xxxl),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.primaryContainer,
+                  color.primaryContainer.withValues(alpha: 0.6),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          calc.pieceName ?? EsBO.calcDetailNoName,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: color.onPrimaryContainer,
-                          ),
+              borderRadius: BorderRadius.circular(AppRadii.xxxl),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        calc.pieceName ?? EsBO.calcDetailNoName,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: color.onPrimaryContainer,
                         ),
-                      ),
-                      if (calc.isSold)
-                        Chip(
-                          label: Text(EsBO.calcDetailSold),
-                          backgroundColor: color.tertiaryContainer,
-                          labelStyle: TextStyle(
-                            color: color.onTertiaryContainer,
-                          ),
-                          avatar: Icon(
-                            Icons.check_circle_rounded,
-                            color: color.tertiary,
-                            size: 16,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                    ],
-                  ),
-                  if (calc.clientName != null && calc.clientName!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.person_outline_rounded,
-                            size: 14,
-                            color: color.onPrimaryContainer,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${EsBO.calcDialogClient}: ${calc.clientName}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: color.onPrimaryContainer,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        size: 14,
-                        color: color.onPrimaryContainer.withValues(alpha: 0.7),
+                    if (calc.isSold)
+                      Chip(
+                        label: Text(EsBO.calcDetailSold),
+                        backgroundColor: color.tertiaryContainer,
+                        labelStyle: TextStyle(color: color.onTertiaryContainer),
+                        avatar: Icon(
+                          Icons.check_circle_rounded,
+                          color: color.tertiary,
+                          size: 16,
+                        ),
+                        padding: EdgeInsets.zero,
                       ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          DateFormat(
-                            'dd MMM yyyy · HH:mm',
-                          ).format(calc.createdAt.toLocal()),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: color.onPrimaryContainer.withValues(
-                              alpha: 0.7,
-                            ),
+                  ],
+                ),
+                if (calc.clientName != null && calc.clientName!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.person_outline_rounded,
+                          size: 14,
+                          color: color.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${EsBO.calcDialogClient}: ${calc.clientName}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: color.onPrimaryContainer,
                           ),
                         ),
-                      ),
-                      if (calc.totalHours > 0) ...[
-                        const SizedBox(width: AppSpacing.lg),
-                        Icon(
-                          Icons.timer_outlined,
-                          size: 14,
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      size: 14,
+                      color: color.onPrimaryContainer.withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        DateFormat(
+                          'dd MMM yyyy · HH:mm',
+                        ).format(calc.createdAt.toLocal()),
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: color.onPrimaryContainer.withValues(
                             alpha: 0.7,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${calc.totalHours.toStringAsFixed(1)} h',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: color.onPrimaryContainer.withValues(
-                              alpha: 0.7,
-                            ),
+                      ),
+                    ),
+                    if (calc.totalHours > 0) ...[
+                      const SizedBox(width: AppSpacing.lg),
+                      Icon(
+                        Icons.timer_outlined,
+                        size: 14,
+                        color: color.onPrimaryContainer.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${calc.totalHours.toStringAsFixed(1)} h',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: color.onPrimaryContainer.withValues(
+                            alpha: 0.7,
                           ),
                         ),
-                      ],
+                      ),
                     ],
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.lg),
+          ),
+          const SizedBox(height: AppSpacing.lg),
 
-            // === Materiales ===
+          // === Materiales ===
           Text(
             EsBO.calcSectionMaterials,
             style: theme.textTheme.titleMedium?.copyWith(
@@ -479,10 +486,10 @@ class _DetailState extends ConsumerState<_Detail> {
                                   style: theme.textTheme.labelMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: color.onPrimaryContainer,
-              ),
-),
-            ),
-          ),
+                                  ),
+                                ),
+                              ),
+                            ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: Column(
@@ -558,9 +565,9 @@ class _DetailState extends ConsumerState<_Detail> {
                     label: EsBO.calcDetailMaterial,
                     value: formatCurrency(
                       Decimal.parse(
-                        calc.materialCostSnapshot.toStringAsFixed(2),
-                      ) *
-                      Decimal.fromInt(calc.quantity),
+                            calc.materialCostSnapshot.toStringAsFixed(2),
+                          ) *
+                          Decimal.fromInt(calc.quantity),
                       currency,
                     ),
                   ),
@@ -608,25 +615,25 @@ class _DetailState extends ConsumerState<_Detail> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                        Text(
-                          // Con lote > 1 se explicita para que el total
-                          // efectivo no confunda frente al unitario.
-                          calc.quantity > 1
-                              ? '${EsBO.calcDetailTotal} (${calc.quantity} u.)'
-                              : EsBO.calcDetailTotal,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                      Text(
+                        // Con lote > 1 se explicita para que el total
+                        // efectivo no confunda frente al unitario.
+                        calc.quantity > 1
+                            ? '${EsBO.calcDetailTotal} (${calc.quantity} u.)'
+                            : EsBO.calcDetailTotal,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
+                      ),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
                           // Total efectivo = unitario x cantidad (lotes).
                           formatCurrency(
                             Decimal.parse(
-                              calc.totalPriceSnapshot.toStringAsFixed(2),
-                            ) *
-                            Decimal.fromInt(calc.quantity),
+                                  calc.totalPriceSnapshot.toStringAsFixed(2),
+                                ) *
+                                Decimal.fromInt(calc.quantity),
                             currency,
                           ),
                           style: GoogleFonts.jetBrainsMono(
@@ -755,6 +762,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   companyLogoBase64: settings.companyLogoBase64,
                   currency: currency,
                   quantity: _quantity,
+                  pieceImageBytes: calc.pieceImageBlob,
                 ),
               ),
             ),
@@ -839,6 +847,9 @@ class _DetailState extends ConsumerState<_Detail> {
                     await ref
                         .read(calculationsNotifierProvider.notifier)
                         .toggleSold(calc.id, !calc.isSold);
+                    // F3: el detalle ya no se alimenta de la lista; el
+                    // provider propio se invalida para re-leer isSold.
+                    ref.invalidate(_calculationByIdProvider(calc.id));
                   },
                 ),
               ),
@@ -1061,13 +1072,14 @@ class _Row extends StatelessWidget {
   }
 }
 
-final _calculationByIdProvider = Provider.family<Calculation?, int>((ref, id) {
-  final list = ref.watch(calculationsNotifierProvider).value;
-  if (list == null) return null;
-  for (final c in list) {
-    if (c.id == id) return c;
-  }
-  return null;
+final _calculationByIdProvider = FutureProvider.family<Calculation?, int>((
+  ref,
+  id,
+) async {
+  // F3: la lista ya no carga BLOBs; el detalle materializa la fila
+  // completa (con BLOB para el preview de la foto) on-demand.
+  final repo = ref.watch(calculationRepositoryProvider);
+  return repo.getById(id);
 });
 
 final _materialsOfProvider =

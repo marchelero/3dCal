@@ -2,9 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
+import '../../data/calculation_repository.dart';
 
 /// Thrown when a Free user tries to create a quote beyond the history cap.
 class HistoryCapReachedException implements Exception {
@@ -24,16 +24,16 @@ class HistoryCapReachedException implements Exception {
 
 /// Notifier reactivo para la lista de cotizaciones con search/filter.
 ///
-/// **Estado**: `AsyncValue<List<Calculation>>`. Carga inicial via
-/// [CalculationRepository.listAll], luego filtra en memoria por busqueda
-/// ([searchQuery]) y estado de venta ([soldFilter]).
+/// **Estado**: `AsyncValue<List<CalculationListItem>>`. Carga inicial via
+/// [CalculationRepository.listItems] (sin BLOBs, F3), luego filtra en
+/// memoria por busqueda ([searchQuery]) y estado de venta ([soldFilter]).
 ///
 /// Filtros:
 /// - [searchQuery]: busca en pieceName + clientName (LIKE %).
 /// - [soldFilter]: null = todas, true = solo vendidas, false = solo pendientes.
-class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
+class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
   /// Cache de todas las cotizaciones (sin filtrar).
-  List<Calculation> _all = [];
+  List<CalculationListItem> _all = [];
 
   /// Query de busqueda activa (vacio = sin filtro).
   String _searchQuery = '';
@@ -42,9 +42,9 @@ class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
   bool? _soldFilter;
 
   @override
-  Future<List<Calculation>> build() async {
+  Future<List<CalculationListItem>> build() async {
     final repo = ref.watch(calculationRepositoryProvider);
-    _all = await repo.listAll();
+    _all = await repo.listItems();
     return _applyFilters();
   }
 
@@ -66,7 +66,7 @@ class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(calculationRepositoryProvider);
-      _all = await repo.listAll();
+      _all = await repo.listItems();
       return _applyFilters();
     });
   }
@@ -116,12 +116,12 @@ class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
 
   Future<void> _reload() async {
     final repo = ref.read(calculationRepositoryProvider);
-    _all = await repo.listAll();
+    _all = await repo.listItems();
     state = AsyncValue.data(_applyFilters());
   }
 
   /// Aplica filtros activos (_searchQuery + _soldFilter) a _all.
-  List<Calculation> _applyFilters() {
+  List<CalculationListItem> _applyFilters() {
     var result = _all;
 
     // Filtro por texto
@@ -145,6 +145,6 @@ class CalculationsNotifier extends AsyncNotifier<List<Calculation>> {
 
 /// Provider del [CalculationsNotifier].
 final calculationsNotifierProvider =
-    AsyncNotifierProvider<CalculationsNotifier, List<Calculation>>(
+    AsyncNotifierProvider<CalculationsNotifier, List<CalculationListItem>>(
       CalculationsNotifier.new,
     );

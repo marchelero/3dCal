@@ -101,6 +101,11 @@ class Calculations extends Table {
   RealColumn get minimumChargeSnapshot => real()();
   RealColumn get markupOnMaterialsSnapshot => real()();
 
+  /// Foto de la pieza persistida (F2, v9). BLOB JPEG downscaled (max 1200px
+  /// lado mayor, calidad 85) para no inflar la DB. `null` en cotizaciones
+  /// sin foto o pre-v9 (migracion aditiva).
+  BlobColumn get pieceImageBlob => blob().nullable()();
+
   @override
   List<Set<Column>> get uniqueKeys => [];
 }

@@ -157,7 +157,7 @@ void main() {
           ResultSheetContent(
             state: state,
             isPro: false,
-            onSave: () {},
+            onSave: (_) {},
             onReset: () {},
             onToggleDetail: () {},
             onDiscountChanged: (_) {},
@@ -183,7 +183,7 @@ void main() {
           ResultSheetContent(
             state: state,
             isPro: false,
-            onSave: () {},
+            onSave: (_) {},
             onReset: () {},
             onToggleDetail: () {},
             onDiscountChanged: (_) {},
@@ -217,7 +217,7 @@ void main() {
                   onPressed: () => showResultSheet(
                     context: ctx,
                     state: state,
-                    onSave: () => saved++,
+                    onSave: (_) => saved++,
                     onReset: () {},
                     onToggleDetail: () {},
                     onDiscountChanged: (_) {},
@@ -254,7 +254,7 @@ void main() {
           ResultSheetContent(
             state: state,
             isPro: false,
-            onSave: () {},
+            onSave: (_) {},
             onReset: () {},
             onToggleDetail: () {},
             onDiscountChanged: (_) {},
@@ -285,18 +285,24 @@ void main() {
     XFile fileFromBytes(Uint8List bytes) =>
         XFile.fromData(bytes, name: 'img.png', mimeType: 'image/png');
 
-    Future<void> pumpSheet(WidgetTester tester) async {
+    Future<void> pumpSheet(
+      WidgetTester tester, {
+      Future<Uint8List?> Function(Uint8List sourceBytes)? cropper,
+    }) async {
       final state = _validState();
       await tester.pumpWidget(
         _wrap(
           ResultSheetContent(
             state: state,
             isPro: false,
-            onSave: () {},
+            onSave: (_) {},
             onReset: () {},
             onToggleDetail: () {},
             onDiscountChanged: (_) {},
             currency: WorldCurrency.usd,
+            // F3: seam del cropper — en tests no hay plugin nativo. Default:
+            // devuelve la imagen sin recortar (conserva el flujo SC2/SC5).
+            pieceImageCropper: cropper ?? ((bytes) async => bytes),
           ),
         ),
       );
@@ -403,6 +409,89 @@ void main() {
 
       expect(find.byKey(heroKey), findsNothing);
       expect(find.text(EsBO.quoteImageInvalidFormat), findsOneWidget);
+    });
+
+    testWidgets('F3: cancelar el recorte no adjunta imagen (sin error)', (
+      tester,
+    ) async {
+      ImagePickerPlatform.instance = _FakePickerPlatform(
+        fileFromBytes(tinyPng()),
+      );
+      await pumpSheet(tester, cropper: (_) async => null);
+
+      await attachFromGallery(tester);
+
+      // Sin preview: el control sigue en "Agregar imagen", sin snackbar.
+      expect(find.byKey(heroKey), findsNothing);
+      expect(find.text(EsBO.quoteImageAdd), findsOneWidget);
+      expect(find.text(EsBO.quoteImageError), findsNothing);
+    });
+
+    testWidgets('F3: cancelar al "Cambiar" conserva la foto previa', (
+      tester,
+    ) async {
+      ImagePickerPlatform.instance = _FakePickerPlatform(
+        fileFromBytes(tinyPng()),
+      );
+      var calls = 0;
+      await pumpSheet(
+        tester,
+        cropper: (bytes) async {
+          calls++;
+          return calls == 1 ? bytes : null;
+        },
+      );
+
+      // Primera adjunta (recorte OK) → preview.
+      await attachFromGallery(tester);
+      expect(find.byKey(heroKey), findsOneWidget);
+
+      // Cambiar → cancelar el recorte → el preview previo se mantiene.
+      await tester.ensureVisible(find.text(EsBO.quoteImageChange));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.quoteImageChange));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.quoteImageGallery));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(heroKey), findsOneWidget);
+      expect(find.text(EsBO.quoteImageChange), findsOneWidget);
+    });
+
+    testWidgets(
+      'F3: error del editor de recorte → snackbar de error y sin adjuntar',
+      (tester) async {
+        ImagePickerPlatform.instance = _FakePickerPlatform(
+          fileFromBytes(tinyPng()),
+        );
+        await pumpSheet(
+          tester,
+          cropper: (_) async => throw Exception('crop boom'),
+        );
+
+        await attachFromGallery(tester);
+
+        expect(find.byKey(heroKey), findsNothing);
+        expect(find.text(EsBO.quoteImageError), findsOneWidget);
+      },
+    );
+
+    testWidgets('F3: confirmar el recorte adjunta los bytes del editor', (
+      tester,
+    ) async {
+      final marker = Uint8List.fromList([...tinyPng(), 1, 2, 3]);
+      ImagePickerPlatform.instance = _FakePickerPlatform(
+        fileFromBytes(tinyPng()),
+      );
+      await pumpSheet(tester, cropper: (_) async => marker);
+
+      await attachFromGallery(tester);
+
+      expect(find.byKey(heroKey), findsOneWidget);
+      final template = tester.widget<QuoteImageTemplate>(
+        find.byType(QuoteImageTemplate),
+      );
+      expect(template.pieceImageBytes, equals(marker));
     });
 
     testWidgets('SC4: PNG capturado con foto difiere del sin foto', (

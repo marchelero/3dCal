@@ -574,6 +574,8 @@ class DeImpl implements AppStrings {
       'Ungültiges Bildformat (nur JPEG, PNG oder WebP).';
   @override
   String get quoteImageError => 'Das Bild konnte nicht abgerufen werden';
+  @override
+  String get quoteImageEditToolbar => 'Bild bearbeiten';
 
   @override
   String get filamentTitle => 'Filamente';

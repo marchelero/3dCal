@@ -7,6 +7,45 @@ import '../domain/entities/calculation_output.dart';
 import '../domain/entities/material_input.dart';
 import '../domain/monthly_totals.dart';
 
+/// Vista ligera de una cotizacion para el historial (F3).
+///
+/// Pensada para la lista y el export CSV: contiene SOLO las columnas que
+/// esos flujos leen, NUNCA el BLOB de imagen. `hasImage` indica si la foto
+/// existe para que la UI decida renderizar el thumbnail SIN materializar
+/// el BLOB; la fila completa (con BLOB) se lee on-demand via
+/// [CalculationRepository.getById] (detalle, prefill, thumbnail).
+class CalculationListItem {
+  const CalculationListItem({
+    required this.id,
+    required this.createdAt,
+    this.pieceName,
+    this.clientName,
+    required this.quantity,
+    required this.totalHours,
+    required this.discountPercentage,
+    required this.isSold,
+    required this.materialCostSnapshot,
+    required this.electricCostSnapshot,
+    required this.profitAmountSnapshot,
+    required this.totalPriceSnapshot,
+    required this.hasImage,
+  });
+
+  final int id;
+  final DateTime createdAt;
+  final String? pieceName;
+  final String? clientName;
+  final int quantity;
+  final double totalHours;
+  final double discountPercentage;
+  final bool isSold;
+  final double materialCostSnapshot;
+  final double electricCostSnapshot;
+  final double profitAmountSnapshot;
+  final double totalPriceSnapshot;
+  final bool hasImage;
+}
+
 /// Datos de entrada para crear una cotizacion.
 ///
 /// Snapshot de los valores al guardar.
@@ -24,6 +63,7 @@ class CalculationDraft {
     this.conditions,
     this.isTemplate = false,
     this.quantity = 1,
+    this.pieceImageBytes,
   });
 
   final List<MaterialInput> materials;
@@ -51,6 +91,10 @@ class CalculationDraft {
   /// Cantidad de unidades del lote (>= 1). Los snapshots financieros de
   /// [output] son UNITARIOS; el total efectivo es `unitario x quantity`.
   final int quantity;
+
+  /// Foto de la pieza persistida (F2): BLOB ya downscaled (max 1200px,
+  /// JPEG q85). Null = cotizacion sin foto.
+  final Uint8List? pieceImageBytes;
 }
 
 /// CRUD + queries de cotizaciones.
@@ -163,6 +207,7 @@ class CalculationRepository {
             minimumChargeSnapshot: 0,
             markupOnMaterialsSnapshot: 0,
             isTemplate: Value(isTemplate),
+            pieceImageBlob: Value(draft.pieceImageBytes),
           ),
         );
     for (final m in draft.materials) {
@@ -271,6 +316,7 @@ class CalculationRepository {
             failureRateSnapshot: source.failureRateSnapshot,
             minimumChargeSnapshot: source.minimumChargeSnapshot,
             markupOnMaterialsSnapshot: source.markupOnMaterialsSnapshot,
+            pieceImageBlob: Value(source.pieceImageBlob),
           ),
         );
     for (final m in materials) {
@@ -296,6 +342,65 @@ class CalculationRepository {
           ..where((_) => excludeTemplatesFilter())
           ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
         .get();
+  }
+
+  /// Lista "ligera" de cotizaciones (no plantillas), mas recientes primero.
+  ///
+  /// **F3**: NO materializa los BLOBs de imagen — solo las columnas que la
+  /// lista/CSV leen + `hasImage` (bool) para que la UI sepa que la foto
+  /// existe sin cargarla. La fila completa (con BLOB) se lee on-demand via
+  /// [getById].
+  Future<List<CalculationListItem>> listItems() async {
+    final t = _db.calculations;
+    final hasImage = t.pieceImageBlob.isNotNull();
+    final rows =
+        await (_db.selectOnly(t)
+              ..addColumns([
+                t.id,
+                t.createdAt,
+                t.pieceName,
+                t.clientName,
+                t.quantity,
+                t.totalHours,
+                t.discountPercentage,
+                t.isSold,
+                t.materialCostSnapshot,
+                t.electricCostSnapshot,
+                t.profitAmountSnapshot,
+                t.totalPriceSnapshot,
+                hasImage,
+              ])
+              ..where(excludeTemplatesFilter())
+              ..orderBy([OrderingTerm.desc(t.createdAt)]))
+            .get();
+    return [
+      for (final r in rows)
+        CalculationListItem(
+          id: r.read(t.id)!,
+          createdAt: r.read(t.createdAt)!,
+          pieceName: r.read(t.pieceName),
+          clientName: r.read(t.clientName),
+          quantity: r.read(t.quantity)!,
+          totalHours: r.read(t.totalHours)!,
+          discountPercentage: r.read(t.discountPercentage)!,
+          isSold: r.read(t.isSold)!,
+          materialCostSnapshot: r.read(t.materialCostSnapshot)!,
+          electricCostSnapshot: r.read(t.electricCostSnapshot)!,
+          profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
+          totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
+          hasImage: r.read(hasImage) ?? false,
+        ),
+    ];
+  }
+
+  /// Obtiene una cotizacion completa (incluido el BLOB de imagen) por id.
+  ///
+  /// **F3**: unica puerta para materializar el BLOB on-demand (detalle,
+  /// prefill y thumbnail de la lista). Excluye plantillas.
+  Future<Calculation?> getById(int id) {
+    return (_db.select(_db.calculations)
+          ..where((c) => c.id.equals(id) & excludeTemplatesFilter()))
+        .getSingleOrNull();
   }
 
   /// Busca cotizaciones por nombre de pieza o cliente (LIKE %query%).

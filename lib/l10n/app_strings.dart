@@ -359,6 +359,9 @@ abstract class AppStrings {
   /// Error genérico al obtener la imagen.
   String get quoteImageError;
 
+  /// Título del toolbar del editor de recorte (image_cropper).
+  String get quoteImageEditToolbar;
+
   // === Filaments / Printers forms ===
   String get filamentTitle;
   String get filamentNew;

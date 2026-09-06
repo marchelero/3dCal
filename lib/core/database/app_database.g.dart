@@ -1278,6 +1278,18 @@ class $CalculationsTable extends Calculations
         type: DriftSqlType.double,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _pieceImageBlobMeta = const VerificationMeta(
+    'pieceImageBlob',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> pieceImageBlob =
+      GeneratedColumn<Uint8List>(
+        'piece_image_blob',
+        aliasedName,
+        true,
+        type: DriftSqlType.blob,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1313,6 +1325,7 @@ class $CalculationsTable extends Calculations
     failureRateSnapshot,
     minimumChargeSnapshot,
     markupOnMaterialsSnapshot,
+    pieceImageBlob,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1629,6 +1642,15 @@ class $CalculationsTable extends Calculations
     } else if (isInserting) {
       context.missing(_markupOnMaterialsSnapshotMeta);
     }
+    if (data.containsKey('piece_image_blob')) {
+      context.handle(
+        _pieceImageBlobMeta,
+        pieceImageBlob.isAcceptableOrUnknown(
+          data['piece_image_blob']!,
+          _pieceImageBlobMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1770,6 +1792,10 @@ class $CalculationsTable extends Calculations
         DriftSqlType.double,
         data['${effectivePrefix}markup_on_materials_snapshot'],
       )!,
+      pieceImageBlob: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}piece_image_blob'],
+      ),
     );
   }
 
@@ -1867,6 +1893,11 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   final double failureRateSnapshot;
   final double minimumChargeSnapshot;
   final double markupOnMaterialsSnapshot;
+
+  /// Foto de la pieza persistida (F2, v9). BLOB JPEG downscaled (max 1200px
+  /// lado mayor, calidad 85) para no inflar la DB. `null` en cotizaciones
+  /// sin foto o pre-v9 (migracion aditiva).
+  final Uint8List? pieceImageBlob;
   const Calculation({
     required this.id,
     required this.createdAt,
@@ -1901,6 +1932,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.failureRateSnapshot,
     required this.minimumChargeSnapshot,
     required this.markupOnMaterialsSnapshot,
+    this.pieceImageBlob,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1958,6 +1990,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     map['markup_on_materials_snapshot'] = Variable<double>(
       markupOnMaterialsSnapshot,
     );
+    if (!nullToAbsent || pieceImageBlob != null) {
+      map['piece_image_blob'] = Variable<Uint8List>(pieceImageBlob);
+    }
     return map;
   }
 
@@ -2008,6 +2043,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       failureRateSnapshot: Value(failureRateSnapshot),
       minimumChargeSnapshot: Value(minimumChargeSnapshot),
       markupOnMaterialsSnapshot: Value(markupOnMaterialsSnapshot),
+      pieceImageBlob: pieceImageBlob == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pieceImageBlob),
     );
   }
 
@@ -2084,6 +2122,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       markupOnMaterialsSnapshot: serializer.fromJson<double>(
         json['markupOnMaterialsSnapshot'],
       ),
+      pieceImageBlob: serializer.fromJson<Uint8List?>(json['pieceImageBlob']),
     );
   }
   @override
@@ -2133,6 +2172,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'markupOnMaterialsSnapshot': serializer.toJson<double>(
         markupOnMaterialsSnapshot,
       ),
+      'pieceImageBlob': serializer.toJson<Uint8List?>(pieceImageBlob),
     };
   }
 
@@ -2170,6 +2210,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     double? failureRateSnapshot,
     double? minimumChargeSnapshot,
     double? markupOnMaterialsSnapshot,
+    Value<Uint8List?> pieceImageBlob = const Value.absent(),
   }) => Calculation(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -2211,6 +2252,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     minimumChargeSnapshot: minimumChargeSnapshot ?? this.minimumChargeSnapshot,
     markupOnMaterialsSnapshot:
         markupOnMaterialsSnapshot ?? this.markupOnMaterialsSnapshot,
+    pieceImageBlob: pieceImageBlob.present
+        ? pieceImageBlob.value
+        : this.pieceImageBlob,
   );
   Calculation copyWithCompanion(CalculationsCompanion data) {
     return Calculation(
@@ -2299,6 +2343,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       markupOnMaterialsSnapshot: data.markupOnMaterialsSnapshot.present
           ? data.markupOnMaterialsSnapshot.value
           : this.markupOnMaterialsSnapshot,
+      pieceImageBlob: data.pieceImageBlob.present
+          ? data.pieceImageBlob.value
+          : this.pieceImageBlob,
     );
   }
 
@@ -2339,7 +2386,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('postProcessRateSnapshot: $postProcessRateSnapshot, ')
           ..write('failureRateSnapshot: $failureRateSnapshot, ')
           ..write('minimumChargeSnapshot: $minimumChargeSnapshot, ')
-          ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot')
+          ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot, ')
+          ..write('pieceImageBlob: $pieceImageBlob')
           ..write(')'))
         .toString();
   }
@@ -2379,6 +2427,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     failureRateSnapshot,
     minimumChargeSnapshot,
     markupOnMaterialsSnapshot,
+    $driftBlobEquality.hash(pieceImageBlob),
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2417,7 +2466,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.postProcessRateSnapshot == this.postProcessRateSnapshot &&
           other.failureRateSnapshot == this.failureRateSnapshot &&
           other.minimumChargeSnapshot == this.minimumChargeSnapshot &&
-          other.markupOnMaterialsSnapshot == this.markupOnMaterialsSnapshot);
+          other.markupOnMaterialsSnapshot == this.markupOnMaterialsSnapshot &&
+          $driftBlobEquality.equals(other.pieceImageBlob, this.pieceImageBlob));
 }
 
 class CalculationsCompanion extends UpdateCompanion<Calculation> {
@@ -2454,6 +2504,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<double> failureRateSnapshot;
   final Value<double> minimumChargeSnapshot;
   final Value<double> markupOnMaterialsSnapshot;
+  final Value<Uint8List?> pieceImageBlob;
   const CalculationsCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -2488,6 +2539,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.failureRateSnapshot = const Value.absent(),
     this.minimumChargeSnapshot = const Value.absent(),
     this.markupOnMaterialsSnapshot = const Value.absent(),
+    this.pieceImageBlob = const Value.absent(),
   });
   CalculationsCompanion.insert({
     this.id = const Value.absent(),
@@ -2523,6 +2575,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     required double failureRateSnapshot,
     required double minimumChargeSnapshot,
     required double markupOnMaterialsSnapshot,
+    this.pieceImageBlob = const Value.absent(),
   }) : createdAt = Value(createdAt),
        totalHours = Value(totalHours),
        discountPercentage = Value(discountPercentage),
@@ -2578,6 +2631,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<double>? failureRateSnapshot,
     Expression<double>? minimumChargeSnapshot,
     Expression<double>? markupOnMaterialsSnapshot,
+    Expression<Uint8List>? pieceImageBlob,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2629,6 +2683,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         'minimum_charge_snapshot': minimumChargeSnapshot,
       if (markupOnMaterialsSnapshot != null)
         'markup_on_materials_snapshot': markupOnMaterialsSnapshot,
+      if (pieceImageBlob != null) 'piece_image_blob': pieceImageBlob,
     });
   }
 
@@ -2666,6 +2721,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<double>? failureRateSnapshot,
     Value<double>? minimumChargeSnapshot,
     Value<double>? markupOnMaterialsSnapshot,
+    Value<Uint8List?>? pieceImageBlob,
   }) {
     return CalculationsCompanion(
       id: id ?? this.id,
@@ -2707,6 +2763,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           minimumChargeSnapshot ?? this.minimumChargeSnapshot,
       markupOnMaterialsSnapshot:
           markupOnMaterialsSnapshot ?? this.markupOnMaterialsSnapshot,
+      pieceImageBlob: pieceImageBlob ?? this.pieceImageBlob,
     );
   }
 
@@ -2838,6 +2895,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         markupOnMaterialsSnapshot.value,
       );
     }
+    if (pieceImageBlob.present) {
+      map['piece_image_blob'] = Variable<Uint8List>(pieceImageBlob.value);
+    }
     return map;
   }
 
@@ -2878,7 +2938,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('postProcessRateSnapshot: $postProcessRateSnapshot, ')
           ..write('failureRateSnapshot: $failureRateSnapshot, ')
           ..write('minimumChargeSnapshot: $minimumChargeSnapshot, ')
-          ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot')
+          ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot, ')
+          ..write('pieceImageBlob: $pieceImageBlob')
           ..write(')'))
         .toString();
   }
@@ -4719,6 +4780,7 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       required double failureRateSnapshot,
       required double minimumChargeSnapshot,
       required double markupOnMaterialsSnapshot,
+      Value<Uint8List?> pieceImageBlob,
     });
 typedef $$CalculationsTableUpdateCompanionBuilder =
     CalculationsCompanion Function({
@@ -4755,6 +4817,7 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<double> failureRateSnapshot,
       Value<double> minimumChargeSnapshot,
       Value<double> markupOnMaterialsSnapshot,
+      Value<Uint8List?> pieceImageBlob,
     });
 
 final class $$CalculationsTableReferences
@@ -4961,6 +5024,11 @@ class $$CalculationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<Uint8List> get pieceImageBlob => $composableBuilder(
+    column: $table.pieceImageBlob,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> calculationMaterialsRefs(
     Expression<bool> Function($$CalculationMaterialsTableFilterComposer f) f,
   ) {
@@ -5161,6 +5229,11 @@ class $$CalculationsTableOrderingComposer
     column: $table.markupOnMaterialsSnapshot,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<Uint8List> get pieceImageBlob => $composableBuilder(
+    column: $table.pieceImageBlob,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CalculationsTableAnnotationComposer
@@ -5324,6 +5397,11 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<Uint8List> get pieceImageBlob => $composableBuilder(
+    column: $table.pieceImageBlob,
+    builder: (column) => column,
+  );
+
   Expression<T> calculationMaterialsRefs<T extends Object>(
     Expression<T> Function($$CalculationMaterialsTableAnnotationComposer a) f,
   ) {
@@ -5413,6 +5491,7 @@ class $$CalculationsTableTableManager
                 Value<double> failureRateSnapshot = const Value.absent(),
                 Value<double> minimumChargeSnapshot = const Value.absent(),
                 Value<double> markupOnMaterialsSnapshot = const Value.absent(),
+                Value<Uint8List?> pieceImageBlob = const Value.absent(),
               }) => CalculationsCompanion(
                 id: id,
                 createdAt: createdAt,
@@ -5447,6 +5526,7 @@ class $$CalculationsTableTableManager
                 failureRateSnapshot: failureRateSnapshot,
                 minimumChargeSnapshot: minimumChargeSnapshot,
                 markupOnMaterialsSnapshot: markupOnMaterialsSnapshot,
+                pieceImageBlob: pieceImageBlob,
               ),
           createCompanionCallback:
               ({
@@ -5483,6 +5563,7 @@ class $$CalculationsTableTableManager
                 required double failureRateSnapshot,
                 required double minimumChargeSnapshot,
                 required double markupOnMaterialsSnapshot,
+                Value<Uint8List?> pieceImageBlob = const Value.absent(),
               }) => CalculationsCompanion.insert(
                 id: id,
                 createdAt: createdAt,
@@ -5517,6 +5598,7 @@ class $$CalculationsTableTableManager
                 failureRateSnapshot: failureRateSnapshot,
                 minimumChargeSnapshot: minimumChargeSnapshot,
                 markupOnMaterialsSnapshot: markupOnMaterialsSnapshot,
+                pieceImageBlob: pieceImageBlob,
               ),
           withReferenceMapper: (p0) => p0
               .map(

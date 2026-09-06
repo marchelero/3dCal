@@ -14,6 +14,7 @@ import '../../../../core/export/pdf_export.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
+import '../../../../core/share/piece_image_cropper.dart';
 import '../../../../core/share/quote_image_picker.dart';
 import '../../../../core/share/quote_share.dart';
 import '../../../../core/theme/app_radii.dart';
@@ -241,37 +242,58 @@ class ResultBottomBar extends StatelessWidget {
 Future<void> showResultSheet({
   required BuildContext context,
   required CalculatorState state,
-  required VoidCallback onSave,
+  required ValueChanged<Uint8List?> onSave,
   required VoidCallback onReset,
   required VoidCallback onToggleDetail,
   required ValueChanged<String> onDiscountChanged,
+  Future<Uint8List?> Function(Uint8List sourceBytes)? pieceImageCropper,
+  GallerySaver gallerySaver = const GallerySaver(),
 }) {
+  // AC-402: mensajero ROOT (page-level), capturado ANTES de abrir el modal.
+  // Si el user cierra el sheet mientras un save de imagen (o PDF/share)
+  // esta en vuelo, el `ScaffoldMessenger` local del sheet muere con el
+  // widget: el feedback de exito/error cae aca como fallback.
+  final rootMessenger = ScaffoldMessenger.of(context);
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (sheetCtx) => Consumer(
-      builder: (ctx, ref, _) {
-        // Usamos el state vivo del provider para que el toggle detail
-        // (showDetail) funcione dentro del sheet.
-        final liveState = ref.watch(calculatorNotifierProvider);
-        final asyncSettings = ref.watch(settingsNotifierProvider);
-        final settings = asyncSettings.value;
-        final currency = ref.watch(selectedCurrencyProvider);
-        final isPro = ref.watch(isProProvider);
-        return ResultSheetContent(
-          state: liveState,
-          isPro: isPro,
-          companyName: settings?.companyName,
-          companyLogoBase64: settings?.companyLogoBase64,
-          currency: currency,
-          onSave: onSave,
-          onReset: onReset,
-          onToggleDetail: onToggleDetail,
-          onDiscountChanged: onDiscountChanged,
-        );
-      },
+    // F4: ScaffoldMessenger + Scaffold locales como ANCESTROS del contenido
+    // del sheet. Asi `ScaffoldMessenger.of(context)` dentro de las acciones
+    // resuelve al messenger local y el Scaffold local registra una superficie
+    // VISIBLE sobre la hoja modal: los SnackBars (exito/error de save,
+    // errores de imagen) se muestran encima del sheet, no ocultos debajo del
+    // barrier.
+    builder: (sheetCtx) => ScaffoldMessenger(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Consumer(
+          builder: (ctx, ref, _) {
+            // Usamos el state vivo del provider para que el toggle detail
+            // (showDetail) funcione dentro del sheet.
+            final liveState = ref.watch(calculatorNotifierProvider);
+            final asyncSettings = ref.watch(settingsNotifierProvider);
+            final settings = asyncSettings.value;
+            final currency = ref.watch(selectedCurrencyProvider);
+            final isPro = ref.watch(isProProvider);
+            return ResultSheetContent(
+              state: liveState,
+              isPro: isPro,
+              companyName: settings?.companyName,
+              companyLogoBase64: settings?.companyLogoBase64,
+              currency: currency,
+              onSave: onSave,
+              onReset: onReset,
+              onToggleDetail: onToggleDetail,
+              onDiscountChanged: onDiscountChanged,
+              pieceImageCropper: pieceImageCropper,
+              gallerySaver: gallerySaver,
+              rootMessenger: rootMessenger,
+            );
+          },
+        ),
+      ),
     ),
   );
 }
@@ -294,6 +316,9 @@ class ResultSheetContent extends StatefulWidget {
     required this.onReset,
     required this.onToggleDetail,
     required this.onDiscountChanged,
+    this.pieceImageCropper,
+    this.gallerySaver = const GallerySaver(),
+    this.rootMessenger,
     super.key,
   });
 
@@ -302,13 +327,32 @@ class ResultSheetContent extends StatefulWidget {
   final String? companyName;
   final String? companyLogoBase64;
   final WorldCurrency currency;
-  final VoidCallback onSave;
+
+  /// Guarda en el historial. Recibe la foto de la pieza adjuntada (o null)
+  /// para que el parent la persista (F2): efimera aca, persistida alla.
+  final ValueChanged<Uint8List?> onSave;
   final VoidCallback onReset;
   final VoidCallback onToggleDetail;
 
   /// Escribe el descuento (%) en el notifier (fuente unica de verdad:
   /// state.discountPct → engine → output.discountAmount/output.totalPrice).
   final ValueChanged<String> onDiscountChanged;
+
+  /// Seam (F3): editor de recorte/rotacion de la foto de pieza. Default usa
+  /// [cropPieceImage] real (image_cropper). Injectable en tests para evitar
+  /// el plugin nativo (misma idea que [ImagePicker] en `pickPieceImage`).
+  final Future<Uint8List?> Function(Uint8List sourceBytes)? pieceImageCropper;
+
+  /// Seam (F4): guardado en galeria. Default: [GallerySaver] real (gal).
+  /// Injectable en tests para cubrir el flujo de exito sin platform
+  /// channels.
+  final GallerySaver gallerySaver;
+
+  /// Messengero ROOT de la page (capturado en [showResultSheet] ANTES de
+  /// abrir el modal). Fallback AC-402: si el sheet se cierra mientras un
+  /// save esta en vuelo, el messenger local muere y el feedback de
+  /// exito/error se muestra en este messenger en su lugar.
+  final ScaffoldMessengerState? rootMessenger;
 
   @override
   State<ResultSheetContent> createState() => _ResultSheetContentState();
@@ -370,7 +414,13 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     try {
       final bytes = await pickPieceImage(source: source);
       if (bytes == null) return; // cancelacion, sin feedback.
-      setState(() => _pieceImageBytes = bytes);
+      // F3: recorte/rotacion antes de adjuntar. Cancelar el cropper
+      // (null) deja el flujo en el estado previo sin feedback.
+      final cropped = widget.pieceImageCropper != null
+          ? await widget.pieceImageCropper!(bytes)
+          : await cropPieceImage(sourceBytes: bytes);
+      if (cropped == null) return;
+      setState(() => _pieceImageBytes = cropped);
     } on PieceImageException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
@@ -448,26 +498,49 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     if (_inFlight) return; // BUG-008: guard sincrono anti-doble-tap.
     _inFlight = true;
     setState(() => _isBusy = true);
+    // F4: referenciar el messenger ANTES del async. Con el Scaffold local
+    // dentro del sheet, `ScaffoldMessenger.of(context)` resuelve al
+    // messenger del sheet → el SnackBar se muestra SOBRE la hoja modal
+    // (antes quedaba oculto debajo del barrier). La referencia capturada
+    // sobrevive aunque el sheet se cierre durante el save.
+    final messenger = ScaffoldMessenger.of(context);
+    // AC-402: si el sheet se cierra durante el save, ese messenger muere
+    // (mounted=false); el fallback es el messenger ROOT de la page.
+    final rootMessenger = widget.rootMessenger;
     try {
       final bytes = await captureQuoteImageBytes(_captureKey);
-      await saveQuoteImage(bytes);
-      if (!mounted) return;
+      await saveQuoteImage(bytes, gallerySaver: widget.gallerySaver);
       final msg = kIsWeb
           ? EsBO.commonImageDownloaded
           : EsBO.commonImageSavedGallery;
-      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.success(msg));
+      _showSaveFeedback(messenger, rootMessenger, AppSnackBar.success(msg));
     } on ShareQuoteException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
+      _showSaveFeedback(messenger, rootMessenger, AppSnackBar.error(e.message));
     } catch (e) {
       debugPrint('Quote image save failed: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(AppSnackBar.error(EsBO.calcShareError));
+      _showSaveFeedback(
+        messenger,
+        rootMessenger,
+        AppSnackBar.error(EsBO.calcShareError),
+      );
     } finally {
       _inFlight = false;
       if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  /// Muestra [snackbar] en el messenger del sheet si sigue montado; si el
+  /// sheet se cerro durante el save async, cae al messenger ROOT de la
+  /// page para que el feedback de exito/error no se pierda (AC-402).
+  static void _showSaveFeedback(
+    ScaffoldMessengerState sheetMessenger,
+    ScaffoldMessengerState? rootMessenger,
+    SnackBar snackbar,
+  ) {
+    if (sheetMessenger.mounted) {
+      sheetMessenger.showSnackBar(snackbar);
+    } else if (rootMessenger != null && rootMessenger.mounted) {
+      rootMessenger.showSnackBar(snackbar);
     }
   }
 
@@ -487,6 +560,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final meta = computeMeta(state);
 
+    // La superficie visible para los SnackBars (F4) vive en [showResultSheet]
+    // (ScaffoldMessenger + Scaffold como ancestros del contenido).
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       // Entrada de sello: UN momento autorado (stamp settle).
@@ -642,7 +717,10 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                     ),
                                     if (locked) ...[
                                       const SizedBox(width: AppSpacing.xs),
-                                      const ProBadge(),
+                                      ProBadge(
+                                        onTap: () =>
+                                            ProBadge.sheetAction(ctx, ref),
+                                      ),
                                     ],
                                   ],
                                 ),
@@ -809,7 +887,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                 isBusy: _isBusy,
                 onSaveDb: () {
                   Navigator.of(context).pop();
-                  widget.onSave();
+                  widget.onSave(_pieceImageBytes);
                 },
                 onShare: _handleShare,
                 onSharePdf: _handleSharePdf,

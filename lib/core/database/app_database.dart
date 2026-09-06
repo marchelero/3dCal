@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -105,6 +105,12 @@ class AppDatabase extends _$AppDatabase {
         // v7→v8: cantidad por cotizacion (lotes). Aditiva: registros
         // viejos quedan quantity=1 (comportamiento identico al actual).
         await m.addColumn(calculations, calculations.quantity);
+      }
+      if (from < 9) {
+        // v8→v9: persistir la foto de la pieza en el historial (F2).
+        // Se guarda downscaled (max 1200px lado mayor, JPEG q85). Aditiva:
+        // registros viejos quedan piece_image_blob NULL (sin foto).
+        await m.addColumn(calculations, calculations.pieceImageBlob);
       }
     },
   );

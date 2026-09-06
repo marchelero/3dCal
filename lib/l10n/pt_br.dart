@@ -576,6 +576,8 @@ class PtBrImpl implements AppStrings {
       'Formato de imagem inválido (somente JPEG, PNG ou WebP).';
   @override
   String get quoteImageError => 'Não foi possível obter a imagem';
+  @override
+  String get quoteImageEditToolbar => 'Editar imagem';
 
   @override
   String get filamentTitle => 'Filamentos';

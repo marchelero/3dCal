@@ -272,6 +272,56 @@ void main() {
       expect(() => calculations.duplicate(9999), throwsA(isA<StateError>()));
     });
 
+    test(
+      'create persiste pieceImageBlob y listAll lo devuelve intacto (F2)',
+      () async {
+        final photo = Uint8List.fromList(
+          List<int>.generate(64, (i) => (i * 5) % 256),
+        );
+        final id = await calculations.create(
+          _simpleDraft('Engranaje', null, null, null, 1, photo),
+        );
+        expect(id, greaterThan(0));
+
+        final all = await calculations.listAll();
+        final calc = all.firstWhere((c) => c.id == id);
+        expect(
+          calc.pieceImageBlob,
+          equals(photo),
+          reason: 'El BLOB debe persistir/leerse intacto (round-trip).',
+        );
+      },
+    );
+
+    test('create sin foto deja pieceImageBlob null (F2)', () async {
+      final id = await calculations.create(_simpleDraft('Sin foto'));
+      final calc = (await calculations.listAll()).firstWhere((c) => c.id == id);
+      expect(calc.pieceImageBlob, isNull);
+    });
+
+    test('duplicate copia pieceImageBlob (F2)', () async {
+      final photo = Uint8List.fromList(
+        List<int>.generate(32, (i) => (i * 7) % 256),
+      );
+      final id = await calculations.create(
+        _simpleDraft('Soporte', null, null, null, 1, photo),
+      );
+      final copyId = await calculations.duplicate(id);
+
+      final all = await calculations.listAll();
+      final copy = all.firstWhere((c) => c.id == copyId);
+      expect(copy.pieceImageBlob, isNotNull);
+      expect(copy.pieceImageBlob, equals(photo));
+    });
+
+    test('createTemplate sin foto deja pieceImageBlob null (F2)', () async {
+      final id = await calculations.createTemplate(_simpleDraft('Plantilla'));
+      final t = (await calculations.listTemplates()).firstWhere(
+        (c) => c.id == id,
+      );
+      expect(t.pieceImageBlob, isNull);
+    });
+
     test('create persiste notas y condiciones (v6)', () async {
       final id = await calculations.create(
         _simpleDraft(
@@ -562,6 +612,7 @@ CalculationDraft _simpleDraft(
   String? notes,
   String? conditions,
   int quantity = 1,
+  Uint8List? pieceImageBytes,
 ]) {
   final materials = [
     MaterialInput(
@@ -594,6 +645,7 @@ CalculationDraft _simpleDraft(
     notes: notes,
     conditions: conditions,
     quantity: quantity,
+    pieceImageBytes: pieceImageBytes,
   );
 }
 

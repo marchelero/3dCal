@@ -560,6 +560,8 @@ class EnImpl implements AppStrings {
       'Invalid image format (JPEG, PNG or WebP only).';
   @override
   String get quoteImageError => 'Could not get the image';
+  @override
+  String get quoteImageEditToolbar => 'Edit image';
 
   @override
   String get filamentTitle => 'Filaments';

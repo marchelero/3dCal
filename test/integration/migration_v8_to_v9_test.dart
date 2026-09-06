@@ -1,22 +1,24 @@
 // ignore_for_file: public_member_api_docs, depend_on_referenced_packages
+import 'dart:typed_data';
+
 import 'package:drift/drift.dart' show QueryRow, Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 
-/// Integration test de la migracion Drift v5 → v6 (notas + condiciones por
-/// cotizacion).
+/// Integration test de la migracion Drift v8 → v9 (foto de la pieza
+/// persistida en el historial, F2).
 ///
-/// **Que prueba**: que un usuario que actualiza desde v5 (con datos
-/// existentes) recibe las columnas `notes` y `conditions` en `calculations`
+/// **Que prueba**: que un usuario que actualiza desde v8 (con datos
+/// existentes) recibe la columna `piece_image_blob` en `calculations`
 /// sin perder datos.
 ///
-/// Mismo patron que migration_v4_to_v5_test.dart: seed del schema v5 raw
-/// con `PRAGMA user_version = 5`, hand-off via `NativeDatabase.opened`, y
-/// Drift dispara `onUpgrade(5, 6)` al abrir.
-void _seedV5Schema(Database rawDb) {
-  // --- printers (v5) ---
+/// Mismo patron que migration_v4_to_v5/v5_to_v6: seed del schema v8 raw
+/// con `PRAGMA user_version = 8`, hand-off via `NativeDatabase.opened`, y
+/// Drift dispara `onUpgrade(8, 9)` al abrir.
+void _seedV8Schema(Database rawDb) {
+  // --- printers (v8) ---
   rawDb.execute('''
     CREATE TABLE printers (
       id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +30,7 @@ void _seedV5Schema(Database rawDb) {
     )
   ''');
 
-  // --- filaments (v5) ---
+  // --- filaments (v8) ---
   rawDb.execute('''
     CREATE TABLE filaments (
       id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +43,7 @@ void _seedV5Schema(Database rawDb) {
     )
   ''');
 
-  // --- calculations (v5) — SIN notes/conditions (es el cambio de v6) ---
+  // --- calculations (v8) — SIN piece_image_blob (es el cambio de v9) ---
   rawDb.execute('''
     CREATE TABLE calculations (
       id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -72,11 +74,15 @@ void _seedV5Schema(Database rawDb) {
       post_process_rate_snapshot REAL NOT NULL,
       failure_rate_snapshot REAL NOT NULL,
       minimum_charge_snapshot REAL NOT NULL,
-      markup_on_materials_snapshot REAL NOT NULL
+      markup_on_materials_snapshot REAL NOT NULL,
+      notes TEXT,
+      conditions TEXT,
+      is_template INTEGER NOT NULL DEFAULT 0,
+      quantity INTEGER NOT NULL DEFAULT 1
     )
   ''');
 
-  // --- calculation_materials (v5) ---
+  // --- calculation_materials (v8) ---
   rawDb.execute('''
     CREATE TABLE calculation_materials (
       id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -89,7 +95,7 @@ void _seedV5Schema(Database rawDb) {
     )
   ''');
 
-  // --- settings (v5) ---
+  // --- settings (v8) ---
   rawDb.execute('''
     CREATE TABLE settings (
       key TEXT NOT NULL,
@@ -99,7 +105,7 @@ void _seedV5Schema(Database rawDb) {
     )
   ''');
 
-  // --- entitlements (v5) — creada en v4→v5 ---
+  // --- entitlements (v8) ---
   rawDb.execute('''
     CREATE TABLE entitlements (
       id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -143,9 +149,10 @@ void _seedV5Schema(Database rawDb) {
     'effective_total_snapshot, total_price_snapshot, '
     'labor_rate_snapshot, post_process_rate_snapshot, '
     'failure_rate_snapshot, minimum_charge_snapshot, '
-    'markup_on_materials_snapshot) '
+    'markup_on_materials_snapshot, notes, conditions, '
+    'is_template, quantity) '
     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
-    '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       nowEpoch,
       'Llave Allen',
@@ -175,6 +182,10 @@ void _seedV5Schema(Database rawDb) {
       0.0,
       10.0,
       0.0,
+      'Entregar en 3 dias',
+      'Pago contra entrega',
+      0,
+      2,
     ],
   );
 
@@ -191,24 +202,24 @@ void _seedV5Schema(Database rawDb) {
     ['profit_base_percentage', '30', nowEpoch],
   );
 
-  // Marca la DB como v5 para que AppDatabase dispare onUpgrade(5, 6).
-  rawDb.execute('PRAGMA user_version = 5');
+  // Marca la DB como v8 para que AppDatabase dispare onUpgrade(8, 9).
+  rawDb.execute('PRAGMA user_version = 8');
 }
 
 void main() {
-  group('Migration v5 → v6', () {
+  group('Migration v8 → v9', () {
     late AppDatabase db;
     late Database rawDb;
 
     setUp(() async {
       rawDb = sqlite3.openInMemory();
-      _seedV5Schema(rawDb);
+      _seedV8Schema(rawDb);
       final native = NativeDatabase.opened(rawDb);
       db = AppDatabase.forTesting(native);
       addTearDown(() async => db.close());
     });
 
-    test('onUpgrade(5, 9) agrega notes/conditions y bumpea '
+    test('onUpgrade(8, 9) agrega piece_image_blob BLOB nullable y bumpea '
         'user_version a 9', () async {
       await db.customSelect('SELECT 1').get();
 
@@ -218,7 +229,7 @@ void main() {
         9,
         reason:
             'AppDatabase debe setear user_version=9 tras onUpgrade '
-            '(cadena v5→v6 + v6→v7 + v7→v8 + v8→v9).',
+            '(v8→v9).',
       );
 
       final rows = await db
@@ -233,32 +244,24 @@ void main() {
       }
 
       expect(
-        byName['notes'],
+        byName['piece_image_blob'],
         isNotNull,
-        reason: 'v6 debe crear columna notes en calculations.',
+        reason: 'v9 debe crear columna piece_image_blob en calculations.',
       );
-      expect(byName['notes']!.read<String>('type'), 'TEXT');
       expect(
-        byName['notes']!.read<int>('isNotNull'),
+        byName['piece_image_blob']!.read<String>('type'),
+        'BLOB',
+        reason: 'piece_image_blob debe ser BLOB (bytes crudos de la foto).',
+      );
+      expect(
+        byName['piece_image_blob']!.read<int>('isNotNull'),
         0,
-        reason: 'notes debe ser NULLABLE (opcional).',
-      );
-
-      expect(
-        byName['conditions'],
-        isNotNull,
-        reason: 'v6 debe crear columna conditions en calculations.',
-      );
-      expect(byName['conditions']!.read<String>('type'), 'TEXT');
-      expect(
-        byName['conditions']!.read<int>('isNotNull'),
-        0,
-        reason: 'conditions debe ser NULLABLE (opcional).',
+        reason: 'piece_image_blob debe ser NULLABLE (foto opcional).',
       );
     });
 
     test(
-      'migration es no-destructiva: datos v5 sobreviven con notas null',
+      'migracion es no-destructiva: datos v8 sobreviven con foto null',
       () async {
         await db.customSelect('SELECT 1').get();
 
@@ -266,22 +269,12 @@ void main() {
         expect(calcs, hasLength(1));
         expect(calcs.first.read<String>('piece_name'), 'Llave Allen');
         expect(calcs.first.read<String>('client_name'), 'Juan Perez');
-        expect(calcs.first.read<double>('total_hours'), 2.5);
-        expect(calcs.first.read<int>('print_minutes'), 30);
+        expect(calcs.first.read<String>('notes'), 'Entregar en 3 dias');
+        expect(calcs.first.read<int>('quantity'), 2);
         expect(
-          calcs.first.read<String?>('notes'),
+          calcs.first.read<Uint8List?>('piece_image_blob'),
           isNull,
-          reason: 'Registros pre-v6 deben quedar con notes NULL.',
-        );
-        expect(
-          calcs.first.read<String?>('conditions'),
-          isNull,
-          reason: 'Registros pre-v6 deben quedar con conditions NULL.',
-        );
-        expect(
-          calcs.first.read<int>('is_template'),
-          0,
-          reason: 'Registros pre-v7 deben quedar con is_template=0 (default).',
+          reason: 'Registros pre-v9 deben quedar con piece_image_blob NULL.',
         );
 
         final mats = await db
@@ -293,18 +286,21 @@ void main() {
     );
 
     test(
-      'post-migration: insert + read de notas/condiciones via accessor',
+      'post-migration: insert + read de la foto via accessor (blob intacto)',
       () async {
         await db.customSelect('SELECT 1').get();
 
+        final photo = Uint8List.fromList(
+          List<int>.generate(64, (i) => (i * 3) % 256),
+        );
         final id = await db
             .into(db.calculations)
             .insert(
               CalculationsCompanion.insert(
                 createdAt: DateTime.now().toUtc(),
-                pieceName: const Value('Pieza nueva'),
+                pieceName: const Value('Pieza con foto'),
                 clientName: const Value('Maria'),
-                notes: const Value('Entregar en 3 dias'),
+                notes: const Value('Con imagen'),
                 conditions: const Value('Pago contra entrega'),
                 totalHours: 1.5,
                 printMinutes: const Value(20),
@@ -327,14 +323,21 @@ void main() {
                 failureRateSnapshot: 0,
                 minimumChargeSnapshot: 0,
                 markupOnMaterialsSnapshot: 0,
+                quantity: const Value(1),
+                isTemplate: const Value(false),
+                pieceImageBlob: Value(photo),
               ),
             );
         expect(id, greaterThan(0));
 
         final all = await db.select(db.calculations).get();
         final calc = all.firstWhere((c) => c.id == id);
-        expect(calc.notes, 'Entregar en 3 dias');
-        expect(calc.conditions, 'Pago contra entrega');
+        expect(calc.pieceImageBlob, isNotNull);
+        expect(
+          calc.pieceImageBlob,
+          equals(photo),
+          reason: 'El BLOB debe persistir/leerse intacto (round-trip).',
+        );
       },
     );
   });

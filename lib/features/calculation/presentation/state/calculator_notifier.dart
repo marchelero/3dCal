@@ -1,12 +1,17 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:isolate';
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart' as storage;
+import '../../../../core/utils/image_downscale.dart';
 import '../../../../features/settings/domain/settings.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
@@ -92,8 +97,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       state = _recompute(state.copyWith(discountPct: value));
       return;
     }
-    final clamped = parsed
-        .clamp(Decimal.zero, Decimal.fromInt(kMaxDiscountPercentage));
+    final clamped = parsed.clamp(
+      Decimal.zero,
+      Decimal.fromInt(kMaxDiscountPercentage),
+    );
     state = _recompute(state.copyWith(discountPct: clamped.toString()));
   }
 
@@ -337,10 +344,19 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     String? clientName,
     String? notes,
     String? conditions,
+    Uint8List? pieceImageBytes,
   }) async {
     if (!state.isValid || state.output == null) return null;
     final repo = ref.read(calculationRepositoryProvider);
     final isPro = await resolveIsPro(ref);
+    // F2: downscale antes de persistir (max 1200px lado mayor, JPEG q85).
+    // Correr en un isolate: decode+resize+encode de una foto de camara
+    // (variarios MB) puede congelar la UI 0.5-2s. `package:image` es Dart
+    // puro (isolate-safe) y Uint8List es trasferible por el SendPort. En
+    // web no hay isolates de Dart → fallback sincrono.
+    final pieceImage = kIsWeb
+        ? downscalePieceImage(pieceImageBytes)
+        : await Isolate.run(() => downscalePieceImage(pieceImageBytes));
     // El repositorio hace conteo + insercion en una sola transaccion para
     // evitar que dos guardados concurrentes superen el cap.
     if (!isPro) {
@@ -350,6 +366,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           clientName: clientName,
           notes: notes,
           conditions: conditions,
+          pieceImageBytes: pieceImage,
         ),
         limit: kFreeHistoryCap,
       );
@@ -368,6 +385,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         clientName: clientName,
         notes: notes,
         conditions: conditions,
+        pieceImageBytes: pieceImage,
       ),
     );
     ref.invalidate(calculationsNotifierProvider);
@@ -379,6 +397,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     String? clientName,
     String? notes,
     String? conditions,
+    Uint8List? pieceImageBytes,
   }) {
     final input = _buildInput(state);
     return CalculationDraft(
@@ -405,6 +424,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       conditions: (conditions == null || conditions.trim().isEmpty)
           ? null
           : conditions.trim(),
+      pieceImageBytes: pieceImageBytes,
     );
   }
 

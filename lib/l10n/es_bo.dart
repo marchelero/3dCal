@@ -331,6 +331,7 @@ class EsBO {
   static String get quoteImageTooLarge => _impl.quoteImageTooLarge;
   static String get quoteImageInvalidFormat => _impl.quoteImageInvalidFormat;
   static String get quoteImageError => _impl.quoteImageError;
+  static String get quoteImageEditToolbar => _impl.quoteImageEditToolbar;
 
   // === Filaments / Printers ===
   static String get filamentTitle => _impl.filamentTitle;
@@ -1211,6 +1212,8 @@ class EsImpl implements AppStrings {
       'Formato de imagen no válido (se admiten JPEG, PNG o WebP).';
   @override
   String get quoteImageError => 'No se pudo obtener la imagen';
+  @override
+  String get quoteImageEditToolbar => 'Editar imagen';
 
   @override
   String get filamentTitle => 'Filamentos';

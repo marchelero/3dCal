@@ -11,9 +11,9 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/app_locale.dart';
@@ -22,9 +22,9 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
-
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
+import '../../data/calculation_repository.dart';
 import '../notifiers/calculations_notifier.dart';
 
 /// Historial de cotizaciones guardadas con search + filtros.
@@ -317,12 +317,12 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
 class _CalculationCard extends ConsumerWidget {
   const _CalculationCard({required this.calc, required this.notifier});
 
-  final Calculation calc;
+  final CalculationListItem calc;
   final CalculationsNotifier notifier;
 
   /// Total efectivo de la cotizacion: `unitario x cantidad`.
   /// Los snapshots se guardan unitarios; la cantidad vive en su columna.
-  Decimal _effectiveTotal(Calculation c) =>
+  Decimal _effectiveTotal(CalculationListItem c) =>
       Decimal.parse(c.totalPriceSnapshot.toStringAsFixed(2)) *
       Decimal.fromInt(c.quantity < 1 ? 1 : c.quantity);
 
@@ -361,27 +361,20 @@ class _CalculationCard extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 children: [
-                  // Leading icon (decorative — sale status already in label)
+                  // Leading: thumbnail 44x44 cuando la cotizacion tiene
+                  // foto persistida (F2/F3); si no, el icono decorativo de
+                  // siempre (sale status ya esta en el label). El BLOB solo
+                  // se materializa on-demand por card (familia autoDispose).
                   ExcludeSemantics(
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: calc.isSold
-                            ? color.tertiaryContainer
-                            : color.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(AppRadii.lg),
-                      ),
-                      child: Icon(
-                        calc.isSold
-                            ? Icons.check_circle_rounded
-                            : Icons.receipt_long_rounded,
-                        color: calc.isSold
-                            ? color.tertiary
-                            : color.onSurfaceVariant,
-                        size: 22,
-                      ),
-                    ),
+                    child: calc.hasImage
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadii.lg),
+                            child: _CardThumb(
+                              calcId: calc.id,
+                              isSold: calc.isSold,
+                            ),
+                          )
+                        : _IconPlaceholder(isSold: calc.isSold),
                   ),
                   const SizedBox(width: 14),
                   // Body
@@ -482,10 +475,89 @@ class _CalculationCard extends ConsumerWidget {
   }
 }
 
+/// BLOB de imagen de una cotizacion, materializado SOLO on-demand (F3).
+///
+/// La lista nunca carga BLOBs: cada card que va a mostrar thumbnail
+/// consulta la fila completa via [CalculationRepository.getById] en una
+/// familia autoDispose (se descarta al salir de la pagina).
+final _cardBlobProvider = FutureProvider.autoDispose.family<Uint8List?, int>((
+  ref,
+  calcId,
+) async {
+  final repo = ref.watch(calculationRepositoryProvider);
+  final calc = await repo.getById(calcId);
+  return calc?.pieceImageBlob;
+});
+
+/// Cuadro decorativo 44x44 (icono por estado) usado como fallback del
+/// thumbnail y como leading cuando la cotizacion no tiene foto.
+class _IconPlaceholder extends StatelessWidget {
+  const _IconPlaceholder({required this.isSold});
+
+  final bool isSold;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: isSold ? color.tertiaryContainer : color.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Icon(
+        isSold ? Icons.check_circle_rounded : Icons.receipt_long_rounded,
+        color: isSold ? color.tertiary : color.onSurfaceVariant,
+        size: 22,
+      ),
+    );
+  }
+}
+
+/// Thumbnail 44x44 del BLOB persistido, cargado on-demand (F3).
+///
+/// Muestra el placeholder de icono mientras el BLOB no llega (o si por
+/// algun motivo la row ya no tiene foto).
+class _CardThumb extends ConsumerWidget {
+  const _CardThumb({required this.calcId, required this.isSold});
+
+  final int calcId;
+  final bool isSold;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final color = Theme.of(context).colorScheme;
+    final blobAsync = ref.watch(_cardBlobProvider(calcId));
+    final blob = blobAsync.value;
+    if (blob == null) return _IconPlaceholder(isSold: isSold);
+    return Image.memory(
+      blob,
+      width: 44,
+      height: 44,
+      fit: BoxFit.cover,
+      // Decode acotado (RNF): 88px alcanza para 44px a hasta 2x, no
+      // decodifica el JPEG full.
+      cacheWidth: 88,
+      cacheHeight: 88,
+      errorBuilder: (_, _, _) => Container(
+        width: 44,
+        height: 44,
+        color: color.surfaceContainerHighest,
+        child: Icon(
+          isSold ? Icons.check_circle_rounded : Icons.receipt_long_rounded,
+          color: isSold ? color.tertiary : color.onSurfaceVariant,
+          size: 22,
+        ),
+      ),
+    );
+  }
+}
+
 class _PopupMenu extends StatelessWidget {
   const _PopupMenu({required this.calc, required this.notifier});
 
-  final Calculation calc;
+  final CalculationListItem calc;
   final CalculationsNotifier notifier;
 
   @override

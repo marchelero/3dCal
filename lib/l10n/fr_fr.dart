@@ -543,6 +543,8 @@ class FrImpl implements AppStrings {
       'Format d’image invalide (JPEG, PNG ou WebP uniquement).';
   @override
   String get quoteImageError => 'Impossible d’obtenir l’image';
+  @override
+  String get quoteImageEditToolbar => 'Modifier l’image';
 
   @override
   String get filamentTitle => 'Filaments';

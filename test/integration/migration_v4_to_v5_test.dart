@@ -233,12 +233,12 @@ void main() {
               '`if (from <= 4)`.',
         );
 
-        // user_version debe ser 8 post-migration (v4 migra directo a v8:
-        // onUpgrade encadena los pasos v4→v5, v5→v6, v6→v7 y v7→v8).
+        // user_version debe ser 9 post-migration (v4 migra directo a v9:
+        // onUpgrade encadena los pasos v4→v5, v5→v6, v6→v7, v7→v8 y v8→v9).
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          8,
+          9,
           reason:
               'AppDatabase debe setear user_version=schemaVersion tras '
               'onUpgrade exitoso.',
@@ -246,9 +246,11 @@ void main() {
 
         // La cadena v5→v6→v7 tambien debe haber corrido: columnas
         // notes/conditions/isTemplate presentes.
-        final cols = await db.customSelect(
-          'SELECT name FROM pragma_table_info(\'calculations\')',
-        ).get();
+        final cols = await db
+            .customSelect(
+              'SELECT name FROM pragma_table_info(\'calculations\')',
+            )
+            .get();
         final colNames = cols.map((r) => r.read<String>('name')).toList();
         expect(
           colNames,

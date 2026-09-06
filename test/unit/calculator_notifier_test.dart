@@ -1,9 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/utils/image_downscale.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 import 'package:tresdcal/features/calculation/presentation/notifiers/calculations_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
@@ -512,6 +516,40 @@ void main() {
       expect(c.printMinutes, 0);
     });
 
+    test('save con pieceImageBytes persiste la foto downscaled (F2)', () async {
+      final n = container.read(calculatorNotifierProvider.notifier);
+      n.setWeight('100');
+      n.setPrintHours('5');
+      n.setFilamentPrice('120');
+      n.setFilamentGrams('1000');
+
+      // Foto 2400x1800 (lado mayor 2400 > 1200): debe quedar en 1200x900.
+      await n.save(pieceName: 'Con foto', pieceImageBytes: _pngOf(2400, 1800));
+
+      final c = (await db.select(db.calculations).get()).single;
+      expect(c.pieceImageBlob, isNotNull);
+      final stored = img.decodeImage(c.pieceImageBlob!);
+      expect(stored, isNotNull);
+      expect(
+        stored!.width,
+        kPieceImageMaxDimension,
+        reason: 'El lado mayor debe downscalearse a 1200px antes de guardar.',
+      );
+      expect(stored.height, 900);
+    });
+
+    test('save sin foto deja pieceImageBlob null (F2)', () async {
+      final n = container.read(calculatorNotifierProvider.notifier);
+      n.setWeight('100');
+      n.setPrintHours('5');
+      n.setFilamentPrice('120');
+      n.setFilamentGrams('1000');
+
+      await n.save(pieceName: 'Sin foto');
+      final c = (await db.select(db.calculations).get()).single;
+      expect(c.pieceImageBlob, isNull);
+    });
+
     test('loadFromCalculation preserva el split h+m (regression v4)', () async {
       // Setup: guardar cotizacion con 1h 33min
       final n = container.read(calculatorNotifierProvider.notifier);
@@ -525,14 +563,18 @@ void main() {
       // Reset del form (simula que el user sale y vuelve).
       n.reset();
 
-      // Carga la cotizacion guardada ("Reusar" en historial).
+      // Carga la cotizacion guardada ("Reusar" en historial). F3: la lista
+      // ya no trae BLOBs → la fila completa para `loadFromCalculation`
+      // (que necesita todos los campos) se lee via `getById`.
       final calculations = await container.read(
         calculationsNotifierProvider.future,
       );
-      final calc = calculations.first;
+      final item = calculations.first;
+      final repo = container.read(calculationRepositoryProvider);
+      final calc = await repo.getById(item.id);
       await container
           .read(calculatorNotifierProvider.notifier)
-          .loadFromCalculation(calc);
+          .loadFromCalculation(calc!);
 
       // Verifica que el split se preserva.
       final state = container.read(calculatorNotifierProvider);
@@ -596,4 +638,11 @@ class _FakeSettingsNotifier extends SettingsNotifier {
   Future<Settings> build() async => Settings.defaults;
 
   void setForTest(Settings s) => state = AsyncValue.data(s);
+}
+
+/// Genera un PNG solido de `w x h`. Usado para ejercitar el downscale (F2).
+Uint8List _pngOf(int w, int h) {
+  final image = img.Image(width: w, height: h);
+  img.fill(image, color: img.ColorRgb8(60, 120, 200));
+  return Uint8List.fromList(img.encodePng(image));
 }
