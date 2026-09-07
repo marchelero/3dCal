@@ -57,7 +57,8 @@ void main() {
     });
 
     testWidgets(
-      'paso 2: Continuar deshabilitado sin impresora, se habilita al guardar',
+      'paso 2: Continuar deshabilitado sin impresora ni filamento, '
+      'se habilita al guardar ambos',
       (tester) async {
         final container = await _pumpStepper(tester);
         await tester.ensureVisible(find.text('Continuar'));
@@ -66,8 +67,9 @@ void main() {
 
         // Paso 2: titulo de secciones impresora/filamento visibles.
         expect(find.text('Impresora (requerida)'), findsOneWidget);
-        expect(find.text('Filamento (opcional)'), findsOneWidget);
-        // Sin impresora guardada el boton Continuar esta deshabilitado.
+        expect(find.text('Filamento (requerido)'), findsOneWidget);
+        // Sin impresora ni filamento guardados el boton Continuar esta
+        // deshabilitado.
         final btn = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, 'Continuar'),
         );
@@ -95,6 +97,42 @@ void main() {
         expect(printers.first.name, 'Ender 3');
         expect(printers.first.averageWatts, 180);
 
+        // Solo impresora NO habilita Continuar: el filamento es requerido.
+        final btnAfterPrinter = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Continuar'),
+        );
+        expect(btnAfterPrinter.onPressed == null, isTrue);
+
+        // Completo el formulario de filamento y guardo.
+        await tester.ensureVisible(find.widgetWithText(TextField, 'Nombre'));
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Nombre'),
+          'PLA Pro',
+        );
+        await tester.ensureVisible(
+          find.widgetWithText(TextField, 'Precio filamento (\$)'),
+        );
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Precio filamento (\$)'),
+          '120',
+        );
+        await tester.ensureVisible(
+          find.widgetWithText(TextField, 'Gramos por rollo'),
+        );
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Gramos por rollo'),
+          '1000',
+        );
+        await tester.pump();
+        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+        await tester.pumpAndSettle();
+
+        // Filamento persistido.
+        final filaments = await container.read(filamentsNotifierProvider.future);
+        expect(filaments, hasLength(1));
+        expect(filaments.first.name, 'PLA Pro');
+
         // Continuar habilitado de nuevo.
         final btn2 = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, 'Continuar'),
@@ -104,12 +142,15 @@ void main() {
     );
 
     testWidgets(
-      'paso 2: filamento opcional se puede saltear con "Lo agrego después"',
+      'paso 2: filamento es REQUERIDO (sin boton "Lo agrego después")',
       (tester) async {
         final container = await _pumpStepper(tester);
         await tester.ensureVisible(find.text('Continuar'));
         await tester.tap(find.text('Continuar'));
         await tester.pumpAndSettle();
+
+        // El titulo refleja que el filamento ya no es opcional.
+        expect(find.text('Filamento (requerido)'), findsOneWidget);
 
         // Guardo impresora para habilitar Continuar.
         await tester.enterText(
@@ -127,17 +168,15 @@ void main() {
         await tester.tap(find.widgetWithText(FilledButton, 'Guardar').first);
         await tester.pumpAndSettle();
 
-        // Salto el filamento.
-        await tester.ensureVisible(find.text('Lo agrego después'));
-        await tester.tap(find.text('Lo agrego después'));
-        await tester.pumpAndSettle();
-        expect(find.text('Filamento (opcional)'), findsOneWidget);
+        // Sin filamento, Continuar sigue deshabilitado (requerido).
+        final btn = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Continuar'),
+        );
+        expect(btn.onPressed == null, isTrue);
 
-        // Continuar → paso 3.
-        await tester.ensureVisible(find.text('Continuar'));
-        await tester.tap(find.text('Continuar'));
-        await tester.pumpAndSettle();
-        expect(find.text('Ganancia base (%)'), findsWidgets);
+        // El skip "Lo agrego después" fue eliminado del flujo.
+        expect(find.text('Lo agrego después'), findsNothing);
+        expect(find.text('Lo agrego despu�s'), findsNothing);
 
         // Sin filamento creado.
         final filaments = await container.read(
@@ -199,7 +238,8 @@ void main() {
       expect(filaments.first.name, 'PLA Pro');
     });
 
-    testWidgets('paso 3: ganancia y energia precargadas con defaults', (
+    testWidgets('paso 3: ganancia y energia VACIAS por default (0 = sin '
+        'configurar)', (
       tester,
     ) async {
       final container = await _pumpStepper(tester);
@@ -221,6 +261,30 @@ void main() {
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Guardar').first);
       await tester.pumpAndSettle();
+      // Filamento requerido para avanzar al paso 3.
+      await tester.ensureVisible(find.widgetWithText(TextField, 'Nombre'));
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Nombre'),
+        'PLA Pro',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+        '120',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+        '1000',
+      );
+      await tester.pump();
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Continuar'));
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
@@ -231,9 +295,21 @@ void main() {
         find.text('Tarifa electrica (${currency.symbol}/kWh)'),
         findsWidgets,
       );
-      // Defaults 200% y 0.70 en los inputs.
-      expect(find.widgetWithText(TextField, '200'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '0.7'), findsOneWidget);
+      // Defaults 0 → campos VACIOS (el usuario los define en Ajustes).
+      expect(find.text('200'), findsNothing);
+      expect(find.text('0.7'), findsNothing);
+      // Los inputs de ganancia y tarifa estan vacios.
+      expect(
+        find.widgetWithText(TextField, 'Ganancia base (%)'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(
+          TextField,
+          'Tarifa electrica (${currency.symbol}/kWh)',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('paso 2: dropdown impresora muestra marcas de impresoras y NO '
@@ -341,7 +417,7 @@ void main() {
       );
     });
 
-    testWidgets('paso 3: chip "Típico" con defaults y desaparece al cambiar', (
+    testWidgets('paso 3: sin chip "Típico" (vive solo en Ajustes)', (
       tester,
     ) async {
       await _pumpStepper(tester);
@@ -362,17 +438,37 @@ void main() {
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Guardar').first);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(TextField, 'Nombre'));
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Nombre'),
+        'PLA Pro',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+        '120',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+        '1000',
+      );
+      await tester.pump();
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Continuar'));
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
-      // Defaults 200% y 0.7 → ambos chips "Típico" visibles.
-      expect(find.text('Típico'), findsNWidgets(2));
-
-      // Cambio ganancia → desaparece su chip, queda el de kWh.
-      await tester.enterText(find.widgetWithText(TextField, '200'), '150');
-      await tester.pump();
-      expect(find.text('Típico'), findsOneWidget);
+      // El onboarding NO ofrece el chip "Típico" (el usuario define sus
+      // valores); el chip de valores sugeridos vive en Ajustes.
+      expect(find.text('Típico'), findsNothing);
+      expect(find.text('Tipico'), findsNothing);
     });
 
     testWidgets('paso 3: bloque Resumen muestra los 6 valores y botón final', (
@@ -429,7 +525,7 @@ void main() {
       expect(find.text('Resumen'), findsOneWidget);
       expect(find.text('Tu próxima cotización:'), findsOneWidget);
       expect(find.text('Impresora (requerida)'), findsWidgets);
-      expect(find.text('Filamento (opcional)'), findsWidgets);
+      expect(find.text('Filamento (requerido)'), findsWidgets);
       expect(find.text('Ender 3'), findsWidgets);
       expect(find.text('PLA Pro'), findsWidgets);
 
@@ -469,6 +565,30 @@ void main() {
         find.widgetWithText(FilledButton, 'Guardar').first,
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Guardar').first);
+      await tester.pumpAndSettle();
+      // Filamento requerido para habilitar Continuar.
+      await tester.ensureVisible(find.widgetWithText(TextField, 'Nombre'));
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Nombre'),
+        'PLA Pro',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+        '120',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+        '1000',
+      );
+      await tester.pump();
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Continuar'));
       await tester.tap(find.text('Continuar'));

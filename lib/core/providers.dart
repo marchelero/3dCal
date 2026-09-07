@@ -1,3 +1,7 @@
+import 'dart:isolate';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -8,6 +12,24 @@ import '../../features/catalog/printers/data/printer_repository.dart';
 import '../../features/catalog/printers/presentation/notifiers/printers_notifier.dart';
 import '../../features/settings/data/settings_repository.dart';
 import 'database/app_database.dart';
+import 'utils/image_downscale.dart';
+
+/// Downscaler de la foto de la pieza (F2), inyectable.
+///
+/// Producción: corre en un isolate para no congelar la UI con el decode/
+/// resize/encode de una foto de cámara (varios MB). Web: síncrono (no hay
+/// isolates de Dart).
+///
+/// **Tests**: los widget tests corren en fake-async, donde `Isolate.run`
+/// nunca resuelve. Los tests de UI que guardan cotizaciones deben override
+/// este provider con la versión síncrona (`(b) async => downscalePieceImage(b)`).
+final pieceImageDownscalerProvider =
+    Provider<Future<Uint8List?> Function(Uint8List?)>((ref) {
+  if (kIsWeb) {
+    return (bytes) async => downscalePieceImage(bytes);
+  }
+  return (bytes) => Isolate.run(() => downscalePieceImage(bytes));
+});
 
 /// Provider de la base de datos.
 ///

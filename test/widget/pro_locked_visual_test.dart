@@ -421,7 +421,7 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('Calculator — modo advanced gate visual', () {
-    testWidgets('free: segmento Advanced muestra badge "PRO" + Opacity 0.6', (
+    testWidgets('free: segmento Advanced muestra badge "PRO" + texto atenuado', (
       tester,
     ) async {
       await _pumpCalculator(tester);
@@ -438,16 +438,24 @@ void main() {
         findsAtLeastNWidgets(1),
         reason: 'Free: el badge debe incluir el icono de candado.',
       );
-      expect(
-        _dimmed(),
-        findsAtLeastNWidgets(1),
-        reason: 'Free: el segmento advanced debe estar atenuado (0.6).',
-      );
       // El texto "Advanced" sigue presente (el gate de tap no cambia).
       expect(find.text(EsBO.calcModeAdvanced), findsOneWidget);
+      // Free: el label "Avanzado" se atenua (color con alpha 0.5) — el
+      // _ModePill locked usa `onSurfaceVariant.withValues(alpha: 0.5)`
+      // (no un widget Opacity como los otros gates).
+      final advancedText = tester.widget<Text>(
+        find.text(EsBO.calcModeAdvanced),
+      );
+      final color = advancedText.style?.color;
+      expect(color, isNotNull, reason: 'El label avanzado debe tener color.');
+      expect(
+        color!.a,
+        lessThan(1.0),
+        reason: 'Free: el label avanzado debe estar atenuado (alpha < 1).',
+      );
     });
 
-    testWidgets('pro: segmento Advanced normal, sin badge ni opacidad', (
+    testWidgets('pro: segmento Advanced normal, sin badge ni atenuacion', (
       tester,
     ) async {
       await _pumpCalculator(tester, seedPro: true);
@@ -457,10 +465,17 @@ void main() {
         findsNothing,
         reason: 'Pro: no debe mostrarse el badge "PRO".',
       );
+      expect(find.text(EsBO.calcModeAdvanced), findsOneWidget);
+      // Pro: el label "Avanzado" no esta atenuado (alpha = 1).
+      final advancedText = tester.widget<Text>(
+        find.text(EsBO.calcModeAdvanced),
+      );
+      final color = advancedText.style?.color;
+      expect(color, isNotNull, reason: 'El label avanzado debe tener color.');
       expect(
-        _dimmed(),
-        findsNothing,
-        reason: 'Pro: el modo advanced no debe estar atenuado.',
+        color!.a,
+        1.0,
+        reason: 'Pro: el label avanzado no debe estar atenuado.',
       );
     });
   });

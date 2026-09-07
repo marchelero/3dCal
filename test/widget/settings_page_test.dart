@@ -19,6 +19,7 @@ import 'package:tresdcal/l10n/en_us.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
 import 'package:tresdcal/l10n/fr_fr.dart';
 import 'package:tresdcal/l10n/pt_br.dart';
+import 'package:tresdcal/shared/widgets/numeric_input_field.dart';
 
 /// Helper: monta [SettingsPage] dentro de un [ProviderScope] con DB in-memory
 /// + SharedPreferences mock (necesario para themeModeProvider que la pagina
@@ -204,9 +205,19 @@ void main() {
       final container = await _pumpPage(tester);
 
       // _AutoSaveField usa NumericInputField -> TextField (no TextFormField
-      // porque validator=null). El valor inicial 200 sale de settings.profitBase.
-      final profitField = find.widgetWithText(TextField, '200');
-      await tester.enterText(profitField, '350');
+      // porque validator=null). El valor inicial 0 sale de settings.profitBase
+      // y se muestra VACIO (el campo 0 = "aun no configurado").
+      final profitField = find.widgetWithText(TextField, '0');
+      if (profitField.evaluate().isEmpty) {
+        // Profit 0 → campo vacio; localizamos el input por su label.
+        final profitInput = find.widgetWithText(
+          NumericInputField,
+          EsBO.settingsProfitBase,
+        );
+        await tester.enterText(profitInput, '350');
+      } else {
+        await tester.enterText(profitField, '350');
+      }
       await tester.pumpAndSettle();
       // Blur para disparar el listener.
       tester.binding.focusManager.primaryFocus?.unfocus();

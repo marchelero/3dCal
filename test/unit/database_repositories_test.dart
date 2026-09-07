@@ -117,9 +117,9 @@ void main() {
   });
 
   group('SettingsRepository', () {
-    test('getProfitBase devuelve default 200 si no existe', () async {
+    test('getProfitBase devuelve default 0 si no existe', () async {
       final profit = await settings.getProfitBase();
-      expect(profit, _d('200'));
+      expect(profit, _d('0'));
     });
 
     test('setProfitBase + getProfitBase', () async {

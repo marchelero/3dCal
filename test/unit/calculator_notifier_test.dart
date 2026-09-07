@@ -230,8 +230,8 @@ void main() {
       expect(output!.materialCost, Decimal.parse('12'));
       // discount = 0 (sin descuento)
       expect(output.discountAmount, Decimal.zero);
-      // totalPrice = totalFinal (material 12 + profit 200% = 36)
-      expect(output.totalPrice, Decimal.parse('36'));
+      // totalPrice = totalFinal (material 12 + profit default 0 = 12)
+      expect(output.totalPrice, Decimal.parse('12'));
     });
 
     test('setWeight=0 invalida el form (output null)', () {
@@ -284,11 +284,11 @@ void main() {
       expect(output, isNotNull);
       // materialCost = 100 * 100/1000 = 10
       expect(output!.materialCost, Decimal.fromInt(10));
-      // totalFinal = 10 + profit 200% = 30
-      // discountPct 20 → discountOnTotalFinal = 30 * 20% = 6
-      expect(output.discountAmount, Decimal.fromInt(6));
-      // totalPrice = 30 - 6 = 24
-      expect(output.totalPrice, Decimal.fromInt(24));
+      // totalFinal = 10 + profit default 0 = 10
+      // discountPct 20 → discountOnTotalFinal = 10 * 20% = 2
+      expect(output.discountAmount, Decimal.fromInt(2));
+      // totalPrice = 10 - 2 = 8
+      expect(output.totalPrice, Decimal.fromInt(8));
     });
 
     test('regression: solo minutos (horas vacias) calcula correctamente', () {
@@ -312,25 +312,28 @@ void main() {
       // labor = 0.55h * 10 = 5.5 (prueba que totalHours=0.55, no 0)
       expect(output.laborCost, Decimal.parse('5.5'));
       // baseCost = 10 + 5.5 = 15.5
-      // profit 200% → totalFinal = 15.5 * 3 = 46.5
-      // discount 0 → totalPrice = 46.5
-      expect(output.totalPrice, Decimal.parse('46.5'));
+      // profit default 0 → totalFinal = 15.5
+      // discount 0 → totalPrice = 15.5
+      expect(output.totalPrice, Decimal.parse('15.5'));
     });
 
     test('horas + minutos se suman en el output final', () {
-      // 1h 33min = 1.55h. Sin electric (no printer) ni extras,
-      // totalPrice = materialCost * 3 (profit 200%) = 10 * 3 = 30.
+      // 1h 33min = 1.55h. Con labor rate 10 la suma de horas es observable:
+      // labor = 1.55 * 10 = 15.5 (si solo contara 1h, seria 10).
+      // totalPrice = material 10 + labor 15.5 (profit default 0) = 25.5.
       final notifier = container.read(calculatorNotifierProvider.notifier);
       notifier.setWeight('100');
       notifier.setFilamentPrice('100');
       notifier.setFilamentGrams('1000');
       notifier.setPrintHours('1');
       notifier.setPrintMinutes('33');
+      notifier.setExtraLaborRate('10');
 
       final output = container.read(calculatorNotifierProvider).output;
       expect(output, isNotNull);
       expect(output!.materialCost, Decimal.fromInt(10));
-      expect(output.totalPrice, Decimal.fromInt(30));
+      expect(output.laborCost, Decimal.parse('15.5'));
+      expect(output.totalPrice, Decimal.parse('25.5'));
     });
 
     test(
@@ -363,6 +366,8 @@ void main() {
       () async {
         // El output dependia de ref.read(settings) sin listen: cambiar un
         // parametro en Ajustes dejaba el total congelado hasta tocar un campo.
+        // El fake arranca con profit 200 (como un usuario que ya configuro su
+        // margen) y el test lo baja a 0: el total debe recalcularse al vuelo.
         final container = ProviderContainer(
           overrides: [
             appDatabaseProvider.overrideWithValue(db),
@@ -370,6 +375,12 @@ void main() {
           ],
         );
         addTearDown(container.dispose);
+        await container.read(settingsNotifierProvider.future);
+
+        // Profit inicial 200 → el fake expone setForTest para mutar.
+        (container.read(settingsNotifierProvider.notifier)
+                as _FakeSettingsNotifier)
+            .setForTest(Settings.defaults.copyWith(profitBase: Decimal.fromInt(200)));
         await container.read(settingsNotifierProvider.future);
 
         final notifier = container.read(calculatorNotifierProvider.notifier);
@@ -449,8 +460,8 @@ void main() {
       expect(c.clientName, 'Juan');
       expect(c.printerId, isNull);
       expect(c.totalHours, 5.0);
-      // 100g * 120/1000 = 12 material + profit 200% = 36 (sin descuento)
-      expect(c.totalPriceSnapshot, 36.0);
+      // 100g * 120/1000 = 12 material + profit default 0 = 12 (sin descuento)
+      expect(c.totalPriceSnapshot, 12.0);
     });
 
     test('pieceName vacio se persiste como null', () async {

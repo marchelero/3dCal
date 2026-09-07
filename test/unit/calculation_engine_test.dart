@@ -233,12 +233,12 @@ void main() {
   });
 
   group('Constants', () {
-    test('kDefaultKwhRate es BOB/kWh residencial Bolivia', () {
-      expect(kDefaultKwhRate, inInclusiveRange(0.6, 0.8));
+    test('kDefaultKwhRate es 0 (vacio, el usuario la define)', () {
+      expect(kDefaultKwhRate, 0);
     });
 
-    test('kDefaultProfitBasePercentage es 200%', () {
-      expect(kDefaultProfitBasePercentage, 200);
+    test('kDefaultProfitBasePercentage es 0 (vacio, el usuario la define)', () {
+      expect(kDefaultProfitBasePercentage, 0);
     });
 
     test('kMaxMaterialsPerCalculation = 10', () {

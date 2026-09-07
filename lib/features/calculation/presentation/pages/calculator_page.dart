@@ -1834,7 +1834,7 @@ class _ModeSelector extends ConsumerWidget {
           const SizedBox(width: AppSpacing.xs),
           _ModePill(
             icon: Icons.layers_rounded,
-            label: locked ? null : EsBO.calcModeAdvanced,
+            label: EsBO.calcModeAdvanced,
             isActive: mode == CalculatorMode.advanced,
             locked: locked,
             onTap: () => onChanged(CalculatorMode.advanced),

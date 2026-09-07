@@ -83,10 +83,10 @@ void main() {
       //   materialCost = 100 * (120/1000) = 12
       //   discountAmount = 0 (sin descuento)
       //   totalPrice = 12
-      //   profitBase default 200% → profitAmount = 12 * 200% = 24
-      //   totalFinal = materialCost + profit = 36
-      // Bs. 36,00 aparece como precio grande (costo total final)
-      expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
+      //   profitBase default 0 → profitAmount = 0
+      //   totalFinal = materialCost + profit = 12
+      // Bs. 12,00 aparece como precio grande (costo total final)
+      expect(find.text(r'$ 12,00'), findsAtLeastNWidgets(1));
       // Costo material solo en ojito detail (oculto por default)
       expect(find.text('Costo material'), findsNothing);
       // Detalle electrico/base/profit solo aparece al tocar ojito
@@ -120,21 +120,21 @@ void main() {
 
       // Output card se fue, vuelve el empty hint del bar
       expect(find.textContaining('Completa peso'), findsOneWidget);
-      expect(find.textContaining(r'$ 36,00'), findsNothing);
+      expect(find.textContaining(r'$ 12,00'), findsNothing);
     });
 
     testWidgets('descuento reduce precio final', (tester) async {
       await _pumpPage(tester);
       await _fillValid(tester);
 
-      // Sin descuento: totalFinal = 36 (materialCost 12 + profit 200%).
+      // Sin descuento: totalFinal = 12 (materialCost 12 + profit default 0).
       // El total vive en el ResultBottomBar.
-      expect(find.text(r'$ 36,00'), findsAtLeastNWidgets(1));
+      expect(find.text(r'$ 12,00'), findsAtLeastNWidgets(1));
 
       // El campo Descuento vive en el result sheet (ya no en el form).
       // El total aparece 2x (chip del AppBar + ResultBottomBar); ambos
       // abren el sheet, asi que tapamos la primera instancia.
-      await tester.tap(find.text(r'$ 36,00').first);
+      await tester.tap(find.text(r'$ 12,00').first);
       await tester.pumpAndSettle();
 
       // Aplicar descuento 25% en el field del sheet. Escribe en el notifier
@@ -146,11 +146,11 @@ void main() {
       await tester.enterText(discountField, '25');
       await tester.pumpAndSettle();
 
-      // Engine: totalFinal 36 - 25% = 27. Total del template + bar.
-      expect(find.text(r'$ 27,00'), findsAtLeastNWidgets(1));
-      // UNA sola caja de descuento con el monto correcto.
+      // Engine: totalFinal 12 - 25% = 9. Total del template + bar.
+      expect(find.text(r'$ 9,00'), findsAtLeastNWidgets(1));
+      // UNA sola caja de descuento con el monto correcto (25% de 12 = 3).
       expect(find.textContaining('Descuento 25%'), findsOneWidget);
-      expect(find.textContaining(r'$ 9,00'), findsOneWidget);
+      expect(find.textContaining(r'$ 3,00'), findsOneWidget);
     });
   });
 }
