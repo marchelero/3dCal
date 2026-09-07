@@ -44,6 +44,12 @@ class FrImpl implements AppStrings {
   String get settingsProfitBase => 'Marge de base (%)';
   @override
   String get settingsProfitBaseHelper => 'Marge sur le coût de base. 0-1000';
+
+  @override
+  String get settingsProfitBaseInfo =>
+      "L'usage courant dans le monde est une marge de 200 % sur le coût. "
+      'Si vous ne savez pas par où commencer, essayez 200 et ajustez selon '
+      'votre marché.';
   @override
   String settingsKwhRate(String symbol) => 'Tarif d’électricité ($symbol/kWh)';
   @override

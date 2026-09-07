@@ -199,6 +199,30 @@ void main() {
       expect(find.textContaining('Privacidad'), findsAtLeast(1));
     });
 
+    testWidgets('info tooltip de Ganancia base sugiere 200% como partida', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await _pumpPage(tester);
+
+      // El tooltip de ayuda del tile de Ganancia base (puede haber otros
+      // iconos info en la pagina — filtramos por el tooltip localizado).
+      final infoTooltip = find.byTooltip(EsBO.settingsProfitBaseInfo);
+      expect(infoTooltip, findsOneWidget);
+
+      // Tap → el tooltip con la guia del 200% se hace visible (l10n).
+      await tester.tap(infoTooltip);
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('200%'),
+        findsWidgets,
+        reason: 'El tooltip debe mencionar el 200% como margen usual.',
+      );
+    });
+
     testWidgets('auto-save on blur: editar profit base persiste el cambio', (
       tester,
     ) async {

@@ -50,6 +50,12 @@ class DeImpl implements AppStrings {
   @override
   String get settingsProfitBaseHelper =>
       'Aufschlag auf die Grundkosten. 0-1000';
+
+  @override
+  String get settingsProfitBaseInfo =>
+      'Weltweit üblich ist ein Aufschlag von 200 % auf die Kosten. Wenn du '
+      'nicht weißt, wo du anfangen sollst, probiere 200 und passe es an '
+      'deinen Markt an.';
   @override
   String settingsKwhRate(String symbol) => 'Stromtarif ($symbol/kWh)';
   @override

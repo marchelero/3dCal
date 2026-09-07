@@ -33,6 +33,9 @@ abstract class AppStrings {
   String get settingsGlobalParams;
   String get settingsProfitBase;
   String get settingsProfitBaseHelper;
+
+  /// Tooltip info del margen de ganancia: guia de partida (lo usual mundial).
+  String get settingsProfitBaseInfo;
   String settingsKwhRate(String symbol);
   String get settingsKwhRateHelper;
   String get settingsCatalogos;

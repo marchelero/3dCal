@@ -48,6 +48,11 @@ class PtBrImpl implements AppStrings {
   String get settingsProfitBase => 'Lucro base (%)';
   @override
   String get settingsProfitBaseHelper => 'Margem sobre o custo base. 0-1000';
+
+  @override
+  String get settingsProfitBaseInfo =>
+      'O usual no mundo é cobrar uma margem de 200% sobre o custo. Se você '
+      'não sabe por onde começar, tente 200 e ajuste conforme seu mercado.';
   @override
   String settingsKwhRate(String symbol) =>
       'Tarifa de eletricidade ($symbol/kWh)';

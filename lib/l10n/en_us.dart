@@ -48,6 +48,11 @@ class EnImpl implements AppStrings {
   String get settingsProfitBase => 'Base profit (%)';
   @override
   String get settingsProfitBaseHelper => 'Margin over base cost. 0-1000';
+
+  @override
+  String get settingsProfitBaseInfo =>
+      'The typical worldwide markup is 200% over cost. If you do not know '
+      'where to start, try 200 and adjust it to your market.';
   @override
   String settingsKwhRate(String symbol) => 'Electricity rate ($symbol/kWh)';
   @override

@@ -46,6 +46,7 @@ class EsBO {
   static String get settingsGlobalParams => _impl.settingsGlobalParams;
   static String get settingsProfitBase => _impl.settingsProfitBase;
   static String get settingsProfitBaseHelper => _impl.settingsProfitBaseHelper;
+  static String get settingsProfitBaseInfo => _impl.settingsProfitBaseInfo;
   static String settingsKwhRate(String symbol) => _impl.settingsKwhRate(symbol);
   static String get settingsKwhRateHelper => _impl.settingsKwhRateHelper;
   static String get settingsCatalogos => _impl.settingsCatalogos;
@@ -703,6 +704,13 @@ class EsImpl implements AppStrings {
   String get settingsProfitBase => 'Ganancia base (%)';
   @override
   String get settingsProfitBaseHelper => 'Margen sobre costo base. 0-1000';
+
+  @override
+  String get settingsProfitBaseInfo =>
+      'Lo usual en el mundo es cobrar un margen del 200% sobre el costo. '
+      'Si no sabés por dónde empezar, probá con 200 y ajustalo según tu '
+      'mercado.';
+
   @override
   String settingsKwhRate(String symbol) => 'Tarifa electrica ($symbol/kWh)';
   @override

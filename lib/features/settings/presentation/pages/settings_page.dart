@@ -140,6 +140,7 @@ class _SettingsBody extends ConsumerWidget {
                   icon: Icons.percent_rounded,
                   title: EsBO.settingsProfitBase,
                   helper: EsBO.settingsProfitBaseHelper,
+                  infoTooltip: EsBO.settingsProfitBaseInfo,
                   accent: color.primary,
                   initialValue: settings.profitBase == Decimal.zero
                       ? ''
@@ -843,6 +844,7 @@ class _StatParamTile extends StatefulWidget {
     this.sliderLeadingIcon,
     this.sliderTrailingIcon,
     this.showProfitPreview = false,
+    this.infoTooltip,
   });
 
   final IconData icon;
@@ -860,6 +862,10 @@ class _StatParamTile extends StatefulWidget {
   final IconData? sliderLeadingIcon;
   final IconData? sliderTrailingIcon;
   final bool showProfitPreview;
+
+  /// Tooltip de ayuda con icono de informacion junto al titulo.
+  /// Null = no se muestra el icono.
+  final String? infoTooltip;
 
   @override
   State<_StatParamTile> createState() => _StatParamTileState();
@@ -962,6 +968,17 @@ class _StatParamTileState extends State<_StatParamTile> {
                           style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
+                      if (widget.infoTooltip != null) ...[
+                        Tooltip(
+                          message: widget.infoTooltip,
+                          triggerMode: TooltipTriggerMode.tap,
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            size: 18,
+                            color: color.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
