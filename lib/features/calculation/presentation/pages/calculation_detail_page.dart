@@ -749,6 +749,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   showDetail: _showDetail,
                   detailMaterialBreakdown: result.breakdown,
                   detailElectricCost: result.electricCost,
+                  detailAmortizationCost: result.amortizationCost,
                   detailLaborCost: result.laborCost,
                   detailPostProcessCost: result.postProcessCost,
                   detailBaseCost: result.baseCost,
@@ -879,6 +880,7 @@ class _DetailState extends ConsumerState<_Detail> {
   CalculationOutput output,
   List<MaterialCostBreakdown> breakdown,
   Decimal electricCost,
+  Decimal amortizationCost,
   Decimal laborCost,
   Decimal postProcessCost,
   Decimal baseCost,
@@ -931,12 +933,21 @@ _recomputeOutput(
                 Decimal.fromInt(1000))
             .toDecimal()
       : Decimal.zero;
+  // F5: amortizacion desde el snapshot persistido (la impresora original
+  // pudo editarse/borrarse; el snapshot es la fuente de verdad historica).
+  final amortizationCost = calc.amortizationCostSnapshot > 0
+      ? Decimal.parse(calc.amortizationCostSnapshot.toStringAsFixed(2))
+      : Decimal.zero;
   final laborCost = hours * settings.laborRate;
   final postProcessCost = settings.postProcessRate > Decimal.zero
       ? (materialCost * settings.postProcessRate / Decimal.fromInt(100))
             .toDecimal()
       : Decimal.zero;
-  final baseCost = materialCost + electricCost + laborCost + postProcessCost;
+  final baseCost = materialCost +
+      electricCost +
+      amortizationCost +
+      laborCost +
+      postProcessCost;
   final failureCost = settings.failureRate > Decimal.zero
       ? (baseCost * settings.failureRate / Decimal.fromInt(100)).toDecimal()
       : Decimal.zero;
@@ -961,6 +972,7 @@ _recomputeOutput(
   final output = CalculationOutput(
     materialCost: materialCost * qtyD,
     electricCost: electricCost * qtyD,
+    amortizationCost: amortizationCost * qtyD,
     laborCost: laborCost * qtyD,
     postProcessCost: postProcessCost * qtyD,
     baseCost: baseCost * qtyD,
@@ -991,6 +1003,7 @@ _recomputeOutput(
     output: output,
     breakdown: breakdown,
     electricCost: electricCost * qtyD,
+    amortizationCost: amortizationCost * qtyD,
     laborCost: laborCost * qtyD,
     postProcessCost: postProcessCost * qtyD,
     baseCost: baseCost * qtyD,

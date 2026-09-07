@@ -13,6 +13,7 @@ CalculationInput _input({
   List<MaterialInput> materials = const [],
   String totalHours = '0',
   String discount = '0',
+  String? amortizationPerHour,
 }) {
   return CalculationInput(
     materials: materials,
@@ -25,6 +26,9 @@ CalculationInput _input({
     postProcessRate: Decimal.zero,
     failureRate: Decimal.zero,
     markupOnMaterials: Decimal.zero,
+    amortizationPerHour: amortizationPerHour == null
+        ? null
+        : DecimalParse.fromString(amortizationPerHour),
   );
 }
 
@@ -312,6 +316,89 @@ void main() {
       // totalFinal = 6.60 + 13.20 = 19.80
       expect(out.totalFinal, DecimalParse.fromString('19.8'));
       expect(out.totalPrice, DecimalParse.fromString('19.8'));
+    });
+  });
+
+  group('F5 amortizacion de impresora', () {
+    test('AC1: helper costo/vida util + linea en desglose y total', () {
+      // costo_hora = 3500 / 4000 = 0.875 (escala 6 interna).
+      final perHour = CalculationEngine.amortizationPerHour(
+        purchaseCost: Decimal.fromInt(3500),
+        usefulLifeHours: 4000,
+      );
+      expect(perHour, DecimalParse.fromString('0.875'));
+
+      // 2h de impresion → amortizacion = 0.875 * 2 = 1.75.
+      final out = CalculationEngine.compute(
+        _input(
+          materials: [_material(weight: '100', pricePerBobbin: '120')],
+          totalHours: '2',
+          amortizationPerHour: '0.875',
+        ),
+      );
+      // materialCost = 100 * 120/1000 = 12
+      expect(out.materialCost, DecimalParse.fromString('12'));
+      expect(out.amortizationCost, DecimalParse.fromString('1.75'));
+      // baseCost = 12 + 0 + 1.75 + 0 + 0 = 13.75
+      expect(out.baseCost, DecimalParse.fromString('13.75'));
+      // totalPrice = baseCost (profit 0, sin descuento) = 13.75
+      expect(out.totalPrice, DecimalParse.fromString('13.75'));
+    });
+
+    test('AC2: sin amortizationPerHour la linea es 0 y el total no cambia', () {
+      final out = CalculationEngine.compute(
+        _input(
+          materials: [_material(weight: '100', pricePerBobbin: '120')],
+          totalHours: '2',
+        ),
+      );
+      expect(out.amortizationCost, Decimal.zero);
+      expect(out.baseCost, DecimalParse.fromString('12'));
+      expect(out.totalPrice, DecimalParse.fromString('12'));
+    });
+
+    test('AC3: vida util 0 → helper null (sin division por cero, sin linea)', () {
+      final perHour = CalculationEngine.amortizationPerHour(
+        purchaseCost: Decimal.fromInt(3500),
+        usefulLifeHours: 0,
+      );
+      expect(perHour, isNull);
+
+      final out = CalculationEngine.compute(
+        _input(materials: [_material()], totalHours: '2'),
+      );
+      expect(out.amortizationCost, Decimal.zero);
+      expect(out.baseCost, out.materialCost);
+    });
+
+    test('costo <= 0 → null (impresora sin precio de compra)', () {
+      final perHour = CalculationEngine.amortizationPerHour(
+        purchaseCost: Decimal.zero,
+        usefulLifeHours: 4000,
+      );
+      expect(perHour, isNull);
+    });
+
+    test('la amortizacion fluye por profit% (esta en baseCost)', () {
+      final out = CalculationEngine.compute(
+        CalculationInput(
+          materials: [_material(weight: '100', pricePerBobbin: '120')],
+          totalHours: Decimal.fromInt(2),
+          discountPercentage: Decimal.zero,
+          printerWatts: 0,
+          kwhRate: Decimal.zero,
+          profitBase: Decimal.fromInt(200),
+          laborRate: Decimal.zero,
+          postProcessRate: Decimal.zero,
+          failureRate: Decimal.zero,
+          markupOnMaterials: Decimal.zero,
+          amortizationPerHour: DecimalParse.fromString('0.875'),
+        ),
+      );
+      // baseCost = 12 + 1.75 = 13.75; profit 200% = 27.5; total = 41.25
+      expect(out.amortizationCost, DecimalParse.fromString('1.75'));
+      expect(out.profitAmount, DecimalParse.fromString('27.5'));
+      expect(out.totalPrice, DecimalParse.fromString('41.25'));
     });
   });
 }

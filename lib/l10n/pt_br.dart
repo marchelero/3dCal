@@ -652,6 +652,27 @@ class PtBrImpl implements AppStrings {
   String get printerMustBeNonNegative => 'Deve ser >= 0';
 
   @override
+  String get printerPurchaseCost => 'Custo (Bs)';
+
+  @override
+  String get printerPurchaseCostHelper =>
+      'Preço de compra. Amortizado por hora de uso.';
+
+  @override
+  String get printerUsefulLifeHours => 'Vida útil (horas)';
+
+  @override
+  String get printerUsefulLifeHoursHelper =>
+      'Ex: 4000. Com custo, o orçamento soma amortização da máquina.';
+
+  @override
+  String get printerLifePositiveIfCost =>
+      'A vida útil deve ser ≥ 1 se houver custo';
+
+  @override
+  String get calcDetailAmortization => 'Amortização da máquina';
+
+  @override
   String get calcNotifFilament => 'Filamento';
   @override
   String get calcNotifMaterial => 'Material';

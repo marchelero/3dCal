@@ -614,6 +614,7 @@ void main() {
           isSold: false,
           materialCostSnapshot: 12,
           electricCostSnapshot: 0,
+          amortizationCostSnapshot: 0,
           laborCostSnapshot: 0,
           postProcessCostSnapshot: 0,
           baseCostSnapshot: 0,

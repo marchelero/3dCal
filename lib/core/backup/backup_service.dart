@@ -15,6 +15,7 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
@@ -371,8 +372,30 @@ class BackupService {
               markupOnMaterialsSnapshot: Value(
                 (row['markupOnMaterialsSnapshot'] as num?)?.toDouble() ?? 0,
               ),
+              pieceImageBlob: Value(_decodePieceImage(row)),
             ),
           );
+    }
+  }
+
+  /// Decodifica la foto de la pieza (F2) desde el backup.
+  ///
+  /// El export serializa `pieceImageBlob` como base64 String (via `toJson()`
+  /// de drift). Backups viejos sin la key, o sin foto, llegan como `null`.
+  /// Base64 corrupto → [FormatException] → el catch de [restoreFromJson]
+  /// hace rollback transaccional y la DB actual queda intacta.
+  Uint8List? _decodePieceImage(Map<String, dynamic> row) {
+    final raw = row['pieceImageBlob'];
+    if (raw == null) return null;
+    if (raw is! String) {
+      throw const FormatException(
+        'pieceImageBlob invalido (no es base64 String)',
+      );
+    }
+    try {
+      return base64Decode(raw);
+    } on FormatException {
+      throw FormatException('pieceImageBlob invalido (base64 corrupto)');
     }
   }
 

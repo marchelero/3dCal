@@ -629,6 +629,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   showDetail: state.showDetail,
                   detailMaterialBreakdown: state.detailMaterialBreakdown,
                   detailElectricCost: state.detailElectricCost,
+                  detailAmortizationCost: state.detailAmortizationCost,
                   detailLaborCost: state.detailLaborCost,
                   detailPostProcessCost: state.detailPostProcessCost,
                   detailBaseCost: state.detailBaseCost,

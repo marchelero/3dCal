@@ -636,6 +636,27 @@ class EnImpl implements AppStrings {
   String get printerMustBeNonNegative => 'Must be >= 0';
 
   @override
+  String get printerPurchaseCost => 'Cost (Bs)';
+
+  @override
+  String get printerPurchaseCostHelper =>
+      'Purchase price. Amortized per hour of use.';
+
+  @override
+  String get printerUsefulLifeHours => 'Useful life (hours)';
+
+  @override
+  String get printerUsefulLifeHoursHelper =>
+      'E.g. 4000. With a cost, quotes add machine amortization.';
+
+  @override
+  String get printerLifePositiveIfCost =>
+      'Useful life must be ≥ 1 when cost is set';
+
+  @override
+  String get calcDetailAmortization => 'Machine amortization';
+
+  @override
   String get calcNotifFilament => 'Filament';
   @override
   String get calcNotifMaterial => 'Material';

@@ -34,6 +34,7 @@ class QuoteImageTemplate extends StatelessWidget {
     required this.showDetail,
     required this.detailMaterialBreakdown,
     required this.detailElectricCost,
+    this.detailAmortizationCost,
     required this.detailLaborCost,
     required this.detailPostProcessCost,
     required this.detailBaseCost,
@@ -59,6 +60,7 @@ class QuoteImageTemplate extends StatelessWidget {
   final bool showDetail;
   final List<MaterialCostBreakdown> detailMaterialBreakdown;
   final Decimal? detailElectricCost;
+  final Decimal? detailAmortizationCost;
   final Decimal? detailLaborCost;
   final Decimal? detailPostProcessCost;
   final Decimal? detailBaseCost;
@@ -313,6 +315,7 @@ class QuoteImageTemplate extends StatelessWidget {
                   ),
               ],
               electricCost: (detailElectricCost ?? Decimal.zero) * qty,
+              amortizationCost: (detailAmortizationCost ?? Decimal.zero) * qty,
               laborCost: (detailLaborCost ?? Decimal.zero) * qty,
               postProcessCost: (detailPostProcessCost ?? Decimal.zero) * qty,
               baseCost: (detailBaseCost ?? Decimal.zero) * qty,

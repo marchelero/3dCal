@@ -16,6 +16,13 @@ Future<ProviderContainer> _pumpForm(
   WidgetTester tester, {
   PrinterProfile? existing,
 }) async {
+  // Viewport alto: el form (marca + modelo + watts + costo + vida + switch)
+  // excede 600px y el boton Guardar queda fuera sin scroll.
+  tester.view.physicalSize = const Size(800, 1600);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -105,6 +112,107 @@ void main() {
       final list = await container.read(printersNotifierProvider.future);
       expect(list, hasLength(1));
       expect(list.first.name, 'Ender 3 V2');
+    });
+
+    testWidgets('F5: muestra campos de costo y vida util', (tester) async {
+      await _pumpForm(tester);
+      expect(
+        find.widgetWithText(TextField, 'Costo (Bs)'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(TextField, 'Vida útil (horas)'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('F5: guardar con costo + vida persiste amortizacion', (
+      tester,
+    ) async {
+      final container = await _pumpForm(tester);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Modelo'),
+        'Ender 3 V2',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Consumo promedio (W)'),
+        '120',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Costo (Bs)'),
+        '3500',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Vida útil (horas)'),
+        '4000',
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+
+      final list = await container.read(printersNotifierProvider.future);
+      expect(list, hasLength(1));
+      expect(list.first.purchaseCost, closeTo(3500.0, 0.0001));
+      expect(list.first.usefulLifeHours, 4000);
+    });
+
+    testWidgets('F5: costo sin vida util muestra error de validacion', (
+      tester,
+    ) async {
+      await _pumpForm(tester);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Modelo'),
+        'Ender 3 V2',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Consumo promedio (W)'),
+        '120',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Costo (Bs)'),
+        '3500',
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('La vida útil debe ser ≥ 1 si hay costo'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('F5: vida util 0 con costo → error (sin division por cero)', (
+      tester,
+    ) async {
+      await _pumpForm(tester);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Modelo'),
+        'Ender 3 V2',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Consumo promedio (W)'),
+        '120',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Costo (Bs)'),
+        '3500',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Vida útil (horas)'),
+        '0',
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('La vida útil debe ser ≥ 1 si hay costo'),
+        findsOneWidget,
+      );
     });
   });
 

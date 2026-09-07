@@ -650,6 +650,27 @@ class DeImpl implements AppStrings {
   String get printerMustBeNonNegative => 'Muss >= 0 sein';
 
   @override
+  String get printerPurchaseCost => 'Kosten (Bs)';
+
+  @override
+  String get printerPurchaseCostHelper =>
+      'Kaufpreis. Wird pro Nutzungsstunde amortisiert.';
+
+  @override
+  String get printerUsefulLifeHours => 'Lebensdauer (Stunden)';
+
+  @override
+  String get printerUsefulLifeHoursHelper =>
+      'Z.B. 4000. Mit Kosten addiert der Angebot Maschinenamortisation.';
+
+  @override
+  String get printerLifePositiveIfCost =>
+      'Lebensdauer muss ≥ 1 sein, wenn Kosten vorhanden';
+
+  @override
+  String get calcDetailAmortization => 'Maschinenamortisation';
+
+  @override
   String get calcNotifFilament => 'Filament';
   @override
   String get calcNotifMaterial => 'Material';

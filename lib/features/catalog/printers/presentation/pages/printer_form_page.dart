@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +32,8 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _brandCtrl;
   late final TextEditingController _wattsCtrl;
+  late final TextEditingController _costCtrl;
+  late final TextEditingController _lifeCtrl;
   late bool _isDefault;
   bool _saving = false;
 
@@ -43,6 +46,13 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     _wattsCtrl = TextEditingController(
       text: p == null ? '' : p.averageWatts.toString(),
     );
+    // F5: campos opcionales de amortizacion (vacio = sin linea).
+    _costCtrl = TextEditingController(
+      text: p?.purchaseCost == null ? '' : p!.purchaseCost!.toString(),
+    );
+    _lifeCtrl = TextEditingController(
+      text: p?.usefulLifeHours == null ? '' : p!.usefulLifeHours!.toString(),
+    );
     _isDefault = p?.isDefault ?? false;
   }
 
@@ -51,6 +61,8 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     _nameCtrl.dispose();
     _brandCtrl.dispose();
     _wattsCtrl.dispose();
+    _costCtrl.dispose();
+    _lifeCtrl.dispose();
     super.dispose();
   }
 
@@ -70,6 +82,28 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     return null;
   }
 
+  /// Costo de compra (F5): opcional. Vacio o > 0 valido.
+  String? _validateCost(String? v) {
+    if (v == null || v.trim().isEmpty) return null;
+    final n = Decimal.tryParse(v.trim().replaceAll(',', '.'));
+    if (n == null) return EsBO.commonInvalidNumber;
+    if (n <= Decimal.zero) return EsBO.printerMustBeNonNegative;
+    return null;
+  }
+
+  /// Vida util en horas (F5): opcional. Con costo presente debe ser >= 1.
+  String? _validateLife(String? v) {
+    if (v == null || v.trim().isEmpty) {
+      // Sin costo → vacio ok. Con costo → requerida.
+      final hasCost = _costCtrl.text.trim().isNotEmpty;
+      return hasCost ? EsBO.printerLifePositiveIfCost : null;
+    }
+    final n = int.tryParse(v.trim());
+    if (n == null) return EsBO.commonInvalidNumber;
+    if (n < 1) return EsBO.printerLifePositiveIfCost;
+    return null;
+  }
+
   void _setDefault(bool v) {
     setState(() => _isDefault = v);
   }
@@ -82,6 +116,13 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     final name = _nameCtrl.text.trim();
     final brand = _brandCtrl.text.trim();
     final watts = int.parse(_wattsCtrl.text.trim());
+    // F5: null si vacio (sin linea de amortizacion).
+    final cost = _costCtrl.text.trim().isEmpty
+        ? null
+        : Decimal.parse(_costCtrl.text.trim().replaceAll(',', '.'));
+    final life = _lifeCtrl.text.trim().isEmpty
+        ? null
+        : int.parse(_lifeCtrl.text.trim());
     try {
       if (_isEdit) {
         await notifier.updatePrinter(
@@ -90,6 +131,8 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
           brand: brand.isEmpty ? null : brand,
           averageWatts: watts,
           asDefault: _isDefault,
+          purchaseCost: cost,
+          usefulLifeHours: life,
         );
       } else {
         await notifier.create(
@@ -97,6 +140,8 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
           brand: brand.isEmpty ? null : brand,
           averageWatts: watts,
           asDefault: _isDefault,
+          purchaseCost: cost,
+          usefulLifeHours: life,
         );
       }
       if (mounted) {
@@ -154,8 +199,27 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                   controller: _wattsCtrl,
                   allowDecimals: false,
                   helperText: EsBO.printerWattsHelper,
-                  textInputAction: TextInputAction.done,
+                  textInputAction: TextInputAction.next,
                   validator: _requiredWatts,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                // F5: amortizacion (opcional). Ambos vacios → sin linea.
+                NumericInputField(
+                  label: EsBO.printerPurchaseCost,
+                  controller: _costCtrl,
+                  allowDecimals: true,
+                  helperText: EsBO.printerPurchaseCostHelper,
+                  textInputAction: TextInputAction.next,
+                  validator: _validateCost,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                NumericInputField(
+                  label: EsBO.printerUsefulLifeHours,
+                  controller: _lifeCtrl,
+                  allowDecimals: false,
+                  helperText: EsBO.printerUsefulLifeHoursHelper,
+                  textInputAction: TextInputAction.done,
+                  validator: _validateLife,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SwitchListTile(

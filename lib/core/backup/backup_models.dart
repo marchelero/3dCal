@@ -27,7 +27,13 @@ const String kBackupAppName = '3dCal';
 
 /// Tamaño maximo aceptado para un backup (bytes). Protege contra archivos
 /// gigantes que agotarian la memoria al deserializarlos.
-const int kBackupMaxFileBytes = 50 * 1024 * 1024; // 50 MB
+///
+/// 128MB: con fotos de piezas (F2, ~100-400KB raw → ~133-533KB base64 cada
+/// una), 50MB se alcanzaba con ~100-370 fotos — un taller con 1-2 años de
+/// historial los supera y la restauracion se romperia aunque el export
+/// funcionara. A futuro: restore por streaming/chunks en vez de cargar todo
+/// en memoria.
+const int kBackupMaxFileBytes = 128 * 1024 * 1024; // 128 MB
 
 /// Limites de filas por coleccion. Son órdenes de magnitud muy por encima
 /// de cualquier uso real (catalogo de filamentos, historial de cotizaciones),
@@ -49,6 +55,12 @@ const int kBackupMaxSettings = 500;
 /// Longitud maxima de strings en campos de texto (protege contra valores
 /// abusivos que inflarian la memoria o romperian la UI).
 const int kBackupMaxStringLength = 2048;
+
+/// Longitud maxima del base64 de la foto de una pieza (F2).
+///
+/// Una foto downscaled (1200px lado mayor, JPEG q85) pesa ~100-400KB
+/// → base64 ~133-533KB. 2MB da margen amplio sin permitir blobs gigantes.
+const int kBackupMaxImageBase64Length = 2 * 1024 * 1024; // 2 MB base64
 
 /// Datos completos de un backup.
 class BackupData {
@@ -177,6 +189,7 @@ class BackupData {
       _checkString(row, 'pieceName', 'Cotizacion #$id', errors);
       _checkString(row, 'clientName', 'Cotizacion #$id', errors);
       _checkDateTime(row, 'createdAt', 'Cotizacion #$id', errors);
+      _checkPieceImage(row, 'Cotizacion #$id', errors);
       for (final key in const [
         'totalHours',
         'discountPercentage',
@@ -266,6 +279,20 @@ class BackupData {
     final v = row[key];
     if (v != null && (v is! String || v.length > kBackupMaxStringLength)) {
       errors.add('$label: $key invalido');
+    }
+  }
+
+  /// Valida la foto de la pieza (F2): debe ser base64 String o null, con
+  /// limite propio ([kBackupMaxImageBase64Length]) que excede el de texto.
+  static void _checkPieceImage(
+    Map<String, dynamic> row,
+    String label,
+    List<String> errors,
+  ) {
+    final v = row['pieceImageBlob'];
+    if (v == null) return;
+    if (v is! String || v.length > kBackupMaxImageBase64Length) {
+      errors.add('$label: pieceImageBlob invalido');
     }
   }
 

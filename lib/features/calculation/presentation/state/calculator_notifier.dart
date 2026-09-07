@@ -503,6 +503,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       output: output,
       detailMaterialBreakdown: breakdown,
       detailElectricCost: output.electricCost,
+      detailAmortizationCost: output.amortizationCost,
       detailLaborCost: output.laborCost,
       detailPostProcessCost: output.postProcessCost,
       detailBaseCost: output.baseCost,
@@ -533,6 +534,15 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     );
     final settings = asyncSettings.value ?? Settings.defaults;
     final printer = ref.read(activePrinterProvider);
+
+    // F5: amortizacion de la impresora (costo fijo por hora). Null si la
+    // impresora no tiene costo/vida util configurados → linea ausente.
+    final amortizationPerHour = printer == null
+        ? null
+        : CalculationEngine.amortizationPerHour(
+            purchaseCost: _toDecimal(printer.purchaseCost) ?? Decimal.zero,
+            usefulLifeHours: printer.usefulLifeHours ?? 0,
+          );
 
     final materials = <MaterialInput>[];
     if (s.mode == CalculatorMode.express) {
@@ -579,8 +589,13 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       markupOnMaterials:
           CalculatorState.parseDecimal(s.extraMarkupOnMaterials) ??
           Decimal.zero,
+      amortizationPerHour: amortizationPerHour,
     );
   }
+
+  /// Convierte el `double?` de drift (REAL) al `Decimal?` del dominio.
+  static Decimal? _toDecimal(double? v) =>
+      v == null ? null : Decimal.parse(v.toString());
 }
 
 /// Provider del [CalculatorNotifier]. Standalone (no depende de DB).

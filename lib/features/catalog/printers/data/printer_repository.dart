@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 
 import '../../../../core/database/app_database.dart';
@@ -36,11 +37,15 @@ class PrinterRepository {
   /// Inserta una nueva impresora.
   ///
   /// Si [asDefault] es true, desmarca cualquier otra default primero.
+  /// F5: [purchaseCost] (BOB) + [usefulLifeHours] opcionales — ambos
+  /// configurados habilitan la linea de amortizacion en las cotizaciones.
   Future<int> create({
     required String name,
     String? brand,
     required int averageWatts,
     bool asDefault = false,
+    Decimal? purchaseCost,
+    int? usefulLifeHours,
   }) {
     // BUG-002 fix: transaccion para evitar dos impresoras con isDefault=true
     // en inserts concurrentes (multi-tab web, autosave).
@@ -56,6 +61,8 @@ class PrinterRepository {
               brand: Value(brand),
               averageWatts: averageWatts,
               isDefault: Value(asDefault),
+              purchaseCost: Value(purchaseCost?.toDouble()),
+              usefulLifeHours: Value(usefulLifeHours),
               createdAt: DateTime.now().toUtc(),
             ),
           );
@@ -69,6 +76,8 @@ class PrinterRepository {
     String? brand,
     required int averageWatts,
     bool? asDefault,
+    Decimal? purchaseCost,
+    int? usefulLifeHours,
   }) {
     // BUG-002 fix: misma proteccion transaccional que create().
     return _db.transaction(() async {
@@ -84,6 +93,8 @@ class PrinterRepository {
               isDefault: asDefault == null
                   ? const Value.absent()
                   : Value(asDefault),
+              purchaseCost: Value(purchaseCost?.toDouble()),
+              usefulLifeHours: Value(usefulLifeHours),
             ),
           );
       return updated > 0;

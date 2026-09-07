@@ -121,6 +121,7 @@ class CalculatorState {
     this.detailMaterialBreakdown = const <MaterialCostBreakdown>[],
     this.showDetail = false,
     this.detailElectricCost,
+    this.detailAmortizationCost,
     this.detailLaborCost,
     this.detailPostProcessCost,
     this.detailBaseCost,
@@ -188,6 +189,7 @@ class CalculatorState {
   // === Detail (ojito toggle) ===
   final bool showDetail;
   final Decimal? detailElectricCost;
+  final Decimal? detailAmortizationCost;
   final Decimal? detailLaborCost;
   final Decimal? detailPostProcessCost;
   final Decimal? detailBaseCost;
@@ -235,6 +237,7 @@ class CalculatorState {
     bool clearOutput = false,
     bool? showDetail,
     Decimal? detailElectricCost,
+    Decimal? detailAmortizationCost,
     Decimal? detailLaborCost,
     Decimal? detailPostProcessCost,
     Decimal? detailBaseCost,
@@ -265,9 +268,13 @@ class CalculatorState {
     detailMaterialBreakdown:
         detailMaterialBreakdown ?? this.detailMaterialBreakdown,
     showDetail: showDetail ?? this.showDetail,
-    detailElectricCost: clearDetail
+detailElectricCost: clearDetail
         ? null
-        : (detailElectricCost ?? this.detailElectricCost),
+        : (detailElectricCost ?? 
+            this.detailElectricCost),
+    detailAmortizationCost: clearDetail
+        ? null
+        : (detailAmortizationCost ?? this.detailAmortizationCost),
     detailLaborCost: clearDetail
         ? null
         : (detailLaborCost ?? this.detailLaborCost),
@@ -403,6 +410,7 @@ class CalculatorState {
         _listEqBD(detailMaterialBreakdown, other.detailMaterialBreakdown) &&
         showDetail == other.showDetail &&
         detailElectricCost == other.detailElectricCost &&
+        detailAmortizationCost == other.detailAmortizationCost &&
         detailLaborCost == other.detailLaborCost &&
         detailPostProcessCost == other.detailPostProcessCost &&
         detailBaseCost == other.detailBaseCost &&
@@ -454,6 +462,7 @@ class CalculatorState {
     Object.hashAll(detailMaterialBreakdown),
     showDetail,
     detailElectricCost,
+    detailAmortizationCost,
     detailLaborCost,
     detailPostProcessCost,
     detailBaseCost,

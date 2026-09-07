@@ -334,6 +334,11 @@ Future<Uint8List> buildQuotePdfBytes({
               _row(EsBO.pdfMaterialCosts, _fmt(output.materialCost)),
               if (output.electricCost > Decimal.zero)
                 _row(EsBO.pdfElectricity, _fmt(output.electricCost)),
+              if (output.amortizationCost > Decimal.zero)
+                _row(
+                  EsBO.calcDetailAmortization,
+                  _fmt(output.amortizationCost),
+                ),
               if (output.laborCost > Decimal.zero)
                 _row(EsBO.calcDetailLabor, _fmt(output.laborCost)),
               if (output.postProcessCost > Decimal.zero)

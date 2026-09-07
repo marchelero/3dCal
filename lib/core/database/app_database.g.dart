@@ -55,6 +55,28 @@ class $PrintersTable extends Printers
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _purchaseCostMeta = const VerificationMeta(
+    'purchaseCost',
+  );
+  @override
+  late final GeneratedColumn<double> purchaseCost = GeneratedColumn<double>(
+    'purchase_cost',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _usefulLifeHoursMeta = const VerificationMeta(
+    'usefulLifeHours',
+  );
+  @override
+  late final GeneratedColumn<int> usefulLifeHours = GeneratedColumn<int>(
+    'useful_life_hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDefaultMeta = const VerificationMeta(
     'isDefault',
   );
@@ -87,6 +109,8 @@ class $PrintersTable extends Printers
     brand,
     name,
     averageWatts,
+    purchaseCost,
+    usefulLifeHours,
     isDefault,
     createdAt,
   ];
@@ -130,6 +154,24 @@ class $PrintersTable extends Printers
     } else if (isInserting) {
       context.missing(_averageWattsMeta);
     }
+    if (data.containsKey('purchase_cost')) {
+      context.handle(
+        _purchaseCostMeta,
+        purchaseCost.isAcceptableOrUnknown(
+          data['purchase_cost']!,
+          _purchaseCostMeta,
+        ),
+      );
+    }
+    if (data.containsKey('useful_life_hours')) {
+      context.handle(
+        _usefulLifeHoursMeta,
+        usefulLifeHours.isAcceptableOrUnknown(
+          data['useful_life_hours']!,
+          _usefulLifeHoursMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_default')) {
       context.handle(
         _isDefaultMeta,
@@ -169,6 +211,14 @@ class $PrintersTable extends Printers
         DriftSqlType.int,
         data['${effectivePrefix}average_watts'],
       )!,
+      purchaseCost: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}purchase_cost'],
+      ),
+      usefulLifeHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}useful_life_hours'],
+      ),
       isDefault: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_default'],
@@ -198,6 +248,14 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   /// Consumo promedio en Watts (>= 0). 0 = sin impresora.
   final int averageWatts;
 
+  /// Precio de compra de la impresora (BOB). Null = no configurado
+  /// (sin linea de amortizacion).
+  final double? purchaseCost;
+
+  /// Vida util estimada (horas). Null = no configurado.
+  /// Con [purchaseCost], la cotizacion suma amortizacion por hora.
+  final int? usefulLifeHours;
+
   /// Marca como default. Solo uno a la vez (enforcement en repository).
   final bool isDefault;
 
@@ -208,6 +266,8 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     this.brand,
     required this.name,
     required this.averageWatts,
+    this.purchaseCost,
+    this.usefulLifeHours,
     required this.isDefault,
     required this.createdAt,
   });
@@ -220,6 +280,12 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     }
     map['name'] = Variable<String>(name);
     map['average_watts'] = Variable<int>(averageWatts);
+    if (!nullToAbsent || purchaseCost != null) {
+      map['purchase_cost'] = Variable<double>(purchaseCost);
+    }
+    if (!nullToAbsent || usefulLifeHours != null) {
+      map['useful_life_hours'] = Variable<int>(usefulLifeHours);
+    }
     map['is_default'] = Variable<bool>(isDefault);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -233,6 +299,12 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
           : Value(brand),
       name: Value(name),
       averageWatts: Value(averageWatts),
+      purchaseCost: purchaseCost == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purchaseCost),
+      usefulLifeHours: usefulLifeHours == null && nullToAbsent
+          ? const Value.absent()
+          : Value(usefulLifeHours),
       isDefault: Value(isDefault),
       createdAt: Value(createdAt),
     );
@@ -248,6 +320,8 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
       brand: serializer.fromJson<String?>(json['brand']),
       name: serializer.fromJson<String>(json['name']),
       averageWatts: serializer.fromJson<int>(json['averageWatts']),
+      purchaseCost: serializer.fromJson<double?>(json['purchaseCost']),
+      usefulLifeHours: serializer.fromJson<int?>(json['usefulLifeHours']),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -260,6 +334,8 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
       'brand': serializer.toJson<String?>(brand),
       'name': serializer.toJson<String>(name),
       'averageWatts': serializer.toJson<int>(averageWatts),
+      'purchaseCost': serializer.toJson<double?>(purchaseCost),
+      'usefulLifeHours': serializer.toJson<int?>(usefulLifeHours),
       'isDefault': serializer.toJson<bool>(isDefault),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -270,6 +346,8 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     Value<String?> brand = const Value.absent(),
     String? name,
     int? averageWatts,
+    Value<double?> purchaseCost = const Value.absent(),
+    Value<int?> usefulLifeHours = const Value.absent(),
     bool? isDefault,
     DateTime? createdAt,
   }) => PrinterProfile(
@@ -277,6 +355,10 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     brand: brand.present ? brand.value : this.brand,
     name: name ?? this.name,
     averageWatts: averageWatts ?? this.averageWatts,
+    purchaseCost: purchaseCost.present ? purchaseCost.value : this.purchaseCost,
+    usefulLifeHours: usefulLifeHours.present
+        ? usefulLifeHours.value
+        : this.usefulLifeHours,
     isDefault: isDefault ?? this.isDefault,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -288,6 +370,12 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
       averageWatts: data.averageWatts.present
           ? data.averageWatts.value
           : this.averageWatts,
+      purchaseCost: data.purchaseCost.present
+          ? data.purchaseCost.value
+          : this.purchaseCost,
+      usefulLifeHours: data.usefulLifeHours.present
+          ? data.usefulLifeHours.value
+          : this.usefulLifeHours,
       isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -300,6 +388,8 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
           ..write('brand: $brand, ')
           ..write('name: $name, ')
           ..write('averageWatts: $averageWatts, ')
+          ..write('purchaseCost: $purchaseCost, ')
+          ..write('usefulLifeHours: $usefulLifeHours, ')
           ..write('isDefault: $isDefault, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -307,8 +397,16 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, brand, name, averageWatts, isDefault, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    brand,
+    name,
+    averageWatts,
+    purchaseCost,
+    usefulLifeHours,
+    isDefault,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -317,6 +415,8 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
           other.brand == this.brand &&
           other.name == this.name &&
           other.averageWatts == this.averageWatts &&
+          other.purchaseCost == this.purchaseCost &&
+          other.usefulLifeHours == this.usefulLifeHours &&
           other.isDefault == this.isDefault &&
           other.createdAt == this.createdAt);
 }
@@ -326,6 +426,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
   final Value<String?> brand;
   final Value<String> name;
   final Value<int> averageWatts;
+  final Value<double?> purchaseCost;
+  final Value<int?> usefulLifeHours;
   final Value<bool> isDefault;
   final Value<DateTime> createdAt;
   const PrintersCompanion({
@@ -333,6 +435,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     this.brand = const Value.absent(),
     this.name = const Value.absent(),
     this.averageWatts = const Value.absent(),
+    this.purchaseCost = const Value.absent(),
+    this.usefulLifeHours = const Value.absent(),
     this.isDefault = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -341,6 +445,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     this.brand = const Value.absent(),
     required String name,
     required int averageWatts,
+    this.purchaseCost = const Value.absent(),
+    this.usefulLifeHours = const Value.absent(),
     this.isDefault = const Value.absent(),
     required DateTime createdAt,
   }) : name = Value(name),
@@ -351,6 +457,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     Expression<String>? brand,
     Expression<String>? name,
     Expression<int>? averageWatts,
+    Expression<double>? purchaseCost,
+    Expression<int>? usefulLifeHours,
     Expression<bool>? isDefault,
     Expression<DateTime>? createdAt,
   }) {
@@ -359,6 +467,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
       if (brand != null) 'brand': brand,
       if (name != null) 'name': name,
       if (averageWatts != null) 'average_watts': averageWatts,
+      if (purchaseCost != null) 'purchase_cost': purchaseCost,
+      if (usefulLifeHours != null) 'useful_life_hours': usefulLifeHours,
       if (isDefault != null) 'is_default': isDefault,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -369,6 +479,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     Value<String?>? brand,
     Value<String>? name,
     Value<int>? averageWatts,
+    Value<double?>? purchaseCost,
+    Value<int?>? usefulLifeHours,
     Value<bool>? isDefault,
     Value<DateTime>? createdAt,
   }) {
@@ -377,6 +489,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
       brand: brand ?? this.brand,
       name: name ?? this.name,
       averageWatts: averageWatts ?? this.averageWatts,
+      purchaseCost: purchaseCost ?? this.purchaseCost,
+      usefulLifeHours: usefulLifeHours ?? this.usefulLifeHours,
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -397,6 +511,12 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     if (averageWatts.present) {
       map['average_watts'] = Variable<int>(averageWatts.value);
     }
+    if (purchaseCost.present) {
+      map['purchase_cost'] = Variable<double>(purchaseCost.value);
+    }
+    if (usefulLifeHours.present) {
+      map['useful_life_hours'] = Variable<int>(usefulLifeHours.value);
+    }
     if (isDefault.present) {
       map['is_default'] = Variable<bool>(isDefault.value);
     }
@@ -413,6 +533,8 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
           ..write('brand: $brand, ')
           ..write('name: $name, ')
           ..write('averageWatts: $averageWatts, ')
+          ..write('purchaseCost: $purchaseCost, ')
+          ..write('usefulLifeHours: $usefulLifeHours, ')
           ..write('isDefault: $isDefault, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1122,6 +1244,18 @@ class $CalculationsTable extends Calculations
         type: DriftSqlType.double,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _amortizationCostSnapshotMeta =
+      const VerificationMeta('amortizationCostSnapshot');
+  @override
+  late final GeneratedColumn<double> amortizationCostSnapshot =
+      GeneratedColumn<double>(
+        'amortization_cost_snapshot',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
   static const VerificationMeta _laborCostSnapshotMeta = const VerificationMeta(
     'laborCostSnapshot',
   );
@@ -1311,6 +1445,7 @@ class $CalculationsTable extends Calculations
     isTemplate,
     materialCostSnapshot,
     electricCostSnapshot,
+    amortizationCostSnapshot,
     laborCostSnapshot,
     postProcessCostSnapshot,
     baseCostSnapshot,
@@ -1487,6 +1622,15 @@ class $CalculationsTable extends Calculations
       );
     } else if (isInserting) {
       context.missing(_electricCostSnapshotMeta);
+    }
+    if (data.containsKey('amortization_cost_snapshot')) {
+      context.handle(
+        _amortizationCostSnapshotMeta,
+        amortizationCostSnapshot.isAcceptableOrUnknown(
+          data['amortization_cost_snapshot']!,
+          _amortizationCostSnapshotMeta,
+        ),
+      );
     }
     if (data.containsKey('labor_cost_snapshot')) {
       context.handle(
@@ -1736,6 +1880,10 @@ class $CalculationsTable extends Calculations
         DriftSqlType.double,
         data['${effectivePrefix}electric_cost_snapshot'],
       )!,
+      amortizationCostSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amortization_cost_snapshot'],
+      )!,
       laborCostSnapshot: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}labor_cost_snapshot'],
@@ -1877,6 +2025,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   final double materialCostSnapshot;
   final double electricCostSnapshot;
+  final double amortizationCostSnapshot;
   final double laborCostSnapshot;
   final double postProcessCostSnapshot;
   final double baseCostSnapshot;
@@ -1918,6 +2067,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.isTemplate,
     required this.materialCostSnapshot,
     required this.electricCostSnapshot,
+    required this.amortizationCostSnapshot,
     required this.laborCostSnapshot,
     required this.postProcessCostSnapshot,
     required this.baseCostSnapshot,
@@ -1968,6 +2118,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     map['is_template'] = Variable<bool>(isTemplate);
     map['material_cost_snapshot'] = Variable<double>(materialCostSnapshot);
     map['electric_cost_snapshot'] = Variable<double>(electricCostSnapshot);
+    map['amortization_cost_snapshot'] = Variable<double>(
+      amortizationCostSnapshot,
+    );
     map['labor_cost_snapshot'] = Variable<double>(laborCostSnapshot);
     map['post_process_cost_snapshot'] = Variable<double>(
       postProcessCostSnapshot,
@@ -2029,6 +2182,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       isTemplate: Value(isTemplate),
       materialCostSnapshot: Value(materialCostSnapshot),
       electricCostSnapshot: Value(electricCostSnapshot),
+      amortizationCostSnapshot: Value(amortizationCostSnapshot),
       laborCostSnapshot: Value(laborCostSnapshot),
       postProcessCostSnapshot: Value(postProcessCostSnapshot),
       baseCostSnapshot: Value(baseCostSnapshot),
@@ -2085,6 +2239,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       ),
       electricCostSnapshot: serializer.fromJson<double>(
         json['electricCostSnapshot'],
+      ),
+      amortizationCostSnapshot: serializer.fromJson<double>(
+        json['amortizationCostSnapshot'],
       ),
       laborCostSnapshot: serializer.fromJson<double>(json['laborCostSnapshot']),
       postProcessCostSnapshot: serializer.fromJson<double>(
@@ -2148,6 +2305,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'isTemplate': serializer.toJson<bool>(isTemplate),
       'materialCostSnapshot': serializer.toJson<double>(materialCostSnapshot),
       'electricCostSnapshot': serializer.toJson<double>(electricCostSnapshot),
+      'amortizationCostSnapshot': serializer.toJson<double>(
+        amortizationCostSnapshot,
+      ),
       'laborCostSnapshot': serializer.toJson<double>(laborCostSnapshot),
       'postProcessCostSnapshot': serializer.toJson<double>(
         postProcessCostSnapshot,
@@ -2196,6 +2356,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     bool? isTemplate,
     double? materialCostSnapshot,
     double? electricCostSnapshot,
+    double? amortizationCostSnapshot,
     double? laborCostSnapshot,
     double? postProcessCostSnapshot,
     double? baseCostSnapshot,
@@ -2233,6 +2394,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     isTemplate: isTemplate ?? this.isTemplate,
     materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
     electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
+    amortizationCostSnapshot:
+        amortizationCostSnapshot ?? this.amortizationCostSnapshot,
     laborCostSnapshot: laborCostSnapshot ?? this.laborCostSnapshot,
     postProcessCostSnapshot:
         postProcessCostSnapshot ?? this.postProcessCostSnapshot,
@@ -2301,6 +2464,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       electricCostSnapshot: data.electricCostSnapshot.present
           ? data.electricCostSnapshot.value
           : this.electricCostSnapshot,
+      amortizationCostSnapshot: data.amortizationCostSnapshot.present
+          ? data.amortizationCostSnapshot.value
+          : this.amortizationCostSnapshot,
       laborCostSnapshot: data.laborCostSnapshot.present
           ? data.laborCostSnapshot.value
           : this.laborCostSnapshot,
@@ -2371,6 +2537,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('isTemplate: $isTemplate, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
+          ..write('amortizationCostSnapshot: $amortizationCostSnapshot, ')
           ..write('laborCostSnapshot: $laborCostSnapshot, ')
           ..write('postProcessCostSnapshot: $postProcessCostSnapshot, ')
           ..write('baseCostSnapshot: $baseCostSnapshot, ')
@@ -2413,6 +2580,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     isTemplate,
     materialCostSnapshot,
     electricCostSnapshot,
+    amortizationCostSnapshot,
     laborCostSnapshot,
     postProcessCostSnapshot,
     baseCostSnapshot,
@@ -2452,6 +2620,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.isTemplate == this.isTemplate &&
           other.materialCostSnapshot == this.materialCostSnapshot &&
           other.electricCostSnapshot == this.electricCostSnapshot &&
+          other.amortizationCostSnapshot == this.amortizationCostSnapshot &&
           other.laborCostSnapshot == this.laborCostSnapshot &&
           other.postProcessCostSnapshot == this.postProcessCostSnapshot &&
           other.baseCostSnapshot == this.baseCostSnapshot &&
@@ -2490,6 +2659,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<bool> isTemplate;
   final Value<double> materialCostSnapshot;
   final Value<double> electricCostSnapshot;
+  final Value<double> amortizationCostSnapshot;
   final Value<double> laborCostSnapshot;
   final Value<double> postProcessCostSnapshot;
   final Value<double> baseCostSnapshot;
@@ -2525,6 +2695,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.isTemplate = const Value.absent(),
     this.materialCostSnapshot = const Value.absent(),
     this.electricCostSnapshot = const Value.absent(),
+    this.amortizationCostSnapshot = const Value.absent(),
     this.laborCostSnapshot = const Value.absent(),
     this.postProcessCostSnapshot = const Value.absent(),
     this.baseCostSnapshot = const Value.absent(),
@@ -2561,6 +2732,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.isTemplate = const Value.absent(),
     required double materialCostSnapshot,
     required double electricCostSnapshot,
+    this.amortizationCostSnapshot = const Value.absent(),
     required double laborCostSnapshot,
     required double postProcessCostSnapshot,
     required double baseCostSnapshot,
@@ -2617,6 +2789,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<bool>? isTemplate,
     Expression<double>? materialCostSnapshot,
     Expression<double>? electricCostSnapshot,
+    Expression<double>? amortizationCostSnapshot,
     Expression<double>? laborCostSnapshot,
     Expression<double>? postProcessCostSnapshot,
     Expression<double>? baseCostSnapshot,
@@ -2658,6 +2831,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         'material_cost_snapshot': materialCostSnapshot,
       if (electricCostSnapshot != null)
         'electric_cost_snapshot': electricCostSnapshot,
+      if (amortizationCostSnapshot != null)
+        'amortization_cost_snapshot': amortizationCostSnapshot,
       if (laborCostSnapshot != null) 'labor_cost_snapshot': laborCostSnapshot,
       if (postProcessCostSnapshot != null)
         'post_process_cost_snapshot': postProcessCostSnapshot,
@@ -2707,6 +2882,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<bool>? isTemplate,
     Value<double>? materialCostSnapshot,
     Value<double>? electricCostSnapshot,
+    Value<double>? amortizationCostSnapshot,
     Value<double>? laborCostSnapshot,
     Value<double>? postProcessCostSnapshot,
     Value<double>? baseCostSnapshot,
@@ -2743,6 +2919,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       isTemplate: isTemplate ?? this.isTemplate,
       materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
       electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
+      amortizationCostSnapshot:
+          amortizationCostSnapshot ?? this.amortizationCostSnapshot,
       laborCostSnapshot: laborCostSnapshot ?? this.laborCostSnapshot,
       postProcessCostSnapshot:
           postProcessCostSnapshot ?? this.postProcessCostSnapshot,
@@ -2835,6 +3013,11 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         electricCostSnapshot.value,
       );
     }
+    if (amortizationCostSnapshot.present) {
+      map['amortization_cost_snapshot'] = Variable<double>(
+        amortizationCostSnapshot.value,
+      );
+    }
     if (laborCostSnapshot.present) {
       map['labor_cost_snapshot'] = Variable<double>(laborCostSnapshot.value);
     }
@@ -2923,6 +3106,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('isTemplate: $isTemplate, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
+          ..write('amortizationCostSnapshot: $amortizationCostSnapshot, ')
           ..write('laborCostSnapshot: $laborCostSnapshot, ')
           ..write('postProcessCostSnapshot: $postProcessCostSnapshot, ')
           ..write('baseCostSnapshot: $baseCostSnapshot, ')
@@ -4306,6 +4490,8 @@ typedef $$PrintersTableCreateCompanionBuilder =
       Value<String?> brand,
       required String name,
       required int averageWatts,
+      Value<double?> purchaseCost,
+      Value<int?> usefulLifeHours,
       Value<bool> isDefault,
       required DateTime createdAt,
     });
@@ -4315,6 +4501,8 @@ typedef $$PrintersTableUpdateCompanionBuilder =
       Value<String?> brand,
       Value<String> name,
       Value<int> averageWatts,
+      Value<double?> purchaseCost,
+      Value<int?> usefulLifeHours,
       Value<bool> isDefault,
       Value<DateTime> createdAt,
     });
@@ -4345,6 +4533,16 @@ class $$PrintersTableFilterComposer
 
   ColumnFilters<int> get averageWatts => $composableBuilder(
     column: $table.averageWatts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get purchaseCost => $composableBuilder(
+    column: $table.purchaseCost,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get usefulLifeHours => $composableBuilder(
+    column: $table.usefulLifeHours,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4388,6 +4586,16 @@ class $$PrintersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get purchaseCost => $composableBuilder(
+    column: $table.purchaseCost,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get usefulLifeHours => $composableBuilder(
+    column: $table.usefulLifeHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDefault => $composableBuilder(
     column: $table.isDefault,
     builder: (column) => ColumnOrderings(column),
@@ -4419,6 +4627,16 @@ class $$PrintersTableAnnotationComposer
 
   GeneratedColumn<int> get averageWatts => $composableBuilder(
     column: $table.averageWatts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get purchaseCost => $composableBuilder(
+    column: $table.purchaseCost,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get usefulLifeHours => $composableBuilder(
+    column: $table.usefulLifeHours,
     builder: (column) => column,
   );
 
@@ -4464,6 +4682,8 @@ class $$PrintersTableTableManager
                 Value<String?> brand = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<int> averageWatts = const Value.absent(),
+                Value<double?> purchaseCost = const Value.absent(),
+                Value<int?> usefulLifeHours = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => PrintersCompanion(
@@ -4471,6 +4691,8 @@ class $$PrintersTableTableManager
                 brand: brand,
                 name: name,
                 averageWatts: averageWatts,
+                purchaseCost: purchaseCost,
+                usefulLifeHours: usefulLifeHours,
                 isDefault: isDefault,
                 createdAt: createdAt,
               ),
@@ -4480,6 +4702,8 @@ class $$PrintersTableTableManager
                 Value<String?> brand = const Value.absent(),
                 required String name,
                 required int averageWatts,
+                Value<double?> purchaseCost = const Value.absent(),
+                Value<int?> usefulLifeHours = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
                 required DateTime createdAt,
               }) => PrintersCompanion.insert(
@@ -4487,6 +4711,8 @@ class $$PrintersTableTableManager
                 brand: brand,
                 name: name,
                 averageWatts: averageWatts,
+                purchaseCost: purchaseCost,
+                usefulLifeHours: usefulLifeHours,
                 isDefault: isDefault,
                 createdAt: createdAt,
               ),
@@ -4766,6 +4992,7 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       Value<bool> isTemplate,
       required double materialCostSnapshot,
       required double electricCostSnapshot,
+      Value<double> amortizationCostSnapshot,
       required double laborCostSnapshot,
       required double postProcessCostSnapshot,
       required double baseCostSnapshot,
@@ -4803,6 +5030,7 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<bool> isTemplate,
       Value<double> materialCostSnapshot,
       Value<double> electricCostSnapshot,
+      Value<double> amortizationCostSnapshot,
       Value<double> laborCostSnapshot,
       Value<double> postProcessCostSnapshot,
       Value<double> baseCostSnapshot,
@@ -4951,6 +5179,11 @@ class $$CalculationsTableFilterComposer
 
   ColumnFilters<double> get electricCostSnapshot => $composableBuilder(
     column: $table.electricCostSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amortizationCostSnapshot => $composableBuilder(
+    column: $table.amortizationCostSnapshot,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5159,6 +5392,11 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get amortizationCostSnapshot => $composableBuilder(
+    column: $table.amortizationCostSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get laborCostSnapshot => $composableBuilder(
     column: $table.laborCostSnapshot,
     builder: (column) => ColumnOrderings(column),
@@ -5326,6 +5564,11 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get amortizationCostSnapshot => $composableBuilder(
+    column: $table.amortizationCostSnapshot,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get laborCostSnapshot => $composableBuilder(
     column: $table.laborCostSnapshot,
     builder: (column) => column,
@@ -5476,6 +5719,7 @@ class $$CalculationsTableTableManager
                 Value<bool> isTemplate = const Value.absent(),
                 Value<double> materialCostSnapshot = const Value.absent(),
                 Value<double> electricCostSnapshot = const Value.absent(),
+                Value<double> amortizationCostSnapshot = const Value.absent(),
                 Value<double> laborCostSnapshot = const Value.absent(),
                 Value<double> postProcessCostSnapshot = const Value.absent(),
                 Value<double> baseCostSnapshot = const Value.absent(),
@@ -5512,6 +5756,7 @@ class $$CalculationsTableTableManager
                 isTemplate: isTemplate,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
+                amortizationCostSnapshot: amortizationCostSnapshot,
                 laborCostSnapshot: laborCostSnapshot,
                 postProcessCostSnapshot: postProcessCostSnapshot,
                 baseCostSnapshot: baseCostSnapshot,
@@ -5549,6 +5794,7 @@ class $$CalculationsTableTableManager
                 Value<bool> isTemplate = const Value.absent(),
                 required double materialCostSnapshot,
                 required double electricCostSnapshot,
+                Value<double> amortizationCostSnapshot = const Value.absent(),
                 required double laborCostSnapshot,
                 required double postProcessCostSnapshot,
                 required double baseCostSnapshot,
@@ -5584,6 +5830,7 @@ class $$CalculationsTableTableManager
                 isTemplate: isTemplate,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
+                amortizationCostSnapshot: amortizationCostSnapshot,
                 laborCostSnapshot: laborCostSnapshot,
                 postProcessCostSnapshot: postProcessCostSnapshot,
                 baseCostSnapshot: baseCostSnapshot,

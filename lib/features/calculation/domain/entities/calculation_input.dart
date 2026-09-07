@@ -15,9 +15,10 @@ import 'material_input.dart';
 /// Formula completa:
 ///   materialCost = Σ(weightGrams * pricePerBobbin / gramsPerBobbin)
 ///   electricCost = printerWatts * totalHours * kwhRate / 1000
+///   amortizationCost = amortizationPerHour * totalHours
 ///   laborCost = totalHours * laborRate
 ///   postProcessCost = materialCost * postProcessRate / 100
-///   baseCost = materialCost + electricCost + laborCost + postProcessCost
+///   baseCost = materialCost + electricCost + amortizationCost + laborCost + postProcessCost
 ///   failureCost = baseCost * failureRate / 100
 ///   costWithFailure = baseCost + failureCost
 ///   markupCost = materialCost * markupOnMaterials / 100
@@ -38,6 +39,7 @@ class CalculationInput {
     required this.postProcessRate,
     required this.failureRate,
     required this.markupOnMaterials,
+    this.amortizationPerHour,
   });
 
   /// Lista de materiales (puede ser vacia).
@@ -69,4 +71,8 @@ class CalculationInput {
 
   /// Markup por desperdicio (% del costo de materiales).
   final Decimal markupOnMaterials;
+
+  /// Amortizacion de la impresora (BOB/hora). Null = sin linea
+  /// (impresora sin costo/vida util configurados).
+  final Decimal? amortizationPerHour;
 }

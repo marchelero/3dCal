@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs
+import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/database/app_database.dart';
@@ -25,6 +26,8 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
     String? brand,
     required int averageWatts,
     bool asDefault = false,
+    Decimal? purchaseCost,
+    int? usefulLifeHours,
   }) async {
     final repo = ref.read(printerRepositoryProvider);
     await repo.create(
@@ -32,6 +35,8 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       brand: brand,
       averageWatts: averageWatts,
       asDefault: asDefault,
+      purchaseCost: purchaseCost,
+      usefulLifeHours: usefulLifeHours,
     );
     await _reload();
   }
@@ -44,6 +49,8 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
     String? brand,
     required int averageWatts,
     bool? asDefault,
+    Decimal? purchaseCost,
+    int? usefulLifeHours,
   }) async {
     final repo = ref.read(printerRepositoryProvider);
     await repo.update(
@@ -52,6 +59,8 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       brand: brand,
       averageWatts: averageWatts,
       asDefault: asDefault,
+      purchaseCost: purchaseCost,
+      usefulLifeHours: usefulLifeHours,
     );
     await _reload();
   }
@@ -79,9 +88,17 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       brand: current.brand,
       averageWatts: current.averageWatts,
       asDefault: true,
+      // F5: preservar campos de amortizacion al marcar default (el update
+      // reconstruye el companion completo).
+      purchaseCost: _toDecimal(current.purchaseCost),
+      usefulLifeHours: current.usefulLifeHours,
     );
     await _reload();
   }
+
+  /// Convierte el `double?` que drift expone para REAL al `Decimal?` del repo.
+  static Decimal? _toDecimal(double? v) =>
+      v == null ? null : Decimal.parse(v.toString());
 
   Future<void> _reload() async {
     final repo = ref.read(printerRepositoryProvider);

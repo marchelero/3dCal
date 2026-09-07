@@ -6,9 +6,10 @@ import 'package:decimal/decimal.dart';
 /// Formula completa:
 ///   materialCost = Σ(weight * pricePerBobbin / gramsPerBobbin)
 ///   electricCost = printerWatts * totalHours * kwhRate / 1000
+///   amortizationCost = amortizationPerHour * totalHours
 ///   laborCost = totalHours * laborRate
 ///   postProcessCost = materialCost * postProcessRate / 100
-///   baseCost = materialCost + electricCost + laborCost + postProcessCost
+///   baseCost = materialCost + electricCost + amortizationCost + laborCost + postProcessCost
 ///   failureCost = baseCost * failureRate / 100
 ///   costWithFailure = baseCost + failureCost
 ///   markupCost = materialCost * markupOnMaterials / 100
@@ -18,7 +19,7 @@ import 'package:decimal/decimal.dart';
 ///   discountAmount = totalFinal * discountPercentage / 100
 ///   totalPrice = totalFinal - discountAmount
 class CalculationOutput {
-  const CalculationOutput({
+  CalculationOutput({
     required this.materialCost,
     required this.electricCost,
     required this.laborCost,
@@ -33,7 +34,8 @@ class CalculationOutput {
     required this.discountAmount,
     required this.totalPrice,
     this.totalOriginal,
-  });
+    Decimal? amortizationCost,
+  }) : amortizationCost = amortizationCost ?? Decimal.zero;
 
   /// Crea un output simplificado cuando no hay parametros de settings
   /// (todos los extras en 0). Equivalente a la formula MVP.
@@ -65,13 +67,17 @@ class CalculationOutput {
   /// Costo de energia electrica (BOB).
   final Decimal electricCost;
 
+  /// Costo de amortizacion de la impresora (BOB). F5: costo fijo por hora.
+  final Decimal amortizationCost;
+
   /// Costo de mano de obra (BOB).
   final Decimal laborCost;
 
   /// Costo de post-procesado (BOB).
   final Decimal postProcessCost;
 
-  /// Costo base = materialCost + electricCost + laborCost + postProcessCost.
+  /// Costo base = materialCost + electricCost + amortizationCost
+  /// + laborCost + postProcessCost.
   final Decimal baseCost;
 
   /// Costo por tasa de falla (BOB).
@@ -108,6 +114,7 @@ class CalculationOutput {
       other is CalculationOutput &&
       materialCost == other.materialCost &&
       electricCost == other.electricCost &&
+      amortizationCost == other.amortizationCost &&
       laborCost == other.laborCost &&
       postProcessCost == other.postProcessCost &&
       baseCost == other.baseCost &&
@@ -125,6 +132,7 @@ class CalculationOutput {
   int get hashCode => Object.hash(
     materialCost,
     electricCost,
+    amortizationCost,
     laborCost,
     postProcessCost,
     baseCost,
@@ -144,6 +152,7 @@ class CalculationOutput {
       'CalculationOutput('
       'materialCost: $materialCost, '
       'electricCost: $electricCost, '
+      'amortizationCost: $amortizationCost, '
       'laborCost: $laborCost, '
       'postProcessCost: $postProcessCost, '
       'baseCost: $baseCost, '

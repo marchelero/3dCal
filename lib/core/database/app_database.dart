@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -111,6 +111,17 @@ class AppDatabase extends _$AppDatabase {
         // Se guarda downscaled (max 1200px lado mayor, JPEG q85). Aditiva:
         // registros viejos quedan piece_image_blob NULL (sin foto).
         await m.addColumn(calculations, calculations.pieceImageBlob);
+      }
+      if (from < 10) {
+        // v9→v10: amortizacion de impresora (F5). Aditiva: impresoras
+        // viejas quedan purchase_cost/useful_life_hours NULL (sin linea
+        // de amortizacion) y cotizaciones viejas amortization=0.
+        await m.addColumn(printers, printers.purchaseCost);
+        await m.addColumn(printers, printers.usefulLifeHours);
+        await m.addColumn(
+          calculations,
+          calculations.amortizationCostSnapshot,
+        );
       }
     },
   );

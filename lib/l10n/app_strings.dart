@@ -405,6 +405,14 @@ abstract class AppStrings {
   String get printerDeleteTitle;
   String get printerMustBeNonNegative;
 
+  // === F5: Amortizacion de impresora ===
+  String get printerPurchaseCost;
+  String get printerPurchaseCostHelper;
+  String get printerUsefulLifeHours;
+  String get printerUsefulLifeHoursHelper;
+  String get printerLifePositiveIfCost;
+  String get calcDetailAmortization;
+
   // === Calculator output + notifier labels ===
   String get calcNotifFilament;
   String get calcNotifMaterial;

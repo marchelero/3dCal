@@ -371,6 +371,16 @@ class EsBO {
   static String get printerDeleteTitle => _impl.printerDeleteTitle;
   static String get printerMustBeNonNegative => _impl.printerMustBeNonNegative;
 
+  // === F5: Amortizacion de impresora ===
+  static String get printerPurchaseCost => _impl.printerPurchaseCost;
+  static String get printerPurchaseCostHelper => _impl.printerPurchaseCostHelper;
+  static String get printerUsefulLifeHours => _impl.printerUsefulLifeHours;
+  static String get printerUsefulLifeHoursHelper =>
+      _impl.printerUsefulLifeHoursHelper;
+  static String get printerLifePositiveIfCost =>
+      _impl.printerLifePositiveIfCost;
+  static String get calcDetailAmortization => _impl.calcDetailAmortization;
+
   // === Calculator output ===
   static String get calcNotifFilament => _impl.calcNotifFilament;
   static String get calcNotifMaterial => _impl.calcNotifMaterial;
@@ -1286,6 +1296,27 @@ class EsImpl implements AppStrings {
   String get printerDeleteTitle => 'Eliminar impresora';
   @override
   String get printerMustBeNonNegative => 'Debe ser >= 0';
+
+  @override
+  String get printerPurchaseCost => 'Costo (Bs)';
+
+  @override
+  String get printerPurchaseCostHelper =>
+      'Precio de compra. Se amortiza por hora de uso.';
+
+  @override
+  String get printerUsefulLifeHours => 'Vida útil (horas)';
+
+  @override
+  String get printerUsefulLifeHoursHelper =>
+      'Ej: 4000. Con costo, la cotización suma amortización de máquina.';
+
+  @override
+  String get printerLifePositiveIfCost =>
+      'La vida útil debe ser ≥ 1 si hay costo';
+
+  @override
+  String get calcDetailAmortization => 'Amortización máquina';
 
   @override
   String get calcNotifFilament => 'Filamento';

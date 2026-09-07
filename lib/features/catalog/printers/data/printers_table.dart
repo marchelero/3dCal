@@ -5,6 +5,10 @@ import 'package:drift/drift.dart';
 ///
 /// Cada impresora tiene una marca, un modelo (nombre) y consumo en Watts.
 /// Una sola puede marcarse como `isDefault = true`.
+///
+/// F5 (amortizacion): [purchaseCost] + [usefulLifeHours] opcionales.
+/// Ambos configurados → la cotizacion suma "amortizacion maquina" (costo
+/// fijo por hora). Vacio → linea ausente (cero friccion).
 @DataClassName('PrinterProfile')
 class Printers extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -17,6 +21,14 @@ class Printers extends Table {
 
   /// Consumo promedio en Watts (>= 0). 0 = sin impresora.
   IntColumn get averageWatts => integer()();
+
+  /// Precio de compra de la impresora (BOB). Null = no configurado
+  /// (sin linea de amortizacion).
+  RealColumn get purchaseCost => real().nullable()();
+
+  /// Vida util estimada (horas). Null = no configurado.
+  /// Con [purchaseCost], la cotizacion suma amortizacion por hora.
+  IntColumn get usefulLifeHours => integer().nullable()();
 
   /// Marca como default. Solo uno a la vez (enforcement en repository).
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();

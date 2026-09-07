@@ -13,7 +13,7 @@ import '../state/calculator_state.dart' show MaterialCostBreakdown;
 ///
 /// Extraido de [SummaryCard] para ser compartido con [QuoteImageTemplate].
 class DetailSection extends StatelessWidget {
-  const DetailSection({
+  DetailSection({
     required this.materialCost,
     required this.materialBreakdown,
     required this.electricCost,
@@ -24,13 +24,18 @@ class DetailSection extends StatelessWidget {
     required this.markupCost,
     required this.profitAmount,
     required this.totalFinal,
+    Decimal? amortizationCost,
     this.textColor,
     super.key,
-  });
+  }) : amortizationCost = amortizationCost ?? Decimal.zero;
 
   final Decimal materialCost;
   final List<MaterialCostBreakdown> materialBreakdown;
   final Decimal electricCost;
+
+  /// Amortizacion de la impresora (F5). 0 = sin linea.
+  final Decimal amortizationCost;
+
   final Decimal laborCost;
   final Decimal postProcessCost;
   final Decimal baseCost;
@@ -48,6 +53,7 @@ class DetailSection extends StatelessWidget {
       color: tc.withValues(alpha: 0.8),
     );
     final hasExtras =
+        amortizationCost > Decimal.zero ||
         laborCost > Decimal.zero ||
         postProcessCost > Decimal.zero ||
         failureCost > Decimal.zero ||
@@ -62,6 +68,13 @@ class DetailSection extends StatelessWidget {
         ],
         _dr(EsBO.calcDetailMaterial, formatBob(materialCost), s, tc: tc),
         _dr(EsBO.calcDetailEnergy, formatBob(electricCost), s, tc: tc),
+        if (amortizationCost > Decimal.zero)
+          _dr(
+            EsBO.calcDetailAmortization,
+            formatBob(amortizationCost),
+            s,
+            tc: tc,
+          ),
         if (laborCost > Decimal.zero)
           _dr(EsBO.calcDetailLabor, formatBob(laborCost), s, tc: tc),
         if (postProcessCost > Decimal.zero)

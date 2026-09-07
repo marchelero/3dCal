@@ -1,14 +1,26 @@
 # Ultima sesion
 
-**2026-09-07**: Resuelto el baseline de 22 tests fallidos (suite **497/497 verde**). Causa raiz real: commit `114791e` (31-ago) cambio deliberadamente `kDefaultProfitBasePercentage` 200→0 y `kDefaultKwhRate` 0.7→0 (docstring "vacia para que el usuario la defina"), y ademas cambio la UI del onboarding (filamento opcional→requerido) — pero los tests no se actualizaron. Se corrigieron 4 grupos:
+**2026-09-07 (tarde)**: Implementadas **F7-FIX (backup restaura fotos)** + **F5 (amortizacion de impresora)** del roadmap v2. Suite **517/517 verde** (antes 497), analyze solo 3 warnings pre-existentes.
 
-- **G1 (12 tests, baseline profit/kwh)**: `calculation_engine_test` (constants 0), `database_repositories_test` (getProfitBase default 0), `calculator_notifier_test` (6: output 36→12, descuento 24→8, solo-minutos 46.5→15.5, horas+minutos con laborRate para observabilidad, cambiar-settings arranca con 200 y baja a 0, save snapshot 36→12), `calculator_page_test` ($36→$12, descuento $27→$9 / monto $9→$3), `settings_page_test` (campo profit vacio, localizado por label).
-- **G2 (6 tests, stepper obsoleto)**: `initial_config_stepper_test` reescrito al flujo actual — filamento REQUERIDO (string `configFilamentOptional` devuelve 'Filamento (requerido)', `_canContinue` exige `_printerSaved && _filamentSaved`, boton "Lo agrego después" eliminado), paso 3 sin defaults precargados (campos vacios) y sin chip "Típico" (vive solo en Ajustes).
-- **G3 (2 tests, regresion 44e11d0)**: `full_purchase_flow` + `paywall history cap` fallaban porque `save()` corria `Isolate.run(downscalePieceImage)` que **no resuelve en fake-async de testWidgets** → save #11 nunca insertaba. Fix de CODIGO: nuevo provider `pieceImageDownscalerProvider` en `lib/core/providers.dart` (prod: isolate; web: sincrono); tests overridan con version sincrona.
-- **G4 (2 tests, gate visual advanced)**: `calculator_page.dart` `_ModeSelector` ocultaba el label "Avanzado" cuando locked (`label: locked ? null : ...`) → fix: label siempre visible atenuado. `pro_locked_visual_test` actualizado a la implementacion actual (color alpha 0.5, no widget Opacity).
+## F7-FIX — Backup ahora restaura pieceImageBlob
+Bug real (intuicion del usuario): el export SI serializaba `pieceImageBlob` (base64 via `toJson()` de drift), pero `_insertCalculations` lo ignoraba → las fotos de piezas se PERDIAN al restaurar. Fix:
+- `backup_service.dart`: `_decodePieceImage()` (base64→Uint8List con try/catch; corrupto → `FormatException` → rollback transaccional, DB intacta).
+- `backup_models.dart`: `kBackupMaxImageBase64Length` (2MB/foto) + `_checkPieceImage` en `validate()`.
+- `kBackupMaxFileBytes` 50MB→128MB (con fotos ~100-400KB c/u, 50MB se rompia con ~100-370 fotos).
+- Test nuevo `test/unit/backup_roundtrip_test.dart` (6): round-trip foto byte-a-byte, sin foto, base64 corrupto + rollback, no-String, oversize, valido.
 
-**Tambien confirmado**: el fix del boton tuerca a Settings (ruta `/settings/standalone` + test del stack real) YA estaba commiteado en `44e11d0` (la doc del 5-sep decia PENDIENTE, estaba stale). Nada nuevo pendiente de codigo. `flutter analyze`: 3 warnings pre-existentes.
+## F5 — Amortizacion de impresora por hora (PRD v2)
+- **Motor**: `CalculationEngine.amortizationPerHour(costo, vida_util)` → `Decimal?` (escala 6, null si vida ≤ 0 o costo ≤ 0 → sin linea, sin div/0). `amortizationCost` en output (default 0), entra a `baseCost` (fluye por failure% y profit%), linea entre energia y mano de obra.
+- **Schema v10** (migracion aditiva v9→v10): `printers.purchase_cost` (REAL null), `printers.useful_life_hours` (INTEGER null), `calculations.amortization_cost_snapshot` (REAL default 0). Test nuevo `test/integration/migration_v9_to_v10_test.dart` (3); actualizados v4→v5/v5→v6/v8→v9 a user_version=10.
+- **CRUD impresora**: 2 campos opcionales "Costo (Bs)" + "Vida útil (horas)"; validator "vida ≥ 1 si hay costo"; `setAsDefault` preserva campos.
+- **UI desglose**: `DetailSection` + `QuoteImageTemplate` + `result_sheet` + `calculation_detail_page._recomputeOutput` (lee snapshot persistido — la impresora original pudo editarse) + `pdf_export` linea.
+- **Repo**: `create`/`update` persisten campos; `_insertInTransaction` y `_duplicateInTransaction` persisten/copian snapshot.
+- **l10n**: 6 claves nuevas en 6 locales (es/en/pt/de/fr).
+- Tests: engine 5 (AC1 3500/4000h→2h=1.75, AC2 sin costo→sin linea, AC3 vida 0→null, costo≤0, flujo por profit%), repo 2, form 5.
 
-**PENDIENTE**: probar en Android real (crop+rotar, notificacion de guardado, migracion v8→v9, badges PRO) + commit de este working tree (requiere consentimiento; convencion conventional commits).
+## Pendientes
+- Commit de este working tree (33 archivos, +940/−32; requiere consentimiento).
+- Probar en Android real (crop+rotar, migracion v8→v9/v9→v10 sobre BD existente, backup con fotos round-trip, amortizacion en calculadora).
+- Push a origin/main.
 
-Ver: [2026-09-05-mejoras-pro-historial-crop-snackbar.md](2026-09-05-mejoras-pro-historial-crop-snackbar.md) · [PRD](../prds/2026-09-05_2353-mejoras-pro-historial-crop-snackbar.prd.md)
+Ver: [2026-09-05-mejoras-pro-historial-crop-snackbar.md](2026-09-05-mejoras-pro-historial-crop-snackbar.md) · [PRD-v2-features-taller.md](../prds/PRD-v2-features-taller.md) · [PRD](../prds/2026-09-05_2353-mejoras-pro-historial-crop-snackbar.prd.md)

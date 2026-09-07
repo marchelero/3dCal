@@ -616,6 +616,27 @@ class FrImpl implements AppStrings {
   String get printerDeleteTitle => 'Supprimer lImprimante';
   @override
   String get printerMustBeNonNegative => 'Doit être >= 0';
+
+  @override
+  String get printerPurchaseCost => 'Coût (Bs)';
+
+  @override
+  String get printerPurchaseCostHelper =>
+      "Prix d'achat. Amorti par heure d'utilisation.";
+
+  @override
+  String get printerUsefulLifeHours => 'Durée de vie (heures)';
+
+  @override
+  String get printerUsefulLifeHoursHelper =>
+      'Ex : 4000. Avec un coût, le devis ajoute l\'amortissement machine.';
+
+  @override
+  String get printerLifePositiveIfCost =>
+      'La durée de vie doit être ≥ 1 si un coût est défini';
+
+  @override
+  String get calcDetailAmortization => 'Amortissement machine';
   @override
   String get calcNotifFilament => 'Filament';
   @override

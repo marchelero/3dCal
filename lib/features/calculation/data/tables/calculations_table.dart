@@ -84,6 +84,7 @@ class Calculations extends Table {
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   RealColumn get materialCostSnapshot => real()();
   RealColumn get electricCostSnapshot => real()();
+  RealColumn get amortizationCostSnapshot => real().withDefault(const Constant(0))();
   RealColumn get laborCostSnapshot => real()();
   RealColumn get postProcessCostSnapshot => real()();
   RealColumn get baseCostSnapshot => real()();
