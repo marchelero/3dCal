@@ -151,6 +151,8 @@ class _DetailState extends ConsumerState<_Detail> {
   /// Cantidad mostrada/editable. Arranca con la cantidad guardada de la
   /// cotizacion (lotes, v8) para que preview/export coincidan con lo saved.
   late int _quantity = widget.calc.quantity < 1 ? 1 : widget.calc.quantity;
+  late final TextEditingController _quantityCtrl =
+      TextEditingController(text: '$_quantity');
 
   Future<void> _handleShare() async {
     if (_isBusy) return;
@@ -699,6 +701,7 @@ class _DetailState extends ConsumerState<_Detail> {
                               context.push('/paywall');
                             } else {
                               setState(() => _quantity--);
+                              _quantityCtrl.text = '$_quantity';
                             }
                           }
                         : null,
@@ -707,7 +710,7 @@ class _DetailState extends ConsumerState<_Detail> {
                     width: 64,
                     child: TextFormField(
                       key: const ValueKey('detail_quantity_input'),
-                      initialValue: '$_quantity',
+                      controller: _quantityCtrl,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
                       style: AppTheme.num(
@@ -737,6 +740,7 @@ class _DetailState extends ConsumerState<_Detail> {
                         context.push('/paywall');
                       } else {
                         setState(() => _quantity++);
+                        _quantityCtrl.text = '$_quantity';
                       }
                     },
                   ),

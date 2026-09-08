@@ -364,6 +364,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
   int _quantity = 1;
+  late final TextEditingController _quantityCtrl =
+      TextEditingController(text: '$_quantity');
 
   /// BUG-008 fix: guard sincrono a nivel de closure contra doble-tap.
   /// `_isBusy` (state) se desactiva visualmente en el siguiente frame,
@@ -736,6 +738,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                           GoRouter.of(ctx).push('/paywall');
                                         } else {
                                           setState(() => _quantity--);
+                                          _quantityCtrl.text = '$_quantity';
                                           ref
                                               .read(
                                                 calculatorNotifierProvider
@@ -750,7 +753,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                 width: 64,
                                 child: TextFormField(
                                   key: const ValueKey('quantity_input'),
-                                  initialValue: '$_quantity',
+                                  controller: _quantityCtrl,
                                   keyboardType: TextInputType.number,
                                   textAlign: TextAlign.center,
                                   style: AppTheme.num(
@@ -789,6 +792,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                     GoRouter.of(ctx).push('/paywall');
                                   } else {
                                     setState(() => _quantity++);
+                                    _quantityCtrl.text = '$_quantity';
                                     ref
                                         .read(
                                           calculatorNotifierProvider.notifier,
