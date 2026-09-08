@@ -746,17 +746,38 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                       }
                                     : null,
                               ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.md,
-                                ),
-                                child: Text(
-                                  '$_quantity',
+                              SizedBox(
+                                width: 64,
+                                child: TextFormField(
+                                  key: const ValueKey('quantity_input'),
+                                  initialValue: '$_quantity',
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
                                   style: AppTheme.num(
                                     theme.textTheme.titleMedium ??
                                         const TextStyle(),
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.xs,
+                                      vertical: AppSpacing.xs,
+                                    ),
+                                    border: OutlineInputBorder(),
+                                    suffixText: 'u.',
+                                  ),
+                                  onChanged: (val) {
+                                    final parsed = int.tryParse(val) ?? 1;
+                                    final clamped = parsed
+                                        .clamp(1, kMaxQuantity);
+                                    setState(() => _quantity = clamped);
+                                    ref
+                                        .read(
+                                          calculatorNotifierProvider.notifier,
+                                        )
+                                        .setQuantity(clamped);
+                                  },
                                 ),
                               ),
                               IconButton.outlined(

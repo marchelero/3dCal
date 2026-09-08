@@ -11,7 +11,7 @@ const String kCurrencySymbol = r'$';
 
 /// Version de la app mostrada en UI (Ajustes).
 /// Mantener en sync con `version` de pubspec.yaml (ej: 0.1.0+1 → '0.1.0').
-const String kAppVersion = '0.3.0';
+const String kAppVersion = '0.3.2';
 
 /// Nombre de empresa por defecto (branding free).
 /// Se muestra cuando el usuario no configuro su negocio. Mismo valor en
@@ -54,6 +54,10 @@ const int kMaxMaterialsPerCalculation = 10;
 /// Limite maximo de descuento permitido (100%).
 /// Un descuento de 100% deja el total en 0 (gratis).
 const int kMaxDiscountPercentage = 100;
+
+/// Limite maximo de unidades en lote (TextInputField).
+/// Valor Defensa: evita cantidades absurdas que rompan el layout del PDF.
+const int kMaxQuantity = 9999;
 
 /// Precision decimal para formateo final (2 lugares).
 const int kCurrencyDecimalPlaces = 2;

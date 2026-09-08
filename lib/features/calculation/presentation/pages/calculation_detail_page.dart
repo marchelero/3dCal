@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/export/pdf_export.dart';
 import '../../../../core/money/currency_formatter.dart';
@@ -702,16 +703,31 @@ class _DetailState extends ConsumerState<_Detail> {
                           }
                         : null,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                    ),
-                    child: Text(
-                      '$_quantity',
+                  SizedBox(
+                    width: 64,
+                    child: TextFormField(
+                      key: const ValueKey('detail_quantity_input'),
+                      initialValue: '$_quantity',
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
                       style: AppTheme.num(
                         theme.textTheme.titleMedium ?? const TextStyle(),
                         fontWeight: FontWeight.bold,
                       ),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                          vertical: AppSpacing.xs,
+                        ),
+                        border: OutlineInputBorder(),
+                        suffixText: 'u.',
+                      ),
+                      onChanged: (val) {
+                        final parsed = int.tryParse(val) ?? 1;
+                        final clamped = parsed.clamp(1, kMaxQuantity);
+                        setState(() => _quantity = clamped);
+                      },
                     ),
                   ),
                   IconButton.outlined(
