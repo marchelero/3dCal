@@ -304,6 +304,14 @@ class DeImpl implements AppStrings {
   String get homeRecentTitle => 'Letzte Angebote';
   @override
   String get homeEmptyCta => 'Mit dem Angebot beginnen';
+  @override
+  String get homeDraftTitle => 'Angebot in Arbeit';
+  @override
+  String get homeDraftBody => 'Mach weiter, wo du aufgehört hast';
+  @override
+  String get homeDraftContinue => 'Fortfahren';
+  @override
+  String get homeCatalogsTitle => 'Meine Kataloge';
 
   @override
   String get calcSectionPiece => 'Teil';

@@ -193,6 +193,10 @@ class EsBO {
   static String get homeSeeAll => _impl.homeSeeAll;
   static String get homeRecentTitle => _impl.homeRecentTitle;
   static String get homeEmptyCta => _impl.homeEmptyCta;
+  static String get homeDraftTitle => _impl.homeDraftTitle;
+  static String get homeDraftBody => _impl.homeDraftBody;
+  static String get homeDraftContinue => _impl.homeDraftContinue;
+  static String get homeCatalogsTitle => _impl.homeCatalogsTitle;
 
   // === Calculator ===
   static String get calcSectionPiece => _impl.calcSectionPiece;
@@ -1053,6 +1057,14 @@ class EsImpl implements AppStrings {
   String get homeRecentTitle => 'Últimas cotizaciones';
   @override
   String get homeEmptyCta => 'Empezar a cotizar';
+  @override
+  String get homeDraftTitle => 'Cotización en curso';
+  @override
+  String get homeDraftBody => 'Continuá donde quedaste';
+  @override
+  String get homeDraftContinue => 'Continuar';
+  @override
+  String get homeCatalogsTitle => 'Mis catálogos';
 
   @override
   String get calcSectionPiece => 'Pieza';

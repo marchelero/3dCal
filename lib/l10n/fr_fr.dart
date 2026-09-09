@@ -284,6 +284,14 @@ class FrImpl implements AppStrings {
   String get homeRecentTitle => 'Devis récents';
   @override
   String get homeEmptyCta => 'Commencer à coter';
+  @override
+  String get homeDraftTitle => 'Devis en cours';
+  @override
+  String get homeDraftBody => 'Reprenez là où vous en étiez';
+  @override
+  String get homeDraftContinue => 'Continuer';
+  @override
+  String get homeCatalogsTitle => 'Mes catalogues';
 
   @override
   String get calcSectionPiece => 'Pièce';

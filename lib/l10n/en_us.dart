@@ -295,6 +295,14 @@ class EnImpl implements AppStrings {
   String get homeRecentTitle => 'Recent quotations';
   @override
   String get homeEmptyCta => 'Start quoting';
+  @override
+  String get homeDraftTitle => 'Quotation in progress';
+  @override
+  String get homeDraftBody => 'Pick up where you left off';
+  @override
+  String get homeDraftContinue => 'Continue';
+  @override
+  String get homeCatalogsTitle => 'My catalogs';
 
   @override
   String get calcSectionPiece => 'Piece';

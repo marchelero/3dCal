@@ -221,6 +221,10 @@ abstract class AppStrings {
   String get homeSeeAll;
   String get homeRecentTitle;
   String get homeEmptyCta;
+  String get homeDraftTitle;
+  String get homeDraftBody;
+  String get homeDraftContinue;
+  String get homeCatalogsTitle;
 
   // === Calculator sections + fields ===
   String get calcSectionPiece;

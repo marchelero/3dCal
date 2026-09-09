@@ -13,6 +13,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
+import '../../../../core/storage/calculation_draft.dart';
+import '../../../../core/storage/draft_storage_providers.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -23,7 +25,7 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/pro_active_badge.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
-import '../../data/calculation_repository.dart';
+import '../../data/calculation_repository.dart' hide CalculationDraft;
 import '../notifiers/calculations_notifier.dart';
 import '../widgets/quote_guide_dialog.dart';
 
@@ -35,6 +37,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
     final asyncSettings = ref.watch(settingsNotifierProvider);
+    final asyncDraft = ref.watch(draftStatusProvider);
     final settings = asyncSettings.value;
     final theme = Theme.of(context);
     final color = theme.colorScheme;
@@ -61,7 +64,20 @@ class HomePage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: AppSpacing.lg),
+                      // Banner "Continuar cotización" (solo si hay draft).
+                      if (asyncDraft.value != null &&
+                          _hasDraftContent(asyncDraft.value!)) ...[
+                        _buildDraftBanner(
+                          context,
+                          theme,
+                          color,
+                          asyncDraft.value!,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
                       _buildQuickActions(context, color),
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildCatalogsRow(context, theme, color),
                       const SizedBox(height: AppSpacing.lg),
                       _buildGuideEntry(context, theme, color),
                       const SizedBox(height: AppSpacing.xxl),
@@ -440,6 +456,149 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+  /// Banner "Continuar cotización": aparece cuando hay un draft persistido
+  /// con contenido (la calculadora guarda en cada cambio, debounced).
+  ///
+  /// "Continuar" navega a `/calculator`, que restaura el draft al iniciar
+  /// (comportamiento default de la pagina). El banner se pinta con el color
+  /// del contenedor primario para diferenciarse de las acciones neutras.
+  Widget _buildDraftBanner(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme color,
+    CalculationDraft draft,
+  ) {
+    final label = draft.label.trim();
+    return Semantics(
+      container: true,
+      label: '${EsBO.homeDraftTitle}: ${label.isEmpty ? EsBO.homeDraftBody : label}',
+      child: Card(
+        color: color.primaryContainer.withValues(alpha: 0.35),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                ),
+                child: Icon(
+                  Icons.play_arrow_rounded,
+                  size: 20,
+                  color: color.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      EsBO.homeDraftTitle,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      label.isNotEmpty ? label : EsBO.homeDraftBody,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: color.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              // El theme fuerza minimumSize full-width en FilledButton:
+              // lo sobreescribimos para que quepa en la fila del banner.
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                ),
+                onPressed: () => context.push('/calculator'),
+                child: Text(EsBO.homeDraftContinue),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Un draft "con contenido" merece banner: cualquier campo relevante
+  /// completado. Evita el banner cuando el usuario abrio la calculadora,
+  /// no escribio nada y salio (draft vacio persistido igualmente).
+  static bool _hasDraftContent(CalculationDraft d) =>
+      d.weight.isNotEmpty ||
+      d.printHours.isNotEmpty ||
+      d.printMinutes.isNotEmpty ||
+      d.label.isNotEmpty ||
+      d.filamentLabel.isNotEmpty ||
+      d.extraLaborRate.isNotEmpty ||
+      d.extraPostProcessRate.isNotEmpty ||
+      d.extraFailureRate.isNotEmpty ||
+      d.extraMarkupOnMaterials.isNotEmpty ||
+      d.materials.isNotEmpty;
+
+  /// Fila compacta "Mis catálogos": acceso directo a Filamentos e
+  /// Impresoras (antes solo alcanzables via Settings). Son parte del flujo
+  /// core (se eligen al cotizar), por eso merecen entrada propia en la Home.
+  Widget _buildCatalogsRow(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme color,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          label: EsBO.homeCatalogsTitle,
+          child: Text(
+            EsBO.homeCatalogsTitle,
+            style: theme.textTheme.titleMedium?.copyWith(color: color.onSurface),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: _CatalogCard(
+                icon: Icons.inventory_2_rounded,
+                label: EsBO.settingsFilamentos,
+                onTap: () => context.push('/settings/filaments'),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _CatalogCard(
+                icon: Icons.print_rounded,
+                label: EsBO.settingsImpresoras,
+                onTap: () => context.push('/settings/printers'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   /// Entrada a la guia de cotizacion (paso a paso, modal estilo onboarding).
   ///
   /// Antes vivia en el menu del AppBar de la calculadora; ahora es parte de
@@ -618,6 +777,68 @@ class _QuickActionCard extends StatelessWidget {
                   Icons.chevron_right_rounded,
                   color: theme.colorScheme.onSurfaceVariant,
                   size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card compacta de acceso a un catalogo (Filamentos / Impresoras).
+///
+/// Mas liviana que las quick actions principales: icono + label, sin
+/// subtitulo, para no competir con las 3 acciones primarias de la Home.
+class _CatalogCard extends StatelessWidget {
+  const _CatalogCard({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Semantics(
+      button: true,
+      label: label,
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color.secondaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  child: Icon(icon, size: 16, color: color.onSecondaryContainer),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

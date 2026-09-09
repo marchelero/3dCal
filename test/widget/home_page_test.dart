@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tresdcal/core/storage/calculation_draft.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
-import 'package:tresdcal/features/calculation/data/calculation_repository.dart';
+import 'package:tresdcal/features/calculation/data/calculation_repository.dart'
+    hide CalculationDraft;
 import 'package:tresdcal/features/calculation/presentation/notifiers/calculations_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/home_page.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/quote_guide_dialog.dart';
@@ -65,14 +67,23 @@ GoRouter _router() => GoRouter(
       path: '/history/:id',
       builder: (_, _) => const Scaffold(body: Text('DETAIL_PAGE')),
     ),
+    GoRoute(
+      path: '/settings/filaments',
+      builder: (_, _) => const Scaffold(body: Text('FILAMENTS_PAGE')),
+    ),
+    GoRoute(
+      path: '/settings/printers',
+      builder: (_, _) => const Scaffold(body: Text('PRINTERS_PAGE')),
+    ),
   ],
 );
 
 Future<void> _pumpHome(
   WidgetTester tester, {
   required List<CalculationListItem> items,
+  Map<String, Object> prefsSeed = const {},
 }) async {
-  SharedPreferences.setMockInitialValues({});
+  SharedPreferences.setMockInitialValues(prefsSeed);
   final prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(
     ProviderScope(
@@ -200,6 +211,85 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(QuoteGuideDialog), findsOneWidget);
+    });
+  });
+
+  group('HomePage — banner continuar draft', () {
+    testWidgets('AC-007: aparece con draft en curso', (tester) async {
+      const draft = CalculationDraft(
+        weight: '120',
+        printHours: '2',
+        label: 'Vaso',
+      );
+      await _pumpHome(
+        tester,
+        items: [],
+        prefsSeed: {'form_draft': draft.encode()},
+      );
+
+      expect(find.text(EsBO.homeDraftTitle), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, EsBO.homeDraftContinue),
+          findsOneWidget);
+    });
+
+    testWidgets('AC-007: "Continuar" navega a la calculadora', (
+      tester,
+    ) async {
+      const draft = CalculationDraft(weight: '120');
+      await _pumpHome(
+        tester,
+        items: [],
+        prefsSeed: {'form_draft': draft.encode()},
+      );
+
+      await tester.tap(
+        find.widgetWithText(FilledButton, EsBO.homeDraftContinue),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('CALC_PAGE'), findsOneWidget);
+    });
+
+    testWidgets('AC-008: sin draft no muestra banner', (tester) async {
+      await _pumpHome(tester, items: []);
+
+      expect(find.text(EsBO.homeDraftTitle), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, EsBO.homeDraftContinue),
+        findsNothing,
+      );
+    });
+  });
+
+  group('HomePage — acceso a catalogos', () {
+    testWidgets('AC-009: fila Mis catalogos con Filamentos e Impresoras', (
+      tester,
+    ) async {
+      await _pumpHome(tester, items: []);
+
+      expect(find.text(EsBO.homeCatalogsTitle), findsOneWidget);
+      expect(find.text(EsBO.settingsFilamentos), findsOneWidget);
+      expect(find.text(EsBO.settingsImpresoras), findsOneWidget);
+    });
+
+    testWidgets('AC-009: tap Filamentos navega al catalogo', (tester) async {
+      await _pumpHome(tester, items: []);
+
+      await tester.ensureVisible(find.text(EsBO.settingsFilamentos));
+      await tester.tap(find.text(EsBO.settingsFilamentos));
+      await tester.pumpAndSettle();
+
+      expect(find.text('FILAMENTS_PAGE'), findsOneWidget);
+    });
+
+    testWidgets('AC-009: tap Impresoras navega al catalogo', (tester) async {
+      await _pumpHome(tester, items: []);
+
+      await tester.ensureVisible(find.text(EsBO.settingsImpresoras));
+      await tester.tap(find.text(EsBO.settingsImpresoras));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PRINTERS_PAGE'), findsOneWidget);
     });
   });
 }

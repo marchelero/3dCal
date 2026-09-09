@@ -299,6 +299,14 @@ class PtBrImpl implements AppStrings {
   String get homeRecentTitle => 'Orçamentos recentes';
   @override
   String get homeEmptyCta => 'Começar a cotar';
+  @override
+  String get homeDraftTitle => 'Orçamento em andamento';
+  @override
+  String get homeDraftBody => 'Continue de onde parou';
+  @override
+  String get homeDraftContinue => 'Continuar';
+  @override
+  String get homeCatalogsTitle => 'Meus catálogos';
 
   @override
   String get calcSectionPiece => 'Peça';
