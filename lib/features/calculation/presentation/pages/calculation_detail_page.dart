@@ -26,6 +26,7 @@ import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/pro_badge.dart';
+import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/settings.dart';
 import '../../../settings/presentation/notifiers/settings_notifier.dart';
@@ -50,12 +51,16 @@ class CalculationDetailPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(EsBO.calcDetailTitle),
         actions: [
-          IconButton(
-            tooltip: EsBO.calcDuplicateAction,
-            icon: const Icon(Icons.copy_all_rounded),
-            onPressed: calc == null
-                ? null
-                : () async {
+          // AppBar adaptativo: 2 acciones (duplicar + eliminar) que
+          // colapsan al menu ⋮ en pantallas angostas.
+          SmartAppBarActions(
+            priority: const [],
+            menuActions: [
+              if (calc != null)
+                (
+                  icon: const Icon(Icons.copy_all_rounded),
+                  label: EsBO.calcDuplicateAction,
+                  onTap: () async {
                     try {
                       await ref
                           .read(calculationsNotifierProvider.notifier)
@@ -89,13 +94,12 @@ class CalculationDetailPage extends ConsumerWidget {
                       );
                     }
                   },
-          ),
-          IconButton(
-            tooltip: EsBO.calcDetailDelete,
-            icon: const Icon(Icons.delete_outline_rounded),
-            onPressed: calc == null
-                ? null
-                : () async {
+                ),
+              if (calc != null)
+                (
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: EsBO.calcDetailDelete,
+                  onTap: () async {
                     final confirm = await showConfirmDialog(
                       context,
                       title: EsBO.calcDetailDeleteTitle,
@@ -108,6 +112,9 @@ class CalculationDetailPage extends ConsumerWidget {
                       if (context.mounted) context.pop();
                     }
                   },
+                ),
+            ],
+            overflowTooltip: EsBO.commonMoreActions,
           ),
         ],
       ),

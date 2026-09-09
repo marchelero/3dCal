@@ -280,6 +280,10 @@ class FrImpl implements AppStrings {
   String get homeSummary => 'Résumé';
   @override
   String get homeSeeAll => 'Tout afficher';
+  @override
+  String get homeRecentTitle => 'Devis récents';
+  @override
+  String get homeEmptyCta => 'Commencer à coter';
 
   @override
   String get calcSectionPiece => 'Pièce';
@@ -1305,4 +1309,57 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get colorNameBlack => 'Noir';
   @override
   String get colorNameWhite => 'Blanc';
+
+  @override
+  String get quoteGuideTitle => 'Comment fonctionne la cotation';
+  @override
+  String get quoteGuideMenuLabel => 'Guide';
+  @override
+  String get quoteGuideStep1Title => 'Choisissez le mode';
+  @override
+  String get quoteGuideStep1Body =>
+      'Mode Express : seulement 3 champs (poids, heures et prix de la bobine) '
+      'pour une cotation rapide. Mode Avancé : contrôle total des matériaux, '
+      'de l\'imprimante et du détail.';
+  @override
+  String get quoteGuideStep2Title => 'Matériau';
+  @override
+  String get quoteGuideStep2Body =>
+      'Choisissez un filament du catalogue ou saisissez le prix et les '
+      'grammes de la bobine. En mode Avancé, vous pouvez utiliser plusieurs '
+      'matériaux.';
+  @override
+  String get quoteGuideStep3Title => 'Imprimante';
+  @override
+  String get quoteGuideStep3Body =>
+      'Sélectionnez l\'imprimante active : avec sa puissance enregistrée, '
+      'l\'appli calcule le coût d\'énergie de l\'impression.';
+  @override
+  String get quoteGuideStep4Title => 'Temps d\'impression';
+  @override
+  String get quoteGuideStep4Body =>
+      'Indiquez les heures et minutes estimées. Elles déterminent le coût '
+      'd\'énergie et la main d\'œuvre.';
+  @override
+  String get quoteGuideStep5Title => 'Extras optionnels';
+  @override
+  String get quoteGuideStep5Body =>
+      'Main d\'œuvre, post-traitement, taux de panne, montant minimum et '
+      'majoration des matériaux. Ils se configurent dans les Réglages et '
+      'ajustent le prix final.';
+  @override
+  String get quoteGuideStep6Title => 'Résultat et enregistrement';
+  @override
+  String get quoteGuideStep6Body =>
+      'Le total se met à jour en direct. Touchez le total pour voir le '
+      'détail, appliquer une remise et enregistrer. Partagez/exportez ensuite '
+      'et l\'historique alimente votre tableau de bord.';
+  @override
+  String get quoteGuideNext => 'Suivant';
+  @override
+  String get quoteGuideClose => 'Compris';
+  @override
+  String quoteGuidePageCounter(int page, int total) => 'Étape $page sur $total';
+  @override
+  String get commonMoreActions => 'Plus d\'actions';
 }

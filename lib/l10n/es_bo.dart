@@ -191,6 +191,8 @@ class EsBO {
   static String get homeEmptyQuotations => _impl.homeEmptyQuotations;
   static String get homeSummary => _impl.homeSummary;
   static String get homeSeeAll => _impl.homeSeeAll;
+  static String get homeRecentTitle => _impl.homeRecentTitle;
+  static String get homeEmptyCta => _impl.homeEmptyCta;
 
   // === Calculator ===
   static String get calcSectionPiece => _impl.calcSectionPiece;
@@ -283,6 +285,27 @@ class EsBO {
       _impl.costHelpMinimumChargeBody;
   static String get costHelpMarginTitle => _impl.costHelpMarginTitle;
   static String get costHelpMarginBody => _impl.costHelpMarginBody;
+
+  // === Quote guide (guia paso a paso de la cotizacion) ===
+  static String get quoteGuideTitle => _impl.quoteGuideTitle;
+  static String get quoteGuideMenuLabel => _impl.quoteGuideMenuLabel;
+  static String get quoteGuideStep1Title => _impl.quoteGuideStep1Title;
+  static String get quoteGuideStep1Body => _impl.quoteGuideStep1Body;
+  static String get quoteGuideStep2Title => _impl.quoteGuideStep2Title;
+  static String get quoteGuideStep2Body => _impl.quoteGuideStep2Body;
+  static String get quoteGuideStep3Title => _impl.quoteGuideStep3Title;
+  static String get quoteGuideStep3Body => _impl.quoteGuideStep3Body;
+  static String get quoteGuideStep4Title => _impl.quoteGuideStep4Title;
+  static String get quoteGuideStep4Body => _impl.quoteGuideStep4Body;
+  static String get quoteGuideStep5Title => _impl.quoteGuideStep5Title;
+  static String get quoteGuideStep5Body => _impl.quoteGuideStep5Body;
+  static String get quoteGuideStep6Title => _impl.quoteGuideStep6Title;
+  static String get quoteGuideStep6Body => _impl.quoteGuideStep6Body;
+  static String get quoteGuideNext => _impl.quoteGuideNext;
+  static String get quoteGuideClose => _impl.quoteGuideClose;
+  static String quoteGuidePageCounter(int page, int total) =>
+      _impl.quoteGuidePageCounter(page, total);
+  static String get commonMoreActions => _impl.commonMoreActions;
   static String get calcCloseAction => _impl.calcCloseAction;
 
   // === Calculator modes ===
@@ -1026,6 +1049,10 @@ class EsImpl implements AppStrings {
   String get homeSummary => 'Resumen';
   @override
   String get homeSeeAll => 'Ver todo';
+  @override
+  String get homeRecentTitle => 'Últimas cotizaciones';
+  @override
+  String get homeEmptyCta => 'Empezar a cotizar';
 
   @override
   String get calcSectionPiece => 'Pieza';
@@ -2092,4 +2119,55 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String get colorNameBlack => 'Negro';
   @override
   String get colorNameWhite => 'Blanco';
+
+  @override
+  String get quoteGuideTitle => 'Cómo funciona la cotización';
+  @override
+  String get quoteGuideMenuLabel => 'Guía';
+  @override
+  String get quoteGuideStep1Title => 'Elige el modo';
+  @override
+  String get quoteGuideStep1Body =>
+      'Modo Express: solo 3 campos (peso, horas y precio de bobina) para '
+      'una cotización rápida. Modo Avanzado: control total de materiales, '
+      'impresora y desglose.';
+  @override
+  String get quoteGuideStep2Title => 'Material';
+  @override
+  String get quoteGuideStep2Body =>
+      'Elige un filamento del catálogo o ingresa precio y gramos de la '
+      'bobina. Puedes usar varios materiales en modo Avanzado.';
+  @override
+  String get quoteGuideStep3Title => 'Impresora';
+  @override
+  String get quoteGuideStep3Body =>
+      'Selecciona la impresora activa: con su potencia registrada la app '
+      'calcula el costo de energía de la impresión.';
+  @override
+  String get quoteGuideStep4Title => 'Tiempo de impresión';
+  @override
+  String get quoteGuideStep4Body =>
+      'Indica horas y minutos estimados de impresión. Es la base del costo '
+      'de energía y de la mano de obra.';
+  @override
+  String get quoteGuideStep5Title => 'Extras opcionales';
+  @override
+  String get quoteGuideStep5Body =>
+      'Mano de obra, post-procesado, tasa de fallas, cargo mínimo y markup '
+      'sobre materiales. Se configuran en Ajustes y ajustan el precio final.';
+  @override
+  String get quoteGuideStep6Title => 'Resultado y guardado';
+  @override
+  String get quoteGuideStep6Body =>
+      'El total se actualiza en vivo. Toca el total para ver el desglose, '
+      'aplicar descuento y guardar. Luego puedes compartir/exportar y el '
+      'historial alimenta tu dashboard.';
+  @override
+  String get quoteGuideNext => 'Siguiente';
+  @override
+  String get quoteGuideClose => 'Entendido';
+  @override
+  String quoteGuidePageCounter(int page, int total) => 'Paso $page de $total';
+  @override
+  String get commonMoreActions => 'Más acciones';
 }

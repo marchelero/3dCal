@@ -300,6 +300,10 @@ class DeImpl implements AppStrings {
   String get homeSummary => 'Zusammenfassung';
   @override
   String get homeSeeAll => 'Alle anzeigen';
+  @override
+  String get homeRecentTitle => 'Letzte Angebote';
+  @override
+  String get homeEmptyCta => 'Mit dem Angebot beginnen';
 
   @override
   String get calcSectionPiece => 'Teil';
@@ -1370,4 +1374,58 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   String get colorNameBlack => 'Schwarz';
   @override
   String get colorNameWhite => 'Weiß';
+
+  @override
+  String get quoteGuideTitle => 'So funktionieren Angebote';
+  @override
+  String get quoteGuideMenuLabel => 'Anleitung';
+  @override
+  String get quoteGuideStep1Title => 'Modus wählen';
+  @override
+  String get quoteGuideStep1Body =>
+      'Express-Modus: nur 3 Felder (Gewicht, Stunden und Spulenpreis) für '
+      'ein schnelles Angebot. Erweiterter Modus: volle Kontrolle über '
+      'Materialien, Drucker und Aufschlüsselung.';
+  @override
+  String get quoteGuideStep2Title => 'Material';
+  @override
+  String get quoteGuideStep2Body =>
+      'Wählen Sie ein Filament aus dem Katalog oder geben Sie Spulenpreis '
+      'und Gramm ein. Im erweiterten Modus können Sie mehrere Materialien '
+      'verwenden.';
+  @override
+  String get quoteGuideStep3Title => 'Drucker';
+  @override
+  String get quoteGuideStep3Body =>
+      'Wählen Sie den aktiven Drucker: Mit der registrierten Leistung '
+      'berechnet die App die Energiekosten des Drucks.';
+  @override
+  String get quoteGuideStep4Title => 'Druckzeit';
+  @override
+  String get quoteGuideStep4Body =>
+      'Geben Sie geschätzte Druckstunden und -minuten ein. Sie bestimmen '
+      'die Energiekosten und die Arbeitszeit.';
+  @override
+  String get quoteGuideStep5Title => 'Optionale Extras';
+  @override
+  String get quoteGuideStep5Body =>
+      'Arbeitszeit, Nachbearbeitung, Fehlerquote, Mindestbetrag und '
+      'Materialaufschlag. Sie werden in den Einstellungen konfiguriert und '
+      'passen den Endpreis an.';
+  @override
+  String get quoteGuideStep6Title => 'Ergebnis und Speichern';
+  @override
+  String get quoteGuideStep6Body =>
+      'Der Gesamtbetrag wird live aktualisiert. Tippen Sie darauf, um die '
+      'Aufschlüsselung zu sehen, einen Rabatt anzuwenden und zu speichern. '
+      'Danach teilen/exportieren Sie und der Verlauf speist Ihr Dashboard.';
+  @override
+  String get quoteGuideNext => 'Weiter';
+  @override
+  String get quoteGuideClose => 'Verstanden';
+  @override
+  String quoteGuidePageCounter(int page, int total) =>
+      'Schritt $page von $total';
+  @override
+  String get commonMoreActions => 'Weitere Aktionen';
 }

@@ -219,6 +219,8 @@ abstract class AppStrings {
   String get homeEmptyQuotations;
   String get homeSummary;
   String get homeSeeAll;
+  String get homeRecentTitle;
+  String get homeEmptyCta;
 
   // === Calculator sections + fields ===
   String get calcSectionPiece;
@@ -308,6 +310,39 @@ abstract class AppStrings {
   String get costHelpMinimumChargeBody;
   String get costHelpMarginTitle;
   String get costHelpMarginBody;
+
+  // === Quote guide (guía paso a paso de la cotización) ===
+  /// Titulo del modal "Cómo funciona la cotización".
+  String get quoteGuideTitle;
+
+  /// Label del ítem "Guía" en el AppBar de cotización (tooltip / menú).
+  String get quoteGuideMenuLabel;
+
+  /// Pasos 1-6 de la guía: título + cuerpo.
+  String get quoteGuideStep1Title;
+  String get quoteGuideStep1Body;
+  String get quoteGuideStep2Title;
+  String get quoteGuideStep2Body;
+  String get quoteGuideStep3Title;
+  String get quoteGuideStep3Body;
+  String get quoteGuideStep4Title;
+  String get quoteGuideStep4Body;
+  String get quoteGuideStep5Title;
+  String get quoteGuideStep5Body;
+  String get quoteGuideStep6Title;
+  String get quoteGuideStep6Body;
+
+  /// Botón para avanzar de paso.
+  String get quoteGuideNext;
+
+  /// Botón de la última página: cerrar la guía.
+  String get quoteGuideClose;
+
+  /// Contador de página: "Paso $page de $total".
+  String quoteGuidePageCounter(int page, int total);
+
+  /// Tooltip del botón "más acciones" (⋮) del AppBar adaptativo.
+  String get commonMoreActions;
 
   /// Botón superior de la calculadora: cerrar y volver al menú.
   String get calcCloseAction;

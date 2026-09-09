@@ -417,6 +417,10 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
               ? null
               : Form(
                   key: _printerFormKey,
+                  // Revalidar al editar: si el usuario intentó guardar con
+                  // campos vacíos y luego los llena, el error "Requerido"
+                  // desaparece al instante (BUG-017).
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     children: [
                       PrinterCatalogSelector(
@@ -470,6 +474,8 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
               ? null
               : Form(
                   key: _filamentFormKey,
+                  // Revalidar al editar (ver BUG-017 en el form de impresora).
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     children: [
                       BrandSelectorField(

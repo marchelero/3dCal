@@ -3,9 +3,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
@@ -13,16 +15,17 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
-import '../../../../shared/widgets/money_row.dart';
 import '../../../../shared/widgets/pro_active_badge.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
-import '../../../../shared/widgets/stat_tile.dart';
-import '../../domain/dashboard_stats.dart';
+import '../../data/calculation_repository.dart';
+import '../notifiers/calculations_notifier.dart';
+import '../widgets/quote_guide_dialog.dart';
 
 /// Home page: landing del app con hero + quick actions + stats.
 class HomePage extends ConsumerWidget {
@@ -31,8 +34,6 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
-    // null = sin filtro de rango: la home muestra siempre el total global.
-    final asyncStats = ref.watch(dashboardStatsProvider(null));
     final asyncSettings = ref.watch(settingsNotifierProvider);
     final settings = asyncSettings.value;
     final theme = Theme.of(context);
@@ -61,14 +62,10 @@ class HomePage extends ConsumerWidget {
                     children: [
                       const SizedBox(height: AppSpacing.lg),
                       _buildQuickActions(context, color),
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildGuideEntry(context, theme, color),
                       const SizedBox(height: AppSpacing.xxl),
-                      _buildStatsSection(
-                        context,
-                        ref,
-                        asyncStats,
-                        theme,
-                        color,
-                      ),
+                      _buildRecentQuotesSection(context, ref, theme, color),
                       const SizedBox(height: AppSpacing.xxl),
                     ],
                   ),
@@ -368,31 +365,143 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsSection(
+  /// Seccion "Ultimas cotizaciones": las 3 mas recientes como springboard.
+  ///
+  /// Reemplaza a las stats duplicadas del Dashboard (dedup Home/Dashboard).
+  /// El Dashboard queda como unico analytics; la Home solo apunta al
+  /// historial y al detalle.
+  Widget _buildRecentQuotesSection(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<DashboardStats> asyncStats,
     ThemeData theme,
     ColorScheme color,
   ) {
+    final asyncQuotes = ref.watch(calculationsNotifierProvider);
     final currency = ref.watch(selectedCurrencyProvider);
-    return asyncStats.when(
+    return asyncQuotes.when(
       loading: () => const HomePageSkeleton(),
       error: (e, _) => ErrorView(
         message: EsBO.homeErrorLoadStats,
         details: e.toString(),
-        onRetry: () => ref.invalidate(dashboardStatsProvider(null)),
+        onRetry: () => ref.invalidate(calculationsNotifierProvider),
       ),
-      data: (stats) {
-        if (stats.countAll == 0) {
-          return _buildEmptyStats(color, theme);
+      data: (quotes) {
+        if (quotes.isEmpty) {
+          return _buildEmptyQuotes(context, theme, color);
         }
-        return _buildStatsContent(context, stats, theme, color, currency);
+        // Mas reciente primero (defensivo: el repo ya ordena, pero aca no
+        // dependemos de ese detalle de implementacion).
+        final sorted = [...quotes]
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        final recent = sorted.take(3).toList();
+        return _buildRecentQuotesContent(
+          context,
+          recent,
+          theme,
+          color,
+          currency,
+        );
       },
     );
   }
 
-  Widget _buildEmptyStats(ColorScheme color, ThemeData theme) {
+  Widget _buildRecentQuotesContent(
+    BuildContext context,
+    List<CalculationListItem> recent,
+    ThemeData theme,
+    ColorScheme color,
+    WorldCurrency currency,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              EsBO.homeRecentTitle,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: color.onSurface,
+              ),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.history_rounded, size: 16),
+              label: Text(EsBO.homeSeeAll),
+              onPressed: () => context.go('/history'),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        for (var i = 0; i < recent.length; i++) ...[
+          _RecentQuoteCard(calc: recent[i]),
+          if (i < recent.length - 1) const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+
+  /// Entrada a la guia de cotizacion (paso a paso, modal estilo onboarding).
+  ///
+  /// Antes vivia en el menu del AppBar de la calculadora; ahora es parte de
+  /// la Home como landing (dedup Home/Dashboard): ayuda visible sin robar
+  /// protagonismo a las acciones principales.
+  Widget _buildGuideEntry(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme color,
+  ) {
+    return Semantics(
+      button: true,
+      label: EsBO.quoteGuideTitle,
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          onTap: () => showQuoteGuideDialog(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: color.primaryContainer.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    size: 18,
+                    color: color.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    EsBO.quoteGuideTitle,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: color.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyQuotes(BuildContext context, ThemeData theme, ColorScheme color) {
     return Card(
       color: color.surfaceContainerLow,
       child: Padding(
@@ -418,98 +527,17 @@ class HomePage extends ConsumerWidget {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: color.onSurfaceVariant,
               ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton.icon(
+              onPressed: () => context.push('/calculator'),
+              icon: const Icon(Icons.add_circle_rounded),
+              label: Text(EsBO.homeEmptyCta),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatsContent(
-    BuildContext context,
-    DashboardStats stats,
-    ThemeData theme,
-    ColorScheme color,
-    WorldCurrency currency,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              EsBO.homeSummary,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: color.onSurface,
-              ),
-            ),
-            TextButton.icon(
-              icon: const Icon(Icons.open_in_new, size: 16),
-              label: Text(EsBO.homeSeeAll),
-              onPressed: () => context.go('/dashboard'),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        // Stats row
-        Row(
-          children: [
-            Expanded(
-              child: StatTile(
-                label: EsBO.dashboardStatQuotations,
-                value: '${stats.countAll}',
-                icon: Icons.receipt_long_rounded,
-                color: color.primary,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: StatTile(
-                label: EsBO.dashboardStatSold,
-                value: '${stats.countSold}',
-                icon: Icons.check_circle_rounded,
-                color: color.tertiary,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: StatTile(
-                label: EsBO.dashboardStatConversion,
-                // BUG-023: null = "sin datos" → mostrar "—".
-                value: stats.conversionPct == null
-                    ? '—'
-                    : '${stats.conversionPct!.toStringAsFixed(0)}%',
-                icon: Icons.trending_up_rounded,
-                color: color.secondary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        // Monetary totals
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              children: [
-                MoneyRow(
-                  label: EsBO.dashboardTotalQuoted,
-                  value: formatCurrency(stats.totalQuoted, currency),
-                  valueColor: color.onSurface,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                MoneyRow(
-                  label: EsBO.dashboardTotalSold,
-                  value: formatCurrency(stats.totalSold, currency),
-                  valueColor: color.tertiary,
-                  isBold: true,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -590,6 +618,140 @@ class _QuickActionCard extends StatelessWidget {
                   Icons.chevron_right_rounded,
                   color: theme.colorScheme.onSurfaceVariant,
                   size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card compacta de una cotizacion reciente (Home).
+///
+/// Muestra nombre de pieza (o cliente, o fallback), cliente + fecha y el
+/// total efectivo (unitario x cantidad) en mono tabular. Tap navega al
+/// detalle `/history/:id`. El icono refleja el estado vendida/pendiente.
+class _RecentQuoteCard extends ConsumerWidget {
+  const _RecentQuoteCard({required this.calc});
+
+  final CalculationListItem calc;
+
+  /// Total efectivo: `unitario x cantidad` (misma regla que el historial).
+  Decimal _effectiveTotal(CalculationListItem c) =>
+      Decimal.parse(c.totalPriceSnapshot.toStringAsFixed(2)) *
+      Decimal.fromInt(c.quantity < 1 ? 1 : c.quantity);
+
+  String _title() {
+    final piece = calc.pieceName;
+    if (piece != null && piece.isNotEmpty) return piece;
+    final client = calc.clientName;
+    if (client != null && client.isNotEmpty) {
+      return '${EsBO.calcSheetTitle} · $client';
+    }
+    return EsBO.calcDetailNoName;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final currency = ref.watch(selectedCurrencyProvider);
+    final client = calc.clientName;
+
+    return Semantics(
+      container: true,
+      label: '${_title()}, ${formatCurrency(_effectiveTotal(calc), currency)}',
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          onTap: () => context.push('/history/${calc.id}', extra: calc),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: calc.isSold
+                        ? color.tertiaryContainer
+                        : color.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: Icon(
+                    calc.isSold
+                        ? Icons.check_rounded
+                        : Icons.receipt_long_rounded,
+                    size: 18,
+                    color: calc.isSold
+                        ? color.onTertiaryContainer
+                        : color.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _title(),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          if (client != null && client.isNotEmpty) ...[
+                            Flexible(
+                              child: Text(
+                                client,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: color.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Container(
+                              width: 3,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: color.onSurfaceVariant,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                          ],
+                          Text(
+                            DateFormat('dd MMM').format(
+                              calc.createdAt.toLocal(),
+                            ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: color.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  formatCurrency(_effectiveTotal(calc), currency),
+                  style: AppTheme.num(
+                    theme.textTheme.labelLarge ?? const TextStyle(),
+                    color: color.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),

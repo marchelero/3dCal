@@ -27,6 +27,7 @@ import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../state/calculator_notifier.dart';
@@ -684,53 +685,46 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           child: Text(ref.watch(localeStringsProvider).calcSheetTitle),
         ),
         actions: [
-          // Total chip: siempre visible en el AppBar (nunca se tapa con
-          // el teclado). Tap abre el sheet de resultado.
-          if (totalText != null)
-            Semantics(
-              button: true,
-              label: '${EsBO.calcResultBarTapHint}: $totalText',
-              child: _TotalChip(
-                totalText: totalText,
-                hasDiscount: state.output!.discountAmount > Decimal.zero,
-                onTap: _openResultSheet,
+          // AppBar adaptativo: el chip de total es prioridad (SIEMPRE
+          // directo); el resto colapsa a un menu ⋮ en pantallas angostas.
+          SmartAppBarActions(
+            priority: [
+              // Total chip: siempre visible en el AppBar (nunca se tapa con
+              // el teclado). Tap abre el sheet de resultado.
+              if (totalText != null)
+                Semantics(
+                  button: true,
+                  label: '${EsBO.calcResultBarTapHint}: $totalText',
+                  child: _TotalChip(
+                    totalText: totalText,
+                    hasDiscount: state.output!.discountAmount > Decimal.zero,
+                    onTap: _openResultSheet,
+                  ),
+                ),
+            ],
+            menuActions: [
+              (
+                icon: const Icon(Icons.help_outline_rounded),
+                label: EsBO.costHelpTitle,
+                onTap: () => showCostHelpDialog(context),
               ),
-            ),
-          Semantics(
-            button: true,
-            label: EsBO.costHelpTitle,
-            child: IconButton(
-              icon: const Icon(Icons.help_outline_rounded),
-              tooltip: EsBO.costHelpTitle,
-              onPressed: () => showCostHelpDialog(context),
-            ),
-          ),
-          Semantics(
-            button: true,
-            label: EsBO.calcTemplatesTitle,
-            child: IconButton(
-              icon: const Icon(Icons.folder_copy_rounded),
-              tooltip: EsBO.calcTemplatesTitle,
-              onPressed: _showTemplatesSheet,
-            ),
-          ),
-          Semantics(
-            button: true,
-            label: EsBO.calcActionReset,
-            child: IconButton(
-              icon: const Icon(Icons.refresh_rounded),
-              tooltip: EsBO.calcActionReset,
-              onPressed: _resetAll,
-            ),
-          ),
-          Semantics(
-            button: true,
-            label: EsBO.settingsTitle,
-            child: IconButton(
-              icon: const Icon(Icons.settings_outlined),
-              tooltip: EsBO.settingsTitle,
-              onPressed: () => context.push('/settings/standalone'),
-            ),
+              (
+                icon: const Icon(Icons.folder_copy_rounded),
+                label: EsBO.calcTemplatesTitle,
+                onTap: _showTemplatesSheet,
+              ),
+              (
+                icon: const Icon(Icons.refresh_rounded),
+                label: EsBO.calcActionReset,
+                onTap: _resetAll,
+              ),
+              (
+                icon: const Icon(Icons.settings_outlined),
+                label: EsBO.settingsTitle,
+                onTap: () => context.push('/settings/standalone'),
+              ),
+            ],
+            overflowTooltip: EsBO.commonMoreActions,
           ),
         ],
       ),

@@ -295,6 +295,10 @@ class PtBrImpl implements AppStrings {
   String get homeSummary => 'Resumo';
   @override
   String get homeSeeAll => 'Ver tudo';
+  @override
+  String get homeRecentTitle => 'Orçamentos recentes';
+  @override
+  String get homeEmptyCta => 'Começar a cotar';
 
   @override
   String get calcSectionPiece => 'Peça';
@@ -1365,4 +1369,55 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String get colorNameBlack => 'Preto';
   @override
   String get colorNameWhite => 'Branco';
+
+  @override
+  String get quoteGuideTitle => 'Como funciona a cotação';
+  @override
+  String get quoteGuideMenuLabel => 'Guia';
+  @override
+  String get quoteGuideStep1Title => 'Escolha o modo';
+  @override
+  String get quoteGuideStep1Body =>
+      'Modo Express: apenas 3 campos (peso, horas e preço do rolo) para uma '
+      'cotação rápida. Modo Avançado: controle total de materiais, '
+      'impressora e detalhamento.';
+  @override
+  String get quoteGuideStep2Title => 'Material';
+  @override
+  String get quoteGuideStep2Body =>
+      'Escolha um filamento do catálogo ou informe preço e gramas do rolo. '
+      'No modo Avançado você pode usar vários materiais.';
+  @override
+  String get quoteGuideStep3Title => 'Impressora';
+  @override
+  String get quoteGuideStep3Body =>
+      'Selecione a impressora ativa: com a potência registrada o app '
+      'calcula o custo de energia da impressão.';
+  @override
+  String get quoteGuideStep4Title => 'Tempo de impressão';
+  @override
+  String get quoteGuideStep4Body =>
+      'Informe horas e minutos estimados de impressão. Eles são a base do '
+      'custo de energia e da mão de obra.';
+  @override
+  String get quoteGuideStep5Title => 'Extras opcionais';
+  @override
+  String get quoteGuideStep5Body =>
+      'Mão de obra, pós-processamento, taxa de falhas, valor mínimo e markup '
+      'sobre materiais. São configurados em Ajustes e ajustam o preço final.';
+  @override
+  String get quoteGuideStep6Title => 'Resultado e salvamento';
+  @override
+  String get quoteGuideStep6Body =>
+      'O total é atualizado em tempo real. Toque no total para ver o '
+      'detalhamento, aplicar desconto e salvar. Depois compartilhe/exporte e '
+      'o histórico alimenta seu painel.';
+  @override
+  String get quoteGuideNext => 'Avançar';
+  @override
+  String get quoteGuideClose => 'Entendi';
+  @override
+  String quoteGuidePageCounter(int page, int total) => 'Etapa $page de $total';
+  @override
+  String get commonMoreActions => 'Mais ações';
 }

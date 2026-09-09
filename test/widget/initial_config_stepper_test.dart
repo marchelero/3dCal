@@ -186,6 +186,33 @@ void main() {
     });
 
     testWidgets(
+      'paso 2: error "Requerido" desaparece al llenar el input (BUG-017)',
+      (tester) async {
+        await _pumpStepper(tester);
+        await tester.ensureVisible(find.text('Continuar'));
+        await tester.tap(find.text('Continuar'));
+        await tester.pumpAndSettle();
+
+        // Intento guardar la impresora con campos vacíos → muestra errores.
+        await tester.ensureVisible(
+          find.widgetWithText(FilledButton, 'Guardar').first,
+        );
+        await tester.tap(find.widgetWithText(FilledButton, 'Guardar').first);
+        await tester.pumpAndSettle();
+        expect(find.text('Requerido'), findsAtLeastNWidgets(1));
+
+        // Completo marca/modelo + watts → los errores se limpian solos.
+        await _selectPrinter(tester, 'Creality', 'Ender-3');
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Consumo promedio (W)'),
+          '180',
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Requerido'), findsNothing);
+      },
+    );
+
+    testWidgets(
       'paso 2: filamento es REQUERIDO (sin boton "Lo agrego después")',
       (tester) async {
         final container = await _pumpStepper(tester);

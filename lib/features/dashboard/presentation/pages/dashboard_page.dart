@@ -105,282 +105,318 @@ class _DashboardBody extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: MaxWidthScrollView(
         maxWidth: 960,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+        // LayoutBuilder lee el ancho real (post MaxWidthScrollView) para
+        // decidir si las cards de detalle van en grid de 2 columnas.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 900;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: StatTile(
-                    label: EsBO.dashboardStatQuotations,
-                    value: '${stats.countAll}',
-                    icon: Icons.receipt_long_rounded,
-                    color: color.primary,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: StatTile(
-                    label: EsBO.dashboardStatSold,
-                    value: '${stats.countSold}',
-                    icon: Icons.check_circle_rounded,
-                    color: color.tertiary,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: StatTile(
-                    label: EsBO.dashboardStatConversion,
-                    // BUG-023: null = "sin datos" → mostrar "—".
-                    value: stats.conversionPct == null
-                        ? '—'
-                        : '${stats.conversionPct!.toStringAsFixed(0)}%',
-                    icon: Icons.trending_up_rounded,
-                    color: color.secondary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
+                // ── Resumen (siempre full width) ──
+                Row(
                   children: [
-                    MoneyRow(
-                      label: EsBO.dashboardTotalQuoted,
-                      value: formatCurrency(stats.totalQuoted, currency),
-                      valueColor: color.onSurface,
+                    Expanded(
+                      child: StatTile(
+                        label: EsBO.dashboardStatQuotations,
+                        value: '${stats.countAll}',
+                        icon: Icons.receipt_long_rounded,
+                        color: color.primary,
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    MoneyRow(
-                      label: EsBO.dashboardTotalSold,
-                      value: formatCurrency(stats.totalSold, currency),
-                      valueColor: color.tertiary,
-                      isBold: true,
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: StatTile(
+                        label: EsBO.dashboardStatSold,
+                        value: '${stats.countSold}',
+                        icon: Icons.check_circle_rounded,
+                        color: color.tertiary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: StatTile(
+                        label: EsBO.dashboardStatConversion,
+                        // BUG-023: null = "sin datos" → mostrar "—".
+                        value: stats.conversionPct == null
+                            ? '—'
+                            : '${stats.conversionPct!.toStringAsFixed(0)}%',
+                        icon: Icons.trending_up_rounded,
+                        color: color.secondary,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.md),
 
-            if (isPro) ...[
-              // Filtro de rango de fechas (solo Pro analytics).
-              _RangeChips(selected: since, onSelected: onRangeSelected),
-              const SizedBox(height: AppSpacing.md),
-
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SectionHeader(
-                        icon: Icons.bar_chart_rounded,
-                        title: EsBO.dashboardChartTitle,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      ProfitBarChart(
-                        totalQuoted: stats.totalQuoted,
-                        totalSold: stats.totalSold,
-                        currency: currency,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-
-              if (stats.monthlyTotals.length >= 2)
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SectionHeader(
-                          icon: Icons.trending_up_rounded,
-                          title: EsBO.dashboardMonthlyTrend,
+                        MoneyRow(
+                          label: EsBO.dashboardTotalQuoted,
+                          value: formatCurrency(stats.totalQuoted, currency),
+                          valueColor: color.onSurface,
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        SizedBox(
-                          height: 30,
-                          child: Row(
+                        const SizedBox(height: AppSpacing.sm),
+                        MoneyRow(
+                          label: EsBO.dashboardTotalSold,
+                          value: formatCurrency(stats.totalSold, currency),
+                          valueColor: color.tertiary,
+                          isBold: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                if (isPro) ...[
+                  // Filtro de rango de fechas (solo Pro analytics).
+                  _RangeChips(selected: since, onSelected: onRangeSelected),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // BarChart: full width (grafico ancho, se lee mejor solo).
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(
+                            icon: Icons.bar_chart_rounded,
+                            title: EsBO.dashboardChartTitle,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          ProfitBarChart(
+                            totalQuoted: stats.totalQuoted,
+                            totalSold: stats.totalSold,
+                            currency: currency,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // ── Cards de detalle en grid responsive ──
+                  // En pantallas anchas se emparejan 2 por fila para
+                  // aprovechar el espacio y reducir el scroll vertical.
+                  _ResponsiveGrid(
+                    isWide: isWide,
+                    children: [
+                      if (stats.monthlyTotals.length >= 2)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SectionHeader(
+                                  icon: Icons.trending_up_rounded,
+                                  title: EsBO.dashboardMonthlyTrend,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                SizedBox(
+                                  height: 30,
+                                  child: Row(
+                                    children: [
+                                      _LegendDot(
+                                        color: color.primary,
+                                        label: EsBO.dashboardChartQuoted,
+                                      ),
+                                      const SizedBox(width: AppSpacing.lg),
+                                      _LegendDot(
+                                        color: color.tertiary,
+                                        label: EsBO.dashboardChartSold,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                MonthlyTrendChart(data: stats.monthlyTotals),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Rentabilidad: ganancia estimada + margen promedio.
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _LegendDot(
-                                color: color.primary,
-                                label: EsBO.dashboardChartQuoted,
+                              SectionHeader(
+                                icon: Icons.savings_rounded,
+                                title: EsBO.dashboardProfitTitle,
                               ),
-                              const SizedBox(width: AppSpacing.lg),
-                              _LegendDot(
-                                color: color.tertiary,
-                                label: EsBO.dashboardChartSold,
+                              const SizedBox(height: AppSpacing.md),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: StatTile(
+                                      label: EsBO.dashboardStatEstimatedProfit,
+                                      value: formatCurrency(
+                                        stats.profitQuoted,
+                                        currency,
+                                      ),
+                                      icon: Icons.savings_rounded,
+                                      color: color.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: StatTile(
+                                      label: EsBO.dashboardMarginLabel,
+                                      // marginPct null = "no aplica".
+                                      value: stats.marginPct == null
+                                          ? '—'
+                                          : '${stats.marginPct!.toStringAsFixed(1)}%',
+                                      icon: Icons.percent_rounded,
+                                      color: color.secondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        MonthlyTrendChart(data: stats.monthlyTotals),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.md),
-
-              // Rentabilidad: ganancia estimada + margen promedio.
-              Row(
-                children: [
-                  Expanded(
-                    child: StatTile(
-                      label: EsBO.dashboardStatEstimatedProfit,
-                      value: formatCurrency(stats.profitQuoted, currency),
-                      icon: Icons.savings_rounded,
-                      color: color.primary,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: StatTile(
-                      label: EsBO.dashboardMarginLabel,
-                      // marginPct null = "no aplica" (sin total cotizado).
-                      value: stats.marginPct == null
-                          ? '—'
-                          : '${stats.marginPct!.toStringAsFixed(1)}%',
-                      icon: Icons.percent_rounded,
-                      color: color.secondary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-
-              // Ticket promedio (cotizado / vendido), derivado de totales.
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    children: [
-                      MoneyRow(
-                        label: EsBO.dashboardAvgTicketQuoted,
-                        value: stats.avgTicketQuoted == null
-                            ? '—'
-                            : formatCurrency(stats.avgTicketQuoted!, currency),
-                        valueColor: color.onSurface,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      MoneyRow(
-                        label: EsBO.dashboardAvgTicketSold,
-                        value: stats.avgTicketSold == null
-                            ? '—'
-                            : formatCurrency(stats.avgTicketSold!, currency),
-                        valueColor: color.tertiary,
-                        isBold: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
 
-              if (stats.topClients.isNotEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SectionHeader(
-                          icon: Icons.group_rounded,
-                          title: EsBO.dashboardTopClients,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ...stats.topClients.asMap().entries.map(
-                          (e) => _ClientRow(
-                            rank: e.key + 1,
-                            client: e.value,
-                            currency: currency,
+                      // Ticket promedio (cotizado / vendido).
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Column(
+                            children: [
+                              MoneyRow(
+                                label: EsBO.dashboardAvgTicketQuoted,
+                                value: stats.avgTicketQuoted == null
+                                    ? '—'
+                                    : formatCurrency(
+                                        stats.avgTicketQuoted!,
+                                        currency,
+                                      ),
+                                valueColor: color.onSurface,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              MoneyRow(
+                                label: EsBO.dashboardAvgTicketSold,
+                                value: stats.avgTicketSold == null
+                                    ? '—'
+                                    : formatCurrency(
+                                        stats.avgTicketSold!,
+                                        currency,
+                                      ),
+                                valueColor: color.tertiary,
+                                isBold: true,
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.md),
+                      ),
 
-              // Metricas operativas: horas de impresion + filamento.
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SectionHeader(
-                        icon: Icons.timer_outlined,
-                        title: EsBO.dashboardOperationalTitle,
+                      // Metricas operativas: horas de impresion + filamento.
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SectionHeader(
+                                icon: Icons.timer_outlined,
+                                title: EsBO.dashboardOperationalTitle,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              MoneyRow(
+                                label: EsBO.dashboardPrintHours,
+                                value: '${stats.printHours.toStringAsFixed(1)}h',
+                                valueColor: color.onSurface,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              MoneyRow(
+                                label: EsBO.dashboardFilament,
+                                value: _formatGrams(stats.filamentGrams),
+                                valueColor: color.secondary,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      MoneyRow(
-                        label: EsBO.dashboardPrintHours,
-                        value: '${stats.printHours.toStringAsFixed(1)}h',
-                        valueColor: color.onSurface,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      MoneyRow(
-                        label: EsBO.dashboardFilament,
-                        value: _formatGrams(stats.filamentGrams),
-                        valueColor: color.secondary,
-                      ),
+
+                      if (stats.topClients.isNotEmpty)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SectionHeader(
+                                  icon: Icons.group_rounded,
+                                  title: EsBO.dashboardTopClients,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                ...stats.topClients.asMap().entries.map(
+                                  (e) => _ClientRow(
+                                    rank: e.key + 1,
+                                    client: e.value,
+                                    currency: currency,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Insights automaticos (frases derivadas de datos).
+                      if (insights.isNotEmpty)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SectionHeader(
+                                  icon: Icons.lightbulb_rounded,
+                                  title: EsBO.dashboardInsightsTitle,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                ...insights.map((i) => _InsightRow(text: i)),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      if (stats.topMaterials.isNotEmpty)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SectionHeader(
+                                  icon: Icons.inventory_2_rounded,
+                                  title: EsBO.dashboardTopMaterials,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                ...stats.topMaterials.map(
+                                  (m) => _MaterialRow(m: m),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
+                ] else
+                  const _ProAnalyticsTeaser(),
 
-              // Insights automaticos (frases derivadas de datos existentes).
-              // Solo se muestran para Pro (free no los ve).
-              if (insights.isNotEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SectionHeader(
-                          icon: Icons.lightbulb_rounded,
-                          title: EsBO.dashboardInsightsTitle,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ...insights.map((i) => _InsightRow(text: i)),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.md),
-
-              if (stats.topMaterials.isNotEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SectionHeader(
-                          icon: Icons.inventory_2_rounded,
-                          title: EsBO.dashboardTopMaterials,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ...stats.topMaterials.map((m) => _MaterialRow(m: m)),
-                      ],
-                    ),
-                  ),
-                ),
-            ] else
-              const _ProAnalyticsTeaser(),
-
-            const SizedBox(height: AppSpacing.xxl),
-          ],
+                const SizedBox(height: AppSpacing.xxl),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -699,6 +735,49 @@ class _InsightRow extends StatelessWidget {
           Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
         ],
       ),
+    );
+  }
+}
+
+/// Grid responsive para las cards de detalle del dashboard.
+///
+/// - Angosto (`isWide == false`): una sola columna (igual que antes).
+/// - Ancho (`isWide == true`): 2 columnas para aprovechar el espacio en
+///   tablet/web y reducir el scroll vertical. El ancho de cada item se
+///   calcula del ancho disponible real (ya acotado por MaxWidthScrollView).
+class _ResponsiveGrid extends StatelessWidget {
+  const _ResponsiveGrid({required this.isWide, required this.children});
+
+  /// Si es `true` se disponen 2 por fila; si `false`, 1 columna.
+  final bool isWide;
+
+  /// Cards a mostrar. Mantiene el orden de aparicion.
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isWide || children.length < 2) {
+      return Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i < children.length - 1) const SizedBox(height: AppSpacing.md),
+          ],
+        ],
+      );
+    }
+    // 2 columnas: cada item mide (ancho - separacion) / 2.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth - AppSpacing.md) / 2;
+        return Wrap(
+          spacing: AppSpacing.md,
+          runSpacing: AppSpacing.md,
+          children: [
+            for (final c in children) SizedBox(width: itemWidth, child: c),
+          ],
+        );
+      },
     );
   }
 }

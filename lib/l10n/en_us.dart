@@ -291,6 +291,10 @@ class EnImpl implements AppStrings {
   String get homeSummary => 'Summary';
   @override
   String get homeSeeAll => 'See all';
+  @override
+  String get homeRecentTitle => 'Recent quotations';
+  @override
+  String get homeEmptyCta => 'Start quoting';
 
   @override
   String get calcSectionPiece => 'Piece';
@@ -1345,4 +1349,55 @@ We may update, suspend, or remove application features. These terms may also cha
   String get colorNameBlack => 'Black';
   @override
   String get colorNameWhite => 'White';
+
+  @override
+  String get quoteGuideTitle => 'How quotations work';
+  @override
+  String get quoteGuideMenuLabel => 'Guide';
+  @override
+  String get quoteGuideStep1Title => 'Choose the mode';
+  @override
+  String get quoteGuideStep1Body =>
+      'Express mode: only 3 fields (weight, hours and spool price) for a '
+      'quick quote. Advanced mode: full control over materials, printer '
+      'and breakdown.';
+  @override
+  String get quoteGuideStep2Title => 'Material';
+  @override
+  String get quoteGuideStep2Body =>
+      'Pick a filament from your catalog or enter spool price and grams. '
+      'In Advanced mode you can use multiple materials.';
+  @override
+  String get quoteGuideStep3Title => 'Printer';
+  @override
+  String get quoteGuideStep3Body =>
+      'Select the active printer: with its registered power the app '
+      'computes the printing energy cost.';
+  @override
+  String get quoteGuideStep4Title => 'Print time';
+  @override
+  String get quoteGuideStep4Body =>
+      'Enter estimated print hours and minutes. They drive the energy '
+      'cost and labor.';
+  @override
+  String get quoteGuideStep5Title => 'Optional extras';
+  @override
+  String get quoteGuideStep5Body =>
+      'Labor, post-processing, failure rate, minimum charge and markup on '
+      'materials. They are configured in Settings and adjust the final price.';
+  @override
+  String get quoteGuideStep6Title => 'Result and saving';
+  @override
+  String get quoteGuideStep6Body =>
+      'The total updates live. Tap it to see the breakdown, apply a '
+      'discount and save. Then share/export and your history feeds the '
+      'dashboard.';
+  @override
+  String get quoteGuideNext => 'Next';
+  @override
+  String get quoteGuideClose => 'Got it';
+  @override
+  String quoteGuidePageCounter(int page, int total) => 'Step $page of $total';
+  @override
+  String get commonMoreActions => 'More actions';
 }
