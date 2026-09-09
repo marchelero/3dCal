@@ -9,11 +9,10 @@ import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
-import '../../../../../shared/widgets/brand_selector_field.dart';
-import '../../../../../shared/widgets/k3d_brands.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
 import '../notifiers/printers_notifier.dart';
+import '../widgets/printer_catalog_selector.dart';
 
 /// Form de impresora. Espejo de [FilamentFormPage] sin `brand` ni Decimal.
 class PrinterFormPage extends ConsumerStatefulWidget {
@@ -67,12 +66,6 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   }
 
   bool get _isEdit => widget.existing != null;
-
-  String? _requiredText(String? v) {
-    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
-    if (v.trim().length > 100) return EsBO.filamentMax100;
-    return null;
-  }
 
   String? _requiredWatts(String? v) {
     if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
@@ -177,21 +170,10 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               shrinkWrap: true,
               children: [
-                BrandSelectorField(
-                  domain: BrandDomain.printer,
-                  controller: _brandCtrl,
-                  label: EsBO.filamentBrand,
-                  helperText: EsBO.printerBrandHelper,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                TextFormField(
-                  controller: _nameCtrl,
-                  decoration: InputDecoration(
-                    labelText: EsBO.printerModel,
-                    helperText: EsBO.printerModelHelper,
-                  ),
-                  textInputAction: TextInputAction.next,
-                  validator: _requiredText,
+                PrinterCatalogSelector(
+                  brandController: _brandCtrl,
+                  modelController: _nameCtrl,
+                  wattsController: _wattsCtrl,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 NumericInputField(

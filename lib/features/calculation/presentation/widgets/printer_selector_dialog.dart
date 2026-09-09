@@ -77,7 +77,10 @@ Future<bool> showPrinterSelectorDialog(
     },
     footer: atLimit
         ? _FreeLimitHint(
-            text: EsBO.freePrintersLimitHint(printers.length, kFreePrinterLimit),
+            text: EsBO.freePrintersLimitHint(
+              printers.length,
+              kFreePrinterLimit,
+            ),
           )
         : ListTile(
             leading: const Icon(Icons.add_rounded),
@@ -130,9 +133,7 @@ class _FreeLimitHint extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.tertiaryContainer.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(AppRadii.sm),
-        border: Border.all(
-          color: cs.tertiary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: cs.tertiary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

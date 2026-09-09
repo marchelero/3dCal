@@ -163,8 +163,6 @@ class EnImpl implements AppStrings {
   @override
   String get settingsProTitle => '3D Cal PRO';
   @override
-  String get settingsProActive => 'PRO active';
-  @override
   String get settingsProUnlocked => 'You have all PRO features unlocked';
   @override
   String get settingsProNoAdditionalPurchase =>
@@ -678,6 +676,19 @@ class EnImpl implements AppStrings {
   @override
   String get printerWattsHelper => 'Typically 100-300 W';
   @override
+  String get printerCatalogBrandHint => 'Choose your printer brand';
+  @override
+  String get printerCatalogModelHint => 'Choose the model';
+  @override
+  String get printerCatalogNoModels => 'No models for this brand';
+  @override
+  String get printerCatalogSelectModel => 'Select a model';
+  @override
+  String get printerWattsAutoHelper =>
+      'Average consumption loaded from catalog — you can edit it';
+  @override
+  String get printerWattsEstimated => ' (estimated)';
+  @override
   String get printerDefaultSubtitle =>
       'Will be used in new quotations. Only one printer can be default.';
   @override
@@ -755,19 +766,19 @@ class EnImpl implements AppStrings {
 
   @override
   List<String> get csvExportHeader => const [
-        'Date',
-        'Item',
-        'Client',
-        'Quantity',
-        'Total',
-        'Sold',
-        'Materials',
-        'Hours',
-        'Discount',
-        'MatCost',
-        'Electric',
-        'Profit',
-      ];
+    'Date',
+    'Item',
+    'Client',
+    'Quantity',
+    'Total',
+    'Sold',
+    'Materials',
+    'Hours',
+    'Discount',
+    'MatCost',
+    'Electric',
+    'Profit',
+  ];
   @override
   String get csvValueYes => 'Yes';
   @override
@@ -787,6 +798,11 @@ class EnImpl implements AppStrings {
   String get localeDe => 'German';
   @override
   String get localeFr => 'French';
+  @override
+  String get languagePageTitle => 'Choose your language';
+  @override
+  String get languagePageSubtitle =>
+      'Applies to the whole app. You can change it later in Settings.';
   @override
   String get onboardingTitle1 => 'Welcome to 3dCalc';
   @override
@@ -808,26 +824,27 @@ class EnImpl implements AppStrings {
   String get onboardingDesc4 =>
       'Track quotations, monthly trends,\nPDF export and search history.';
   @override
-  String get onboardingNext => 'Next';
+  String get onboardingTitle5 => 'Easy setup';
   @override
-  String get onboardingSkip => 'Skip';
+  String get onboardingDesc5 =>
+      'Set currency, printer, filament, profit\nand energy cost in a few steps. Ready to quote.';
+  @override
+  String get onboardingNext => 'Next';
   @override
   String get onboardingStart => 'Get Started';
   @override
-  String get onboardingStartQuote => 'Create my first quote';
-  @override
-  String get onboardingGoHome => 'Go to menu';
+  String get onboardingConfigure => 'Set up';
   @override
   String get configTitle => 'Initial Setup';
   @override
-  String get configLanguage => 'Language';
+  String get configTheme => 'Theme';
   @override
   String get configCurrency => 'Currency';
   @override
   String get configContinue => 'Continue';
 
   @override
-  String get configStep1Title => 'Language & currency';
+  String get configStep1Title => 'Theme & currency';
   @override
   String get configStep2Title => 'Printer & filament';
   @override
@@ -847,9 +864,6 @@ class EnImpl implements AppStrings {
       'These values apply to every quote. You can change them later.';
   @override
   String configStepCounter(int step, int total) => 'Step $step of $total';
-  @override
-  String get configLanguageHelper =>
-      'Choose the app language. You can change it later.';
   @override
   String get configCurrencyHelper =>
       'Currency used for prices and quotes. Does not convert values.';

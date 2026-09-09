@@ -169,8 +169,6 @@ class DeImpl implements AppStrings {
   @override
   String get settingsProTitle => '3D Cal PRO';
   @override
-  String get settingsProActive => 'PRO aktiv';
-  @override
   String get settingsProUnlocked => 'Alle PRO-Funktionen sind freigeschaltet';
   @override
   String get settingsProNoAdditionalPurchase =>
@@ -693,6 +691,19 @@ class DeImpl implements AppStrings {
   @override
   String get printerWattsHelper => 'Typischerweise 100-300 W';
   @override
+  String get printerCatalogBrandHint => 'Wähle deine Druckermarke';
+  @override
+  String get printerCatalogModelHint => 'Wähle das Modell';
+  @override
+  String get printerCatalogNoModels => 'Keine Modelle für diese Marke';
+  @override
+  String get printerCatalogSelectModel => 'Wähle ein Modell';
+  @override
+  String get printerWattsAutoHelper =>
+      'Durchschnittsverbrauch aus Katalog geladen — editierbar';
+  @override
+  String get printerWattsEstimated => ' (geschätzt)';
+  @override
   String get printerDefaultSubtitle =>
       'Wird in neuen Angeboten verwendet. Nur ein Drucker kann Standard sein.';
   @override
@@ -770,19 +781,19 @@ class DeImpl implements AppStrings {
 
   @override
   List<String> get csvExportHeader => const [
-        'Datum',
-        'Stück',
-        'Kunde',
-        'Menge',
-        'Gesamt',
-        'Verkauft',
-        'Materialien',
-        'Stunden',
-        'Rabatt',
-        'MatKosten',
-        'Strom',
-        'Gewinn',
-      ];
+    'Datum',
+    'Stück',
+    'Kunde',
+    'Menge',
+    'Gesamt',
+    'Verkauft',
+    'Materialien',
+    'Stunden',
+    'Rabatt',
+    'MatKosten',
+    'Strom',
+    'Gewinn',
+  ];
   @override
   String get csvValueYes => 'Ja';
   @override
@@ -802,6 +813,11 @@ class DeImpl implements AppStrings {
   String get localeDe => 'Deutsch';
   @override
   String get localeFr => 'Französisch';
+  @override
+  String get languagePageTitle => 'Wähle deine Sprache';
+  @override
+  String get languagePageSubtitle =>
+      'Gilt für die gesamte App. Du kannst sie später in den Einstellungen ändern.';
   @override
   String get onboardingTitle1 => 'Willkommen bei 3dCalc';
   @override
@@ -823,26 +839,27 @@ class DeImpl implements AppStrings {
   String get onboardingDesc4 =>
       'Verfolgen Sie Angebote und monatliche Trends,\nexportieren Sie PDFs und durchsuchen Sie den Verlauf.';
   @override
-  String get onboardingNext => 'Weiter';
+  String get onboardingTitle5 => 'Einfache Einrichtung';
   @override
-  String get onboardingSkip => 'Überspringen';
+  String get onboardingDesc5 =>
+      'Legen Sie Währung, Drucker, Filament, Gewinn\nund Energiekosten in wenigen Schritten fest. Bereit für Angebote.';
+  @override
+  String get onboardingNext => 'Weiter';
   @override
   String get onboardingStart => 'Loslegen';
   @override
-  String get onboardingStartQuote => 'Mein erstes Angebot erstellen';
-  @override
-  String get onboardingGoHome => 'Zum Menü';
+  String get onboardingConfigure => 'Einrichten';
   @override
   String get configTitle => 'Ersteinrichtung';
   @override
-  String get configLanguage => 'Sprache';
+  String get configTheme => 'Design';
   @override
   String get configCurrency => 'Währung';
   @override
   String get configContinue => 'Fortfahren';
 
   @override
-  String get configStep1Title => 'Sprache und Währung';
+  String get configStep1Title => 'Design und Währung';
   @override
   String get configStep2Title => 'Drucker und Filament';
   @override
@@ -862,9 +879,6 @@ class DeImpl implements AppStrings {
       'Diese Werte gelten für jedes Angebot. Sie können sie später ändern.';
   @override
   String configStepCounter(int step, int total) => 'Schritt $step von $total';
-  @override
-  String get configLanguageHelper =>
-      'Wählen Sie die Sprache der App. Sie können sie später ändern.';
   @override
   String get configCurrencyHelper =>
       'Währung für Preise und Angebote. Werte werden nicht umgerechnet.';
@@ -941,8 +955,7 @@ class DeImpl implements AppStrings {
       'Free-Limit von $limit Filamenten erreicht. '
       'Pro freischalten für mehr.';
   @override
-  String printerLimitReachedTooltip(int limit) =>
-      'Free-Limit ($limit Drucker)';
+  String printerLimitReachedTooltip(int limit) => 'Free-Limit ($limit Drucker)';
   @override
   String printerLimitReachedBody(int limit) =>
       'Free-Limit von $limit Druckern erreicht. '

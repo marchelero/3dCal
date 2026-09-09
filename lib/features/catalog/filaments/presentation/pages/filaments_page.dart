@@ -111,9 +111,8 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
                     : filaments.where((f) {
                         final name = f.name.toLowerCase();
                         final brand = f.brand?.toLowerCase() ?? '';
-                        final colorName = _localizedColorName(
-                          f.color,
-                        )?.toLowerCase() ?? '';
+                        final colorName =
+                            _localizedColorName(f.color)?.toLowerCase() ?? '';
                         return name.contains(_searchQuery) ||
                             brand.contains(_searchQuery) ||
                             colorName.contains(_searchQuery);
@@ -184,8 +183,8 @@ class _FilamentTile extends ConsumerWidget {
     final subtitle = colorName == null
         ? (brand == null || brand.isEmpty ? base : '$brand  ·  $base')
         : (brand == null || brand.isEmpty
-            ? '$base  · $colorName'
-            : '$brand  ·  $base  · $colorName');
+              ? '$base  · $colorName'
+              : '$brand  ·  $base  · $colorName');
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -365,11 +364,7 @@ class _FilamentLeading extends StatelessWidget {
     }
     // Sin color: comportamiento previo intacto.
     if (filament.isDefault) return const DefaultBadge();
-    return Icon(
-      Icons.label_outline,
-      color: cs.onSurfaceVariant,
-      size: 24,
-    );
+    return Icon(Icons.label_outline, color: cs.onSurfaceVariant, size: 24);
   }
 }
 

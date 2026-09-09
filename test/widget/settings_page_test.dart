@@ -622,7 +622,7 @@ void main() {
       await pumpForRestore(tester, isPro: true);
 
       // Abrir el modal de Pro tocando el pill "PRO".
-      await tester.tap(find.text(EsBO.settingsProActive));
+      await tester.tap(find.text(EsBO.proBadgeLabel));
       await tester.pumpAndSettle();
 
       expect(find.text(EsBO.settingsProRestorePurchase), findsNothing);
@@ -643,10 +643,10 @@ void main() {
       await pumpForRestore(tester, isPro: true);
 
       // Abrir el modal de Pro tocando el pill "PRO".
-      await tester.tap(find.text(EsBO.settingsProActive));
+      await tester.tap(find.text(EsBO.proBadgeLabel));
       await tester.pumpAndSettle();
 
-      expect(find.text(EsBO.settingsProActive), findsOneWidget);
+      expect(find.text(EsBO.proBadgeLabel), findsOneWidget);
       expect(find.text(EsBO.settingsProUnlocked), findsOneWidget);
       expect(find.text(EsBO.settingsProNoAdditionalPurchase), findsOneWidget);
       expect(find.text(EsBO.settingsProFutureUpdates), findsOneWidget);

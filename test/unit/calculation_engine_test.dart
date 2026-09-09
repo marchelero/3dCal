@@ -357,19 +357,22 @@ void main() {
       expect(out.totalPrice, DecimalParse.fromString('12'));
     });
 
-    test('AC3: vida util 0 → helper null (sin division por cero, sin linea)', () {
-      final perHour = CalculationEngine.amortizationPerHour(
-        purchaseCost: Decimal.fromInt(3500),
-        usefulLifeHours: 0,
-      );
-      expect(perHour, isNull);
+    test(
+      'AC3: vida util 0 → helper null (sin division por cero, sin linea)',
+      () {
+        final perHour = CalculationEngine.amortizationPerHour(
+          purchaseCost: Decimal.fromInt(3500),
+          usefulLifeHours: 0,
+        );
+        expect(perHour, isNull);
 
-      final out = CalculationEngine.compute(
-        _input(materials: [_material()], totalHours: '2'),
-      );
-      expect(out.amortizationCost, Decimal.zero);
-      expect(out.baseCost, out.materialCost);
-    });
+        final out = CalculationEngine.compute(
+          _input(materials: [_material()], totalHours: '2'),
+        );
+        expect(out.amortizationCost, Decimal.zero);
+        expect(out.baseCost, out.materialCost);
+      },
+    );
 
     test('costo <= 0 → null (impresora sin precio de compra)', () {
       final perHour = CalculationEngine.amortizationPerHour(

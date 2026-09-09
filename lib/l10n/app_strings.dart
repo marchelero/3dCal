@@ -122,7 +122,6 @@ abstract class AppStrings {
   String get settingsGoProAction;
 
   String get settingsProTitle;
-  String get settingsProActive;
   String get settingsProUnlocked;
   String get settingsProNoAdditionalPurchase;
   String get settingsProFutureUpdates;
@@ -446,6 +445,25 @@ abstract class AppStrings {
   String get printerWatts;
   String get printerWattsHelper;
   String get printerDefaultSubtitle;
+
+  // === Catálogo paramétrico de impresoras (F-CAT-2026-09-09-A) ===
+  /// Hint del dropdown de marca del catalogo.
+  String get printerCatalogBrandHint;
+
+  /// Helper del campo/dropdown de modelo del catalogo.
+  String get printerCatalogModelHint;
+
+  /// Helper cuando la marca elegida no tiene modelos en el catalogo.
+  String get printerCatalogNoModels;
+
+  /// Hint del dropdown de modelo antes de seleccionar uno.
+  String get printerCatalogSelectModel;
+
+  /// Helper bajo watts cuando fue auto-completado desde el catalogo.
+  String get printerWattsAutoHelper;
+
+  /// Sufijo "(estimado)" para modelos con watts extrapolados.
+  String get printerWattsEstimated;
   String get printerNewTooltip;
   String get printerDeleteTitle;
   String get printerMustBeNonNegative;
@@ -515,6 +533,10 @@ abstract class AppStrings {
   String get localeDe;
   String get localeFr;
 
+  // === Language selection (primera ejecución) ===
+  String get languagePageTitle;
+  String get languagePageSubtitle;
+
   // === Onboarding ===
   String get onboardingTitle1;
   String get onboardingDesc1;
@@ -524,19 +546,17 @@ abstract class AppStrings {
   String get onboardingDesc3;
   String get onboardingTitle4;
   String get onboardingDesc4;
+  String get onboardingTitle5;
+  String get onboardingDesc5;
   String get onboardingNext;
-  String get onboardingSkip;
   String get onboardingStart;
 
-  /// CTA de la última slide: entrar directo a la primera cotización.
-  String get onboardingStartQuote;
-
-  /// Acción secundaria de la última slide: cerrar el onboarding e ir al menú.
-  String get onboardingGoHome;
+  /// CTA de la última slide: ir a la configuración inicial (/initial-config).
+  String get onboardingConfigure;
 
   // === Initial config ===
   String get configTitle;
-  String get configLanguage;
+  String get configTheme;
   String get configCurrency;
   String get configContinue;
 
@@ -555,9 +575,6 @@ abstract class AppStrings {
 
   /// Contador del paso: "Paso $step de $total".
   String configStepCounter(int step, int total);
-
-  /// Microcopy: elegible post-config.
-  String get configLanguageHelper;
 
   /// Microcopy: no convierte valores.
   String get configCurrencyHelper;

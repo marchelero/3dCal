@@ -146,9 +146,7 @@ class _FreeLimitHint extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.tertiaryContainer.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(AppRadii.sm),
-        border: Border.all(
-          color: cs.tertiary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: cs.tertiary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

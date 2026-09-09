@@ -25,11 +25,11 @@ import 'utils/image_downscale.dart';
 /// este provider con la versión síncrona (`(b) async => downscalePieceImage(b)`).
 final pieceImageDownscalerProvider =
     Provider<Future<Uint8List?> Function(Uint8List?)>((ref) {
-  if (kIsWeb) {
-    return (bytes) async => downscalePieceImage(bytes);
-  }
-  return (bytes) => Isolate.run(() => downscalePieceImage(bytes));
-});
+      if (kIsWeb) {
+        return (bytes) async => downscalePieceImage(bytes);
+      }
+      return (bytes) => Isolate.run(() => downscalePieceImage(bytes));
+    });
 
 /// Provider de la base de datos.
 ///

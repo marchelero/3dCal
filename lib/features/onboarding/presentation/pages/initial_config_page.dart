@@ -10,8 +10,10 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme_mode_provider.dart';
 import '../../../../features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../../../features/catalog/printers/presentation/notifiers/printers_notifier.dart';
+import '../../../../features/catalog/printers/presentation/widgets/printer_catalog_selector.dart';
 import '../../../../features/settings/domain/settings.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../../l10n/app_locale.dart';
@@ -23,13 +25,14 @@ import '../../../../shared/widgets/k3d_brands.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 
-/// Primera pantalla al abrir la app por primera vez.
+/// Configuración inicial (se llega desde el onboarding, primera ejecución).
 ///
 /// Stepper de 3 pasos:
-/// 1. Idioma + moneda (requeridos, se persisten al cambiar).
+/// 1. Moneda (el idioma ya se eligió antes, en su propia pantalla).
 /// 2. Impresora (requerida) + filamento (opcional con "lo agrego después").
 /// 3. Ganancia base + costo de energía (precargados con defaults) + Resumen.
-/// Al finalizar persiste [SettingsKeys.onboardingDone] y navega al home `/`.
+/// Al finalizar persiste [SettingsKeys.onboardingDone] y abre el calculador
+/// encima del home (botón "Empezar a cotizar").
 class InitialConfigPage extends ConsumerStatefulWidget {
   const InitialConfigPage({super.key});
 
@@ -238,8 +241,13 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.onboardingDone, true);
     if (!mounted) return;
-    // Tras la config inicial, mostrar las slides explicativas (OnboardingPage).
-    GoRouter.of(context).go('/onboarding');
+    // "Empezar a cotizar": termina la ruta /initial-config con go() (stack
+    // limpio → Home) y recién entonces abre el calculador encima. Sin este
+    // go(), /initial-config queda vivo en el stack y al volver atrás desde
+    // el calculador se regresa a la config → ciclo sin salida.
+    final router = GoRouter.of(context);
+    router.go('/');
+    await router.push('/calculator');
   }
 
   @override
@@ -411,21 +419,11 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
                   key: _printerFormKey,
                   child: Column(
                     children: [
-                      BrandSelectorField(
-                        domain: BrandDomain.printer,
-                        controller: _printerBrandCtrl,
-                        label: EsBO.filamentBrand,
-                        helperText: EsBO.printerBrandHelper,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      TextFormField(
-                        controller: _printerNameCtrl,
-                        decoration: InputDecoration(
-                          labelText: EsBO.printerModel,
-                          helperText: EsBO.printerModelHelper,
-                        ),
-                        textInputAction: TextInputAction.next,
-                        validator: _requiredText,
+                      PrinterCatalogSelector(
+                        compact: true,
+                        brandController: _printerBrandCtrl,
+                        modelController: _printerNameCtrl,
+                        wattsController: _printerWattsCtrl,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       NumericInputField(
@@ -493,8 +491,7 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
                       const SizedBox(height: AppSpacing.md),
                       FilamentColorField(
                         value: _filamentColor,
-                        onChanged: (v) =>
-                            setState(() => _filamentColor = v),
+                        onChanged: (v) => setState(() => _filamentColor = v),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextFormField(
@@ -786,57 +783,12 @@ class _Step1Content extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _StepSectionHeader(
-          icon: Icons.language_rounded,
-          title: EsBO.configLanguage,
+          icon: Icons.palette_rounded,
+          title: EsBO.configTheme,
           color: theme.colorScheme.primary,
         ),
         const SizedBox(height: AppSpacing.sm),
-        Text(
-          EsBO.configLanguageHelper,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        InputDecorator(
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.language),
-            border: OutlineInputBorder(),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<AppLocale>(
-              value: ref.watch(localeProvider),
-              isExpanded: true,
-              items: [
-                DropdownMenuItem(
-                  value: AppLocale.es,
-                  child: Text(EsBO.localeEs),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.en,
-                  child: Text(EsBO.localeEn),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.ptBr,
-                  child: Text(EsBO.localePtBr),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.de,
-                  child: Text(EsBO.localeDe),
-                ),
-                DropdownMenuItem(
-                  value: AppLocale.fr,
-                  child: Text(EsBO.localeFr),
-                ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(localeProvider.notifier).setLocale(value);
-                }
-              },
-            ),
-          ),
-        ),
+        const _ThemePicker(),
         const SizedBox(height: AppSpacing.xxl),
         _StepSectionHeader(
           icon: Icons.attach_money_rounded,
@@ -853,6 +805,154 @@ class _Step1Content extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         _CurrencyDropdown(),
       ],
+    );
+  }
+}
+
+/// Selector de tema Claro/Oscuro del setup inicial: dos tarjetas grandes
+/// con preview de gradiente. Solo esas dos opciones; el modo "Sistema"
+/// (y la preferencia persistida) viven en Ajustes.
+class _ThemePicker extends ConsumerWidget {
+  const _ThemePicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeModeProvider);
+    final selected = switch (current) {
+      AppThemeMode.light => AppThemeMode.light,
+      AppThemeMode.dark => AppThemeMode.dark,
+      // Sin preferencia explícita todavía (default = sigue al sistema).
+      AppThemeMode.system => null,
+    };
+
+    return Row(
+      children: [
+        Expanded(
+          child: _ThemeOptionCard(
+            mode: AppThemeMode.light,
+            selected: selected == AppThemeMode.light,
+            onTap: () =>
+                ref.read(themeModeProvider.notifier).setMode(AppThemeMode.light),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: _ThemeOptionCard(
+            mode: AppThemeMode.dark,
+            selected: selected == AppThemeMode.dark,
+            onTap: () =>
+                ref.read(themeModeProvider.notifier).setMode(AppThemeMode.dark),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Tarjeta con preview de tema (gradiente claro/oscuro) + estado seleccionado.
+class _ThemeOptionCard extends StatelessWidget {
+  const _ThemeOptionCard({
+    required this.mode,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final AppThemeMode mode;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLight = mode == AppThemeMode.light;
+    final borderRadius = BorderRadius.circular(20);
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: mode.label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: borderRadius,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+            height: 128,
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isLight
+                    ? const [Color(0xFFF8FAFC), Color(0xFFE2E8F0)]
+                    : const [Color(0xFF0F172A), Color(0xFF1E293B)],
+              ),
+              border: Border.all(
+                color: selected ? primary : Colors.grey.withValues(alpha: 0.4),
+                width: selected ? 2.5 : 1,
+              ),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: primary.withValues(alpha: 0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isLight
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                        size: 34,
+                        color: isLight
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        mode.label,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: isLight
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (selected)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1287,16 +1387,6 @@ class _ConfigSummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final locale = ref.watch(localeProvider);
-    final strings = ref.watch(localeStringsProvider);
-    final languageLabel = switch (locale) {
-      AppLocale.es => strings.localeEs,
-      AppLocale.en => strings.localeEn,
-      AppLocale.ptBr => strings.localePtBr,
-      AppLocale.de => strings.localeDe,
-      AppLocale.fr => strings.localeFr,
-    };
-
     final filamentLabel = filamentName ?? '—';
 
     return Column(
@@ -1326,11 +1416,6 @@ class _ConfigSummaryCard extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               children: [
-                _SummaryRow(
-                  icon: Icons.language_rounded,
-                  label: EsBO.configLanguage,
-                  value: languageLabel,
-                ),
                 _SummaryRow(
                   icon: Icons.attach_money_rounded,
                   label: EsBO.configCurrency,

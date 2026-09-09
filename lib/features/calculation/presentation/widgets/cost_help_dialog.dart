@@ -81,7 +81,11 @@ Future<void> showCostHelpDialog(BuildContext context) {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(item.icon, size: 20, color: theme.colorScheme.primary),
+                      Icon(
+                        item.icon,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Column(
@@ -89,8 +93,9 @@ Future<void> showCostHelpDialog(BuildContext context) {
                           children: [
                             Text(
                               item.title,
-                              style: dialogTheme.textTheme.titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w600),
+                              style: dialogTheme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(

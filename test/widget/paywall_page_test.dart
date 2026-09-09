@@ -43,6 +43,7 @@ class _FakePaymentService implements PaymentService {
   String? lastPurchaseProductId;
   PaymentResult purchaseResult = const PaymentCancelled();
   RestoreResult restoreResult = const RestoreEmpty();
+
   /// Precio que reporta el "store" via [getProPriceString]. `null` = la
   /// plataforma no tiene precio (fallback l10n).
   String? storePrice;

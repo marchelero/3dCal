@@ -19,6 +19,7 @@ import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
+import '../../../../shared/widgets/pro_active_badge.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../domain/dashboard_stats.dart';
@@ -229,7 +230,16 @@ class HomePage extends ConsumerWidget {
                 AppSpacing.xxl,
                 AppSpacing.xxl,
               ),
-              child: content,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Contenido hero (logo + nombre + tagline) a la izquierda.
+                  Expanded(child: content),
+                  const SizedBox(width: AppSpacing.sm),
+                  // Badge PRO activo — extremo derecho de la cabecera.
+                  const ProActiveBadge(),
+                ],
+              ),
             ),
           ],
         ),

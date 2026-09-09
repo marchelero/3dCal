@@ -380,7 +380,9 @@ void main() {
         // Profit inicial 200 → el fake expone setForTest para mutar.
         (container.read(settingsNotifierProvider.notifier)
                 as _FakeSettingsNotifier)
-            .setForTest(Settings.defaults.copyWith(profitBase: Decimal.fromInt(200)));
+            .setForTest(
+              Settings.defaults.copyWith(profitBase: Decimal.fromInt(200)),
+            );
         await container.read(settingsNotifierProvider.future);
 
         final notifier = container.read(calculatorNotifierProvider.notifier);

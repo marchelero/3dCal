@@ -1,4 +1,4 @@
-﻿// ignore_for_file: public_member_api_docs
+// ignore_for_file: public_member_api_docs
 import 'app_strings.dart';
 
 /// Chaînes localisées en français (fr_FR).
@@ -159,8 +159,6 @@ class FrImpl implements AppStrings {
   String get settingsGoProAction => 'Débloquer PRO';
   @override
   String get settingsProTitle => '3D Cal PRO';
-  @override
-  String get settingsProActive => 'PRO actif';
   @override
   String get settingsProUnlocked =>
       'Toutes les fonctionnalités PRO sont débloquées';
@@ -662,6 +660,20 @@ class FrImpl implements AppStrings {
   @override
   String get printerWattsHelper => 'Généralement 100-300 W';
   @override
+  String get printerCatalogBrandHint =>
+      'Choisissez la marque de votre imprimante';
+  @override
+  String get printerCatalogModelHint => 'Choisissez le modèle';
+  @override
+  String get printerCatalogNoModels => 'Aucun modèle pour cette marque';
+  @override
+  String get printerCatalogSelectModel => 'Sélectionnez un modèle';
+  @override
+  String get printerWattsAutoHelper =>
+      'Consommation moyenne chargée du catalogue — modifiable';
+  @override
+  String get printerWattsEstimated => ' (estimé)';
+  @override
   String get printerDefaultSubtitle =>
       'Utilisée dans les nouveaux devis. Une seule imprimante peut être par défaut.';
   @override
@@ -736,19 +748,19 @@ class FrImpl implements AppStrings {
 
   @override
   List<String> get csvExportHeader => const [
-        'Date',
-        'Pièce',
-        'Client',
-        'Quantité',
-        'Total',
-        'Vendu',
-        'Matériaux',
-        'Heures',
-        'Remise',
-        'CoûtMat',
-        'Électricité',
-        'Bénéfice',
-      ];
+    'Date',
+    'Pièce',
+    'Client',
+    'Quantité',
+    'Total',
+    'Vendu',
+    'Matériaux',
+    'Heures',
+    'Remise',
+    'CoûtMat',
+    'Électricité',
+    'Bénéfice',
+  ];
   @override
   String get csvValueYes => 'Oui';
   @override
@@ -770,6 +782,11 @@ class FrImpl implements AppStrings {
   String get localeFr => 'Français';
 
   @override
+  String get languagePageTitle => 'Choisissez votre langue';
+  @override
+  String get languagePageSubtitle =>
+      'S’applique à toute l’application. Vous pourrez la changer plus tard dans Réglages.';
+  @override
   String get onboardingTitle1 => 'Bienvenue dans 3dCalc';
   @override
   String get onboardingDesc1 =>
@@ -790,25 +807,26 @@ class FrImpl implements AppStrings {
   String get onboardingDesc4 =>
       'Suivez les devis et les tendances mensuelles,\nexportez en PDF et recherchez dans l’historique.';
   @override
-  String get onboardingNext => 'Suivant';
+  String get onboardingTitle5 => 'Configuration simple';
   @override
-  String get onboardingSkip => 'Ignorer';
+  String get onboardingDesc5 =>
+      'Définissez devise, imprimante, filament, bénéfice\net coût d’énergie en quelques étapes. Prêt à deviser.';
+  @override
+  String get onboardingNext => 'Suivant';
   @override
   String get onboardingStart => 'Commencer';
   @override
-  String get onboardingStartQuote => 'Créer mon premier devis';
-  @override
-  String get onboardingGoHome => 'Aller au menu';
+  String get onboardingConfigure => 'Configurer';
   @override
   String get configTitle => 'Configuration initiale';
   @override
-  String get configLanguage => 'Langue';
+  String get configTheme => 'Thème';
   @override
   String get configCurrency => 'Devise';
   @override
   String get configContinue => 'Continuer';
   @override
-  String get configStep1Title => 'Langue et devise';
+  String get configStep1Title => 'Thème et devise';
   @override
   String get configStep2Title => 'Imprimante et filament';
   @override
@@ -827,9 +845,6 @@ class FrImpl implements AppStrings {
       'Ces valeurs s’appliquent à chaque devis. Vous pourrez les modifier plus tard.';
   @override
   String configStepCounter(int step, int total) => 'Étape $step sur $total';
-  @override
-  String get configLanguageHelper =>
-      'Choisissez la langue de l’application. Vous pourrez la modifier plus tard.';
   @override
   String get configCurrencyHelper =>
       'Devise utilisée pour les prix et devis. Les valeurs ne sont pas converties.';

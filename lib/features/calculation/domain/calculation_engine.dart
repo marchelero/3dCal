@@ -48,8 +48,9 @@ class CalculationEngine {
     required int usefulLifeHours,
   }) {
     if (usefulLifeHours <= 0 || purchaseCost <= Decimal.zero) return null;
-    return (purchaseCost / Decimal.fromInt(usefulLifeHours))
-        .toDecimal(scaleOnInfinitePrecision: 6);
+    return (purchaseCost / Decimal.fromInt(usefulLifeHours)).toDecimal(
+      scaleOnInfinitePrecision: 6,
+    );
   }
 
   /// Calcula la salida financiera para los [input] dados.
@@ -69,8 +70,8 @@ class CalculationEngine {
     // Amortizacion de la impresora (F5): costo fijo por hora.
     // `Decimal * Decimal` ya da Decimal; solo la division del helper
     // necesita escala explicita (scaleOnInfinitePrecision: 6).
-    final amortizationCost = input.amortizationPerHour != null &&
-            input.totalHours > Decimal.zero
+    final amortizationCost =
+        input.amortizationPerHour != null && input.totalHours > Decimal.zero
         ? input.amortizationPerHour! * input.totalHours
         : Decimal.zero;
 
@@ -83,7 +84,8 @@ class CalculationEngine {
         : Decimal.zero;
 
     // Base
-    final baseCost = materialCost +
+    final baseCost =
+        materialCost +
         electricCost +
         amortizationCost +
         laborCost +

@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_radii.dart';
@@ -12,10 +11,12 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 
-/// 4 pantallas de onboarding swipeables con ilustraciones decorativas.
+/// 5 pantallas de onboarding swipeables con ilustraciones decorativas.
 ///
-/// Muestra solo en primera ejecucion. Skip button + indicador de pagina.
-/// Al completar, persiste [SettingsKeys.onboardingDone] y navega a `/`.
+/// Muestra solo en primera ejecución, ANTES de la configuración inicial.
+/// Sin botón de saltar: la última slide presenta la config inicial con el
+/// CTA "Configurar", que navega a `/initial-config`. El flag
+/// [SettingsKeys.onboardingDone] lo persiste la config inicial al terminar.
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
 
@@ -52,6 +53,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       title: EsBO.onboardingTitle4,
       description: EsBO.onboardingDesc4,
     ),
+    _OnboardingScreenData(
+      icon: Icons.tune_rounded,
+      title: EsBO.onboardingTitle5,
+      description: EsBO.onboardingDesc5,
+    ),
   ];
 
   @override
@@ -60,25 +66,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     super.dispose();
   }
 
-  Future<void> _markDone() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(SettingsKeys.onboardingDone, true);
-    if (!mounted) return;
-    GoRouter.of(context).go('/');
-  }
-
-  /// CTA de la última slide: persiste el onboarding, termina la ruta
-  /// `/onboarding` navegando a `/` (stack limpio → Home) y recién entonces
-  /// abre el calculador encima. Sin este go(), `/onboarding` (y
-  /// `/initial-config`) quedan vivos en el stack y al volver atrás desde el
-  /// calculador se regresa al onboarding → ciclo sin salida.
-  Future<void> _startQuoting() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(SettingsKeys.onboardingDone, true);
-    if (!mounted) return;
-    final router = GoRouter.of(context);
-    router.go('/');
-    await router.push('/calculator');
+  /// CTA de la última slide: pasa a la configuración inicial.
+  ///
+  /// Usa `go()` para reemplazar `/onboarding` en el stack (stack limpio):
+  /// al volver atrás desde la config no se regresa a las slides. El flag
+  /// [SettingsKeys.onboardingDone] lo persiste InitialConfigPage al terminar.
+  void _goToConfig() {
+    GoRouter.of(context).go('/initial-config');
   }
 
   @override
@@ -106,27 +100,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Skip button
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    0,
-                  ),
-                  child: TextButton(
-                    onPressed: _markDone,
-                    child: Text(
-                      isLast ? EsBO.onboardingGoHome : EsBO.onboardingSkip,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
               // PageView
               Expanded(
                 child: PageView.builder(
@@ -227,13 +200,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     Semantics(
                       button: true,
                       label: isLast
-                          ? EsBO.onboardingStartQuote
+                          ? EsBO.onboardingConfigure
                           : EsBO.onboardingNext,
                       child: SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
                           onPressed: isLast
-                              ? _startQuoting
+                              ? _goToConfig
                               : () {
                                   _pageCtrl.nextPage(
                                     duration: const Duration(milliseconds: 300),
@@ -241,7 +214,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                   );
                                 },
                           icon: isLast
-                              ? const Icon(Icons.add_circle_rounded)
+                              ? const Icon(Icons.settings_rounded)
                               : null,
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.white,
@@ -252,7 +225,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                           ),
                           label: Text(
                             isLast
-                                ? EsBO.onboardingStartQuote
+                                ? EsBO.onboardingConfigure
                                 : EsBO.onboardingNext,
                           ),
                         ),

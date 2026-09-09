@@ -151,9 +151,7 @@ void main() {
       () async {
         await db.customSelect('SELECT 1').get();
 
-        final versionRows = await db.customSelect(
-          'PRAGMA user_version',
-        ).get();
+        final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
           11,
@@ -217,4 +215,3 @@ void main() {
     });
   });
 }
-

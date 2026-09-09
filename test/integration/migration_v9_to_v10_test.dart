@@ -201,59 +201,62 @@ void main() {
       addTearDown(() async => db.close());
     });
 
-    test('onUpgrade(9, 11) agrega columnas F5 y bumpea user_version a 11', () async {
-      await db.customSelect('SELECT 1').get();
+    test(
+      'onUpgrade(9, 11) agrega columnas F5 y bumpea user_version a 11',
+      () async {
+        await db.customSelect('SELECT 1').get();
 
-      final versionRows = await db.customSelect('PRAGMA user_version').get();
-      expect(
-        versionRows.first.read<int>('user_version'),
-        11,
-        reason: 'AppDatabase debe setear user_version=11 tras onUpgrade.',
-      );
-      expect(db.schemaVersion, 11);
+        final versionRows = await db.customSelect('PRAGMA user_version').get();
+        expect(
+          versionRows.first.read<int>('user_version'),
+          11,
+          reason: 'AppDatabase debe setear user_version=11 tras onUpgrade.',
+        );
+        expect(db.schemaVersion, 11);
 
-      // printers: purchase_cost REAL nullable + useful_life_hours INTEGER.
-      final printerCols = await db
-          .customSelect(
-            'SELECT name, type, "notnull" AS isNotNull '
-            'FROM pragma_table_info(\'printers\')',
-          )
-          .get();
-      final pByName = <String, QueryRow>{};
-      for (final r in printerCols) {
-        pByName[r.read<String>('name')] = r;
-      }
-      expect(
-        pByName['purchase_cost'],
-        isNotNull,
-        reason: 'v10 debe crear purchase_cost en printers.',
-      );
-      expect(pByName['purchase_cost']!.read<String>('type'), 'REAL');
-      expect(
-        pByName['purchase_cost']!.read<int>('isNotNull'),
-        0,
-        reason: 'purchase_cost NULLABLE (sin linea si vacio).',
-      );
-      expect(
-        pByName['useful_life_hours'],
-        isNotNull,
-        reason: 'v10 debe crear useful_life_hours en printers.',
-      );
-      expect(pByName['useful_life_hours']!.read<String>('type'), 'INTEGER');
+        // printers: purchase_cost REAL nullable + useful_life_hours INTEGER.
+        final printerCols = await db
+            .customSelect(
+              'SELECT name, type, "notnull" AS isNotNull '
+              'FROM pragma_table_info(\'printers\')',
+            )
+            .get();
+        final pByName = <String, QueryRow>{};
+        for (final r in printerCols) {
+          pByName[r.read<String>('name')] = r;
+        }
+        expect(
+          pByName['purchase_cost'],
+          isNotNull,
+          reason: 'v10 debe crear purchase_cost en printers.',
+        );
+        expect(pByName['purchase_cost']!.read<String>('type'), 'REAL');
+        expect(
+          pByName['purchase_cost']!.read<int>('isNotNull'),
+          0,
+          reason: 'purchase_cost NULLABLE (sin linea si vacio).',
+        );
+        expect(
+          pByName['useful_life_hours'],
+          isNotNull,
+          reason: 'v10 debe crear useful_life_hours en printers.',
+        );
+        expect(pByName['useful_life_hours']!.read<String>('type'), 'INTEGER');
 
-      // calculations: amortization_cost_snapshot REAL.
-      final calcCols = await db
-          .customSelect(
-            'SELECT name FROM pragma_table_info(\'calculations\')',
-          )
-          .get();
-      final cNames = calcCols.map((r) => r.read<String>('name')).toSet();
-      expect(
-        cNames.contains('amortization_cost_snapshot'),
-        isTrue,
-        reason: 'v10 debe crear amortization_cost_snapshot en calculations.',
-      );
-    });
+        // calculations: amortization_cost_snapshot REAL.
+        final calcCols = await db
+            .customSelect(
+              'SELECT name FROM pragma_table_info(\'calculations\')',
+            )
+            .get();
+        final cNames = calcCols.map((r) => r.read<String>('name')).toSet();
+        expect(
+          cNames.contains('amortization_cost_snapshot'),
+          isTrue,
+          reason: 'v10 debe crear amortization_cost_snapshot en calculations.',
+        );
+      },
+    );
 
     test(
       'migracion es no-destructiva: datos v9 sobreviven con defaults F5',
@@ -295,22 +298,24 @@ void main() {
       () async {
         await db.customSelect('SELECT 1').get();
 
-        final id = await db.into(db.printers).insert(
-          PrintersCompanion.insert(
-            name: 'Kobra 3',
-            averageWatts: 180,
-            purchaseCost: const Value(3500),
-            usefulLifeHours: const Value(4000),
-            createdAt: DateTime.now().toUtc(),
-          ),
-        );
+        final id = await db
+            .into(db.printers)
+            .insert(
+              PrintersCompanion.insert(
+                name: 'Kobra 3',
+                averageWatts: 180,
+                purchaseCost: const Value(3500),
+                usefulLifeHours: const Value(4000),
+                createdAt: DateTime.now().toUtc(),
+              ),
+            );
         expect(id, greaterThan(0));
 
-final row = (await db.select(db.printers).get()).firstWhere(
-      (p) => p.name == 'Kobra 3',
-    );
-    expect(row.purchaseCost, closeTo(3500.0, 0.0001));
-    expect(row.usefulLifeHours, 4000);
+        final row = (await db.select(db.printers).get()).firstWhere(
+          (p) => p.name == 'Kobra 3',
+        );
+        expect(row.purchaseCost, closeTo(3500.0, 0.0001));
+        expect(row.usefulLifeHours, 4000);
       },
     );
   });

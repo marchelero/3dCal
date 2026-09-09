@@ -77,7 +77,8 @@ Future<T?> showSelectorDialog<T>({
                           )
                         : ListView.builder(
                             shrinkWrap: true,
-                            itemCount: filtered.length + (footer != null ? 1 : 0),
+                            itemCount:
+                                filtered.length + (footer != null ? 1 : 0),
                             itemBuilder: (_, i) {
                               if (i < filtered.length) {
                                 final item = filtered[i];

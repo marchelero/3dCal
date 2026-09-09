@@ -10,13 +10,13 @@ import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/printers/presentation/notifiers/printers_notifier.dart';
 import 'package:tresdcal/features/catalog/printers/presentation/pages/printer_form_page.dart';
-import 'package:tresdcal/shared/widgets/brand_selector_field.dart';
+import 'package:tresdcal/features/catalog/printers/presentation/widgets/printer_catalog_selector.dart';
 
 Future<ProviderContainer> _pumpForm(
   WidgetTester tester, {
   PrinterProfile? existing,
 }) async {
-  // Viewport alto: el form (marca + modelo + watts + costo + vida + switch)
+  // Viewport alto: el form (selector + watts + costo + vida + switch)
   // excede 600px y el boton Guardar queda fuera sin scroll.
   tester.view.physicalSize = const Size(800, 1600);
   tester.view.devicePixelRatio = 1.0;
@@ -46,6 +46,22 @@ Future<ProviderContainer> _pumpForm(
   return container;
 }
 
+/// Selecciona marca + modelo del catalogo via los dropdowns.
+Future<void> _selectCatalogModel(
+  WidgetTester tester,
+  String brand,
+  String model,
+) async {
+  await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(brand).last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(model).last);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('PrinterFormPage (create)', () {
     testWidgets('titulo "Nueva impresora"', (tester) async {
@@ -53,14 +69,13 @@ void main() {
       expect(find.text('Nueva impresora'), findsOneWidget);
     });
 
-    testWidgets('muestra marca + modelo + watts + switch default', (
+    testWidgets('muestra selector de catalogo + watts + switch default', (
       tester,
     ) async {
       await _pumpForm(tester);
-      // Marca es un BrandSelectorField (dropdown + Otro...) desde la feature
-      // de selector de marcas — no un TextField plano.
-      expect(find.byType(BrandSelectorField), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Modelo'), findsOneWidget);
+      expect(find.byType(PrinterCatalogSelector), findsOneWidget);
+      // Brand dropdown + modelo dropdown (deshabilitado sin marca).
+      expect(find.byType(DropdownButtonFormField<String>), findsNWidgets(2));
       expect(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         findsOneWidget,
@@ -75,51 +90,39 @@ void main() {
       expect(find.text('Requerido'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets(
-      'marca (BrandSelectorField) aparece ANTES que el campo modelo',
-      (tester) async {
-        await _pumpForm(tester);
+    testWidgets('selector de catalogo aparece ANTES que el campo watts', (
+      tester,
+    ) async {
+      await _pumpForm(tester);
 
-        // Orden: Marca primero, luego Modelo (decision del usuario:
-        // "primero la marca y luego recien ingresar el modelo").
-        final brandField = tester.getTopLeft(find.byType(BrandSelectorField));
-        final modelField = tester.getTopLeft(
-          find.widgetWithText(TextField, 'Modelo'),
-        );
-        expect(
-          brandField.dy <= modelField.dy,
-          isTrue,
-          reason: 'BrandSelectorField debe estar ARRIBA del campo Modelo',
-        );
-      },
-    );
-
-    testWidgets('guardar valido crea y persiste', (tester) async {
-      final container = await _pumpForm(tester);
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3 V2',
-      );
-      await tester.enterText(
+      final selector = tester.getTopLeft(find.byType(PrinterCatalogSelector));
+      final wattsField = tester.getTopLeft(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
-        '120',
       );
-      await tester.pump();
+      expect(
+        selector.dy <= wattsField.dy,
+        isTrue,
+        reason: 'PrinterCatalogSelector debe estar ARRIBA del campo watts',
+      );
+    });
 
+    testWidgets('guardar valido (cascada) crea y persiste', (tester) async {
+      final container = await _pumpForm(tester);
+      await _selectCatalogModel(tester, 'Creality', 'Ender-3 V2');
+      // Watts auto-completado desde el catalogo (Ender-3 V2 = 125 W).
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
 
       final list = await container.read(printersNotifierProvider.future);
       expect(list, hasLength(1));
-      expect(list.first.name, 'Ender 3 V2');
+      expect(list.first.name, 'Ender-3 V2');
+      expect(list.first.brand, 'Creality');
+      expect(list.first.averageWatts, 125);
     });
 
     testWidgets('F5: muestra campos de costo y vida util', (tester) async {
       await _pumpForm(tester);
-      expect(
-        find.widgetWithText(TextField, 'Costo (Bs)'),
-        findsOneWidget,
-      );
+      expect(find.widgetWithText(TextField, 'Costo (Bs)'), findsOneWidget);
       expect(
         find.widgetWithText(TextField, 'Vida útil (horas)'),
         findsOneWidget,
@@ -130,10 +133,7 @@ void main() {
       tester,
     ) async {
       final container = await _pumpForm(tester);
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3 V2',
-      );
+      await _selectCatalogModel(tester, 'Creality', 'Ender-3 V2');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '120',
@@ -161,10 +161,7 @@ void main() {
       tester,
     ) async {
       await _pumpForm(tester);
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3 V2',
-      );
+      await _selectCatalogModel(tester, 'Creality', 'Ender-3 V2');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '120',
@@ -188,10 +185,7 @@ void main() {
       tester,
     ) async {
       await _pumpForm(tester);
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3 V2',
-      );
+      await _selectCatalogModel(tester, 'Creality', 'Ender-3 V2');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '120',
@@ -236,6 +230,9 @@ void main() {
 
       await _pumpForm(tester, existing: existing);
       expect(find.text('Editar impresora'), findsOneWidget);
+      // Marca "Creality" esta en el catalogo -> dropdown; modelo "Ender Pre"
+      // no coincide con un modelo de catalogo -> campo manual con el valor.
+      expect(find.byType(PrinterCatalogSelector), findsOneWidget);
       final nameField = tester.widget<TextField>(
         find.widgetWithText(TextField, 'Modelo'),
       );

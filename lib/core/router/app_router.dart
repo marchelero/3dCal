@@ -15,6 +15,7 @@ import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/entitlement/presentation/pages/paywall_page.dart';
 import '../../features/legal/presentation/pages/legal_document_page.dart';
 import '../../features/onboarding/presentation/pages/initial_config_page.dart';
+import '../../features/onboarding/presentation/pages/language_selection_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
@@ -63,8 +64,18 @@ final appRouter = GoRouter(
   routes: [
     // === Splash screen (full-screen, sin shell) ===
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
-    GoRoute(path: '/initial-config', builder: (context, state) => const InitialConfigPage()),
-    GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingPage()),
+    GoRoute(
+      path: '/language',
+      builder: (context, state) => const LanguageSelectionPage(),
+    ),
+    GoRoute(
+      path: '/initial-config',
+      builder: (context, state) => const InitialConfigPage(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingPage(),
+    ),
 
     // === Shell: 4 tabs principales ===
     StatefulShellRoute.indexedStack(
@@ -73,18 +84,33 @@ final appRouter = GoRouter(
       },
       branches: [
         StatefulShellBranch(
-          routes: [GoRoute(path: '/', builder: (context, state) => const HomePage())],
-        ),
-        StatefulShellBranch(
           routes: [
-            GoRoute(path: '/history', builder: (context, state) => const CalculationsListPage()),
+            GoRoute(path: '/', builder: (context, state) => const HomePage()),
           ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: '/dashboard', builder: (context, state) => const DashboardPage())],
+          routes: [
+            GoRoute(
+              path: '/history',
+              builder: (context, state) => const CalculationsListPage(),
+            ),
+          ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: '/settings', builder: (context, state) => const SettingsPage())],
+          routes: [
+            GoRoute(
+              path: '/dashboard',
+              builder: (context, state) => const DashboardPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/settings',
+              builder: (context, state) => const SettingsPage(),
+            ),
+          ],
         ),
       ],
     ),
@@ -135,7 +161,8 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: 'new',
-          pageBuilder: (context, state) => _slideRight(const FilamentFormPage()),
+          pageBuilder: (context, state) =>
+              _slideRight(const FilamentFormPage()),
         ),
         GoRoute(
           path: ':id',
@@ -150,7 +177,10 @@ final appRouter = GoRouter(
       path: '/settings/printers',
       pageBuilder: (context, state) => _slideRight(const PrintersPage()),
       routes: [
-        GoRoute(path: 'new', pageBuilder: (context, state) => _slideRight(const PrinterFormPage())),
+        GoRoute(
+          path: 'new',
+          pageBuilder: (context, state) => _slideRight(const PrinterFormPage()),
+        ),
         GoRoute(
           path: ':id',
           pageBuilder: (context, state) {
@@ -182,7 +212,10 @@ class _RouterErrorPage extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 96),
               const SizedBox(height: AppSpacing.lg),
-              Text(EsBO.routeNotFound, style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                EsBO.routeNotFound,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: AppSpacing.xxl),
               FilledButton.icon(
                 icon: const Icon(Icons.home),

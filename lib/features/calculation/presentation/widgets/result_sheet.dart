@@ -364,8 +364,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
   int _quantity = 1;
-  late final TextEditingController _quantityCtrl =
-      TextEditingController(text: '$_quantity');
+  late final TextEditingController _quantityCtrl = TextEditingController(
+    text: '$_quantity',
+  );
 
   /// BUG-008 fix: guard sincrono a nivel de closure contra doble-tap.
   /// `_isBusy` (state) se desactiva visualmente en el siguiente frame,
@@ -772,8 +773,10 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                   ),
                                   onChanged: (val) {
                                     final parsed = int.tryParse(val) ?? 1;
-                                    final clamped = parsed
-                                        .clamp(1, kMaxQuantity);
+                                    final clamped = parsed.clamp(
+                                      1,
+                                      kMaxQuantity,
+                                    );
                                     setState(() => _quantity = clamped);
                                     ref
                                         .read(

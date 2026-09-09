@@ -166,8 +166,6 @@ class PtBrImpl implements AppStrings {
   @override
   String get settingsProTitle => '3D Cal PRO';
   @override
-  String get settingsProActive => 'PRO ativo';
-  @override
   String get settingsProUnlocked =>
       'Você já tem todos os recursos PRO desbloqueados';
   @override
@@ -694,6 +692,19 @@ class PtBrImpl implements AppStrings {
   @override
   String get printerWattsHelper => 'Normalmente 100-300 W';
   @override
+  String get printerCatalogBrandHint => 'Escolha a marca da sua impressora';
+  @override
+  String get printerCatalogModelHint => 'Escolha o modelo';
+  @override
+  String get printerCatalogNoModels => 'Sem modelos para esta marca';
+  @override
+  String get printerCatalogSelectModel => 'Selecione um modelo';
+  @override
+  String get printerWattsAutoHelper =>
+      'Consumo médio carregado do catálogo — você pode editar';
+  @override
+  String get printerWattsEstimated => ' (estimado)';
+  @override
   String get printerDefaultSubtitle =>
       'Será usada em novos orçamentos. Apenas uma impressora pode ser padrão.';
   @override
@@ -782,6 +793,11 @@ class PtBrImpl implements AppStrings {
   @override
   String get localeFr => 'Francês';
   @override
+  String get languagePageTitle => 'Escolha seu idioma';
+  @override
+  String get languagePageSubtitle =>
+      'Aplica-se a todo o aplicativo. Você pode alterá-lo depois em Ajustes.';
+  @override
   String get onboardingTitle1 => 'Boas-vindas ao 3dCalc';
   @override
   String get onboardingDesc1 =>
@@ -802,26 +818,27 @@ class PtBrImpl implements AppStrings {
   String get onboardingDesc4 =>
       'Acompanhe orçamentos, tendências mensais,\nexportação em PDF e pesquisa no histórico.';
   @override
-  String get onboardingNext => 'Avançar';
+  String get onboardingTitle5 => 'Configuração simples';
   @override
-  String get onboardingSkip => 'Pular';
+  String get onboardingDesc5 =>
+      'Defina moeda, impressora, filamento, lucro\ne custo de energia em poucos passos. Tudo pronto para cotar.';
+  @override
+  String get onboardingNext => 'Avançar';
   @override
   String get onboardingStart => 'Começar';
   @override
-  String get onboardingStartQuote => 'Criar minha primeira cotação';
-  @override
-  String get onboardingGoHome => 'Ir ao menu';
+  String get onboardingConfigure => 'Configurar';
   @override
   String get configTitle => 'Configuração inicial';
   @override
-  String get configLanguage => 'Idioma';
+  String get configTheme => 'Tema';
   @override
   String get configCurrency => 'Moeda';
   @override
   String get configContinue => 'Continuar';
 
   @override
-  String get configStep1Title => 'Idioma e moeda';
+  String get configStep1Title => 'Tema e moeda';
   @override
   String get configStep2Title => 'Impressora e filamento';
   @override
@@ -841,9 +858,6 @@ class PtBrImpl implements AppStrings {
       'Esses valores se aplicam a todos os orçamentos. Você pode alterá-los depois.';
   @override
   String configStepCounter(int step, int total) => 'Etapa $step de $total';
-  @override
-  String get configLanguageHelper =>
-      'Escolha o idioma do aplicativo. Você pode alterá-lo depois.';
   @override
   String get configCurrencyHelper =>
       'Moeda usada para preços e orçamentos. Não converte valores.';
@@ -1274,19 +1288,19 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   // === Free-tier catalog gates (F7-FIX) ===
   @override
   List<String> get csvExportHeader => const [
-        'Data',
-        'Peça',
-        'Cliente',
-        'Quantidade',
-        'Total',
-        'Vendido',
-        'Materiais',
-        'Horas',
-        'Desconto',
-        'CustoMat',
-        'Energia',
-        'Lucro',
-      ];
+    'Data',
+    'Peça',
+    'Cliente',
+    'Quantidade',
+    'Total',
+    'Vendido',
+    'Materiais',
+    'Horas',
+    'Desconto',
+    'CustoMat',
+    'Energia',
+    'Lucro',
+  ];
   @override
   String get csvValueYes => 'Sim';
   @override

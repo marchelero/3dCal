@@ -12,7 +12,7 @@ import '../../../../l10n/es_bo.dart';
 /// Pantalla de carga inicial antes del home.
 ///
 /// Muestra el logo centrado con fade-in y una barra de progreso en la parte
-/// inferior. Navega a `/` (o `/initial-config` si falta el onboarding) cuando
+/// inferior. Navega a `/` (o `/language` si falta el onboarding) cuando
 /// la animacion termina Y la DB esta lista.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -47,9 +47,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // BUG-014 fix: esperar la animacion Y la readiness de la DB en paralelo.
     // Antes se navegaba a los 2.5s fijos, aunque la DB (drift) todavia
     // estuviera abriendo — el primer frame del Home mostraba spinner/error.
-    final animation = Future<void>.delayed(
-      const Duration(milliseconds: 2500),
-    );
+    final animation = Future<void>.delayed(const Duration(milliseconds: 2500));
     final dbReady = _ensureDbReady();
     await Future.wait([animation, dbReady]);
 
@@ -64,7 +62,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (onboardingDone) {
       GoRouter.of(context).go('/');
     } else {
-      GoRouter.of(context).go('/initial-config');
+      // Primera ejecución: idioma → onboarding → config inicial.
+      GoRouter.of(context).go('/language');
     }
   }
 

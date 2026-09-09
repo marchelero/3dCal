@@ -171,202 +171,175 @@ void main() {
     kEntitlementValidatedAtKey: validatedAt.toIso8601String(),
   };
 
-  test(
-    'boot cache Pro + store dice INACTIVO (refund con app cerrada) → '
-    'downgrade a Free + cache/DB limpiados',
-    () async {
-      final validated = DateTime.now().toUtc();
-      await setupContainer(
-        spInitial: proCache(validated),
-        seedRow: activeRow(validated),
-      );
-      // Store: el entitlement ya NO esta activo (refund/revocado).
-      paymentService.setStoreProActive(false);
+  test('boot cache Pro + store dice INACTIVO (refund con app cerrada) → '
+      'downgrade a Free + cache/DB limpiados', () async {
+    final validated = DateTime.now().toUtc();
+    await setupContainer(
+      spInitial: proCache(validated),
+      seedRow: activeRow(validated),
+    );
+    // Store: el entitlement ya NO esta activo (refund/revocado).
+    paymentService.setStoreProActive(false);
 
-      // Primer frame: Pro desde cache (fast, no bloquea).
-      final state = await container.read(entitlementNotifierProvider.future);
-      expect(state, isA<EntitlementPro>());
+    // Primer frame: Pro desde cache (fast, no bloquea).
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementPro>());
 
-      // Sync fire-and-forget completa → downgrade a Free.
-      await _waitForAsync();
+    // Sync fire-and-forget completa → downgrade a Free.
+    await _waitForAsync();
 
-      final finalState = container.read(entitlementNotifierProvider).value;
-      expect(
-        finalState,
-        isA<EntitlementFree>(),
-        reason: 'Store inactivo en boot debe bajar a Free al instante.',
-      );
-      expect(container.read(isProProvider), isFalse);
-      expect(
-        repo.clearCalls,
-        1,
-        reason: 'El downgrade debe limpiar la fila activa de la DB.',
-      );
-      expect(
-        prefs.getBool(kIsProKey),
-        isNull,
-        reason: 'La cache local debe borrarse.',
-      );
-      expect(prefs.getString(kEntitlementSourceKey), isNull);
-      expect(prefs.getString(kEntitlementValidatedAtKey), isNull);
-      expect(
-        paymentService.restoreCalls,
-        0,
-        reason: 'Store dio respuesta: el legacy restore no aplica.',
-      );
-    },
-  );
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(
+      finalState,
+      isA<EntitlementFree>(),
+      reason: 'Store inactivo en boot debe bajar a Free al instante.',
+    );
+    expect(container.read(isProProvider), isFalse);
+    expect(
+      repo.clearCalls,
+      1,
+      reason: 'El downgrade debe limpiar la fila activa de la DB.',
+    );
+    expect(
+      prefs.getBool(kIsProKey),
+      isNull,
+      reason: 'La cache local debe borrarse.',
+    );
+    expect(prefs.getString(kEntitlementSourceKey), isNull);
+    expect(prefs.getString(kEntitlementValidatedAtKey), isNull);
+    expect(
+      paymentService.restoreCalls,
+      0,
+      reason: 'Store dio respuesta: el legacy restore no aplica.',
+    );
+  });
 
-  test(
-    'boot cache Pro + store dice ACTIVO → se mantiene Pro + validatedAt '
-    'refrescado (cache + repo)',
-    () async {
-      final stale = DateTime.now().toUtc().subtract(const Duration(days: 8));
-      await setupContainer(
-        spInitial: proCache(stale),
-        seedRow: activeRow(stale),
-      );
-      paymentService.setStoreProActive(true);
+  test('boot cache Pro + store dice ACTIVO → se mantiene Pro + validatedAt '
+      'refrescado (cache + repo)', () async {
+    final stale = DateTime.now().toUtc().subtract(const Duration(days: 8));
+    await setupContainer(spInitial: proCache(stale), seedRow: activeRow(stale));
+    paymentService.setStoreProActive(true);
 
-      final state = await container.read(entitlementNotifierProvider.future);
-      expect(state, isA<EntitlementPro>());
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementPro>());
 
-      await _waitForAsync();
+    await _waitForAsync();
 
-      final finalState = container.read(entitlementNotifierProvider).value;
-      expect(
-        finalState,
-        isA<EntitlementPro>(),
-        reason: 'Store activo → el user sigue Pro.',
-      );
-      expect(container.read(isProProvider), isTrue);
-      expect(
-        prefs.getString(kEntitlementValidatedAtKey),
-        isNotNull,
-      );
-      final refreshed = DateTime.tryParse(
-        prefs.getString(kEntitlementValidatedAtKey)!,
-      );
-      expect(
-        refreshed!.isAfter(stale),
-        isTrue,
-        reason: 'validatedAt debio refrescarse al momento del sync.',
-      );
-      expect(
-        repo.saveCalls,
-        1,
-        reason: 'La fila activa de la DB tambien refresca su validatedAt.',
-      );
-      expect(
-        paymentService.restoreCalls,
-        0,
-        reason: 'Store dio respuesta: el legacy restore no aplica.',
-      );
-    },
-  );
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(
+      finalState,
+      isA<EntitlementPro>(),
+      reason: 'Store activo → el user sigue Pro.',
+    );
+    expect(container.read(isProProvider), isTrue);
+    expect(prefs.getString(kEntitlementValidatedAtKey), isNotNull);
+    final refreshed = DateTime.tryParse(
+      prefs.getString(kEntitlementValidatedAtKey)!,
+    );
+    expect(
+      refreshed!.isAfter(stale),
+      isTrue,
+      reason: 'validatedAt debio refrescarse al momento del sync.',
+    );
+    expect(
+      repo.saveCalls,
+      1,
+      reason: 'La fila activa de la DB tambien refresca su validatedAt.',
+    );
+    expect(
+      paymentService.restoreCalls,
+      0,
+      reason: 'Store dio respuesta: el legacy restore no aplica.',
+    );
+  });
 
-  test(
-    'boot cache Pro + store null (offline) + cache FRESH → se mantiene Pro, '
-    'sin restore()',
-    () async {
-      final fresh = DateTime.now().toUtc().subtract(const Duration(days: 1));
-      await setupContainer(
-        spInitial: proCache(fresh),
-        seedRow: activeRow(fresh),
-      );
-      paymentService.setStoreProActive(null);
+  test('boot cache Pro + store null (offline) + cache FRESH → se mantiene Pro, '
+      'sin restore()', () async {
+    final fresh = DateTime.now().toUtc().subtract(const Duration(days: 1));
+    await setupContainer(spInitial: proCache(fresh), seedRow: activeRow(fresh));
+    paymentService.setStoreProActive(null);
 
-      final state = await container.read(entitlementNotifierProvider.future);
-      expect(state, isA<EntitlementPro>());
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementPro>());
 
-      await _waitForAsync();
+    await _waitForAsync();
 
-      final finalState = container.read(entitlementNotifierProvider).value;
-      expect(
-        finalState,
-        isA<EntitlementPro>(),
-        reason: 'Offline: el cache local es el fallback.',
-      );
-      expect(prefs.getBool(kIsProKey), isTrue);
-      expect(
-        paymentService.restoreCalls,
-        0,
-        reason: 'Offline + cache fresh: no hay nada que re-validar.',
-      );
-      expect(repo.clearCalls, 0);
-    },
-  );
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(
+      finalState,
+      isA<EntitlementPro>(),
+      reason: 'Offline: el cache local es el fallback.',
+    );
+    expect(prefs.getBool(kIsProKey), isTrue);
+    expect(
+      paymentService.restoreCalls,
+      0,
+      reason: 'Offline + cache fresh: no hay nada que re-validar.',
+    );
+    expect(repo.clearCalls, 0);
+  });
 
-  test(
-    'boot cache Pro + store null (offline) + cache STALE → restore() '
-    'fire-and-forget (fallback legacy preservado)',
-    () async {
-      final stale = DateTime.now().toUtc().subtract(const Duration(days: 8));
-      await setupContainer(
-        spInitial: proCache(stale),
-        seedRow: activeRow(stale),
-      );
-      paymentService.setStoreProActive(null);
-      // Store confirma el entitlement al re-validar (restore active).
-      paymentService.seedRestore(
-        RestoreActive(
-          productId: kProProductId,
-          purchasedAt: stale,
-          validatedAt: DateTime.now().toUtc(),
-        ),
-      );
+  test('boot cache Pro + store null (offline) + cache STALE → restore() '
+      'fire-and-forget (fallback legacy preservado)', () async {
+    final stale = DateTime.now().toUtc().subtract(const Duration(days: 8));
+    await setupContainer(spInitial: proCache(stale), seedRow: activeRow(stale));
+    paymentService.setStoreProActive(null);
+    // Store confirma el entitlement al re-validar (restore active).
+    paymentService.seedRestore(
+      RestoreActive(
+        productId: kProProductId,
+        purchasedAt: stale,
+        validatedAt: DateTime.now().toUtc(),
+      ),
+    );
 
-      final state = await container.read(entitlementNotifierProvider.future);
-      expect(state, isA<EntitlementPro>());
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementPro>());
 
-      await _waitForAsync();
+    await _waitForAsync();
 
-      expect(
-        paymentService.restoreCalls,
-        greaterThanOrEqualTo(1),
-        reason: 'Offline + stale: el legacy restore debe re-validar.',
-      );
-      final finalState = container.read(entitlementNotifierProvider).value;
-      expect(
-        finalState,
-        isA<EntitlementPro>(),
-        reason: 'Restore activo confirma Pro (cache refresh via activate).',
-      );
-    },
-  );
+    expect(
+      paymentService.restoreCalls,
+      greaterThanOrEqualTo(1),
+      reason: 'Offline + stale: el legacy restore debe re-validar.',
+    );
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(
+      finalState,
+      isA<EntitlementPro>(),
+      reason: 'Restore activo confirma Pro (cache refresh via activate).',
+    );
+  });
 
-  test(
-    'boot cache Pro + store ACTIVO + validatedAt mas nuevo que el sync → '
-    'NO se sobrescribe (purchase en vuelo gana)',
-    () async {
-      // Cache con timestamp "futuro" (mas nuevo que cualquier syncTime).
-      final future = DateTime.now().toUtc().add(const Duration(days: 1));
-      await setupContainer(
-        spInitial: proCache(future),
-        seedRow: activeRow(future),
-      );
-      paymentService.setStoreProActive(true);
+  test('boot cache Pro + store ACTIVO + validatedAt mas nuevo que el sync → '
+      'NO se sobrescribe (purchase en vuelo gana)', () async {
+    // Cache con timestamp "futuro" (mas nuevo que cualquier syncTime).
+    final future = DateTime.now().toUtc().add(const Duration(days: 1));
+    await setupContainer(
+      spInitial: proCache(future),
+      seedRow: activeRow(future),
+    );
+    paymentService.setStoreProActive(true);
 
-      final state = await container.read(entitlementNotifierProvider.future);
-      expect(state, isA<EntitlementPro>());
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementPro>());
 
-      await _waitForAsync();
+    await _waitForAsync();
 
-      final stored = DateTime.tryParse(
-        prefs.getString(kEntitlementValidatedAtKey)!,
-      );
-      expect(
-        stored,
-        future,
-        reason: 'Un validatedAt mas nuevo que el sync no debe pisarse.',
-      );
-      expect(
-        repo.saveCalls,
-        0,
-        reason: 'No debe re-escribir la fila con un timestamp viejo.',
-      );
-      final finalState = container.read(entitlementNotifierProvider).value;
-      expect(finalState, isA<EntitlementPro>());
-    },
-  );
+    final stored = DateTime.tryParse(
+      prefs.getString(kEntitlementValidatedAtKey)!,
+    );
+    expect(
+      stored,
+      future,
+      reason: 'Un validatedAt mas nuevo que el sync no debe pisarse.',
+    );
+    expect(
+      repo.saveCalls,
+      0,
+      reason: 'No debe re-escribir la fila con un timestamp viejo.',
+    );
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(finalState, isA<EntitlementPro>());
+  });
 }

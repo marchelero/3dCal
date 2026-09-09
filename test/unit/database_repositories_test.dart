@@ -340,50 +340,55 @@ void main() {
       expect(copy.pieceImageBlob, equals(photo));
     });
 
-    test('F5: create persiste amortizationCostSnapshot y duplicate lo copia', () async {
-      final materials = [
-        MaterialInput(
-          label: 'PLA',
-          weightGrams: _d('100'),
-          pricePerBobbin: _d('150'),
-          gramsPerBobbin: _d('1000'),
-        ),
-      ];
-      final input = CalculationInput(
-        materials: materials,
-        totalHours: _d('2'),
-        discountPercentage: Decimal.zero,
-        printerWatts: 0,
-        kwhRate: Decimal.zero,
-        profitBase: Decimal.zero,
-        laborRate: Decimal.zero,
-        postProcessRate: Decimal.zero,
-        failureRate: Decimal.zero,
-        markupOnMaterials: Decimal.zero,
-        amortizationPerHour: _d('0.875'),
-      );
-      final output = CalculationEngine.compute(input);
-      // Amortizacion = 0.875 * 2h = 1.75.
-      expect(output.amortizationCost, _d('1.75'));
-
-      final id = await calculations.create(
-        CalculationDraft(
+    test(
+      'F5: create persiste amortizationCostSnapshot y duplicate lo copia',
+      () async {
+        final materials = [
+          MaterialInput(
+            label: 'PLA',
+            weightGrams: _d('100'),
+            pricePerBobbin: _d('150'),
+            gramsPerBobbin: _d('1000'),
+          ),
+        ];
+        final input = CalculationInput(
           materials: materials,
           totalHours: _d('2'),
           discountPercentage: Decimal.zero,
-          output: output,
-          pieceName: 'Con amortizacion',
-        ),
-      );
-      final calc = (await calculations.listAll()).firstWhere((c) => c.id == id);
-      expect(calc.amortizationCostSnapshot, closeTo(1.75, 0.0001));
+          printerWatts: 0,
+          kwhRate: Decimal.zero,
+          profitBase: Decimal.zero,
+          laborRate: Decimal.zero,
+          postProcessRate: Decimal.zero,
+          failureRate: Decimal.zero,
+          markupOnMaterials: Decimal.zero,
+          amortizationPerHour: _d('0.875'),
+        );
+        final output = CalculationEngine.compute(input);
+        // Amortizacion = 0.875 * 2h = 1.75.
+        expect(output.amortizationCost, _d('1.75'));
 
-      final copyId = await calculations.duplicate(id);
-      final copy = (await calculations.listAll()).firstWhere(
-        (c) => c.id == copyId,
-      );
-      expect(copy.amortizationCostSnapshot, closeTo(1.75, 0.0001));
-    });
+        final id = await calculations.create(
+          CalculationDraft(
+            materials: materials,
+            totalHours: _d('2'),
+            discountPercentage: Decimal.zero,
+            output: output,
+            pieceName: 'Con amortizacion',
+          ),
+        );
+        final calc = (await calculations.listAll()).firstWhere(
+          (c) => c.id == id,
+        );
+        expect(calc.amortizationCostSnapshot, closeTo(1.75, 0.0001));
+
+        final copyId = await calculations.duplicate(id);
+        final copy = (await calculations.listAll()).firstWhere(
+          (c) => c.id == copyId,
+        );
+        expect(copy.amortizationCostSnapshot, closeTo(1.75, 0.0001));
+      },
+    );
 
     test('createTemplate sin foto deja pieceImageBlob null (F2)', () async {
       final id = await calculations.createTemplate(_simpleDraft('Plantilla'));

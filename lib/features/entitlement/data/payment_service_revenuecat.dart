@@ -252,10 +252,9 @@ class RevenueCatPaymentService implements PaymentService {
         return lifetime.storeProduct.priceString;
       }
 
-      final products = await Purchases.getProducts(
-        [kProProductId],
-        productCategory: ProductCategory.nonSubscription,
-      );
+      final products = await Purchases.getProducts([
+        kProProductId,
+      ], productCategory: ProductCategory.nonSubscription);
       if (products.isEmpty) return null;
       return products.first.priceString;
     } catch (e) {

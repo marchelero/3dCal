@@ -40,8 +40,7 @@ class MonthlyTrendChart extends StatelessWidget {
       (max, m) => m.quoted > max ? m.quoted : max,
     );
     final maxValDouble = maxVal.toDouble();
-    final ceilingDouble =
-        maxValDouble == 0 ? 100.0 : (maxValDouble * 1.2);
+    final ceilingDouble = maxValDouble == 0 ? 100.0 : (maxValDouble * 1.2);
     final horizontalInterval = ceilingDouble / 4;
 
     return Semantics(
@@ -105,8 +104,10 @@ class MonthlyTrendChart extends StatelessWidget {
                 spots: data
                     .asMap()
                     .entries
-                    .map((e) =>
-                        FlSpot(e.key.toDouble(), e.value.quoted.toDouble()))
+                    .map(
+                      (e) =>
+                          FlSpot(e.key.toDouble(), e.value.quoted.toDouble()),
+                    )
                     .toList(),
                 isCurved: true,
                 color: color.primary,
@@ -122,8 +123,9 @@ class MonthlyTrendChart extends StatelessWidget {
                 spots: data
                     .asMap()
                     .entries
-                    .map((e) =>
-                        FlSpot(e.key.toDouble(), e.value.sold.toDouble()))
+                    .map(
+                      (e) => FlSpot(e.key.toDouble(), e.value.sold.toDouble()),
+                    )
                     .toList(),
                 isCurved: true,
                 color: color.tertiary,

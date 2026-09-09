@@ -421,39 +421,40 @@ void main() {
   // ─────────────────────────────────────────────────────────────
 
   group('Calculator — modo advanced gate visual', () {
-    testWidgets('free: segmento Advanced muestra badge "PRO" + texto atenuado', (
-      tester,
-    ) async {
-      await _pumpCalculator(tester);
+    testWidgets(
+      'free: segmento Advanced muestra badge "PRO" + texto atenuado',
+      (tester) async {
+        await _pumpCalculator(tester);
 
-      // El badge puede aparecer en varios lugares (modo Advanced + seccion
-      // Otros) — se verifica al menos uno.
-      expect(
-        find.text(EsBO.proBadgeLabel),
-        findsAtLeastNWidgets(1),
-        reason: 'Free: debe mostrarse al menos un badge "PRO".',
-      );
-      expect(
-        find.byIcon(Icons.lock_rounded),
-        findsAtLeastNWidgets(1),
-        reason: 'Free: el badge debe incluir el icono de candado.',
-      );
-      // El texto "Advanced" sigue presente (el gate de tap no cambia).
-      expect(find.text(EsBO.calcModeAdvanced), findsOneWidget);
-      // Free: el label "Avanzado" se atenua (color con alpha 0.5) — el
-      // _ModePill locked usa `onSurfaceVariant.withValues(alpha: 0.5)`
-      // (no un widget Opacity como los otros gates).
-      final advancedText = tester.widget<Text>(
-        find.text(EsBO.calcModeAdvanced),
-      );
-      final color = advancedText.style?.color;
-      expect(color, isNotNull, reason: 'El label avanzado debe tener color.');
-      expect(
-        color!.a,
-        lessThan(1.0),
-        reason: 'Free: el label avanzado debe estar atenuado (alpha < 1).',
-      );
-    });
+        // El badge puede aparecer en varios lugares (modo Advanced + seccion
+        // Otros) — se verifica al menos uno.
+        expect(
+          find.text(EsBO.proBadgeLabel),
+          findsAtLeastNWidgets(1),
+          reason: 'Free: debe mostrarse al menos un badge "PRO".',
+        );
+        expect(
+          find.byIcon(Icons.lock_rounded),
+          findsAtLeastNWidgets(1),
+          reason: 'Free: el badge debe incluir el icono de candado.',
+        );
+        // El texto "Advanced" sigue presente (el gate de tap no cambia).
+        expect(find.text(EsBO.calcModeAdvanced), findsOneWidget);
+        // Free: el label "Avanzado" se atenua (color con alpha 0.5) — el
+        // _ModePill locked usa `onSurfaceVariant.withValues(alpha: 0.5)`
+        // (no un widget Opacity como los otros gates).
+        final advancedText = tester.widget<Text>(
+          find.text(EsBO.calcModeAdvanced),
+        );
+        final color = advancedText.style?.color;
+        expect(color, isNotNull, reason: 'El label avanzado debe tener color.');
+        expect(
+          color!.a,
+          lessThan(1.0),
+          reason: 'Free: el label avanzado debe estar atenuado (alpha < 1).',
+        );
+      },
+    );
 
     testWidgets('pro: segmento Advanced normal, sin badge ni atenuacion', (
       tester,

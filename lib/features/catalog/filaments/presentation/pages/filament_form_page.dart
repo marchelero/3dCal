@@ -29,7 +29,7 @@ class FilamentFormPage extends ConsumerStatefulWidget {
 
   /// Si se pasa, la pagina entra en modo edicion y pre-rellena los campos.
   final Filament? existing;
-  
+
   /// Callback opcional que se ejecuta al guardar con exito. Si es null, hace pop.
   final VoidCallback? onSaved;
 

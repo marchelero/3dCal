@@ -83,63 +83,71 @@ void main() {
     'settings': <Map<String, dynamic>>[],
   };
 
-  test('round-trip: restaurar backup con foto preserva pieceImageBlob', () async {
-    final png = pngOf(800, 600);
-    final json = jsonEncode(
-      validBackupJson(pieceImageBase64: base64Encode(png)),
-    );
+  test(
+    'round-trip: restaurar backup con foto preserva pieceImageBlob',
+    () async {
+      final png = pngOf(800, 600);
+      final json = jsonEncode(
+        validBackupJson(pieceImageBase64: base64Encode(png)),
+      );
 
-    final result = await backup.restoreFromJson(json);
-    expect(result, isEmpty, reason: 'Restore debe ser exitoso.');
+      final result = await backup.restoreFromJson(json);
+      expect(result, isEmpty, reason: 'Restore debe ser exitoso.');
 
-    final rows = await db.select(db.calculations).get();
-    expect(rows, hasLength(1));
-    expect(rows.first.pieceImageBlob, isNotNull);
-    expect(rows.first.pieceImageBlob, equals(png));
-  });
+      final rows = await db.select(db.calculations).get();
+      expect(rows, hasLength(1));
+      expect(rows.first.pieceImageBlob, isNotNull);
+      expect(rows.first.pieceImageBlob, equals(png));
+    },
+  );
 
-  test('backup sin key pieceImageBlob restaura null (compatibilidad v1)', () async {
-    final json = jsonEncode(validBackupJson(pieceImageBase64: null));
+  test(
+    'backup sin key pieceImageBlob restaura null (compatibilidad v1)',
+    () async {
+      final json = jsonEncode(validBackupJson(pieceImageBase64: null));
 
-    final result = await backup.restoreFromJson(json);
-    expect(result, isEmpty);
+      final result = await backup.restoreFromJson(json);
+      expect(result, isEmpty);
 
-    final rows = await db.select(db.calculations).get();
-    expect(rows, hasLength(1));
-    expect(rows.first.pieceImageBlob, isNull);
-  });
+      final rows = await db.select(db.calculations).get();
+      expect(rows, hasLength(1));
+      expect(rows.first.pieceImageBlob, isNull);
+    },
+  );
 
   test('base64 corrupto → error claro y rollback (DB actual intacta)', () async {
     // Seed: una cotizacion existente que NO debe perderse si el restore falla.
-    await db.into(db.calculations).insert(
-      CalculationsCompanion.insert(
-        createdAt: DateTime.now().toUtc(),
-        pieceName: const Value('Existente'),
-        totalHours: 1,
-        printMinutes: const Value(60),
-        discountPercentage: 0,
-        kwhRateSnapshot: 0,
-        profitBaseSnapshot: 0,
-        isSold: const Value(false),
-        isTemplate: const Value(false),
-        materialCostSnapshot: 5,
-        electricCostSnapshot: 0,
-        laborCostSnapshot: 0,
-        postProcessCostSnapshot: 0,
-        baseCostSnapshot: 5,
-        failureCostSnapshot: 0,
-        markupCostSnapshot: 0,
-        profitAmountSnapshot: 0,
-        minimumChargeAppliedSnapshot: 0,
-        effectiveTotalSnapshot: 5,
-        totalPriceSnapshot: 5,
-        laborRateSnapshot: 0,
-        postProcessRateSnapshot: 0,
-        failureRateSnapshot: 0,
-        minimumChargeSnapshot: 0,
-        markupOnMaterialsSnapshot: 0,
-      ),
-    );
+    await db
+        .into(db.calculations)
+        .insert(
+          CalculationsCompanion.insert(
+            createdAt: DateTime.now().toUtc(),
+            pieceName: const Value('Existente'),
+            totalHours: 1,
+            printMinutes: const Value(60),
+            discountPercentage: 0,
+            kwhRateSnapshot: 0,
+            profitBaseSnapshot: 0,
+            isSold: const Value(false),
+            isTemplate: const Value(false),
+            materialCostSnapshot: 5,
+            electricCostSnapshot: 0,
+            laborCostSnapshot: 0,
+            postProcessCostSnapshot: 0,
+            baseCostSnapshot: 5,
+            failureCostSnapshot: 0,
+            markupCostSnapshot: 0,
+            profitAmountSnapshot: 0,
+            minimumChargeAppliedSnapshot: 0,
+            effectiveTotalSnapshot: 5,
+            totalPriceSnapshot: 5,
+            laborRateSnapshot: 0,
+            postProcessRateSnapshot: 0,
+            failureRateSnapshot: 0,
+            minimumChargeSnapshot: 0,
+            markupOnMaterialsSnapshot: 0,
+          ),
+        );
 
     final json = jsonEncode(
       validBackupJson(pieceImageBase64: '!!!esto-no-es-base64!!!'),
@@ -156,19 +164,24 @@ void main() {
 
   test('validate() rechaza pieceImageBlob no-String', () {
     final json = validBackupJson(pieceImageBase64: 'aGVsbG8=');
-    (json['calculations'] as List).cast<Map<String, dynamic>>().first[
-      'pieceImageBlob'
-    ] = 12345;
+    (json['calculations'] as List)
+            .cast<Map<String, dynamic>>()
+            .first['pieceImageBlob'] =
+        12345;
     expect(BackupData.fromJson(json).validate(), isNotNull);
   });
 
-  test('validate() rechaza pieceImageBlob oversize (> kBackupMaxImageBase64Length)', () {
-    final json = validBackupJson();
-    (json['calculations'] as List).cast<Map<String, dynamic>>().first[
-      'pieceImageBlob'
-    ] = 'a' * (kBackupMaxImageBase64Length + 1);
-    expect(BackupData.fromJson(json).validate(), isNotNull);
-  });
+  test(
+    'validate() rechaza pieceImageBlob oversize (> kBackupMaxImageBase64Length)',
+    () {
+      final json = validBackupJson();
+      (json['calculations'] as List)
+              .cast<Map<String, dynamic>>()
+              .first['pieceImageBlob'] =
+          'a' * (kBackupMaxImageBase64Length + 1);
+      expect(BackupData.fromJson(json).validate(), isNotNull);
+    },
+  );
 
   test('validate() acepta base64 valido dentro del limite', () {
     final png = pngOf(64, 64);

@@ -22,6 +22,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
+import '../../../../shared/widgets/filament_color_palette.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/pro_badge.dart';
@@ -96,9 +97,15 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _labelCtrl = TextEditingController(text: initial.filamentLabel);
     _pieceLabelCtrl = TextEditingController(text: initial.label);
     _extraLaborRateCtrl = TextEditingController(text: initial.extraLaborRate);
-    _extraPostProcessRateCtrl = TextEditingController(text: initial.extraPostProcessRate);
-    _extraFailureRateCtrl = TextEditingController(text: initial.extraFailureRate);
-    _extraMarkupOnMaterialsCtrl = TextEditingController(text: initial.extraMarkupOnMaterials);
+    _extraPostProcessRateCtrl = TextEditingController(
+      text: initial.extraPostProcessRate,
+    );
+    _extraFailureRateCtrl = TextEditingController(
+      text: initial.extraFailureRate,
+    );
+    _extraMarkupOnMaterialsCtrl = TextEditingController(
+      text: initial.extraMarkupOnMaterials,
+    );
 
     for (final c in [
       _weightCtrl,
@@ -115,10 +122,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       c.addListener(_onAnyFieldChange);
     }
     _labelCtrl.addListener(() {
-      ref.read(calculatorNotifierProvider.notifier).setFilamentLabel(_labelCtrl.text);
+      ref
+          .read(calculatorNotifierProvider.notifier)
+          .setFilamentLabel(_labelCtrl.text);
     });
     _pieceLabelCtrl.addListener(() {
-      ref.read(calculatorNotifierProvider.notifier).setLabel(_pieceLabelCtrl.text);
+      ref
+          .read(calculatorNotifierProvider.notifier)
+          .setLabel(_pieceLabelCtrl.text);
     });
 
     if (initial.mode == CalculatorMode.advanced) {
@@ -153,7 +164,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       // Restaurar la impresora que el usuario eligio en una sesion anterior
       // (persistida en prefs). Si el id ya no existe, el fallback del
       // provider resuelve a la default o a la primera registrada.
-      final savedPrinterId = ref.read(sharedPreferencesProvider).getInt(kActivePrinterIdPrefsKey);
+      final savedPrinterId = ref
+          .read(sharedPreferencesProvider)
+          .getInt(kActivePrinterIdPrefsKey);
       if (savedPrinterId != null && mounted) {
         ref.read(activePrinterIdProvider.notifier).state = savedPrinterId;
       }
@@ -340,8 +353,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _advancedListKey.currentState?.removeItem(
         index,
-        (context, animation) =>
-            SizeTransition(sizeFactor: animation, child: const SizedBox.shrink()),
+        (context, animation) => SizeTransition(
+          sizeFactor: animation,
+          child: const SizedBox.shrink(),
+        ),
         duration: const Duration(milliseconds: 200),
       );
     });
@@ -421,9 +436,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: Text(
                   EsBO.calcTemplatesTitle,
-                  style: Theme.of(
-                    sheetCtx,
-                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Flexible(
@@ -440,7 +455,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                       title: Text(name),
                       subtitle: Text(
                         formatCurrency(
-                          Decimal.parse(t.totalPriceSnapshot.toStringAsFixed(2)),
+                          Decimal.parse(
+                            t.totalPriceSnapshot.toStringAsFixed(2),
+                          ),
                           currency,
                         ),
                       ),
@@ -451,11 +468,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                           try {
                             final ok = await notifier.deleteTemplate(t.id);
                             if (!sheetCtx.mounted) return;
-                            ScaffoldMessenger.of(sheetCtx).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(
+                              sheetCtx,
+                            ).hideCurrentSnackBar();
                             if (!ok) {
-                              ScaffoldMessenger.of(
-                                sheetCtx,
-                              ).showSnackBar(AppSnackBar.error(EsBO.calcTemplateDeleteError));
+                              ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                AppSnackBar.error(EsBO.calcTemplateDeleteError),
+                              );
                               return;
                             }
                             Navigator.of(sheetCtx).pop();
@@ -463,9 +482,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                           } catch (e) {
                             debugPrint('Delete template failed: $e');
                             if (!sheetCtx.mounted) return;
-                            ScaffoldMessenger.of(
-                              sheetCtx,
-                            ).showSnackBar(AppSnackBar.error(EsBO.calcTemplateDeleteError));
+                            ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                              AppSnackBar.error(EsBO.calcTemplateDeleteError),
+                            );
                           }
                         },
                       ),
@@ -479,17 +498,23 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                           // cargado. Sin esto, el state tiene los datos pero
                           // los campos de texto quedan vacíos (solo se ve el
                           // total en el AppBar/bottom bar).
-                          _syncControllersFromState(ref.read(calculatorNotifierProvider));
+                          _syncControllersFromState(
+                            ref.read(calculatorNotifierProvider),
+                          );
                           _rebuildAdvancedRows();
                           ScaffoldMessenger.of(context)
                             ..hideCurrentSnackBar()
-                            ..showSnackBar(AppSnackBar.success(EsBO.calcTemplateApplySuccess));
+                            ..showSnackBar(
+                              AppSnackBar.success(
+                                EsBO.calcTemplateApplySuccess,
+                              ),
+                            );
                         } catch (e) {
                           debugPrint('Apply template failed: $e');
                           if (!sheetCtx.mounted) return;
-                          ScaffoldMessenger.of(
-                            sheetCtx,
-                          ).showSnackBar(AppSnackBar.error(EsBO.calcTemplateApplyError));
+                          ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                            AppSnackBar.error(EsBO.calcTemplateApplyError),
+                          );
                         }
                       },
                     );
@@ -511,7 +536,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       ).showSnackBar(AppSnackBar.warning(EsBO.calcFormIncompleteWarning));
       return;
     }
-    final recentClients = await ref.read(calculationRepositoryProvider).recentClientNames();
+    final recentClients = await ref
+        .read(calculationRepositoryProvider)
+        .recentClientNames();
     if (!mounted) return;
     final result = await showModalBottomSheet<_SaveResult>(
       context: context,
@@ -534,7 +561,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       );
       if (id == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
         return;
       }
 
@@ -593,7 +622,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     } catch (e) {
       debugPrint('Quote save failed: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(EsBO.commonErrorGeneric));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppSnackBar.error(EsBO.commonErrorGeneric));
     }
   }
 
@@ -606,7 +637,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         state: state,
         onSave: _showSaveDialog,
         onReset: _resetAll,
-        onToggleDetail: () => ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
+        onToggleDetail: () =>
+            ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
         onDiscountChanged: (value) {
           ref.read(calculatorNotifierProvider.notifier).setDiscountPct(value);
           if (_discountCtrl.text != value) {
@@ -627,7 +659,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final theme = Theme.of(context);
     final isValid = state.isValid && state.output != null;
     final totalText = isValid
-        ? formatCurrency(state.output!.totalPrice * Decimal.fromInt(state.quantity), currency)
+        ? formatCurrency(
+            state.output!.totalPrice * Decimal.fromInt(state.quantity),
+            currency,
+          )
         : null;
 
     return Scaffold(
@@ -709,8 +744,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       // la única fuente del total — el AppBar lo muestra siempre.
       bottomNavigationBar: ResultBottomBar(
         totalText: totalText ?? '—',
-        hasDiscount: state.output != null && state.output!.discountAmount > Decimal.zero,
-        emptyHint: state.isValid ? null : _buildEmptyHint(state.missingRequiredFields),
+        hasDiscount:
+            state.output != null && state.output!.discountAmount > Decimal.zero,
+        emptyHint: state.isValid
+            ? null
+            : _buildEmptyHint(state.missingRequiredFields),
         onTap: _openResultSheet,
       ),
     );
@@ -760,7 +798,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     WorldCurrency currency,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: MaxWidthScrollView(
         maxWidth: 720,
         child: _paperSheet(
@@ -893,7 +934,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     WorldCurrency currency,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: MaxWidthScrollView(
         maxWidth: 720,
         child: _paperSheet(
@@ -1041,7 +1085,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   /// 4 campos en una fila sutil (labels atenuados) para que el usuario
   /// sepa que existe sin tener que tocar. Free ve un overlay de bloqueo;
   /// Pro puede expandir normalmente.
-  Widget _buildOtrosSection(CalculatorNotifier notifier, WorldCurrency currency) {
+  Widget _buildOtrosSection(
+    CalculatorNotifier notifier,
+    WorldCurrency currency,
+  ) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isPro = ref.watch(isProProvider);
@@ -1058,11 +1105,18 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (showProBadge) ...[const ProBadge(), const SizedBox(width: AppSpacing.xs)],
+              if (showProBadge) ...[
+                const ProBadge(),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               AnimatedRotation(
                 turns: _showOtros ? 0.5 : 0.0,
                 duration: const Duration(milliseconds: 200),
-                child: Icon(Icons.expand_more, size: 20, color: cs.onSurfaceVariant),
+                child: Icon(
+                  Icons.expand_more,
+                  size: 20,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -1148,7 +1202,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xl,
+      ),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -1215,7 +1272,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 /// Siempre visible (no se tapa con el teclado). Tap abre el sheet
 /// de resultado con el desglose completo y acciones.
 class _TotalChip extends StatefulWidget {
-  const _TotalChip({required this.totalText, required this.hasDiscount, required this.onTap});
+  const _TotalChip({
+    required this.totalText,
+    required this.hasDiscount,
+    required this.onTap,
+  });
 
   final String totalText;
   final bool hasDiscount;
@@ -1225,18 +1286,23 @@ class _TotalChip extends StatefulWidget {
   State<_TotalChip> createState() => _TotalChipState();
 }
 
-class _TotalChipState extends State<_TotalChip> with SingleTickerProviderStateMixin {
+class _TotalChipState extends State<_TotalChip>
+    with SingleTickerProviderStateMixin {
   AnimationController? _pulseCtrl;
 
   @override
   void initState() {
     super.initState();
     // Pulse sutil una sola vez cuando aparece el total por primera vez.
-    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
-      ..forward().then((_) {
-        _pulseCtrl?.dispose();
-        _pulseCtrl = null;
-      });
+    _pulseCtrl =
+        AnimationController(
+            vsync: this,
+            duration: const Duration(milliseconds: 600),
+          )
+          ..forward().then((_) {
+            _pulseCtrl?.dispose();
+            _pulseCtrl = null;
+          });
   }
 
   @override
@@ -1258,16 +1324,26 @@ class _TotalChipState extends State<_TotalChip> with SingleTickerProviderStateMi
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
           decoration: BoxDecoration(
             color: cs.primaryContainer,
             borderRadius: BorderRadius.circular(AppRadii.md),
-            border: Border.all(color: cs.primary.withValues(alpha: 0.4), width: 1),
+            border: Border.all(
+              color: cs.primary.withValues(alpha: 0.4),
+              width: 1,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.receipt_long_rounded, size: 16, color: cs.onPrimaryContainer),
+              Icon(
+                Icons.receipt_long_rounded,
+                size: 16,
+                color: cs.onPrimaryContainer,
+              ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 widget.totalText,
@@ -1280,7 +1356,10 @@ class _TotalChipState extends State<_TotalChip> with SingleTickerProviderStateMi
               if (widget.hasDiscount) ...[
                 const SizedBox(width: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: cs.error,
                     borderRadius: BorderRadius.circular(4),
@@ -1310,10 +1389,9 @@ class _TotalChipState extends State<_TotalChip> with SingleTickerProviderStateMi
     // Pulse sutil al primer render.
     if (_pulseCtrl != null) {
       return ScaleTransition(
-        scale: Tween<double>(
-          begin: 0.92,
-          end: 1,
-        ).animate(CurvedAnimation(parent: _pulseCtrl!, curve: Curves.easeOutBack)),
+        scale: Tween<double>(begin: 0.92, end: 1).animate(
+          CurvedAnimation(parent: _pulseCtrl!, curve: Curves.easeOutBack),
+        ),
         child: chip,
       );
     }
@@ -1325,7 +1403,12 @@ class _TotalChipState extends State<_TotalChip> with SingleTickerProviderStateMi
 
 /// Small action chip for filament catalog actions.
 class _ActionChip extends StatelessWidget {
-  const _ActionChip({required this.icon, required this.label, required this.onTap, this.maxWidth});
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.maxWidth,
+  });
 
   final IconData icon;
   final String label;
@@ -1375,7 +1458,10 @@ class _PrinterIndicator extends ConsumerWidget {
             : () => showPrinterSelectorDialog(context, ref, printers: printers),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.lg),
             border: Border.all(color: theme.colorScheme.outlineVariant),
@@ -1409,7 +1495,8 @@ class _PrinterIndicator extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            activePrinter.brand != null && activePrinter.brand!.isNotEmpty
+                            activePrinter.brand != null &&
+                                    activePrinter.brand!.isNotEmpty
                                 ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
                                 : '${activePrinter.averageWatts} W',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -1557,6 +1644,14 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
     final currency = ref.watch(selectedCurrencyProvider);
     final hasCatalog = filaments.isNotEmpty;
 
+    // Color del filamento seleccionado (derivado del catálogo por nombre).
+    final colorMatches = filaments.where(
+      (f) => f.name == _selectedFilamentName,
+    );
+    final selectedColor = colorMatches.isEmpty
+        ? null
+        : colorFromHex(colorMatches.first.color);
+
     return Semantics(
       container: true,
       label: EsBO.calcMaterialTitle(widget.index + 1),
@@ -1595,7 +1690,10 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text(EsBO.calcMaterialTitle(widget.index + 1), style: theme.textTheme.titleSmall),
+                Text(
+                  EsBO.calcMaterialTitle(widget.index + 1),
+                  style: theme.textTheme.titleSmall,
+                ),
                 const Spacer(),
                 if (widget.deletable)
                   IconButton(
@@ -1626,7 +1724,8 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
                       onChanged: (v) => _emit(),
                     ),
                   ),
-                if (widget.showLabel && hasCatalog) const SizedBox(width: AppSpacing.sm),
+                if (widget.showLabel && hasCatalog)
+                  const SizedBox(width: AppSpacing.sm),
                 // Selector de filamento
                 if (hasCatalog)
                   Expanded(
@@ -1646,15 +1745,28 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
                         decoration: InputDecoration(
                           labelText: EsBO.calcFieldFilament,
                           hintText: EsBO.calcSelectFilament,
-                          prefixIcon: const Icon(Icons.inventory_2_rounded, size: 18),
+                          prefixIcon: const Icon(
+                            Icons.inventory_2_rounded,
+                            size: 18,
+                          ),
                           suffixIcon: const Icon(Icons.expand_more_rounded),
                           isDense: true,
                         ),
-                        child: Text(
-                          _selectedFilamentName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium,
+                        child: Row(
+                          children: [
+                            if (selectedColor != null) ...[
+                              _FilamentColorSwatch(color: selectedColor),
+                              const SizedBox(width: AppSpacing.sm),
+                            ],
+                            Expanded(
+                              child: Text(
+                                _selectedFilamentName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1697,7 +1809,8 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
                   const SizedBox(width: AppSpacing.sm),
                 ],
                 // Si filamento del catálogo: chip compacto
-                if (_selectedFilamentName.isNotEmpty && widget.priceCtrl.text.isNotEmpty)
+                if (_selectedFilamentName.isNotEmpty &&
+                    widget.priceCtrl.text.isNotEmpty)
                   _MaterialCostChip(
                     price: widget.priceCtrl.text,
                     grams: widget.gramsCtrl.text,
@@ -1756,7 +1869,11 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
 /// Chip compacto de costo de filamento: muestra precio y gramos inline.
 /// Se usa en Advanced cuando el filamento viene del catálogo (estilo Express).
 class _MaterialCostChip extends StatelessWidget {
-  const _MaterialCostChip({required this.price, required this.grams, required this.currency});
+  const _MaterialCostChip({
+    required this.price,
+    required this.grams,
+    required this.currency,
+  });
 
   final String price;
   final String grams;
@@ -1767,7 +1884,10 @@ class _MaterialCostChip extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: cs.primaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AppRadii.xs),
@@ -1820,7 +1940,9 @@ class _ModeSelector extends ConsumerWidget {
 
     return Semantics(
       label: EsBO.calcSemanticMode(
-        mode == CalculatorMode.express ? EsBO.calcModeExpress : EsBO.calcModeAdvanced,
+        mode == CalculatorMode.express
+            ? EsBO.calcModeExpress
+            : EsBO.calcModeAdvanced,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1876,11 +1998,15 @@ class _ModePill extends StatelessWidget {
         : cs.onSurfaceVariant;
 
     return Material(
-      color: isActive ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
+      color: isActive
+          ? activeColor.withValues(alpha: 0.12)
+          : Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.xl),
         side: BorderSide(
-          color: isActive ? activeColor.withValues(alpha: 0.4) : cs.outlineVariant,
+          color: isActive
+              ? activeColor.withValues(alpha: 0.4)
+              : cs.outlineVariant,
           width: isActive ? 1.5 : 1,
         ),
       ),
@@ -1888,7 +2014,10 @@ class _ModePill extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.xl),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1915,7 +2044,12 @@ class _ModePill extends StatelessWidget {
 // === Save dialog ===
 
 class _SaveResult {
-  const _SaveResult({this.clientName, this.notes, this.conditions, this.saveAsTemplate = false});
+  const _SaveResult({
+    this.clientName,
+    this.notes,
+    this.conditions,
+    this.saveAsTemplate = false,
+  });
   final String? clientName;
   final String? notes;
   final String? conditions;
@@ -2000,12 +2134,16 @@ class _SaveSheetState extends State<_SaveSheet> {
                       children: [
                         Text(
                           EsBO.calcBtnSave,
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           EsBO.calcDialogSaveSubtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(color: color.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: color.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -2015,7 +2153,11 @@ class _SaveSheetState extends State<_SaveSheet> {
               const SizedBox(height: AppSpacing.lg),
 
               // ── Datos del cliente ──
-              _fieldLabel(theme, Icons.person_outline_rounded, EsBO.calcDialogClient),
+              _fieldLabel(
+                theme,
+                Icons.person_outline_rounded,
+                EsBO.calcDialogClient,
+              ),
               const SizedBox(height: AppSpacing.xs),
               TextField(
                 controller: _clientCtrl,
@@ -2027,7 +2169,11 @@ class _SaveSheetState extends State<_SaveSheet> {
               ),
               if (widget.recentClients.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _fieldLabel(theme, Icons.history_rounded, EsBO.calcDialogRecentClients),
+                _fieldLabel(
+                  theme,
+                  Icons.history_rounded,
+                  EsBO.calcDialogRecentClients,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -2040,7 +2186,8 @@ class _SaveSheetState extends State<_SaveSheet> {
                             : null,
                         label: Text(client, overflow: TextOverflow.ellipsis),
                         selected: _clientCtrl.text == client,
-                        onSelected: (_) => setState(() => _clientCtrl.text = client),
+                        onSelected: (_) =>
+                            setState(() => _clientCtrl.text = client),
                       ),
                   ],
                 ),
@@ -2048,7 +2195,11 @@ class _SaveSheetState extends State<_SaveSheet> {
               const SizedBox(height: AppSpacing.lg),
 
               // ── Detalles ──
-              _fieldLabel(theme, Icons.article_outlined, EsBO.calcDialogDetails),
+              _fieldLabel(
+                theme,
+                Icons.article_outlined,
+                EsBO.calcDialogDetails,
+              ),
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: _notesCtrl,
@@ -2085,7 +2236,8 @@ class _SaveSheetState extends State<_SaveSheet> {
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () => setState(() => _saveAsTemplate = !_saveAsTemplate),
+                  onTap: () =>
+                      setState(() => _saveAsTemplate = !_saveAsTemplate),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
@@ -2098,7 +2250,9 @@ class _SaveSheetState extends State<_SaveSheet> {
                               ? Icons.playlist_add_check_circle_rounded
                               : Icons.playlist_add_circle_outlined,
                           size: 28,
-                          color: _saveAsTemplate ? color.primary : color.onSurfaceVariant,
+                          color: _saveAsTemplate
+                              ? color.primary
+                              : color.onSurfaceVariant,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
@@ -2210,8 +2364,19 @@ class _ExpressFilamentRow extends ConsumerWidget {
     final hasFilaments = filaments.isNotEmpty;
     final hasLabel = labelCtrl.text.isNotEmpty;
 
+    // Color del filamento seleccionado: se deriva del catalogo por nombre
+    // para que el swatch aparezca tambien tras restore/draft/prefill (el
+    // label del Express SIEMPRE es el nombre del filamento elegido).
+    final colorMatches = filaments.where((f) => f.name == labelCtrl.text);
+    final selectedColor = colorMatches.isEmpty
+        ? null
+        : colorFromHex(colorMatches.first.color);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         border: Border(
@@ -2240,8 +2405,12 @@ class _ExpressFilamentRow extends ConsumerWidget {
                     _MaterialUpdate(
                       label: filament.name,
                       weight: '',
-                      pricePerBobbin: filament.pricePerBobbin.toStringAsFixed(2),
-                      gramsPerBobbin: filament.gramsPerBobbin.toStringAsFixed(0),
+                      pricePerBobbin: filament.pricePerBobbin.toStringAsFixed(
+                        2,
+                      ),
+                      gramsPerBobbin: filament.gramsPerBobbin.toStringAsFixed(
+                        0,
+                      ),
                     ),
                   );
                 }
@@ -2255,11 +2424,24 @@ class _ExpressFilamentRow extends ConsumerWidget {
                   suffixIcon: const Icon(Icons.expand_more_rounded),
                   isDense: true,
                 ),
-                child: Text(
-                  labelCtrl.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium,
+                child: Row(
+                  children: [
+                    // Swatch del color solo cuando hay filamento seleccionado
+                    // con color: va inline junto al nombre, no como prefix
+                    // (evita el dot flotante del prefixIcon vacio).
+                    if (selectedColor != null) ...[
+                      _FilamentColorSwatch(color: selectedColor),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
+                    Expanded(
+                      child: Text(
+                        labelCtrl.text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             )
@@ -2297,7 +2479,10 @@ class _ExpressFilamentRow extends ConsumerWidget {
                 if (hasLabel) ...[
                   // Chip con precio y gramos del filamento actual
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: cs.primaryContainer.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(AppRadii.xs),
@@ -2324,21 +2509,26 @@ class _ExpressFilamentRow extends ConsumerWidget {
                 ],
                 const Spacer(),
                 // "Usar default" si hay default y es diferente al actual
-                if (defaultFilament != null && labelCtrl.text != defaultFilament.name)
+                if (defaultFilament != null &&
+                    labelCtrl.text != defaultFilament.name)
                   _ActionChip(
                     icon: Icons.star_rounded,
                     label: EsBO.calcMaterialUse(defaultFilament.name),
                     maxWidth: 180,
                     onTap: () {
                       labelCtrl.text = defaultFilament.name;
-                      priceCtrl.text = defaultFilament.pricePerBobbin.toStringAsFixed(2);
-                      gramsCtrl.text = defaultFilament.gramsPerBobbin.toStringAsFixed(0);
+                      priceCtrl.text = defaultFilament.pricePerBobbin
+                          .toStringAsFixed(2);
+                      gramsCtrl.text = defaultFilament.gramsPerBobbin
+                          .toStringAsFixed(0);
                       onChanged(
                         _MaterialUpdate(
                           label: defaultFilament.name,
                           weight: '',
-                          pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(2),
-                          gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(0),
+                          pricePerBobbin: defaultFilament.pricePerBobbin
+                              .toStringAsFixed(2),
+                          gramsPerBobbin: defaultFilament.gramsPerBobbin
+                              .toStringAsFixed(0),
                         ),
                       );
                     },
@@ -2388,7 +2578,10 @@ class _OtrosPeekPreview extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: Container(
         margin: const EdgeInsets.only(top: AppSpacing.xs),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(AppRadii.sm),
@@ -2420,7 +2613,11 @@ class _OtrosPeekPreview extends StatelessWidget {
             ),
             if (locked) ...[
               const SizedBox(width: AppSpacing.sm),
-              Icon(Icons.lock_outline, size: 14, color: cs.primary.withValues(alpha: 0.5)),
+              Icon(
+                Icons.lock_outline,
+                size: 14,
+                color: cs.primary.withValues(alpha: 0.5),
+              ),
             ],
           ],
         ),
@@ -2435,7 +2632,11 @@ class _OtrosPeekPreview extends StatelessWidget {
 /// con su regla de cota ([SectionHeader]) seguido del contenido. Sin card
 /// anidada: la hoja ya ES el documento.
 class _RubricSection extends StatelessWidget {
-  const _RubricSection({required this.icon, required this.title, required this.child});
+  const _RubricSection({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
 
   final IconData icon;
   final String title;
@@ -2450,6 +2651,33 @@ class _RubricSection extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         child,
       ],
+    );
+  }
+}
+
+/// Swatch circular del color del filamento seleccionado. Se coloca inline
+/// ANTES del nombre del filamento en el selector (Express y Advanced), para
+/// que el color se vea junto al texto y no como un dot flotante.
+class _FilamentColorSwatch extends StatelessWidget {
+  const _FilamentColorSwatch({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isWhite = color.toARGB32() == 0xFFFFFFFF;
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isWhite ? cs.outline : cs.outlineVariant,
+          width: 1,
+        ),
+      ),
     );
   }
 }

@@ -78,23 +78,24 @@ class FilamentRepository {
       if (asDefault == true) {
         await _clearDefault();
       }
-      final updated = await (_db.update(
-        _db.filaments,
-      )..where((f) => f.id.equals(id))).write(
-        FilamentsCompanion(
-          name: Value(name),
-          brand: Value(brand),
-          pricePerBobbin: Value(pricePerBobbin.toDouble()),
-          gramsPerBobbin: Value(gramsPerBobbin.toDouble()),
-          isDefault: asDefault == null
-              ? const Value.absent()
-              : Value(asDefault),
-          // `color` es opt-in: si `updateColor` es false, el valor persistido
-          // se conserva (importante para que `setAsDefault` no borre el color
-          // accidentalmente al pasar solo los demas campos).
-          color: updateColor ? Value(color) : const Value.absent(),
-        ),
-      );
+      final updated =
+          await (_db.update(
+            _db.filaments,
+          )..where((f) => f.id.equals(id))).write(
+            FilamentsCompanion(
+              name: Value(name),
+              brand: Value(brand),
+              pricePerBobbin: Value(pricePerBobbin.toDouble()),
+              gramsPerBobbin: Value(gramsPerBobbin.toDouble()),
+              isDefault: asDefault == null
+                  ? const Value.absent()
+                  : Value(asDefault),
+              // `color` es opt-in: si `updateColor` es false, el valor persistido
+              // se conserva (importante para que `setAsDefault` no borre el color
+              // accidentalmente al pasar solo los demas campos).
+              color: updateColor ? Value(color) : const Value.absent(),
+            ),
+          );
       return updated > 0;
     });
   }

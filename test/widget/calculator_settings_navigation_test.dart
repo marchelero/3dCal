@@ -67,7 +67,8 @@ class _FakePaymentService implements PaymentService {
   Future<void> configure() async {}
 
   @override
-  Future<PaymentResult> purchase({required String productId}) async => const PaymentCancelled();
+  Future<PaymentResult> purchase({required String productId}) async =>
+      const PaymentCancelled();
 
   @override
   Future<RestoreResult> restore() async => const RestoreEmpty();
@@ -108,14 +109,18 @@ void main() {
   /// Helper: monta [TresdcalApp] (router REAL) con DB in-memory + fakes.
   /// [dashboardIsProProvider] override a isProProvider replica main.dart.
   Future<void> _pumpApp(WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{'onboarding_done': true});
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'onboarding_done': true,
+    });
     prefs = await SharedPreferences.getInstance();
     db = AppDatabase.forTesting(NativeDatabase.memory());
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
         sharedPreferencesProvider.overrideWithValue(prefs),
-        entitlementRepositoryProvider.overrideWithValue(_FakeEntitlementRepository()),
+        entitlementRepositoryProvider.overrideWithValue(
+          _FakeEntitlementRepository(),
+        ),
         paymentServiceProvider.overrideWithValue(_FakePaymentService()),
         dashboardIsProProvider.overrideWith((ref) => ref.watch(isProProvider)),
       ],
@@ -125,15 +130,22 @@ void main() {
       await db.close();
     });
     await tester.pumpWidget(
-      UncontrolledProviderScope(container: container, child: const TresdcalApp()),
+      UncontrolledProviderScope(
+        container: container,
+        child: const TresdcalApp(),
+      ),
     );
     await tester.pumpAndSettle();
   }
 
   NumericInputField _pesoField(WidgetTester tester) =>
-      tester.widget<NumericInputField>(find.widgetWithText(NumericInputField, 'Peso'));
+      tester.widget<NumericInputField>(
+        find.widgetWithText(NumericInputField, 'Peso'),
+      );
 
-  testWidgets('gear → SettingsPage (standalone) y back restaura calculator', (tester) async {
+  testWidgets('gear → SettingsPage (standalone) y back restaura calculator', (
+    tester,
+  ) async {
     _useTallViewport(tester);
     await _pumpApp(tester);
 
@@ -154,11 +166,20 @@ void main() {
     expect(gear, findsOneWidget);
 
     // 3. Tipear un draft parcial (express: Peso / Horas / Precio bobina).
-    await tester.enterText(find.widgetWithText(NumericInputField, 'Peso'), '100');
+    await tester.enterText(
+      find.widgetWithText(NumericInputField, 'Peso'),
+      '100',
+    );
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(NumericInputField, 'Horas'), '5');
+    await tester.enterText(
+      find.widgetWithText(NumericInputField, 'Horas'),
+      '5',
+    );
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(NumericInputField, 'Precio bobina'), '120');
+    await tester.enterText(
+      find.widgetWithText(NumericInputField, 'Precio bobina'),
+      '120',
+    );
     await tester.pumpAndSettle();
 
     // 4. Gear → /settings/standalone (push). SettingsPage se empuja ENCIMA
@@ -166,7 +187,11 @@ void main() {
     await tester.tap(gear);
     await tester.pumpAndSettle();
 
-    expect(find.byType(SettingsPage), findsOneWidget, reason: 'Gear debe navegar a SettingsPage.');
+    expect(
+      find.byType(SettingsPage),
+      findsOneWidget,
+      reason: 'Gear debe navegar a SettingsPage.',
+    );
     expect(
       find.byType(CalculatorPage),
       findsNothing,

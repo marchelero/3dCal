@@ -268,10 +268,9 @@ class CalculatorState {
     detailMaterialBreakdown:
         detailMaterialBreakdown ?? this.detailMaterialBreakdown,
     showDetail: showDetail ?? this.showDetail,
-detailElectricCost: clearDetail
+    detailElectricCost: clearDetail
         ? null
-        : (detailElectricCost ?? 
-            this.detailElectricCost),
+        : (detailElectricCost ?? this.detailElectricCost),
     detailAmortizationCost: clearDetail
         ? null
         : (detailAmortizationCost ?? this.detailAmortizationCost),

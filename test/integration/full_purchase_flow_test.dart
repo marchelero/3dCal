@@ -188,14 +188,13 @@ void main() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     repo = _FakeEntitlementRepository();
     payment = _FakePaymentService();
-final container = ProviderContainer(
+    final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
         sharedPreferencesProvider.overrideWithValue(prefs),
         entitlementRepositoryProvider.overrideWithValue(repo),
         paymentServiceProvider.overrideWithValue(payment),
-        dashboardIsProProvider.overrideWith((ref) =>
-            ref.watch(isProProvider)),
+        dashboardIsProProvider.overrideWith((ref) => ref.watch(isProProvider)),
         // F2: Isolate.run no resuelve en fake-async de testWidgets; el
         // save() del calculator usa este provider → version sincrona.
         pieceImageDownscalerProvider.overrideWithValue(

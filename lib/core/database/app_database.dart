@@ -118,10 +118,7 @@ class AppDatabase extends _$AppDatabase {
         // de amortizacion) y cotizaciones viejas amortization=0.
         await m.addColumn(printers, printers.purchaseCost);
         await m.addColumn(printers, printers.usefulLifeHours);
-        await m.addColumn(
-          calculations,
-          calculations.amortizationCostSnapshot,
-        );
+        await m.addColumn(calculations, calculations.amortizationCostSnapshot);
       }
       if (from < 11) {
         // v10→v11: color del filamento (RF1-1 del PRD 2026-09-08). Aditiva:

@@ -117,7 +117,6 @@ class EsBO {
       _impl.settingsBrandingLockedBody;
   static String get settingsGoProAction => _impl.settingsGoProAction;
   static String get settingsProTitle => _impl.settingsProTitle;
-  static String get settingsProActive => _impl.settingsProActive;
   static String get settingsProUnlocked => _impl.settingsProUnlocked;
   static String get settingsProNoAdditionalPurchase =>
       _impl.settingsProNoAdditionalPurchase;
@@ -394,13 +393,21 @@ class EsBO {
   static String get printerWatts => _impl.printerWatts;
   static String get printerWattsHelper => _impl.printerWattsHelper;
   static String get printerDefaultSubtitle => _impl.printerDefaultSubtitle;
+  static String get printerCatalogBrandHint => _impl.printerCatalogBrandHint;
+  static String get printerCatalogModelHint => _impl.printerCatalogModelHint;
+  static String get printerCatalogNoModels => _impl.printerCatalogNoModels;
+  static String get printerCatalogSelectModel =>
+      _impl.printerCatalogSelectModel;
+  static String get printerWattsAutoHelper => _impl.printerWattsAutoHelper;
+  static String get printerWattsEstimated => _impl.printerWattsEstimated;
   static String get printerNewTooltip => _impl.printerNewTooltip;
   static String get printerDeleteTitle => _impl.printerDeleteTitle;
   static String get printerMustBeNonNegative => _impl.printerMustBeNonNegative;
 
   // === F5: Amortizacion de impresora ===
   static String get printerPurchaseCost => _impl.printerPurchaseCost;
-  static String get printerPurchaseCostHelper => _impl.printerPurchaseCostHelper;
+  static String get printerPurchaseCostHelper =>
+      _impl.printerPurchaseCostHelper;
   static String get printerUsefulLifeHours => _impl.printerUsefulLifeHours;
   static String get printerUsefulLifeHoursHelper =>
       _impl.printerUsefulLifeHoursHelper;
@@ -450,6 +457,10 @@ class EsBO {
   static String get localeDe => _impl.localeDe;
   static String get localeFr => _impl.localeFr;
 
+  // === Language selection (primera ejecución) ===
+  static String get languagePageTitle => _impl.languagePageTitle;
+  static String get languagePageSubtitle => _impl.languagePageSubtitle;
+
   // === Onboarding ===
   static String get onboardingTitle1 => _impl.onboardingTitle1;
   static String get onboardingDesc1 => _impl.onboardingDesc1;
@@ -459,15 +470,15 @@ class EsBO {
   static String get onboardingDesc3 => _impl.onboardingDesc3;
   static String get onboardingTitle4 => _impl.onboardingTitle4;
   static String get onboardingDesc4 => _impl.onboardingDesc4;
+  static String get onboardingTitle5 => _impl.onboardingTitle5;
+  static String get onboardingDesc5 => _impl.onboardingDesc5;
   static String get onboardingNext => _impl.onboardingNext;
-  static String get onboardingSkip => _impl.onboardingSkip;
   static String get onboardingStart => _impl.onboardingStart;
-  static String get onboardingStartQuote => _impl.onboardingStartQuote;
-  static String get onboardingGoHome => _impl.onboardingGoHome;
+  static String get onboardingConfigure => _impl.onboardingConfigure;
 
   // === Initial config ===
   static String get configTitle => _impl.configTitle;
-  static String get configLanguage => _impl.configLanguage;
+  static String get configTheme => _impl.configTheme;
   static String get configCurrency => _impl.configCurrency;
   static String get configContinue => _impl.configContinue;
 
@@ -482,7 +493,6 @@ class EsBO {
   static String get configStepSubtitle3 => _impl.configStepSubtitle3;
   static String configStepCounter(int step, int total) =>
       _impl.configStepCounter(step, total);
-  static String get configLanguageHelper => _impl.configLanguageHelper;
   static String get configCurrencyHelper => _impl.configCurrencyHelper;
   static String get configPrinterSectionHelper =>
       _impl.configPrinterSectionHelper;
@@ -885,8 +895,6 @@ class EsImpl implements AppStrings {
   String get settingsGoProAction => 'Desbloquear PRO';
   @override
   String get settingsProTitle => '3D Cal PRO';
-  @override
-  String get settingsProActive => 'PRO activo';
   @override
   String get settingsProUnlocked =>
       'Ya tienes todas las funciones PRO desbloqueadas';
@@ -1407,6 +1415,19 @@ class EsImpl implements AppStrings {
   @override
   String get printerWattsHelper => 'Tipico 100-300 W';
   @override
+  String get printerCatalogBrandHint => 'Elige la marca de tu impresora';
+  @override
+  String get printerCatalogModelHint => 'Elige el modelo';
+  @override
+  String get printerCatalogNoModels => 'Sin modelos para esta marca';
+  @override
+  String get printerCatalogSelectModel => 'Selecciona un modelo';
+  @override
+  String get printerWattsAutoHelper =>
+      'Consumo promedio cargado del catálogo — puedes editarlo';
+  @override
+  String get printerWattsEstimated => ' (estimado)';
+  @override
   String get printerDefaultSubtitle =>
       'Se usará en nuevas cotizaciones. Solo una impresora puede ser predeterminada.';
   @override
@@ -1484,19 +1505,19 @@ class EsImpl implements AppStrings {
 
   @override
   List<String> get csvExportHeader => const [
-        'Fecha',
-        'Pieza',
-        'Cliente',
-        'Cantidad',
-        'Total',
-        'Vendido',
-        'Materiales',
-        'Horas',
-        'Descuento',
-        'CostoMat',
-        'Elect',
-        'Ganancia',
-      ];
+    'Fecha',
+    'Pieza',
+    'Cliente',
+    'Cantidad',
+    'Total',
+    'Vendido',
+    'Materiales',
+    'Horas',
+    'Descuento',
+    'CostoMat',
+    'Elect',
+    'Ganancia',
+  ];
   @override
   String get csvValueYes => 'Sí';
   @override
@@ -1516,6 +1537,11 @@ class EsImpl implements AppStrings {
   String get localeDe => 'Alemán';
   @override
   String get localeFr => 'Francés';
+  @override
+  String get languagePageTitle => 'Elige tu idioma';
+  @override
+  String get languagePageSubtitle =>
+      'Se aplica a toda la aplicación. Puedes cambiarlo después en Ajustes.';
   @override
   String get onboardingTitle1 => 'Bienvenido a 3dCalc';
   @override
@@ -1537,26 +1563,27 @@ class EsImpl implements AppStrings {
   String get onboardingDesc4 =>
       'Seguimiento de cotizaciones, tendencias mensuales,\nexportación a PDF e historial con búsqueda.';
   @override
-  String get onboardingNext => 'Siguiente';
+  String get onboardingTitle5 => 'Configuración fácil';
   @override
-  String get onboardingSkip => 'Saltar';
+  String get onboardingDesc5 =>
+      'Define moneda, impresora, filamento, ganancia\ny costo de energía en unos pocos pasos. Todo listo para cotizar.';
+  @override
+  String get onboardingNext => 'Siguiente';
   @override
   String get onboardingStart => 'Comenzar';
   @override
-  String get onboardingStartQuote => 'Crear mi primera cotización';
-  @override
-  String get onboardingGoHome => 'Ir al menú';
+  String get onboardingConfigure => 'Configurar';
   @override
   String get configTitle => 'Configuración inicial';
   @override
-  String get configLanguage => 'Idioma';
+  String get configTheme => 'Tema';
   @override
   String get configCurrency => 'Moneda';
   @override
   String get configContinue => 'Continuar';
 
   @override
-  String get configStep1Title => 'Idioma y moneda';
+  String get configStep1Title => 'Tema y moneda';
   @override
   String get configStep2Title => 'Impresora y filamento';
   @override
@@ -1576,9 +1603,6 @@ class EsImpl implements AppStrings {
       'Estos valores se usan en cada cotización. Puedes cambiarlos después.';
   @override
   String configStepCounter(int step, int total) => 'Paso $step de $total';
-  @override
-  String get configLanguageHelper =>
-      'Elige el idioma de la app. Puedes cambiarlo después.';
   @override
   String get configCurrencyHelper =>
       'Moneda en que se muestran precios y cotizaciones. No convierte valores.';

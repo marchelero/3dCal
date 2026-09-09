@@ -309,10 +309,7 @@ class QuoteImageTemplate extends StatelessWidget {
               materialCost: output.materialCost * qty,
               materialBreakdown: [
                 for (final b in detailMaterialBreakdown)
-                  MaterialCostBreakdown(
-                    label: b.label,
-                    cost: b.cost * qty,
-                  ),
+                  MaterialCostBreakdown(label: b.label, cost: b.cost * qty),
               ],
               electricCost: (detailElectricCost ?? Decimal.zero) * qty,
               amortizationCost: (detailAmortizationCost ?? Decimal.zero) * qty,

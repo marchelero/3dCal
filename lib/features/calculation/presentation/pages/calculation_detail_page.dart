@@ -151,8 +151,9 @@ class _DetailState extends ConsumerState<_Detail> {
   /// Cantidad mostrada/editable. Arranca con la cantidad guardada de la
   /// cotizacion (lotes, v8) para que preview/export coincidan con lo saved.
   late int _quantity = widget.calc.quantity < 1 ? 1 : widget.calc.quantity;
-  late final TextEditingController _quantityCtrl =
-      TextEditingController(text: '$_quantity');
+  late final TextEditingController _quantityCtrl = TextEditingController(
+    text: '$_quantity',
+  );
 
   Future<void> _handleShare() async {
     if (_isBusy) return;
@@ -963,7 +964,8 @@ _recomputeOutput(
       ? (materialCost * settings.postProcessRate / Decimal.fromInt(100))
             .toDecimal()
       : Decimal.zero;
-  final baseCost = materialCost +
+  final baseCost =
+      materialCost +
       electricCost +
       amortizationCost +
       laborCost +

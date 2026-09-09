@@ -14,10 +14,7 @@ import 'package:flutter/material.dart';
 /// El nombre legible ([nameKey]) es la clave de i18n que el UI resuelve
 /// contra el locale activo (`EsBO.colorNameRed`, etc.).
 class FilamentPaletteEntry {
-  const FilamentPaletteEntry({
-    required this.color,
-    required this.nameKey,
-  });
+  const FilamentPaletteEntry({required this.color, required this.nameKey});
 
   final Color color;
   final String nameKey;
@@ -126,4 +123,3 @@ bool isPaletteHex(String? hex) {
   }
   return false;
 }
-

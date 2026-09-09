@@ -144,111 +144,120 @@ void main() {
 
   tearDown(() => container.dispose());
 
-  test('revocacion desde Pro → downgrade a Free + cache/DB limpiados', () async {
-    // Pre-poblar cache Pro fresh (para que el boot emita Pro sin restore).
-    final validated = DateTime.now().toUtc();
-    await setupContainer(
-      spInitial: <String, Object>{
-        kIsProKey: true,
-        kEntitlementSourceKey: kSourceLifetimePurchase,
-        kEntitlementValidatedAtKey: validated.toIso8601String(),
-      },
-    );
-    // Seed DB con fila activa (caso real: user compro, ahora refund).
-    repo.seedActive(
-      Entitlement(
-        id: 1,
-        source: kSourceLifetimePurchase,
-        productId: kProProductId,
-        purchasedAt: validated,
-        validatedAt: validated,
-        expiresAt: null,
-        receiptData: null,
-        isActive: true,
-      ),
-    );
+  test(
+    'revocacion desde Pro → downgrade a Free + cache/DB limpiados',
+    () async {
+      // Pre-poblar cache Pro fresh (para que el boot emita Pro sin restore).
+      final validated = DateTime.now().toUtc();
+      await setupContainer(
+        spInitial: <String, Object>{
+          kIsProKey: true,
+          kEntitlementSourceKey: kSourceLifetimePurchase,
+          kEntitlementValidatedAtKey: validated.toIso8601String(),
+        },
+      );
+      // Seed DB con fila activa (caso real: user compro, ahora refund).
+      repo.seedActive(
+        Entitlement(
+          id: 1,
+          source: kSourceLifetimePurchase,
+          productId: kProProductId,
+          purchasedAt: validated,
+          validatedAt: validated,
+          expiresAt: null,
+          receiptData: null,
+          isActive: true,
+        ),
+      );
 
-    await container.read(entitlementNotifierProvider.future);
-    expect(
-      container.read(entitlementNotifierProvider).value,
-      isA<EntitlementPro>(),
-    );
+      await container.read(entitlementNotifierProvider.future);
+      expect(
+        container.read(entitlementNotifierProvider).value,
+        isA<EntitlementPro>(),
+      );
 
-    // RevenueCat reporta que el entitlement quedo inactivo.
-    paymentService.emitRevocation();
-    await _waitForAsync();
+      // RevenueCat reporta que el entitlement quedo inactivo.
+      paymentService.emitRevocation();
+      await _waitForAsync();
 
-    final state = container.read(entitlementNotifierProvider).value;
-    expect(
-      state,
-      isA<EntitlementFree>(),
-      reason: 'Refund detectado en vivo debe bajar a Free.',
-    );
-    expect(container.read(isProProvider), isFalse);
-    expect(
-      repo.clearCalls,
-      1,
-      reason: 'El downgrade debe limpiar la fila activa de la DB.',
-    );
-    expect(
-      prefs.getBool(kIsProKey),
-      isNull,
-      reason: 'La cache local debe borrarse.',
-    );
-    expect(prefs.getString(kEntitlementSourceKey), isNull);
-    expect(prefs.getString(kEntitlementValidatedAtKey), isNull);
-  });
+      final state = container.read(entitlementNotifierProvider).value;
+      expect(
+        state,
+        isA<EntitlementFree>(),
+        reason: 'Refund detectado en vivo debe bajar a Free.',
+      );
+      expect(container.read(isProProvider), isFalse);
+      expect(
+        repo.clearCalls,
+        1,
+        reason: 'El downgrade debe limpiar la fila activa de la DB.',
+      );
+      expect(
+        prefs.getBool(kIsProKey),
+        isNull,
+        reason: 'La cache local debe borrarse.',
+      );
+      expect(prefs.getString(kEntitlementSourceKey), isNull);
+      expect(prefs.getString(kEntitlementValidatedAtKey), isNull);
+    },
+  );
 
-  test('revocacion en estado Free → no-op (sin clear, sin escrituras)', () async {
-    await setupContainer();
+  test(
+    'revocacion en estado Free → no-op (sin clear, sin escrituras)',
+    () async {
+      await setupContainer();
 
-    await container.read(entitlementNotifierProvider.future);
-    expect(
-      container.read(entitlementNotifierProvider).value,
-      isA<EntitlementFree>(),
-    );
+      await container.read(entitlementNotifierProvider.future);
+      expect(
+        container.read(entitlementNotifierProvider).value,
+        isA<EntitlementFree>(),
+      );
 
-    paymentService.emitRevocation();
-    await _waitForAsync();
+      paymentService.emitRevocation();
+      await _waitForAsync();
 
-    final state = container.read(entitlementNotifierProvider).value;
-    expect(state, isA<EntitlementFree>());
-    expect(
-      repo.clearCalls,
-      0,
-      reason: 'User free: una revocacion no debe tocar la DB.',
-    );
-    expect(repo.saveCalls, 0);
-  });
+      final state = container.read(entitlementNotifierProvider).value;
+      expect(state, isA<EntitlementFree>());
+      expect(
+        repo.clearCalls,
+        0,
+        reason: 'User free: una revocacion no debe tocar la DB.',
+      );
+      expect(repo.saveCalls, 0);
+    },
+  );
 
-  test('revocacion tras una compra posterior → vuelve a Free (re-arm)', () async {
-    await setupContainer();
+  test(
+    'revocacion tras una compra posterior → vuelve a Free (re-arm)',
+    () async {
+      await setupContainer();
 
-    await container.read(entitlementNotifierProvider.future);
+      await container.read(entitlementNotifierProvider.future);
 
-    // Compra exitosa → Pro.
-    paymentService.seedPurchase(
-      PaymentSuccess(
-        productId: kProProductId,
-        purchasedAt: DateTime.now().toUtc(),
-      ),
-    );
-    await container
-        .read(entitlementNotifierProvider.notifier)
-        .purchase(productId: kProProductId);
-    expect(container.read(isProProvider), isTrue);
+      // Compra exitosa → Pro.
+      paymentService.seedPurchase(
+        PaymentSuccess(
+          productId: kProProductId,
+          purchasedAt: DateTime.now().toUtc(),
+        ),
+      );
+      await container
+          .read(entitlementNotifierProvider.notifier)
+          .purchase(productId: kProProductId);
+      expect(container.read(isProProvider), isTrue);
 
-    // Refund posterior → vuelve a Free.
-    paymentService.emitRevocation();
-    await _waitForAsync();
+      // Refund posterior → vuelve a Free.
+      paymentService.emitRevocation();
+      await _waitForAsync();
 
-    expect(container.read(isProProvider), isFalse);
-    expect(
-      container.read(entitlementNotifierProvider).value,
-      isA<EntitlementFree>(),
-    );
-    expect(prefs.getBool(kIsProKey), isNull);
-  });
+      expect(container.read(isProProvider), isFalse);
+      expect(
+        container.read(entitlementNotifierProvider).value,
+        isA<EntitlementFree>(),
+      );
+      expect(prefs.getBool(kIsProKey), isNull);
+    },
+  );
 
   test('revocacion durante loading (boot sin terminar) → no-op', () async {
     await setupContainer();

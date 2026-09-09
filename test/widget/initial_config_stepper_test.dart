@@ -52,12 +52,36 @@ Future<ProviderContainer> _pumpStepper(
   return container;
 }
 
+/// Selecciona marca + modelo del catalogo en el sub-form de impresora del
+/// paso 2 (via los dropdowns del PrinterCatalogSelector).
+Future<void> _selectPrinter(
+  WidgetTester tester,
+  String brand,
+  String model,
+) async {
+  await tester.tap(find.byKey(const ValueKey('catalog-brand-dropdown')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(brand).last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('catalog-model-dropdown-$brand')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(model).last);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('InitialConfigPage stepper', () {
-    testWidgets('paso 1 muestra idioma + moneda', (tester) async {
+    testWidgets('paso 1 muestra tema (claro/oscuro) + moneda', (tester) async {
       await _pumpStepper(tester);
-      expect(find.text('Idioma'), findsOneWidget);
+      // Tema: solo las dos opciones, sin "Sistema" en el setup.
+      expect(find.text('Tema'), findsOneWidget);
+      expect(find.text('Claro'), findsOneWidget);
+      expect(find.text('Oscuro'), findsOneWidget);
+      expect(find.text('Sistema'), findsNothing);
+      // Moneda debajo del tema.
       expect(find.text('Moneda'), findsOneWidget);
+      // El idioma ya no se configura acá: vive en su propia pantalla previa.
+      expect(find.text('Idioma'), findsNothing);
       // Boton Continuar habilitado (paso 1 siempre permite avanzar).
       final btn = tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, 'Continuar'),
@@ -65,90 +89,101 @@ void main() {
       expect(btn.onPressed != null, isTrue);
     });
 
-    testWidgets(
-      'paso 2: Continuar deshabilitado sin impresora ni filamento, '
-      'se habilita al guardar ambos',
-      (tester) async {
-        final container = await _pumpStepper(tester);
-        await tester.ensureVisible(find.text('Continuar'));
-        await tester.tap(find.text('Continuar'));
-        await tester.pumpAndSettle();
+    testWidgets('paso 1: tocar la tarjeta Oscuro persiste theme_mode', (
+      tester,
+    ) async {
+      await _pumpStepper(tester);
 
-        // Paso 2: titulo de secciones impresora/filamento visibles.
-        expect(find.text('Impresora (requerida)'), findsOneWidget);
-        expect(find.text('Filamento (requerido)'), findsOneWidget);
-        // Sin impresora ni filamento guardados el boton Continuar esta
-        // deshabilitado.
-        final btn = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Continuar'),
-        );
-        expect(btn.onPressed == null, isTrue);
+      // Ninguna preferencia previa → nada seleccionado.
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
 
-        // Completo el formulario de impresora y guardo.
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Modelo'),
-          'Ender 3',
-        );
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Consumo promedio (W)'),
-          '180',
-        );
-        await tester.pump();
-        await tester.ensureVisible(
-          find.widgetWithText(FilledButton, 'Guardar').first,
-        );
-        await tester.tap(find.widgetWithText(FilledButton, 'Guardar').first);
-        await tester.pumpAndSettle();
+      await tester.tap(find.text('Oscuro'));
+      await tester.pumpAndSettle();
 
-        // Impresora persistida en el notifier.
-        final printers = await container.read(printersNotifierProvider.future);
-        expect(printers, hasLength(1));
-        expect(printers.first.name, 'Ender 3');
-        expect(printers.first.averageWatts, 180);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('theme_mode'), 'dark');
+      // La tarjeta seleccionada muestra el check.
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    });
 
-        // Solo impresora NO habilita Continuar: el filamento es requerido.
-        final btnAfterPrinter = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Continuar'),
-        );
-        expect(btnAfterPrinter.onPressed == null, isTrue);
+    testWidgets('paso 2: Continuar deshabilitado sin impresora ni filamento, '
+        'se habilita al guardar ambos', (tester) async {
+      final container = await _pumpStepper(tester);
+      await tester.ensureVisible(find.text('Continuar'));
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
 
-        // Completo el formulario de filamento y guardo.
-        await tester.ensureVisible(find.widgetWithText(TextField, 'Nombre'));
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Nombre'),
-          'PLA Pro',
-        );
-        await tester.ensureVisible(
-          find.widgetWithText(TextField, 'Precio filamento (\$)'),
-        );
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Precio filamento (\$)'),
-          '120',
-        );
-        await tester.ensureVisible(
-          find.widgetWithText(TextField, 'Gramos por rollo'),
-        );
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Gramos por rollo'),
-          '1000',
-        );
-        await tester.pump();
-        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
-        await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
-        await tester.pumpAndSettle();
+      // Paso 2: titulo de secciones impresora/filamento visibles.
+      expect(find.text('Impresora (requerida)'), findsOneWidget);
+      expect(find.text('Filamento (requerido)'), findsOneWidget);
+      // Sin impresora ni filamento guardados el boton Continuar esta
+      // deshabilitado.
+      final btn = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Continuar'),
+      );
+      expect(btn.onPressed == null, isTrue);
 
-        // Filamento persistido.
-        final filaments = await container.read(filamentsNotifierProvider.future);
-        expect(filaments, hasLength(1));
-        expect(filaments.first.name, 'PLA Pro');
+      // Completo el formulario de impresora y guardo.
+      await _selectPrinter(tester, 'Creality', 'Ender-3');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Consumo promedio (W)'),
+        '180',
+      );
+      await tester.pump();
+      await tester.ensureVisible(
+        find.widgetWithText(FilledButton, 'Guardar').first,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Guardar').first);
+      await tester.pumpAndSettle();
 
-        // Continuar habilitado de nuevo.
-        final btn2 = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Continuar'),
-        );
-        expect(btn2.onPressed != null, isTrue);
-      },
-    );
+      // Impresora persistida en el notifier.
+      final printers = await container.read(printersNotifierProvider.future);
+      expect(printers, hasLength(1));
+      expect(printers.first.name, 'Ender-3');
+      expect(printers.first.averageWatts, 180);
+
+      // Solo impresora NO habilita Continuar: el filamento es requerido.
+      final btnAfterPrinter = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Continuar'),
+      );
+      expect(btnAfterPrinter.onPressed == null, isTrue);
+
+      // Completo el formulario de filamento y guardo.
+      await tester.ensureVisible(find.widgetWithText(TextField, 'Nombre'));
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Nombre'),
+        'PLA Pro',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Precio filamento (\$)'),
+        '120',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Gramos por rollo'),
+        '1000',
+      );
+      await tester.pump();
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.pumpAndSettle();
+
+      // Filamento persistido.
+      final filaments = await container.read(filamentsNotifierProvider.future);
+      expect(filaments, hasLength(1));
+      expect(filaments.first.name, 'PLA Pro');
+
+      // Continuar habilitado de nuevo.
+      final btn2 = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Continuar'),
+      );
+      expect(btn2.onPressed != null, isTrue);
+    });
 
     testWidgets(
       'paso 2: filamento es REQUERIDO (sin boton "Lo agrego después")',
@@ -162,10 +197,7 @@ void main() {
         expect(find.text('Filamento (requerido)'), findsOneWidget);
 
         // Guardo impresora para habilitar Continuar.
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Modelo'),
-          'Ender 3',
-        );
+        await _selectPrinter(tester, 'Creality', 'Ender-3');
         await tester.enterText(
           find.widgetWithText(TextField, 'Consumo promedio (W)'),
           '180',
@@ -203,10 +235,7 @@ void main() {
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3',
-      );
+      await _selectPrinter(tester, 'Creality', 'Ender-3');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '180',
@@ -248,18 +277,13 @@ void main() {
     });
 
     testWidgets('paso 3: ganancia y energia VACIAS por default (0 = sin '
-        'configurar)', (
-      tester,
-    ) async {
+        'configurar)', (tester) async {
       final container = await _pumpStepper(tester);
       await tester.ensureVisible(find.text('Continuar'));
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
       // Impresora requerida para avanzar al paso 3.
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3',
-      );
+      await _selectPrinter(tester, 'Creality', 'Ender-3');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '180',
@@ -328,12 +352,12 @@ void main() {
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
-      // En el paso 2, la sub-seccion impresora tiene un
-      // BrandSelectorField (domain: printer).
-      final dropdown = find.byType(DropdownButtonFormField<String>);
+      // En el paso 2, la sub-seccion impresora usa el PrinterCatalogSelector
+      // cuyo dropdown de marca lista el catalogo de impresoras.
+      final dropdown = find.byKey(const ValueKey('catalog-brand-dropdown'));
       expect(dropdown, findsWidgets);
 
-      // Abre el dropdown de impresora (el primero).
+      // Abre el dropdown de marca de impresora.
       await tester.tap(dropdown.first);
       await tester.pumpAndSettle();
 
@@ -346,12 +370,14 @@ void main() {
 
       // Marcas exclusivas de filamentos: ausentes (el dropdown de filamento
       // cerrado tiene sus items offstage → skiped por skipOffstage default).
+      // Nota: 'Kingroon' y 'Longer' ahora SI estan en el catalogo de
+      // impresoras (ya no son exclusivas de filamento).
       expect(find.text('Hatchbox'), findsNothing);
       expect(find.text('Polymaker'), findsNothing);
       expect(find.text('Prusament'), findsNothing);
       expect(find.text('Sunlu'), findsNothing);
       expect(find.text('Eryone'), findsNothing);
-      expect(find.text('Kingroon'), findsNothing);
+      expect(find.text('Overture'), findsNothing);
       expect(find.text('eSun'), findsNothing);
       expect(find.text('Amolen'), findsNothing);
     });
@@ -365,15 +391,17 @@ void main() {
 
       // Sub-seccion filamento: agregar en el momento para ver su dropdown.
       // La sub-seccion filament aparece debajo de la de impresora con su
-      // propio BrandSelectorField (domain: filament).
+      // propio BrandSelectorField (domain: filament). En total hay 3
+      // dropdowns: marca de impresora, modelo (deshabilitado) y marca de
+      // filamento.
       final dropdowns = find.byType(DropdownButtonFormField<String>);
       expect(
         dropdowns,
-        findsNWidgets(2),
-        reason: 'Impresora y filamento tienen cada uno su dropdown',
+        findsNWidgets(3),
+        reason: 'Marca/modelo de impresora + marca de filamento',
       );
 
-      // Abre el segundo dropdown (el de filamento).
+      // Abre el ultimo dropdown (el de filamento).
       await tester.ensureVisible(dropdowns.last);
       await tester.tap(dropdowns.last);
       await tester.pumpAndSettle();
@@ -409,14 +437,8 @@ void main() {
       expect(progress.value, closeTo(1 / 3, 0.001));
     });
 
-    testWidgets('paso 1: microcopy helper de idioma y moneda visibles', (
-      tester,
-    ) async {
+    testWidgets('paso 1: microcopy helper de moneda visible', (tester) async {
       await _pumpStepper(tester);
-      expect(
-        find.text('Elegí el idioma de la app. Podés cambiarlo después.'),
-        findsOneWidget,
-      );
       expect(
         find.text(
           'Moneda en que se muestran precios y cotizaciones. No convierte '
@@ -433,10 +455,7 @@ void main() {
       await tester.ensureVisible(find.text('Continuar'));
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3',
-      );
+      await _selectPrinter(tester, 'Creality', 'Ender-3');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '180',
@@ -487,10 +506,7 @@ void main() {
       await tester.ensureVisible(find.text('Continuar'));
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3',
-      );
+      await _selectPrinter(tester, 'Creality', 'Ender-3');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '180',
@@ -535,15 +551,15 @@ void main() {
       expect(find.text('Tu próxima cotización:'), findsOneWidget);
       expect(find.text('Impresora (requerida)'), findsWidgets);
       expect(find.text('Filamento (requerido)'), findsWidgets);
-      expect(find.text('Ender 3'), findsWidgets);
+      expect(find.text('Ender-3'), findsWidgets);
       expect(find.text('PLA Pro'), findsWidgets);
 
       // Botón final (configStartButton).
       expect(find.text('Empezar a cotizar'), findsOneWidget);
     });
 
-    testWidgets('paso 3: finalizar persiste onboarding_done y navega a '
-        '/onboarding', (tester) async {
+    testWidgets('paso 3: finalizar persiste onboarding_done y abre el '
+        'calculador encima del home', (tester) async {
       final router = GoRouter(
         initialLocation: '/config',
         routes: [
@@ -552,8 +568,14 @@ void main() {
             builder: (_, _) => const InitialConfigPage(),
           ),
           GoRoute(
-            path: '/onboarding',
-            builder: (_, _) => const Scaffold(body: Text('onboarding')),
+            path: '/',
+            builder: (_, _) =>
+                Scaffold(appBar: AppBar(), body: const Text('home')),
+          ),
+          GoRoute(
+            path: '/calculator',
+            builder: (_, _) =>
+                Scaffold(appBar: AppBar(), body: const Text('calculator')),
           ),
         ],
       );
@@ -561,10 +583,7 @@ void main() {
       await tester.ensureVisible(find.text('Continuar'));
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Modelo'),
-        'Ender 3',
-      );
+      await _selectPrinter(tester, 'Creality', 'Ender-3');
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '180',
@@ -603,14 +622,21 @@ void main() {
       await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
-      // Paso 3: botón final → persiste onboarding_done y navega a /onboarding.
+      // Paso 3: botón final → persiste onboarding_done y abre el calculador
+      // encima de Home (stack limpio, sin /initial-config vivo).
       await tester.ensureVisible(find.text('Empezar a cotizar'));
       await tester.tap(find.text('Empezar a cotizar'));
       await tester.pumpAndSettle();
 
-      expect(find.text('onboarding'), findsOneWidget);
+      expect(find.text('calculator'), findsOneWidget);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool(SettingsKeys.onboardingDone), isTrue);
+
+      // Back desde el calculador → Home (nunca la config).
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('home'), findsOneWidget);
+      expect(find.byType(InitialConfigPage), findsNothing);
     });
   });
 }

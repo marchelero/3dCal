@@ -207,8 +207,7 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
 
       final cache = ref.read(entitlementCacheProvider);
       final cachedValidatedAt = cache.validatedAt;
-      if (cachedValidatedAt != null &&
-          cachedValidatedAt.isAfter(validatedAt)) {
+      if (cachedValidatedAt != null && cachedValidatedAt.isAfter(validatedAt)) {
         return;
       }
 
