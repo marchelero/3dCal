@@ -15,6 +15,8 @@ class EnImpl implements AppStrings {
   @override
   String get commonCancel => 'Cancel';
   @override
+  String get commonApply => 'Apply';
+  @override
   String get commonDelete => 'Delete';
   @override
   String get commonRetry => 'Retry';
@@ -22,6 +24,10 @@ class EnImpl implements AppStrings {
   String get commonEdit => 'Edit';
   @override
   String get commonNew => 'New';
+  @override
+  String get commonCreateNew => 'Create new';
+  @override
+  String get commonAddToCatalog => 'Add to catalog';
   @override
   String get commonRequired => 'Required';
   @override
@@ -539,6 +545,8 @@ class EnImpl implements AppStrings {
   @override
   String get calcEmptyHintSuffix => 'to see the quotation';
   @override
+  String get calcEmptyHintConnector => 'and';
+  @override
   String get calcFieldWeightShort => 'piece weight';
   @override
   String get calcFieldPriceShort => 'filament price';
@@ -635,6 +643,23 @@ class EnImpl implements AppStrings {
   String get filamentMustBeInteger => 'Must be integer';
   @override
   String get filamentMax100 => 'Max 100 characters';
+  @override
+  String get filamentColorLabel => 'Color';
+  @override
+  String get filamentColorHelper =>
+      'Optional. Visually identifies the filament.';
+  @override
+  String get filamentColorCustom => 'Custom...';
+  @override
+  String get filamentColorClear => 'Remove color';
+  @override
+  String get filamentColorPickerTitle => 'Pick a color';
+  @override
+  String get filamentColorHexLabel => 'Hex';
+  @override
+  String get filamentColorHexHelper => 'Format #RRGGBB';
+  @override
+  String get filamentColorInvalid => 'Invalid color, format #RRGGBB';
 
   @override
   String get printerTitle => 'Printers';
@@ -727,6 +752,28 @@ class EnImpl implements AppStrings {
   String get csvExportLockedBody => 'CSV export is a Pro feature';
   @override
   String get csvGoProAction => 'Unlock PRO';
+
+  @override
+  List<String> get csvExportHeader => const [
+        'Date',
+        'Item',
+        'Client',
+        'Quantity',
+        'Total',
+        'Sold',
+        'Materials',
+        'Hours',
+        'Discount',
+        'MatCost',
+        'Electric',
+        'Profit',
+      ];
+  @override
+  String get csvValueYes => 'Yes';
+  @override
+  String get csvValueNo => 'No';
+  @override
+  String get csvFileName => '3dcalc_quotes.csv';
 
   @override
   String get localeLabel => 'Language';
@@ -863,6 +910,28 @@ class EnImpl implements AppStrings {
   @override
   String get historyCapReachedBody =>
       "You've reached the free history limit. Upgrade to Pro for unlimited history.";
+
+  // === Free-tier catalog gates ===
+  @override
+  String freePrintersLimitHint(int current, int limit) =>
+      '$current/$limit printers — unlock Pro for more';
+  @override
+  String freeFilamentsLimitHint(int current, int limit) =>
+      '$current/$limit filaments — unlock Pro for more';
+  @override
+  String filamentLimitReachedTooltip(int limit) =>
+      'Free limit ($limit filaments)';
+  @override
+  String filamentLimitReachedBody(int limit) =>
+      'Free limit of $limit filaments reached. '
+      'Unlock Pro to add more.';
+  @override
+  String printerLimitReachedTooltip(int limit) =>
+      'Free limit ($limit printers)';
+  @override
+  String printerLimitReachedBody(int limit) =>
+      'Free limit of $limit printers reached. '
+      'Unlock Pro to add more.';
 
   // === Pro badge / locked visuals (UX) ===
   @override
@@ -1015,6 +1084,9 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String get homeHeroTagline =>
       '3D Quotes · Fast · Accurate · Ready when you are';
+
+  @override
+  String get homeHeroSemanticsSuffix => '3D Quotes';
 
   @override
   String get calcFormIncompleteWarning => 'Complete the form before saving.';
@@ -1223,4 +1295,40 @@ We may update, suspend, or remove application features. These terms may also cha
       'No printers. Tap + to register the first one.';
   @override
   String printerDeleteConfirm(String name) => 'Delete "$name"?';
+
+  // === Color de filamento (PRD 2026-09-08) ===
+  @override
+  String get colorNameRed => 'Red';
+  @override
+  String get colorNameOrange => 'Orange';
+  @override
+  String get colorNameAmber => 'Amber';
+  @override
+  String get colorNameYellow => 'Yellow';
+  @override
+  String get colorNameLime => 'Lime';
+  @override
+  String get colorNameGreen => 'Green';
+  @override
+  String get colorNameTeal => 'Teal';
+  @override
+  String get colorNameCyan => 'Cyan';
+  @override
+  String get colorNameBlue => 'Blue';
+  @override
+  String get colorNameIndigo => 'Indigo';
+  @override
+  String get colorNamePurple => 'Purple';
+  @override
+  String get colorNameMagenta => 'Magenta';
+  @override
+  String get colorNamePink => 'Pink';
+  @override
+  String get colorNameBrown => 'Brown';
+  @override
+  String get colorNameGray => 'Gray';
+  @override
+  String get colorNameBlack => 'Black';
+  @override
+  String get colorNameWhite => 'White';
 }

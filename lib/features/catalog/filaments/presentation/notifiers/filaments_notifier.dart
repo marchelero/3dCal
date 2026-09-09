@@ -38,6 +38,7 @@ class FilamentsNotifier extends AsyncNotifier<List<Filament>> {
     required Decimal pricePerBobbin,
     required Decimal gramsPerBobbin,
     bool asDefault = false,
+    String? color,
   }) async {
     final repo = ref.read(filamentRepositoryProvider);
     await repo.create(
@@ -46,11 +47,13 @@ class FilamentsNotifier extends AsyncNotifier<List<Filament>> {
       pricePerBobbin: pricePerBobbin,
       gramsPerBobbin: gramsPerBobbin,
       asDefault: asDefault,
+      color: color,
     );
     await _reload();
   }
 
   /// Actualiza un filamento. Si [asDefault] es `true`, desmarca los demas.
+  /// [color] se persiste solo si [updateColor] es `true`; ver repo.
   ///
   /// Nombre `updateFilament` (no `update`) para no colisionar con
   /// `AsyncNotifier.update` del base class de Riverpod.
@@ -61,6 +64,8 @@ class FilamentsNotifier extends AsyncNotifier<List<Filament>> {
     required Decimal pricePerBobbin,
     required Decimal gramsPerBobbin,
     bool? asDefault,
+    String? color,
+    bool updateColor = false,
   }) async {
     final repo = ref.read(filamentRepositoryProvider);
     await repo.update(
@@ -70,6 +75,8 @@ class FilamentsNotifier extends AsyncNotifier<List<Filament>> {
       pricePerBobbin: pricePerBobbin,
       gramsPerBobbin: gramsPerBobbin,
       asDefault: asDefault,
+      color: color,
+      updateColor: updateColor,
     );
     await _reload();
   }

@@ -16,6 +16,7 @@ import '../../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../../shared/widgets/default_badge.dart';
 import '../../../../../shared/widgets/empty_view.dart';
 import '../../../../../shared/widgets/error_view.dart';
+import '../../../../../shared/widgets/filament_color_palette.dart';
 import '../../../../../shared/widgets/skeleton_widget.dart';
 import '../notifiers/filaments_notifier.dart';
 
@@ -110,8 +111,12 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
                     : filaments.where((f) {
                         final name = f.name.toLowerCase();
                         final brand = f.brand?.toLowerCase() ?? '';
+                        final colorName = _localizedColorName(
+                          f.color,
+                        )?.toLowerCase() ?? '';
                         return name.contains(_searchQuery) ||
-                            brand.contains(_searchQuery);
+                            brand.contains(_searchQuery) ||
+                            colorName.contains(_searchQuery);
                       }).toList();
                 if (filtered.isEmpty) {
                   return _searchQuery.isNotEmpty
@@ -172,7 +177,15 @@ class _FilamentTile extends ConsumerWidget {
     final grams = filament.gramsPerBobbin.toStringAsFixed(0);
     final brand = filament.brand;
     final base = '${currency.symbol} $price  ·  $grams g';
-    final subtitle = brand == null || brand.isEmpty ? base : '$brand  ·  $base';
+    // Subtitulo: si hay color, anade el nombre legible entre parentesis
+    // (solo cuando el hex matchea la paleta; los custom hex no muestran
+    // nombre para evitar inventar un label).
+    final colorName = _localizedColorName(filament.color);
+    final subtitle = colorName == null
+        ? (brand == null || brand.isEmpty ? base : '$brand  ·  $base')
+        : (brand == null || brand.isEmpty
+            ? '$base  · $colorName'
+            : '$brand  ·  $base  · $colorName');
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -192,15 +205,10 @@ class _FilamentTile extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              // Leading icon / badge
-              if (filament.isDefault)
-                const DefaultBadge()
-              else
-                Icon(
-                  Icons.label_outline,
-                  color: color.onSurfaceVariant,
-                  size: 24,
-                ),
+              // Leading avatar: color si esta definido; DefaultBadge o
+              // icono etiqueta si no hay color (compatibilidad con el
+              // comportamiento anterior).
+              _FilamentLeading(filament: filament),
               const SizedBox(width: AppSpacing.md),
               // Name + details
               Expanded(
@@ -297,3 +305,117 @@ class _FilamentTile extends ConsumerWidget {
 }
 
 enum _TileAction { setDefault, delete }
+
+/// Leading widget de la fila: avatar con color si hay, sino DefaultBadge o
+/// icono etiqueta (compatibilidad con el comportamiento anterior).
+class _FilamentLeading extends StatelessWidget {
+  const _FilamentLeading({required this.filament});
+
+  final Filament filament;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final color = colorFromHex(filament.color);
+    final size = 40.0;
+    if (color != null) {
+      // Avatar circular con color. Si ademas es default, monta la estrella
+      // dorada encima via Stack.
+      final isWhite = color.toARGB32() == 0xFFFFFFFF;
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isWhite ? cs.outline : cs.outlineVariant,
+                  width: 1,
+                ),
+              ),
+              child: isWhite
+                  ? Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withValues(alpha: 0.4),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            if (filament.isDefault)
+              const Positioned(
+                right: -2,
+                bottom: -2,
+                child: DefaultBadge(size: 18),
+              ),
+          ],
+        ),
+      );
+    }
+    // Sin color: comportamiento previo intacto.
+    if (filament.isDefault) return const DefaultBadge();
+    return Icon(
+      Icons.label_outline,
+      color: cs.onSurfaceVariant,
+      size: 24,
+    );
+  }
+}
+
+/// Resuelve la clave i18n del nombre del color al locale activo (es/en/pt/de/fr).
+/// Devuelve `null` para hex invalidos o custom hex sin match exacto de paleta
+/// (para evitar inventar un label).
+String? _localizedColorName(String? hex) {
+  final key = nameKeyFromHex(hex);
+  if (key == null) return null;
+  if (!isPaletteHex(hex)) return null;
+  switch (key) {
+    case 'red':
+      return EsBO.colorNameRed;
+    case 'orange':
+      return EsBO.colorNameOrange;
+    case 'amber':
+      return EsBO.colorNameAmber;
+    case 'yellow':
+      return EsBO.colorNameYellow;
+    case 'lime':
+      return EsBO.colorNameLime;
+    case 'green':
+      return EsBO.colorNameGreen;
+    case 'teal':
+      return EsBO.colorNameTeal;
+    case 'cyan':
+      return EsBO.colorNameCyan;
+    case 'blue':
+      return EsBO.colorNameBlue;
+    case 'indigo':
+      return EsBO.colorNameIndigo;
+    case 'purple':
+      return EsBO.colorNamePurple;
+    case 'magenta':
+      return EsBO.colorNameMagenta;
+    case 'pink':
+      return EsBO.colorNamePink;
+    case 'brown':
+      return EsBO.colorNameBrown;
+    case 'gray':
+      return EsBO.colorNameGray;
+    case 'black':
+      return EsBO.colorNameBlack;
+    case 'white':
+      return EsBO.colorNameWhite;
+    default:
+      return null;
+  }
+}

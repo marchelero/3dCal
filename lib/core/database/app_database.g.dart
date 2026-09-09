@@ -620,6 +620,15 @@ class $FilamentsTable extends Filaments
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<String> color = GeneratedColumn<String>(
+    'color',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -639,6 +648,7 @@ class $FilamentsTable extends Filaments
     pricePerBobbin,
     gramsPerBobbin,
     isDefault,
+    color,
     createdAt,
   ];
   @override
@@ -698,6 +708,12 @@ class $FilamentsTable extends Filaments
         isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
       );
     }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -739,6 +755,10 @@ class $FilamentsTable extends Filaments
         DriftSqlType.bool,
         data['${effectivePrefix}is_default'],
       )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -770,6 +790,12 @@ class Filament extends DataClass implements Insertable<Filament> {
   /// Marca como default. Solo uno a la vez.
   final bool isDefault;
 
+  /// Color del filamento en formato hex `#RRGGBB` (mayusculas), o `null` si
+  /// el usuario no asigno color. Se almacena como TEXT para que el backup
+  /// (drift `toJson()`) lo serialice transparentemente.
+  /// Agregado en v11 (migracion aditiva 10→11).
+  final String? color;
+
   /// Fecha de creacion. UTC.
   final DateTime createdAt;
   const Filament({
@@ -779,6 +805,7 @@ class Filament extends DataClass implements Insertable<Filament> {
     required this.pricePerBobbin,
     required this.gramsPerBobbin,
     required this.isDefault,
+    this.color,
     required this.createdAt,
   });
   @override
@@ -792,6 +819,9 @@ class Filament extends DataClass implements Insertable<Filament> {
     map['price_per_bobbin'] = Variable<double>(pricePerBobbin);
     map['grams_per_bobbin'] = Variable<double>(gramsPerBobbin);
     map['is_default'] = Variable<bool>(isDefault);
+    if (!nullToAbsent || color != null) {
+      map['color'] = Variable<String>(color);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -806,6 +836,9 @@ class Filament extends DataClass implements Insertable<Filament> {
       pricePerBobbin: Value(pricePerBobbin),
       gramsPerBobbin: Value(gramsPerBobbin),
       isDefault: Value(isDefault),
+      color: color == null && nullToAbsent
+          ? const Value.absent()
+          : Value(color),
       createdAt: Value(createdAt),
     );
   }
@@ -822,6 +855,7 @@ class Filament extends DataClass implements Insertable<Filament> {
       pricePerBobbin: serializer.fromJson<double>(json['pricePerBobbin']),
       gramsPerBobbin: serializer.fromJson<double>(json['gramsPerBobbin']),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
+      color: serializer.fromJson<String?>(json['color']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -835,6 +869,7 @@ class Filament extends DataClass implements Insertable<Filament> {
       'pricePerBobbin': serializer.toJson<double>(pricePerBobbin),
       'gramsPerBobbin': serializer.toJson<double>(gramsPerBobbin),
       'isDefault': serializer.toJson<bool>(isDefault),
+      'color': serializer.toJson<String?>(color),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -846,6 +881,7 @@ class Filament extends DataClass implements Insertable<Filament> {
     double? pricePerBobbin,
     double? gramsPerBobbin,
     bool? isDefault,
+    Value<String?> color = const Value.absent(),
     DateTime? createdAt,
   }) => Filament(
     id: id ?? this.id,
@@ -854,6 +890,7 @@ class Filament extends DataClass implements Insertable<Filament> {
     pricePerBobbin: pricePerBobbin ?? this.pricePerBobbin,
     gramsPerBobbin: gramsPerBobbin ?? this.gramsPerBobbin,
     isDefault: isDefault ?? this.isDefault,
+    color: color.present ? color.value : this.color,
     createdAt: createdAt ?? this.createdAt,
   );
   Filament copyWithCompanion(FilamentsCompanion data) {
@@ -868,6 +905,7 @@ class Filament extends DataClass implements Insertable<Filament> {
           ? data.gramsPerBobbin.value
           : this.gramsPerBobbin,
       isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      color: data.color.present ? data.color.value : this.color,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -881,6 +919,7 @@ class Filament extends DataClass implements Insertable<Filament> {
           ..write('pricePerBobbin: $pricePerBobbin, ')
           ..write('gramsPerBobbin: $gramsPerBobbin, ')
           ..write('isDefault: $isDefault, ')
+          ..write('color: $color, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -894,6 +933,7 @@ class Filament extends DataClass implements Insertable<Filament> {
     pricePerBobbin,
     gramsPerBobbin,
     isDefault,
+    color,
     createdAt,
   );
   @override
@@ -906,6 +946,7 @@ class Filament extends DataClass implements Insertable<Filament> {
           other.pricePerBobbin == this.pricePerBobbin &&
           other.gramsPerBobbin == this.gramsPerBobbin &&
           other.isDefault == this.isDefault &&
+          other.color == this.color &&
           other.createdAt == this.createdAt);
 }
 
@@ -916,6 +957,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
   final Value<double> pricePerBobbin;
   final Value<double> gramsPerBobbin;
   final Value<bool> isDefault;
+  final Value<String?> color;
   final Value<DateTime> createdAt;
   const FilamentsCompanion({
     this.id = const Value.absent(),
@@ -924,6 +966,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
     this.pricePerBobbin = const Value.absent(),
     this.gramsPerBobbin = const Value.absent(),
     this.isDefault = const Value.absent(),
+    this.color = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   FilamentsCompanion.insert({
@@ -933,6 +976,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
     required double pricePerBobbin,
     required double gramsPerBobbin,
     this.isDefault = const Value.absent(),
+    this.color = const Value.absent(),
     required DateTime createdAt,
   }) : name = Value(name),
        pricePerBobbin = Value(pricePerBobbin),
@@ -945,6 +989,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
     Expression<double>? pricePerBobbin,
     Expression<double>? gramsPerBobbin,
     Expression<bool>? isDefault,
+    Expression<String>? color,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -954,6 +999,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
       if (pricePerBobbin != null) 'price_per_bobbin': pricePerBobbin,
       if (gramsPerBobbin != null) 'grams_per_bobbin': gramsPerBobbin,
       if (isDefault != null) 'is_default': isDefault,
+      if (color != null) 'color': color,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -965,6 +1011,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
     Value<double>? pricePerBobbin,
     Value<double>? gramsPerBobbin,
     Value<bool>? isDefault,
+    Value<String?>? color,
     Value<DateTime>? createdAt,
   }) {
     return FilamentsCompanion(
@@ -974,6 +1021,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
       pricePerBobbin: pricePerBobbin ?? this.pricePerBobbin,
       gramsPerBobbin: gramsPerBobbin ?? this.gramsPerBobbin,
       isDefault: isDefault ?? this.isDefault,
+      color: color ?? this.color,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -999,6 +1047,9 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
     if (isDefault.present) {
       map['is_default'] = Variable<bool>(isDefault.value);
     }
+    if (color.present) {
+      map['color'] = Variable<String>(color.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1014,6 +1065,7 @@ class FilamentsCompanion extends UpdateCompanion<Filament> {
           ..write('pricePerBobbin: $pricePerBobbin, ')
           ..write('gramsPerBobbin: $gramsPerBobbin, ')
           ..write('isDefault: $isDefault, ')
+          ..write('color: $color, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -4749,6 +4801,7 @@ typedef $$FilamentsTableCreateCompanionBuilder =
       required double pricePerBobbin,
       required double gramsPerBobbin,
       Value<bool> isDefault,
+      Value<String?> color,
       required DateTime createdAt,
     });
 typedef $$FilamentsTableUpdateCompanionBuilder =
@@ -4759,6 +4812,7 @@ typedef $$FilamentsTableUpdateCompanionBuilder =
       Value<double> pricePerBobbin,
       Value<double> gramsPerBobbin,
       Value<bool> isDefault,
+      Value<String?> color,
       Value<DateTime> createdAt,
     });
 
@@ -4798,6 +4852,11 @@ class $$FilamentsTableFilterComposer
 
   ColumnFilters<bool> get isDefault => $composableBuilder(
     column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get color => $composableBuilder(
+    column: $table.color,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4846,6 +4905,11 @@ class $$FilamentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4882,6 +4946,9 @@ class $$FilamentsTableAnnotationComposer
 
   GeneratedColumn<bool> get isDefault =>
       $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<String> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -4921,6 +4988,7 @@ class $$FilamentsTableTableManager
                 Value<double> pricePerBobbin = const Value.absent(),
                 Value<double> gramsPerBobbin = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
+                Value<String?> color = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => FilamentsCompanion(
                 id: id,
@@ -4929,6 +4997,7 @@ class $$FilamentsTableTableManager
                 pricePerBobbin: pricePerBobbin,
                 gramsPerBobbin: gramsPerBobbin,
                 isDefault: isDefault,
+                color: color,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -4939,6 +5008,7 @@ class $$FilamentsTableTableManager
                 required double pricePerBobbin,
                 required double gramsPerBobbin,
                 Value<bool> isDefault = const Value.absent(),
+                Value<String?> color = const Value.absent(),
                 required DateTime createdAt,
               }) => FilamentsCompanion.insert(
                 id: id,
@@ -4947,6 +5017,7 @@ class $$FilamentsTableTableManager
                 pricePerBobbin: pricePerBobbin,
                 gramsPerBobbin: gramsPerBobbin,
                 isDefault: isDefault,
+                color: color,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

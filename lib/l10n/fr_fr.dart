@@ -12,6 +12,8 @@ class FrImpl implements AppStrings {
   @override
   String get commonCancel => 'Annuler';
   @override
+  String get commonApply => 'Appliquer';
+  @override
   String get commonDelete => 'Supprimer';
   @override
   String get commonRetry => 'Réessayer';
@@ -19,6 +21,10 @@ class FrImpl implements AppStrings {
   String get commonEdit => 'Modifier';
   @override
   String get commonNew => 'Nouveau';
+  @override
+  String get commonCreateNew => 'Créer';
+  @override
+  String get commonAddToCatalog => 'Ajouter au catalogue';
   @override
   String get commonRequired => 'Obligatoire';
   @override
@@ -527,6 +533,8 @@ class FrImpl implements AppStrings {
   @override
   String get calcEmptyHintSuffix => 'pour voir le devis';
   @override
+  String get calcEmptyHintConnector => 'et';
+  @override
   String get calcFieldWeightShort => 'poids de la pièce';
   @override
   String get calcFieldPriceShort => 'prix du filament';
@@ -621,6 +629,23 @@ class FrImpl implements AppStrings {
   @override
   String get filamentMax100 => '100 caractères maximum';
   @override
+  String get filamentColorLabel => 'Couleur';
+  @override
+  String get filamentColorHelper =>
+      'Facultatif. Identifie visuellement le filament.';
+  @override
+  String get filamentColorCustom => 'Personnalisé...';
+  @override
+  String get filamentColorClear => 'Supprimer la couleur';
+  @override
+  String get filamentColorPickerTitle => 'Choisir une couleur';
+  @override
+  String get filamentColorHexLabel => 'Hex';
+  @override
+  String get filamentColorHexHelper => 'Format #RRGGBB';
+  @override
+  String get filamentColorInvalid => 'Couleur invalide, format #RRGGBB';
+  @override
   String get printerTitle => 'Imprimantes';
   @override
   String get printerNew => 'Nouvelle imprimante';
@@ -708,6 +733,29 @@ class FrImpl implements AppStrings {
       'L’exportation au format CSV est une fonction de la version Pro';
   @override
   String get csvGoProAction => 'Débloquer PRO';
+
+  @override
+  List<String> get csvExportHeader => const [
+        'Date',
+        'Pièce',
+        'Client',
+        'Quantité',
+        'Total',
+        'Vendu',
+        'Matériaux',
+        'Heures',
+        'Remise',
+        'CoûtMat',
+        'Électricité',
+        'Bénéfice',
+      ];
+  @override
+  String get csvValueYes => 'Oui';
+  @override
+  String get csvValueNo => 'Non';
+  @override
+  String get csvFileName => 'devis_3dcalc.csv';
+
   @override
   String get localeLabel => 'Langue';
   @override
@@ -838,6 +886,29 @@ class FrImpl implements AppStrings {
   @override
   String get historyCapReachedBody =>
       'Vous avez atteint la limite de l’historique gratuit. Passez à la version Pro pour un historique illimité.';
+
+  // === Free-tier catalog gates ===
+  @override
+  String freePrintersLimitHint(int current, int limit) =>
+      '$current/$limit imprimantes — débloquez Pro pour plus';
+  @override
+  String freeFilamentsLimitHint(int current, int limit) =>
+      '$current/$limit filaments — débloquez Pro pour plus';
+  @override
+  String filamentLimitReachedTooltip(int limit) =>
+      'Limite Free ($limit filaments)';
+  @override
+  String filamentLimitReachedBody(int limit) =>
+      'Limite Free de $limit filaments atteinte. '
+      'Débloquez Pro pour en ajouter plus.';
+  @override
+  String printerLimitReachedTooltip(int limit) =>
+      'Limite Free ($limit imprimantes)';
+  @override
+  String printerLimitReachedBody(int limit) =>
+      'Limite Free de $limit imprimantes atteinte. '
+      'Débloquez Pro pour en ajouter plus.';
+
   @override
   String get proBadgeLabel => 'PRO';
   @override
@@ -1180,4 +1251,43 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
       'Aucune imprimante. Appuyez sur + pour enregistrer la première.';
   @override
   String printerDeleteConfirm(String name) => 'Supprimer « $name » ?';
+
+  @override
+  String get homeHeroSemanticsSuffix => 'Devis 3D';
+
+  // === Couleur du filament (PRD 2026-09-08) ===
+  @override
+  String get colorNameRed => 'Rouge';
+  @override
+  String get colorNameOrange => 'Orange';
+  @override
+  String get colorNameAmber => 'Ambre';
+  @override
+  String get colorNameYellow => 'Jaune';
+  @override
+  String get colorNameLime => 'Citron vert';
+  @override
+  String get colorNameGreen => 'Vert';
+  @override
+  String get colorNameTeal => 'Sarcelle';
+  @override
+  String get colorNameCyan => 'Cyan';
+  @override
+  String get colorNameBlue => 'Bleu';
+  @override
+  String get colorNameIndigo => 'Indigo';
+  @override
+  String get colorNamePurple => 'Violet';
+  @override
+  String get colorNameMagenta => 'Magenta';
+  @override
+  String get colorNamePink => 'Rose';
+  @override
+  String get colorNameBrown => 'Marron';
+  @override
+  String get colorNameGray => 'Gris';
+  @override
+  String get colorNameBlack => 'Noir';
+  @override
+  String get colorNameWhite => 'Blanc';
 }

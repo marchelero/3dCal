@@ -18,6 +18,15 @@ Future<ProviderContainer> _pumpStepper(
   WidgetTester tester, {
   GoRouter? router,
 }) async {
+  // Viewport mas alto para acomodar el form de filamento que ahora incluye
+  // el campo color (RF1-2 del PRD 2026-09-08); el default 800x600 deja el
+  // boton "Guardar" fuera de pantalla en algunos tests.
+  tester.view.physicalSize = const Size(800, 2000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());

@@ -29,6 +29,12 @@ class Filaments extends Table {
   /// Marca como default. Solo uno a la vez.
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 
+  /// Color del filamento en formato hex `#RRGGBB` (mayusculas), o `null` si
+  /// el usuario no asigno color. Se almacena como TEXT para que el backup
+  /// (drift `toJson()`) lo serialice transparentemente.
+  /// Agregado en v11 (migracion aditiva 10→11).
+  TextColumn get color => text().nullable()();
+
   /// Fecha de creacion. UTC.
   DateTimeColumn get createdAt => dateTime()();
 }

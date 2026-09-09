@@ -738,12 +738,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     }
 
     final parts = missingKeys.map(resolveFieldKey).toList();
+    final connector = EsBO.calcEmptyHintConnector;
     final joined = parts.length == 1
         ? parts.first
         : parts.length == 2
-        ? '${parts[0]} y ${parts[1]}'
+        ? '${parts[0]} $connector ${parts[1]}'
         : '${parts.sublist(0, parts.length - 1).join(', ')} '
-              'y ${parts.last}';
+              '$connector ${parts.last}';
     return '${EsBO.calcEmptyHintPrefix} $joined '
         '${EsBO.calcEmptyHintSuffix}.';
   }

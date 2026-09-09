@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -122,6 +122,13 @@ class AppDatabase extends _$AppDatabase {
           calculations,
           calculations.amortizationCostSnapshot,
         );
+      }
+      if (from < 11) {
+        // v10→v11: color del filamento (RF1-1 del PRD 2026-09-08). Aditiva:
+        // filamentos viejos quedan NULL (sin color, comportamiento actual).
+        // El backup/restore de drift cubre la columna automaticamente via
+        // `toJson()` de la data class.
+        await m.addColumn(filaments, filaments.color);
       }
     },
   );

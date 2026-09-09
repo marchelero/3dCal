@@ -18,6 +18,7 @@ import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/brand_selector_field.dart';
+import '../../../../shared/widgets/filament_color_field.dart';
 import '../../../../shared/widgets/k3d_brands.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
@@ -56,6 +57,7 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
   final _filamentBrandCtrl = TextEditingController();
   final _filamentPriceCtrl = TextEditingController();
   final _filamentGramsCtrl = TextEditingController(text: '1000');
+  String? _filamentColor;
   bool _filamentSaving = false;
   bool _filamentSaved = false;
   String? _filamentSavedName;
@@ -186,6 +188,7 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
             pricePerBobbin: price,
             gramsPerBobbin: grams,
             asDefault: true,
+            color: _filamentColor,
           );
       if (!mounted) return;
       setState(() {
@@ -486,6 +489,12 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
                         ),
                         textInputAction: TextInputAction.next,
                         validator: _requiredText,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      FilamentColorField(
+                        value: _filamentColor,
+                        onChanged: (v) =>
+                            setState(() => _filamentColor = v),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextFormField(

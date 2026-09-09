@@ -38,6 +38,7 @@ class FilamentRepository {
     required Decimal pricePerBobbin,
     required Decimal gramsPerBobbin,
     bool asDefault = false,
+    String? color,
   }) {
     // BUG-002 fix: envuelve _clearDefault + insert en transaccion para evitar
     // race condition con inserts concurrentes (multi-tab web, autosave) que
@@ -55,6 +56,7 @@ class FilamentRepository {
               pricePerBobbin: pricePerBobbin.toDouble(),
               gramsPerBobbin: gramsPerBobbin.toDouble(),
               isDefault: Value(asDefault),
+              color: Value(color),
               createdAt: DateTime.now().toUtc(),
             ),
           );
@@ -68,6 +70,8 @@ class FilamentRepository {
     required Decimal pricePerBobbin,
     required Decimal gramsPerBobbin,
     bool? asDefault,
+    String? color,
+    bool updateColor = false,
   }) {
     // BUG-002 fix: misma proteccion transaccional que create().
     return _db.transaction(() async {
@@ -85,6 +89,10 @@ class FilamentRepository {
           isDefault: asDefault == null
               ? const Value.absent()
               : Value(asDefault),
+          // `color` es opt-in: si `updateColor` es false, el valor persistido
+          // se conserva (importante para que `setAsDefault` no borre el color
+          // accidentalmente al pasar solo los demas campos).
+          color: updateColor ? Value(color) : const Value.absent(),
         ),
       );
       return updated > 0;

@@ -30,6 +30,8 @@ class EsBO {
   static String get commonRetry => _impl.commonRetry;
   static String get commonEdit => _impl.commonEdit;
   static String get commonNew => _impl.commonNew;
+  static String get commonCreateNew => _impl.commonCreateNew;
+  static String get commonAddToCatalog => _impl.commonAddToCatalog;
   static String get commonRequired => _impl.commonRequired;
   static String get commonInvalidNumber => _impl.commonInvalidNumber;
   static String get commonLoading => _impl.commonLoading;
@@ -319,6 +321,7 @@ class EsBO {
   // === Dynamic empty hint ===
   static String get calcEmptyHintPrefix => _impl.calcEmptyHintPrefix;
   static String get calcEmptyHintSuffix => _impl.calcEmptyHintSuffix;
+  static String get calcEmptyHintConnector => _impl.calcEmptyHintConnector;
   static String get calcFieldWeightShort => _impl.calcFieldWeightShort;
   static String get calcFieldPriceShort => _impl.calcFieldPriceShort;
   static String get calcFieldTimeShort => _impl.calcFieldTimeShort;
@@ -373,6 +376,14 @@ class EsBO {
   static String get filamentMustBePositive => _impl.filamentMustBePositive;
   static String get filamentMustBeInteger => _impl.filamentMustBeInteger;
   static String get filamentMax100 => _impl.filamentMax100;
+  static String get filamentColorLabel => _impl.filamentColorLabel;
+  static String get filamentColorHelper => _impl.filamentColorHelper;
+  static String get filamentColorCustom => _impl.filamentColorCustom;
+  static String get filamentColorClear => _impl.filamentColorClear;
+  static String get filamentColorPickerTitle => _impl.filamentColorPickerTitle;
+  static String get filamentColorHexLabel => _impl.filamentColorHexLabel;
+  static String get filamentColorHexHelper => _impl.filamentColorHexHelper;
+  static String get filamentColorInvalid => _impl.filamentColorInvalid;
 
   static String get printerTitle => _impl.printerTitle;
   static String get printerNew => _impl.printerNew;
@@ -426,6 +437,10 @@ class EsBO {
   // === CSV export gate (T16) ===
   static String get csvExportLockedBody => _impl.csvExportLockedBody;
   static String get csvGoProAction => _impl.csvGoProAction;
+  static List<String> get csvExportHeader => _impl.csvExportHeader;
+  static String get csvValueYes => _impl.csvValueYes;
+  static String get csvValueNo => _impl.csvValueNo;
+  static String get csvFileName => _impl.csvFileName;
 
   // === Locale ===
   static String get localeLabel => _impl.localeLabel;
@@ -498,6 +513,18 @@ class EsBO {
 
   // === History cap gate (T15) ===
   static String get historyCapReachedBody => _impl.historyCapReachedBody;
+  static String freePrintersLimitHint(int current, int limit) =>
+      _impl.freePrintersLimitHint(current, limit);
+  static String freeFilamentsLimitHint(int current, int limit) =>
+      _impl.freeFilamentsLimitHint(current, limit);
+  static String filamentLimitReachedTooltip(int limit) =>
+      _impl.filamentLimitReachedTooltip(limit);
+  static String filamentLimitReachedBody(int limit) =>
+      _impl.filamentLimitReachedBody(limit);
+  static String printerLimitReachedTooltip(int limit) =>
+      _impl.printerLimitReachedTooltip(limit);
+  static String printerLimitReachedBody(int limit) =>
+      _impl.printerLimitReachedBody(limit);
 
   // === Pro badge / locked visuals (UX) ===
   static String get proBadgeLabel => _impl.proBadgeLabel;
@@ -553,6 +580,7 @@ class EsBO {
       _impl.shareErrorSaveWithMessage(msg);
 
   static String get homeHeroTagline => _impl.homeHeroTagline;
+  static String get homeHeroSemanticsSuffix => _impl.homeHeroSemanticsSuffix;
 
   static String get calcFormIncompleteWarning =>
       _impl.calcFormIncompleteWarning;
@@ -666,6 +694,27 @@ class EsBO {
   static String filamentDeleteConfirm(String name) =>
       _impl.filamentDeleteConfirm(name);
 
+  // Nombres de colores (paleta de filamentos).
+  static String get colorNameRed => _impl.colorNameRed;
+  static String get colorNameOrange => _impl.colorNameOrange;
+  static String get colorNameAmber => _impl.colorNameAmber;
+  static String get colorNameYellow => _impl.colorNameYellow;
+  static String get colorNameLime => _impl.colorNameLime;
+  static String get colorNameGreen => _impl.colorNameGreen;
+  static String get colorNameTeal => _impl.colorNameTeal;
+  static String get colorNameCyan => _impl.colorNameCyan;
+  static String get colorNameBlue => _impl.colorNameBlue;
+  static String get colorNameIndigo => _impl.colorNameIndigo;
+  static String get colorNamePurple => _impl.colorNamePurple;
+  static String get colorNameMagenta => _impl.colorNameMagenta;
+  static String get colorNamePink => _impl.colorNamePink;
+  static String get colorNameBrown => _impl.colorNameBrown;
+  static String get colorNameGray => _impl.colorNameGray;
+  static String get colorNameBlack => _impl.colorNameBlack;
+  static String get colorNameWhite => _impl.colorNameWhite;
+
+  static String get commonApply => _impl.commonApply;
+
   static String get printerErrorLoad => _impl.printerErrorLoad;
   static String printerNoResults(String query) => _impl.printerNoResults(query);
   static String get printerEmptyList => _impl.printerEmptyList;
@@ -686,6 +735,8 @@ class EsImpl implements AppStrings {
   @override
   String get commonCancel => 'Cancelar';
   @override
+  String get commonApply => 'Aplicar';
+  @override
   String get commonDelete => 'Eliminar';
   @override
   String get commonRetry => 'Reintentar';
@@ -693,6 +744,10 @@ class EsImpl implements AppStrings {
   String get commonEdit => 'Editar';
   @override
   String get commonNew => 'Nuevo';
+  @override
+  String get commonCreateNew => 'Crear nuevo';
+  @override
+  String get commonAddToCatalog => 'Agregar al catálogo';
   @override
   String get commonRequired => 'Requerido';
   @override
@@ -1219,6 +1274,8 @@ class EsImpl implements AppStrings {
   @override
   String get calcEmptyHintSuffix => 'para ver la cotización';
   @override
+  String get calcEmptyHintConnector => 'y';
+  @override
   String get calcFieldWeightShort => 'peso de la pieza';
   @override
   String get calcFieldPriceShort => 'precio del filamento';
@@ -1315,6 +1372,23 @@ class EsImpl implements AppStrings {
   String get filamentMustBeInteger => 'Debe ser entero';
   @override
   String get filamentMax100 => 'Maximo 100 caracteres';
+  @override
+  String get filamentColorLabel => 'Color';
+  @override
+  String get filamentColorHelper =>
+      'Opcional. Identifica visualmente el filamento.';
+  @override
+  String get filamentColorCustom => 'Personalizado...';
+  @override
+  String get filamentColorClear => 'Quitar color';
+  @override
+  String get filamentColorPickerTitle => 'Elegir color';
+  @override
+  String get filamentColorHexLabel => 'Hex';
+  @override
+  String get filamentColorHexHelper => 'Formato #RRGGBB';
+  @override
+  String get filamentColorInvalid => 'Color inválido, formato #RRGGBB';
 
   @override
   String get printerTitle => 'Impresoras';
@@ -1407,6 +1481,28 @@ class EsImpl implements AppStrings {
   String get csvExportLockedBody => 'Exportar CSV es una función Pro';
   @override
   String get csvGoProAction => 'Hazte Pro';
+
+  @override
+  List<String> get csvExportHeader => const [
+        'Fecha',
+        'Pieza',
+        'Cliente',
+        'Cantidad',
+        'Total',
+        'Vendido',
+        'Materiales',
+        'Horas',
+        'Descuento',
+        'CostoMat',
+        'Elect',
+        'Ganancia',
+      ];
+  @override
+  String get csvValueYes => 'Sí';
+  @override
+  String get csvValueNo => 'No';
+  @override
+  String get csvFileName => 'cotizaciones_3dcalc.csv';
 
   @override
   String get localeLabel => 'Idioma';
@@ -1544,6 +1640,28 @@ class EsImpl implements AppStrings {
   @override
   String get historyCapReachedBody =>
       'Llegaste al limite del historial gratuito. Mejora a Pro para historial ilimitado.';
+
+  // === Free-tier catalog gates ===
+  @override
+  String freePrintersLimitHint(int current, int limit) =>
+      '$current/$limit impresoras — desbloquea Pro para más';
+  @override
+  String freeFilamentsLimitHint(int current, int limit) =>
+      '$current/$limit filamentos — desbloquea Pro para más';
+  @override
+  String filamentLimitReachedTooltip(int limit) =>
+      'Límite Free ($limit filamentos)';
+  @override
+  String filamentLimitReachedBody(int limit) =>
+      'Límite de $limit filamentos en modo Free. '
+      'Desbloquea Pro para agregar más.';
+  @override
+  String printerLimitReachedTooltip(int limit) =>
+      'Límite Free ($limit impresoras)';
+  @override
+  String printerLimitReachedBody(int limit) =>
+      'Límite de $limit impresoras en modo Free. '
+      'Desbloquea Pro para agregar más.';
 
   // === Pro badge / locked visuals (UX) ===
   @override
@@ -1697,6 +1815,9 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String get homeHeroTagline =>
       'Cotizaciones 3D · Rápido · Preciso · Siempre contigo';
+
+  @override
+  String get homeHeroSemanticsSuffix => 'Cotizaciones 3D';
 
   @override
   String get calcFormIncompleteWarning =>
@@ -1911,4 +2032,40 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
       'Sin impresoras. Toca + para registrar la primera.';
   @override
   String printerDeleteConfirm(String name) => '¿Eliminar "$name"?';
+
+  // === Color de filamento (PRD 2026-09-08) ===
+  @override
+  String get colorNameRed => 'Rojo';
+  @override
+  String get colorNameOrange => 'Naranja';
+  @override
+  String get colorNameAmber => 'Ámbar';
+  @override
+  String get colorNameYellow => 'Amarillo';
+  @override
+  String get colorNameLime => 'Lima';
+  @override
+  String get colorNameGreen => 'Verde';
+  @override
+  String get colorNameTeal => 'Verde azulado';
+  @override
+  String get colorNameCyan => 'Cian';
+  @override
+  String get colorNameBlue => 'Azul';
+  @override
+  String get colorNameIndigo => 'Índigo';
+  @override
+  String get colorNamePurple => 'Púrpura';
+  @override
+  String get colorNameMagenta => 'Magenta';
+  @override
+  String get colorNamePink => 'Rosa';
+  @override
+  String get colorNameBrown => 'Marrón';
+  @override
+  String get colorNameGray => 'Gris';
+  @override
+  String get colorNameBlack => 'Negro';
+  @override
+  String get colorNameWhite => 'Blanco';
 }

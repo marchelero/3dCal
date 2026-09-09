@@ -15,6 +15,12 @@ class PtBrImpl implements AppStrings {
   @override
   String get commonCancel => 'Cancelar';
   @override
+  String get commonApply => 'Aplicar';
+  @override
+  String get commonCreateNew => 'Criar novo';
+  @override
+  String get commonAddToCatalog => 'Adicionar ao catálogo';
+  @override
   String get commonDelete => 'Excluir';
   @override
   String get commonRetry => 'Tentar novamente';
@@ -555,6 +561,8 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcEmptyHintSuffix => 'para ver o orçamento';
   @override
+  String get calcEmptyHintConnector => 'e';
+  @override
   String get calcFieldWeightShort => 'peso da peça';
   @override
   String get calcFieldPriceShort => 'preço do filamento';
@@ -651,6 +659,23 @@ class PtBrImpl implements AppStrings {
   String get filamentMustBeInteger => 'Deve ser um número inteiro';
   @override
   String get filamentMax100 => 'Máximo de 100 caracteres';
+  @override
+  String get filamentColorLabel => 'Cor';
+  @override
+  String get filamentColorHelper =>
+      'Opcional. Identifica visualmente o filamento.';
+  @override
+  String get filamentColorCustom => 'Personalizado...';
+  @override
+  String get filamentColorClear => 'Remover cor';
+  @override
+  String get filamentColorPickerTitle => 'Escolher cor';
+  @override
+  String get filamentColorHexLabel => 'Hex';
+  @override
+  String get filamentColorHexHelper => 'Formato #RRGGBB';
+  @override
+  String get filamentColorInvalid => 'Cor inválida, formato #RRGGBB';
 
   @override
   String get printerTitle => 'Impressoras';
@@ -1245,4 +1270,85 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
       'Nenhuma impressora. Toque em + para cadastrar a primeira.';
   @override
   String printerDeleteConfirm(String name) => 'Excluir "$name"?';
+
+  // === Free-tier catalog gates (F7-FIX) ===
+  @override
+  List<String> get csvExportHeader => const [
+        'Data',
+        'Peça',
+        'Cliente',
+        'Quantidade',
+        'Total',
+        'Vendido',
+        'Materiais',
+        'Horas',
+        'Desconto',
+        'CustoMat',
+        'Energia',
+        'Lucro',
+      ];
+  @override
+  String get csvValueYes => 'Sim';
+  @override
+  String get csvValueNo => 'Não';
+  @override
+  String get csvFileName => 'orcamentos_3dcalc.csv';
+  @override
+  String freeFilamentsLimitHint(int current, int limit) =>
+      '$current/$limit filamentos — desbloqueie Pro para mais';
+  @override
+  String filamentLimitReachedTooltip(int limit) =>
+      'Limite Free ($limit filamentos)';
+  @override
+  String filamentLimitReachedBody(int limit) =>
+      'Limite Free de $limit filamentos atingido. '
+      'Desbloqueie Pro para adicionar mais.';
+  @override
+  String freePrintersLimitHint(int current, int limit) =>
+      '$current/$limit impressoras — desbloqueie Pro para mais';
+  @override
+  String printerLimitReachedTooltip(int limit) =>
+      'Limite Free ($limit impressoras)';
+  @override
+  String printerLimitReachedBody(int limit) =>
+      'Limite Free de $limit impressoras atingido. '
+      'Desbloqueie Pro para adicionar mais.';
+  @override
+  String get homeHeroSemanticsSuffix => 'Orçamentos 3D';
+
+  // === Cor do filamento (PRD 2026-09-08) ===
+  @override
+  String get colorNameRed => 'Vermelho';
+  @override
+  String get colorNameOrange => 'Laranja';
+  @override
+  String get colorNameAmber => 'Âmbar';
+  @override
+  String get colorNameYellow => 'Amarelo';
+  @override
+  String get colorNameLime => 'Lima';
+  @override
+  String get colorNameGreen => 'Verde';
+  @override
+  String get colorNameTeal => 'Verde-azulado';
+  @override
+  String get colorNameCyan => 'Ciano';
+  @override
+  String get colorNameBlue => 'Azul';
+  @override
+  String get colorNameIndigo => 'Índigo';
+  @override
+  String get colorNamePurple => 'Roxo';
+  @override
+  String get colorNameMagenta => 'Magenta';
+  @override
+  String get colorNamePink => 'Rosa';
+  @override
+  String get colorNameBrown => 'Marrom';
+  @override
+  String get colorNameGray => 'Cinza';
+  @override
+  String get colorNameBlack => 'Preto';
+  @override
+  String get colorNameWhite => 'Branco';
 }

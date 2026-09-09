@@ -106,6 +106,36 @@ void main() {
       final list = await container.read(filamentsNotifierProvider.future);
       expect(list.first.brand, 'Prusament');
     });
+
+    // RF1-3 / AC-101 del PRD 2026-09-08.
+    test('create con color de paleta se persiste en hex normalizado', () async {
+      final n = container.read(filamentsNotifierProvider.notifier);
+      await container.read(filamentsNotifierProvider.future);
+
+      await n.create(
+        name: 'PLA Naranja',
+        pricePerBobbin: Decimal.parse('150'),
+        gramsPerBobbin: Decimal.parse('1000'),
+        color: '#FB8C00',
+      );
+
+      final list = await container.read(filamentsNotifierProvider.future);
+      expect(list.first.color, '#FB8C00');
+    });
+
+    test('create sin color deja color=null (compatibilidad)', () async {
+      final n = container.read(filamentsNotifierProvider.notifier);
+      await container.read(filamentsNotifierProvider.future);
+
+      await n.create(
+        name: 'PLA Sin Color',
+        pricePerBobbin: Decimal.parse('150'),
+        gramsPerBobbin: Decimal.parse('1000'),
+      );
+
+      final list = await container.read(filamentsNotifierProvider.future);
+      expect(list.first.color, isNull);
+    });
   });
 
   group('FilamentsNotifier.update', () {
@@ -132,6 +162,86 @@ void main() {
       expect(updated.first.name, 'New');
       expect(updated.first.pricePerBobbin, 200.0);
       expect(updated.first.gramsPerBobbin, 800.0);
+    });
+
+    // RF1-3 / AC-104 del PRD 2026-09-08.
+    test('update con updateColor=true cambia color', () async {
+      final n = container.read(filamentsNotifierProvider.notifier);
+      await container.read(filamentsNotifierProvider.future);
+      await n.create(
+        name: 'PLA',
+        pricePerBobbin: Decimal.parse('100'),
+        gramsPerBobbin: Decimal.parse('1000'),
+        color: '#E53935',
+      );
+      final id = (await container.read(
+        filamentsNotifierProvider.future,
+      )).first.id;
+
+      await n.updateFilament(
+        id: id,
+        name: 'PLA',
+        pricePerBobbin: Decimal.parse('100'),
+        gramsPerBobbin: Decimal.parse('1000'),
+        color: '#1E88E5',
+        updateColor: true,
+      );
+
+      final updated = await container.read(filamentsNotifierProvider.future);
+      expect(updated.first.color, '#1E88E5');
+    });
+
+    // Color es opt-in en update: sin updateColor, el color persistido se
+    // conserva (necesario para que setAsDefault no borre el color).
+    test('update sin updateColor preserva el color existente', () async {
+      final n = container.read(filamentsNotifierProvider.notifier);
+      await container.read(filamentsNotifierProvider.future);
+      await n.create(
+        name: 'PLA',
+        pricePerBobbin: Decimal.parse('100'),
+        gramsPerBobbin: Decimal.parse('1000'),
+        color: '#E53935',
+      );
+      final id = (await container.read(
+        filamentsNotifierProvider.future,
+      )).first.id;
+
+      await n.updateFilament(
+        id: id,
+        name: 'PLA Renombrado',
+        pricePerBobbin: Decimal.parse('100'),
+        gramsPerBobbin: Decimal.parse('1000'),
+      );
+
+      final updated = await container.read(filamentsNotifierProvider.future);
+      expect(updated.first.color, '#E53935');
+      expect(updated.first.name, 'PLA Renombrado');
+    });
+
+    test('update con color=null + updateColor=true quita el color', () async {
+      final n = container.read(filamentsNotifierProvider.notifier);
+      await container.read(filamentsNotifierProvider.future);
+      await n.create(
+        name: 'PLA',
+        pricePerBobbin: Decimal.parse('100'),
+        gramsPerBobbin: Decimal.parse('1000'),
+        color: '#E53935',
+      );
+      final id = (await container.read(
+        filamentsNotifierProvider.future,
+      )).first.id;
+
+      await n.updateFilament(
+        id: id,
+        name: 'PLA',
+        pricePerBobbin: Decimal.parse('100'),
+        gramsPerBobbin: Decimal.parse('1000'),
+        color: null,
+        updateColor: true,
+      );
+
+      final updated = await container.read(filamentsNotifierProvider.future);
+      expect(updated.first.color, isNull);
     });
   });
 

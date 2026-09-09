@@ -215,7 +215,7 @@ void main() {
     });
 
     test(
-      'onUpgrade(4, 10) crea tabla entitlements y bumpea user_version a 10',
+      'onUpgrade(4, 11) crea tabla entitlements y bumpea user_version a 11',
       () async {
         // Forzar la apertura lazy de Drift ejecutando una query.
         final tables = await db
@@ -233,12 +233,12 @@ void main() {
               '`if (from <= 4)`.',
         );
 
-        // user_version debe ser 10 post-migration (v4 migra directo a v10:
-        // onUpgrade encadena los pasos v4→v5 ... v8→v9 y v9→v10).
+        // user_version debe ser 11 post-migration (v4 migra directo a v11:
+        // onUpgrade encadena los pasos v4→v5 ... v8→v9, v9→v10 y v10→v11).
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          10,
+          11,
           reason:
               'AppDatabase debe setear user_version=schemaVersion tras '
               'onUpgrade exitoso.',

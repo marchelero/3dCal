@@ -77,14 +77,12 @@ Future<bool> showPrinterSelectorDialog(
     },
     footer: atLimit
         ? _FreeLimitHint(
-            current: printers.length,
-            limit: kFreePrinterLimit,
-            label: 'impresoras',
+            text: EsBO.freePrintersLimitHint(printers.length, kFreePrinterLimit),
           )
         : ListTile(
             leading: const Icon(Icons.add_rounded),
-            title: const Text('Crear nuevo'),
-            subtitle: const Text('Agregar al catálogo'),
+            title: Text(EsBO.commonCreateNew),
+            subtitle: Text(EsBO.commonAddToCatalog),
             onTap: () {
               Navigator.of(context).pop(); // cerrar dialog
               context.push('/settings/printers/new');
@@ -112,15 +110,9 @@ Future<void> _persistActivePrinterId(WidgetRef ref, int id) async {
 
 /// Hint sutil cuando el usuario Free alcanza el límite del catálogo.
 class _FreeLimitHint extends StatelessWidget {
-  const _FreeLimitHint({
-    required this.current,
-    required this.limit,
-    required this.label,
-  });
+  const _FreeLimitHint({required this.text});
 
-  final int current;
-  final int limit;
-  final String label;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +140,7 @@ class _FreeLimitHint extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              '$current/$limit $label — desbloquea Pro para más',
+              text,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: cs.onTertiaryContainer,
               ),

@@ -219,17 +219,17 @@ void main() {
       addTearDown(() async => db.close());
     });
 
-    test('onUpgrade(8, 10) agrega piece_image_blob BLOB nullable y bumpea '
-        'user_version a 10', () async {
+    test('onUpgrade(8, 11) agrega piece_image_blob BLOB nullable y bumpea '
+        'user_version a 11', () async {
       await db.customSelect('SELECT 1').get();
 
       final versionRows = await db.customSelect('PRAGMA user_version').get();
       expect(
         versionRows.first.read<int>('user_version'),
-        10,
+        11,
         reason:
-            'AppDatabase debe setear user_version=10 tras onUpgrade '
-            '(v8→v9 + v9→v10).',
+            'AppDatabase debe setear user_version=11 tras onUpgrade '
+            '(v8→v9 + v9→v10 + v10→v11).',
       );
 
       final rows = await db

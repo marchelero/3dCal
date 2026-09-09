@@ -17,6 +17,13 @@ abstract class AppStrings {
   String get commonRetry;
   String get commonEdit;
   String get commonNew;
+
+  /// "Crear nuevo" / "Create new" — CTA al pie de selectores para crear el item.
+  String get commonCreateNew;
+
+  /// "Agregar al catalogo" / "Add to catalog" — subtitulo del CTA de crear.
+  String get commonAddToCatalog;
+
   String get commonRequired;
   String get commonInvalidNumber;
   String get commonLoading;
@@ -348,6 +355,11 @@ abstract class AppStrings {
   // === Dynamic empty hint ===
   String get calcEmptyHintPrefix;
   String get calcEmptyHintSuffix;
+
+  /// Conector "y" / "and" — une nombres de campos faltantes en el hint
+  /// dinamico de la barra inferior (ultimo elemento de la lista).
+  /// Tambien se usa como conector en listas de 2 elementos.
+  String get calcEmptyHintConnector;
   String get calcFieldWeightShort;
   String get calcFieldPriceShort;
   String get calcFieldTimeShort;
@@ -482,6 +494,19 @@ abstract class AppStrings {
   /// visible, no necesariamente un upsell — pero ayuda a la conversion).
   String get csvGoProAction;
 
+  /// Header del CSV exportado (12 columnas, coma-separadas).
+  /// El orden debe coincidir con el writer de CSV en calculations_list_page.
+  List<String> get csvExportHeader;
+
+  /// Valor "Si" / "Yes" — columna Vendido del CSV.
+  String get csvValueYes;
+
+  /// Valor "No" / "No" — columna Vendido del CSV.
+  String get csvValueNo;
+
+  /// Nombre del archivo CSV generado al exportar.
+  String get csvFileName;
+
   // === Locale ===
   String get localeLabel;
   String get localeEs;
@@ -593,6 +618,29 @@ abstract class AppStrings {
   /// Body del SnackBar cuando un Free user intenta guardar la cotizacion
   /// #11 (kFreeHistoryCap + 1). Accion navega a /paywall.
   String get historyCapReachedBody;
+
+  // === Free-tier catalog gates (T14/T15 catálogos) ===
+  /// Hint al pie del selector de impresoras cuando el user Free está en el
+  /// tope (kFreePrinterLimit). Formato: "$current/$limit impresoras —
+  /// desbloquea Pro para más".
+  String freePrintersLimitHint(int current, int limit);
+
+  /// Idem para filamentos.
+  String freeFilamentsLimitHint(int current, int limit);
+
+  /// Tooltip del `+` en la AppBar de filamentos cuando user Free está en el
+  /// tope (kFreeFilamentLimit). Formato: "Límite Free ($limit filamentos)".
+  String filamentLimitReachedTooltip(int limit);
+
+  /// Body del SnackBar al tap del `+` locked en filamentos.
+  String filamentLimitReachedBody(int limit);
+
+  /// Tooltip del `+` en la AppBar de impresoras cuando user Free está en el
+  /// tope (kFreePrinterLimit). Formato: "Límite Free ($limit impresoras)".
+  String printerLimitReachedTooltip(int limit);
+
+  /// Body del SnackBar al tap del `+` locked en impresoras.
+  String printerLimitReachedBody(int limit);
 
   // === Pro badge / locked visuals (UX) ===
   /// Label del badge "PRO" que marca controles gateados (modo advanced,
@@ -725,6 +773,10 @@ abstract class AppStrings {
 
   /// Hero tagline de la home.
   String get homeHeroTagline;
+
+  /// Sufijo del Semantics label del hero header: "Cotizaciones 3D" /
+  /// "3D Quotations". Se concatena con la app name o el nombre de empresa.
+  String get homeHeroSemanticsSuffix;
 
   /// Warning al intentar guardar con el form incompleto.
   String get calcFormIncompleteWarning;
@@ -982,4 +1034,53 @@ abstract class AppStrings {
 
   /// "¿Eliminar \"$name\"?" / "Delete \"$name\"?".
   String printerDeleteConfirm(String name);
+
+  // === Color de filamento (PRD 2026-09-08) ===
+  /// "Color" / "Color".
+  String get filamentColorLabel;
+
+  /// "Opcional. Identifica visualmente el filamento." /
+  /// "Optional. Visually identifies the filament.".
+  String get filamentColorHelper;
+
+  /// "Personalizado..." / "Custom...".
+  String get filamentColorCustom;
+
+  /// "Quitar color" / "Remove color".
+  String get filamentColorClear;
+
+  /// "Elegir color" / "Pick a color".
+  String get filamentColorPickerTitle;
+
+  /// "Hex" / "Hex".
+  String get filamentColorHexLabel;
+
+  /// "Formato #RRGGBB" / "Format #RRGGBB".
+  String get filamentColorHexHelper;
+
+  /// "Color inválido, formato #RRGGBB" /
+  /// "Invalid color, format #RRGGBB".
+  String get filamentColorInvalid;
+
+  /// "Aplicar" / "Apply".
+  String get commonApply;
+
+  // Nombres de la paleta de filamentos (17 entradas).
+  String get colorNameRed;
+  String get colorNameOrange;
+  String get colorNameAmber;
+  String get colorNameYellow;
+  String get colorNameLime;
+  String get colorNameGreen;
+  String get colorNameTeal;
+  String get colorNameCyan;
+  String get colorNameBlue;
+  String get colorNameIndigo;
+  String get colorNamePurple;
+  String get colorNameMagenta;
+  String get colorNamePink;
+  String get colorNameBrown;
+  String get colorNameGray;
+  String get colorNameBlack;
+  String get colorNameWhite;
 }

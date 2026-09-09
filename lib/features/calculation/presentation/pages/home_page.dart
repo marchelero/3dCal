@@ -98,7 +98,7 @@ class HomePage extends ConsumerWidget {
     // Modo empresa: muestra logo + nombre empresa grande, app name pequeno
     if (hasCompanyConfig || hasLogo) {
       final displayName = hasCompanyConfig ? companyName : EsBO.appName;
-      semanticsLabel = '$displayName — Cotizaciones 3D';
+      semanticsLabel = '$displayName — ${EsBO.homeHeroSemanticsSuffix}';
       content = Row(
         children: [
           // Logo o icono default
@@ -161,7 +161,7 @@ class HomePage extends ConsumerWidget {
       );
     } else {
       // Modo default: solo app name
-      semanticsLabel = '${EsBO.appName} — Cotizaciones 3D';
+      semanticsLabel = '${EsBO.appName} — ${EsBO.homeHeroSemanticsSuffix}';
       content = Row(
         children: [
           // Sello de plano con logo

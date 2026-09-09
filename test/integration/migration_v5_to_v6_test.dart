@@ -208,17 +208,17 @@ void main() {
       addTearDown(() async => db.close());
     });
 
-    test('onUpgrade(5, 10) agrega notes/conditions y bumpea '
-        'user_version a 10', () async {
+    test('onUpgrade(5, 11) agrega notes/conditions y bumpea '
+        'user_version a 11', () async {
       await db.customSelect('SELECT 1').get();
 
       final versionRows = await db.customSelect('PRAGMA user_version').get();
       expect(
         versionRows.first.read<int>('user_version'),
-        10,
+        11,
         reason:
-            'AppDatabase debe setear user_version=10 tras onUpgrade '
-            '(cadena v5→v6 ... v8→v9 + v9→v10).',
+            'AppDatabase debe setear user_version=11 tras onUpgrade '
+            '(cadena v5→v6 ... v9→v10 + v10→v11).',
       );
 
       final rows = await db

@@ -11,6 +11,7 @@ import '../../../../../l10n/app_locale.dart';
 import '../../../../../l10n/es_bo.dart';
 import '../../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../../shared/widgets/brand_selector_field.dart';
+import '../../../../../shared/widgets/filament_color_field.dart';
 import '../../../../../shared/widgets/k3d_brands.dart';
 import '../../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../../shared/widgets/numeric_input_field.dart';
@@ -44,6 +45,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
   late final TextEditingController _priceCtrl;
   late final TextEditingController _gramsCtrl;
   late bool _isDefault;
+  String? _color;
 
   bool _saving = false;
 
@@ -60,6 +62,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
       text: f == null ? '1000' : f.gramsPerBobbin.toStringAsFixed(0),
     );
     _isDefault = f?.isDefault ?? false;
+    _color = f?.color;
   }
 
   @override
@@ -119,6 +122,8 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
           pricePerBobbin: Decimal.parse(priceStr),
           gramsPerBobbin: Decimal.parse(gramsStr),
           asDefault: _isDefault,
+          color: _color,
+          updateColor: true,
         );
       } else {
         await notifier.create(
@@ -127,6 +132,7 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
           pricePerBobbin: Decimal.parse(priceStr),
           gramsPerBobbin: Decimal.parse(gramsStr),
           asDefault: _isDefault,
+          color: _color,
         );
       }
       if (mounted) {
@@ -181,6 +187,11 @@ class _FilamentFormPageState extends ConsumerState<FilamentFormPage> {
                   ),
                   textInputAction: TextInputAction.next,
                   validator: _requiredText,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                FilamentColorField(
+                  value: _color,
+                  onChanged: (v) => setState(() => _color = v),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(

@@ -53,7 +53,7 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
           if (atLimit)
             IconButton(
               icon: const Icon(Icons.add),
-              tooltip: 'Límite Free ($_kFreePrinterLimit impresoras)',
+              tooltip: EsBO.printerLimitReachedTooltip(_kFreePrinterLimit),
               onPressed: () => _showLimitSnack(context),
             )
           else
@@ -149,8 +149,7 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
       ..showSnackBar(
         AppSnackBar.info(
           context,
-          'Límite de $_kFreePrinterLimit impresoras en modo Free. '
-          'Desbloquea Pro para agregar más.',
+          EsBO.printerLimitReachedBody(_kFreePrinterLimit),
         ),
       );
   }

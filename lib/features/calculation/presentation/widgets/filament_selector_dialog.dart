@@ -21,6 +21,7 @@ import '../../../../features/entitlement/presentation/providers/entitlement_prov
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/avatar_icon.dart';
 import '../../../../shared/widgets/default_badge.dart';
+import '../../../../shared/widgets/filament_color_palette.dart';
 import 'selector_dialog_shell.dart';
 
 /// Límite de filamentos para usuarios Free.
@@ -44,18 +45,50 @@ Future<Filament?> showFilamentSelectorDialog(
     title: EsBO.calcSelectFilament,
     searchHint: EsBO.calcSearchFilament,
     items: filaments,
-    matches: (f, query) =>
-        f.name.toLowerCase().contains(query) ||
-        (f.brand?.toLowerCase().contains(query) ?? false),
+    matches: (f, query) {
+      if (f.name.toLowerCase().contains(query)) return true;
+      if (f.brand?.toLowerCase().contains(query) ?? false) return true;
+      // Busqueda por nombre de color (RF2-4 del PRD 2026-09-08). Solo
+      // cuando el hex es de paleta reconocida (custom hex no muestra
+      // label en la lista, asi que tampoco debe matchear).
+      final colorName = _colorNameForFilament(f.color);
+      if (colorName != null && colorName.toLowerCase().contains(query)) {
+        return true;
+      }
+      return false;
+    },
     itemBuilder: (context, f, select) {
       final theme = Theme.of(context);
+      final fColor = colorFromHex(f.color);
       return ListTile(
-        leading: AvatarIcon(
-          icon: f.isDefault ? Icons.star_rounded : Icons.label_rounded,
-          background: theme.colorScheme.secondaryContainer,
-          foreground: f.isDefault
-              ? theme.colorScheme.tertiary
-              : theme.colorScheme.onSecondaryContainer,
+        leading: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            AvatarIcon(
+              icon: f.isDefault ? Icons.star_rounded : Icons.label_rounded,
+              background: theme.colorScheme.secondaryContainer,
+              foreground: f.isDefault
+                  ? theme.colorScheme.tertiary
+                  : theme.colorScheme.onSecondaryContainer,
+            ),
+            if (fColor != null)
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: fColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.colorScheme.surface,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
         title: Text(f.name, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
@@ -132,5 +165,51 @@ class _FreeLimitHint extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Resuelve el nombre legible del color en el locale activo (es/en/pt/de/fr).
+/// Devuelve `null` si el hex es invalido o no matchea un color de paleta
+/// (custom hex sin label explicito).
+String? _colorNameForFilament(String? hex) {
+  final key = nameKeyFromHex(hex);
+  if (key == null || !isPaletteHex(hex)) return null;
+  switch (key) {
+    case 'red':
+      return EsBO.colorNameRed;
+    case 'orange':
+      return EsBO.colorNameOrange;
+    case 'amber':
+      return EsBO.colorNameAmber;
+    case 'yellow':
+      return EsBO.colorNameYellow;
+    case 'lime':
+      return EsBO.colorNameLime;
+    case 'green':
+      return EsBO.colorNameGreen;
+    case 'teal':
+      return EsBO.colorNameTeal;
+    case 'cyan':
+      return EsBO.colorNameCyan;
+    case 'blue':
+      return EsBO.colorNameBlue;
+    case 'indigo':
+      return EsBO.colorNameIndigo;
+    case 'purple':
+      return EsBO.colorNamePurple;
+    case 'magenta':
+      return EsBO.colorNameMagenta;
+    case 'pink':
+      return EsBO.colorNamePink;
+    case 'brown':
+      return EsBO.colorNameBrown;
+    case 'gray':
+      return EsBO.colorNameGray;
+    case 'black':
+      return EsBO.colorNameBlack;
+    case 'white':
+      return EsBO.colorNameWhite;
+    default:
+      return null;
   }
 }

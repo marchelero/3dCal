@@ -16,7 +16,7 @@ import 'package:tresdcal/core/database/app_database.dart';
 ///
 /// Mismo patron que migration_v8_to_v9: seed del schema v9 raw con
 /// `PRAGMA user_version = 9`, hand-off via `NativeDatabase.opened`, y
-/// Drift dispara `onUpgrade(9, 10)` al abrir.
+/// Drift dispara `onUpgrade(9, 11)` al abrir.
 void _seedV9Schema(Database rawDb) {
   // --- printers (v9) — SIN purchase_cost/useful_life_hours (v10) ---
   rawDb.execute('''
@@ -184,7 +184,7 @@ void _seedV9Schema(Database rawDb) {
     ],
   );
 
-  // Marca la DB como v9 para que AppDatabase dispare onUpgrade(9, 10).
+  // Marca la DB como v9 para que AppDatabase dispare onUpgrade(9, 11).
   rawDb.execute('PRAGMA user_version = 9');
 }
 
@@ -201,16 +201,16 @@ void main() {
       addTearDown(() async => db.close());
     });
 
-    test('onUpgrade(9, 10) agrega columnas F5 y bumpea user_version a 10', () async {
+    test('onUpgrade(9, 11) agrega columnas F5 y bumpea user_version a 11', () async {
       await db.customSelect('SELECT 1').get();
 
       final versionRows = await db.customSelect('PRAGMA user_version').get();
       expect(
         versionRows.first.read<int>('user_version'),
-        10,
-        reason: 'AppDatabase debe setear user_version=10 tras onUpgrade.',
+        11,
+        reason: 'AppDatabase debe setear user_version=11 tras onUpgrade.',
       );
-      expect(db.schemaVersion, 10);
+      expect(db.schemaVersion, 11);
 
       // printers: purchase_cost REAL nullable + useful_life_hours INTEGER.
       final printerCols = await db

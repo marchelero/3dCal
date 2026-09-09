@@ -11,6 +11,7 @@ import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filament_form_page.dart';
 import 'package:tresdcal/shared/widgets/brand_selector_field.dart';
+import 'package:tresdcal/shared/widgets/filament_color_field.dart';
 
 Future<ProviderContainer> _pumpForm(
   WidgetTester tester, {
@@ -46,15 +47,15 @@ void main() {
       expect(find.text('Nuevo filamento'), findsOneWidget);
     });
 
-    testWidgets('muestra los 4 inputs numericos + switch default', (
-      tester,
-    ) async {
+    testWidgets('muestra los inputs y el switch default', (tester) async {
       await _pumpForm(tester);
       // Labels actuales segun EsBO.filament* en l10n/es_bo.dart.
       expect(find.widgetWithText(TextField, 'Nombre'), findsOneWidget);
       // Marca es un BrandSelectorField (dropdown + Otro...) desde la feature
       // de selector de marcas — no un TextField plano.
       expect(find.byType(BrandSelectorField), findsOneWidget);
+      // Campo color (RF1-2 del PRD 2026-09-08) presente en el form.
+      expect(find.byType(FilamentColorField), findsOneWidget);
       expect(
         find.widgetWithText(TextField, 'Precio filamento (\$)'),
         findsOneWidget,
@@ -63,11 +64,26 @@ void main() {
         find.widgetWithText(TextField, 'Gramos por rollo'),
         findsOneWidget,
       );
+      // El switch esta fuera del viewport por defecto del test (el form
+      // crecio con el color picker). Scrollear para encontrarlo.
+      await tester.scrollUntilVisible(
+        find.byType(SwitchListTile),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.byType(Switch), findsOneWidget);
     });
 
     testWidgets('guardar invalido muestra errores', (tester) async {
       await _pumpForm(tester);
+      // El form incluye el campo color (RF1-2 del PRD 2026-09-08) que ocupa
+      // ~100dp extra; scrollear hasta el boton Guardar para garantizar tap
+      // en tests con viewport chico.
+      await tester.scrollUntilVisible(
+        find.text('Guardar'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Guardar'));
       await tester.pump();
       expect(find.text('Requerido'), findsAtLeastNWidgets(1));
@@ -112,6 +128,13 @@ void main() {
       );
       await tester.pump();
 
+      // Scroll hasta el boton Guardar (form incluye campo color, viewport
+      // chico del test lo deja fuera de pantalla).
+      await tester.scrollUntilVisible(
+        find.text('Guardar'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
 

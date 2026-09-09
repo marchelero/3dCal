@@ -267,18 +267,16 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     }
 
     final buf = StringBuffer();
-    // Header
-    buf.writeln(
-      'Fecha,Pieza,Cliente,Cantidad,Total,Vendido,Materiales,Horas,'
-      'Descuento,CostoMat,Elect,Profit',
-    );
+    // Header (localized via csvExportHeader; column order MUST stay in sync
+    // with the writer below).
+    buf.writeln(EsBO.csvExportHeader.join(','));
     // Rows (valores efectivos = unitario x cantidad)
     for (final c in calcs) {
       final date = DateFormat('yyyy-MM-dd HH:mm').format(c.createdAt.toLocal());
       final piece = _escapeCsv(c.pieceName ?? '');
       final client = _escapeCsv(c.clientName ?? '');
       final total = formatRaw(c.totalPriceSnapshot * c.quantity);
-      final sold = c.isSold ? 'Si' : 'No';
+      final sold = c.isSold ? EsBO.csvValueYes : EsBO.csvValueNo;
       final hours = (c.totalHours * c.quantity).toStringAsFixed(2);
       final discount = c.discountPercentage.toStringAsFixed(1);
       final matCost = formatRaw(c.materialCostSnapshot * c.quantity);
@@ -293,7 +291,7 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     final bytes = Uint8List.fromList(utf8.encode(buf.toString()));
     final xfile = XFile.fromData(
       bytes,
-      name: 'cotizaciones_3dcalc.csv',
+      name: EsBO.csvFileName,
       mimeType: 'text/csv',
     );
     await SharePlus.instance.share(

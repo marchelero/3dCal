@@ -15,6 +15,8 @@ class DeImpl implements AppStrings {
   @override
   String get commonCancel => 'Abbrechen';
   @override
+  String get commonApply => 'Anwenden';
+  @override
   String get commonDelete => 'Löschen';
   @override
   String get commonRetry => 'Erneut versuchen';
@@ -22,6 +24,10 @@ class DeImpl implements AppStrings {
   String get commonEdit => 'Bearbeiten';
   @override
   String get commonNew => 'Neu';
+  @override
+  String get commonCreateNew => 'Neu erstellen';
+  @override
+  String get commonAddToCatalog => 'Zum Katalog hinzufügen';
   @override
   String get commonRequired => 'Erforderlich';
   @override
@@ -553,6 +559,8 @@ class DeImpl implements AppStrings {
   @override
   String get calcEmptyHintSuffix => 'ein, um das Angebot zu sehen';
   @override
+  String get calcEmptyHintConnector => 'und';
+  @override
   String get calcFieldWeightShort => 'Stückgewicht';
   @override
   String get calcFieldPriceShort => 'Filamentpreis';
@@ -650,6 +658,23 @@ class DeImpl implements AppStrings {
   String get filamentMustBeInteger => 'Muss eine ganze Zahl sein';
   @override
   String get filamentMax100 => 'Maximal 100 Zeichen';
+  @override
+  String get filamentColorLabel => 'Farbe';
+  @override
+  String get filamentColorHelper =>
+      'Optional. Identifiziert das Filament visuell.';
+  @override
+  String get filamentColorCustom => 'Benutzerdefiniert...';
+  @override
+  String get filamentColorClear => 'Farbe entfernen';
+  @override
+  String get filamentColorPickerTitle => 'Farbe wählen';
+  @override
+  String get filamentColorHexLabel => 'Hex';
+  @override
+  String get filamentColorHexHelper => 'Format #RRGGBB';
+  @override
+  String get filamentColorInvalid => 'Ungültige Farbe, Format #RRGGBB';
 
   @override
   String get printerTitle => 'Drucker';
@@ -742,6 +767,28 @@ class DeImpl implements AppStrings {
   String get csvExportLockedBody => 'CSV-Export ist eine Pro-Funktion';
   @override
   String get csvGoProAction => 'PRO freischalten';
+
+  @override
+  List<String> get csvExportHeader => const [
+        'Datum',
+        'Stück',
+        'Kunde',
+        'Menge',
+        'Gesamt',
+        'Verkauft',
+        'Materialien',
+        'Stunden',
+        'Rabatt',
+        'MatKosten',
+        'Strom',
+        'Gewinn',
+      ];
+  @override
+  String get csvValueYes => 'Ja';
+  @override
+  String get csvValueNo => 'Nein';
+  @override
+  String get csvFileName => '3dcalc_angebote.csv';
 
   @override
   String get localeLabel => 'Sprache';
@@ -878,6 +925,28 @@ class DeImpl implements AppStrings {
   @override
   String get historyCapReachedBody =>
       'Sie haben das kostenlose Verlaufslimit erreicht. Wechseln Sie zu Pro für einen unbegrenzten Verlauf.';
+
+  // === Free-tier catalog gates ===
+  @override
+  String freePrintersLimitHint(int current, int limit) =>
+      '$current/$limit Drucker — Pro freischalten für mehr';
+  @override
+  String freeFilamentsLimitHint(int current, int limit) =>
+      '$current/$limit Filamente — Pro freischalten für mehr';
+  @override
+  String filamentLimitReachedTooltip(int limit) =>
+      'Free-Limit ($limit Filamente)';
+  @override
+  String filamentLimitReachedBody(int limit) =>
+      'Free-Limit von $limit Filamenten erreicht. '
+      'Pro freischalten für mehr.';
+  @override
+  String printerLimitReachedTooltip(int limit) =>
+      'Free-Limit ($limit Drucker)';
+  @override
+  String printerLimitReachedBody(int limit) =>
+      'Free-Limit von $limit Druckern erreicht. '
+      'Pro freischalten für mehr.';
 
   // === Pro badge / locked visuals (UX) ===
   @override
@@ -1032,6 +1101,9 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   @override
   String get homeHeroTagline =>
       '3D-Angebote · Schnell · Präzise · Immer bereit';
+
+  @override
+  String get homeHeroSemanticsSuffix => '3D-Angebote';
 
   @override
   String get calcFormIncompleteWarning =>
@@ -1249,4 +1321,40 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
       'Keine Drucker. Tippen Sie auf +, um den ersten zu registrieren.';
   @override
   String printerDeleteConfirm(String name) => '"$name" löschen?';
+
+  // === Filamentfarbe (PRD 2026-09-08) ===
+  @override
+  String get colorNameRed => 'Rot';
+  @override
+  String get colorNameOrange => 'Orange';
+  @override
+  String get colorNameAmber => 'Bernstein';
+  @override
+  String get colorNameYellow => 'Gelb';
+  @override
+  String get colorNameLime => 'Limette';
+  @override
+  String get colorNameGreen => 'Grün';
+  @override
+  String get colorNameTeal => 'Blaugrün';
+  @override
+  String get colorNameCyan => 'Cyan';
+  @override
+  String get colorNameBlue => 'Blau';
+  @override
+  String get colorNameIndigo => 'Indigo';
+  @override
+  String get colorNamePurple => 'Lila';
+  @override
+  String get colorNameMagenta => 'Magenta';
+  @override
+  String get colorNamePink => 'Rosa';
+  @override
+  String get colorNameBrown => 'Braun';
+  @override
+  String get colorNameGray => 'Grau';
+  @override
+  String get colorNameBlack => 'Schwarz';
+  @override
+  String get colorNameWhite => 'Weiß';
 }

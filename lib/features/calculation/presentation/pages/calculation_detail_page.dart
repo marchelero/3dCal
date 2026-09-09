@@ -507,7 +507,7 @@ class _DetailState extends ConsumerState<_Detail> {
                                   const SizedBox(height: AppSpacing.xxs),
                                   Text(
                                     '${ms[i].weightGrams.toStringAsFixed(0)} g · '
-                                    'BOB ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
+                                    '${currency.code} ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
                                     '${ms[i].gramsPerBobbinSnapshot.toStringAsFixed(0)} g',
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: color.onSurfaceVariant,
