@@ -75,6 +75,29 @@ class FrImpl implements AppStrings {
   String get settingsManageFilaments => 'Gérer vos filaments';
   @override
   String get settingsManagePrinters => 'Enregistrer vos imprimantes';
+
+  // === Settings page section group labels (uppercase headers) ===
+  @override
+  String get settingsGroupCatalogs => 'Catalogues';
+  @override
+  String get settingsGroupCurrencyAndLanguage => 'Devise et langue';
+  @override
+  String get settingsGroupAppearance => 'Apparence';
+  @override
+  String get settingsGroupYourData => 'Vos données';
+  @override
+  String get settingsGroupAccount => 'Compte';
+  @override
+  String get settingsGroupAbout => 'À propos';
+  @override
+  String settingsFilamentsCount(int count) =>
+      count <= 1 ? '1 filament' : '$count filaments';
+  @override
+  String settingsPrintersCount(int count) =>
+      count <= 1 ? '1 imprimante' : '$count imprimantes';
+  @override
+  String get settingsGainMultiplierSuffix => 'sur le coût';
+
   @override
   String get settingsLaborPost => 'Main-d’œuvre et post-traitement';
   @override

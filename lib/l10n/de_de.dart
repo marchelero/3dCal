@@ -82,6 +82,28 @@ class DeImpl implements AppStrings {
   @override
   String get settingsManagePrinters => 'Drucker registrieren';
 
+  // === Settings page section group labels (uppercase headers) ===
+  @override
+  String get settingsGroupCatalogs => 'Kataloge';
+  @override
+  String get settingsGroupCurrencyAndLanguage => 'Währung und Sprache';
+  @override
+  String get settingsGroupAppearance => 'Erscheinungsbild';
+  @override
+  String get settingsGroupYourData => 'Deine Daten';
+  @override
+  String get settingsGroupAccount => 'Konto';
+  @override
+  String get settingsGroupAbout => 'Über';
+  @override
+  String settingsFilamentsCount(int count) =>
+      count == 1 ? '1 Filament' : '$count Filamente';
+  @override
+  String settingsPrintersCount(int count) =>
+      count == 1 ? '1 Drucker' : '$count Drucker';
+  @override
+  String get settingsGainMultiplierSuffix => 'über Kosten';
+
   @override
   String get settingsLaborPost => 'Arbeitszeit und Nachbearbeitung';
   @override

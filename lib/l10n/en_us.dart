@@ -78,6 +78,28 @@ class EnImpl implements AppStrings {
   @override
   String get settingsManagePrinters => 'Register your printers';
 
+  // === Settings page section group labels (uppercase headers) ===
+  @override
+  String get settingsGroupCatalogs => 'Catalogs';
+  @override
+  String get settingsGroupCurrencyAndLanguage => 'Currency and language';
+  @override
+  String get settingsGroupAppearance => 'Appearance';
+  @override
+  String get settingsGroupYourData => 'Your data';
+  @override
+  String get settingsGroupAccount => 'Account';
+  @override
+  String get settingsGroupAbout => 'About';
+  @override
+  String settingsFilamentsCount(int count) =>
+      count == 1 ? '1 filament' : '$count filaments';
+  @override
+  String settingsPrintersCount(int count) =>
+      count == 1 ? '1 printer' : '$count printers';
+  @override
+  String get settingsGainMultiplierSuffix => 'over cost';
+
   @override
   String get settingsLaborPost => 'Labor and post-processing';
   @override

@@ -49,6 +49,36 @@ abstract class AppStrings {
   String get settingsManageFilaments;
   String get settingsManagePrinters;
 
+  // === Settings page section group labels (uppercase headers) ===
+  /// Titulo de la seccion Catalogos (Filamentos / Impresoras).
+  String get settingsGroupCatalogs;
+
+  /// Titulo de la seccion que agrupa selector de moneda + selector de idioma.
+  String get settingsGroupCurrencyAndLanguage;
+
+  /// Titulo de la seccion Apariencia (selector de tema).
+  String get settingsGroupAppearance;
+
+  /// Titulo de la seccion de datos del usuario (backup/restore).
+  String get settingsGroupYourData;
+
+  /// Titulo de la seccion Cuenta (restaurar compras).
+  String get settingsGroupAccount;
+
+  /// Titulo de la seccion Acerca de + Legal.
+  String get settingsGroupAbout;
+
+  /// Subtitulo del row de Filamentos en Catalogos: "$count filamento(s)".
+  /// Plural-aware: 1 -> singular, !=1 -> plural.
+  String settingsFilamentsCount(int count);
+
+  /// Subtitulo del row de Impresoras en Catalogos: "$count impresora(s)".
+  /// Plural-aware: 1 -> singular, !=1 -> plural.
+  String settingsPrintersCount(int count);
+
+  /// Sufijo del multiplicador de ganancia: "sobre costo" / "over cost".
+  String get settingsGainMultiplierSuffix;
+
   // === F1: Labor + Post-process ===
   String get settingsLaborPost;
   String settingsLaborRate(String symbol);

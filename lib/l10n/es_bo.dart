@@ -60,6 +60,21 @@ class EsBO {
   static String get settingsManageFilaments => _impl.settingsManageFilaments;
   static String get settingsManagePrinters => _impl.settingsManagePrinters;
 
+  // === Settings page section group labels (uppercase headers) ===
+  static String get settingsGroupCatalogs => _impl.settingsGroupCatalogs;
+  static String get settingsGroupCurrencyAndLanguage =>
+      _impl.settingsGroupCurrencyAndLanguage;
+  static String get settingsGroupAppearance => _impl.settingsGroupAppearance;
+  static String get settingsGroupYourData => _impl.settingsGroupYourData;
+  static String get settingsGroupAccount => _impl.settingsGroupAccount;
+  static String get settingsGroupAbout => _impl.settingsGroupAbout;
+  static String settingsFilamentsCount(int count) =>
+      _impl.settingsFilamentsCount(count);
+  static String settingsPrintersCount(int count) =>
+      _impl.settingsPrintersCount(count);
+  static String get settingsGainMultiplierSuffix =>
+      _impl.settingsGainMultiplierSuffix;
+
   // === F1: Labor + Post-process ===
   static String get settingsLaborPost => _impl.settingsLaborPost;
   static String settingsLaborRate(String symbol) =>
@@ -708,7 +723,7 @@ class EsImpl implements AppStrings {
   @override
   String get settingsProfitBaseInfo =>
       'Lo usual en el mundo es cobrar un margen del 200% sobre el costo. '
-      'Si no sabés por dónde empezar, probá con 200 y ajustalo según tu '
+      'Si no sabes por dónde empezar, prueba con 200 y ajústalo según tu '
       'mercado.';
 
   @override
@@ -735,6 +750,28 @@ class EsImpl implements AppStrings {
   String get settingsManageFilaments => 'Gestiona tus filamentos';
   @override
   String get settingsManagePrinters => 'Registra tus impresoras';
+
+  // === Settings page section group labels (uppercase headers) ===
+  @override
+  String get settingsGroupCatalogs => 'Catálogos';
+  @override
+  String get settingsGroupCurrencyAndLanguage => 'Moneda e idioma';
+  @override
+  String get settingsGroupAppearance => 'Apariencia';
+  @override
+  String get settingsGroupYourData => 'Tus datos';
+  @override
+  String get settingsGroupAccount => 'Cuenta';
+  @override
+  String get settingsGroupAbout => 'Acerca de';
+  @override
+  String settingsFilamentsCount(int count) =>
+      count == 1 ? '1 filamento' : '$count filamentos';
+  @override
+  String settingsPrintersCount(int count) =>
+      count == 1 ? '1 impresora' : '$count impresoras';
+  @override
+  String get settingsGainMultiplierSuffix => 'sobre costo';
 
   @override
   String get settingsLaborPost => 'Mano de obra y post-procesado';
@@ -1250,9 +1287,9 @@ class EsImpl implements AppStrings {
   @override
   String get brandSelectorOther => 'Otro...';
   @override
-  String get brandSelectorHint => 'Seleccioná una marca';
+  String get brandSelectorHint => 'Selecciona una marca';
   @override
-  String get brandSelectorManualHelper => 'Escribí el nombre de la marca';
+  String get brandSelectorManualHelper => 'Escribe el nombre de la marca';
   @override
   String filamentPrice(String symbol) => 'Precio filamento ($symbol)';
   @override
@@ -1397,7 +1434,7 @@ class EsImpl implements AppStrings {
   String get onboardingTitle3 => 'Catálogo integrado';
   @override
   String get onboardingDesc3 =>
-      'Guarda tus filamentos e impresoras favoritos.\nSeleccionalos al instante desde el catalogo.';
+      'Guarda tus filamentos e impresoras favoritos.\n Selecciónalos al instante desde el catálogo.';
   @override
   String get onboardingTitle4 => 'Dashboard & mas';
   @override
@@ -1436,16 +1473,16 @@ class EsImpl implements AppStrings {
   String get configStepSubtitle1 => 'Empecemos por lo básico.';
   @override
   String get configStepSubtitle2 =>
-      'Contanos qué imprimís y con qué material. '
+      'Dinos qué imprimes y con qué material. '
       'Necesitamos al menos una impresora y un filamento.';
   @override
   String get configStepSubtitle3 =>
-      'Estos valores se usan en cada cotización. Los podés cambiar después.';
+      'Estos valores se usan en cada cotización. Puedes cambiarlos después.';
   @override
   String configStepCounter(int step, int total) => 'Paso $step de $total';
   @override
   String get configLanguageHelper =>
-      'Elegí el idioma de la app. Podés cambiarlo después.';
+      'Elige el idioma de la app. Puedes cambiarlo después.';
   @override
   String get configCurrencyHelper =>
       'Moneda en que se muestran precios y cotizaciones. No convierte valores.';
@@ -1455,7 +1492,7 @@ class EsImpl implements AppStrings {
   @override
   String get configFilamentSectionHelper =>
       'La necesitamos para calcular el costo del material de cada pieza. '
-      'Registrá al menos uno para poder cotizar.';
+      'Registra al menos uno para poder cotizar.';
   @override
   String get configProfitHelper =>
       'Margen sobre el costo base. 200% duplica el costo. Típico: 100%–300%.';
@@ -1484,14 +1521,14 @@ class EsImpl implements AppStrings {
   String get configFilamentLater => 'Lo agrego después';
   @override
   String get configFilamentSkipHint =>
-      'Podés agregar filamentos cuando quieras desde Ajustes → Catálogos.';
+      'Puedes agregar filamentos cuando quieras desde Ajustes → Catálogos.';
   @override
   String get configPrinterSaved => 'Impresora registrada';
   @override
   String get configFilamentSaved => 'Filamento agregado';
   @override
   String get configRequirementPending =>
-      'Registrá al menos una impresora y un filamento para continuar.';
+      'Registra al menos una impresora y un filamento para continuar.';
   @override
   String get configRequirementDone =>
       'Listo. Impresora y filamento configurados.';

@@ -202,7 +202,10 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Catalogos ──
-                const _GroupLabel(icon: Icons.inventory_2_rounded, titleKey: 'CATÁLOGOS'),
+                _GroupLabel(
+                  icon: Icons.inventory_2_rounded,
+                  title: EsBO.settingsGroupCatalogs,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.secondary,
@@ -218,7 +221,7 @@ class _SettingsBody extends ConsumerWidget {
                             foreground: color.onSecondaryContainer,
                           ),
                           title: Text(EsBO.settingsFilamentos),
-                          subtitle: Text('${filaments.length} filamentos'),
+                          subtitle: Text(EsBO.settingsFilamentsCount(filaments.length)),
                           trailing: Icon(
                             Icons.chevron_right_rounded,
                             color: color.onSurfaceVariant,
@@ -239,7 +242,7 @@ class _SettingsBody extends ConsumerWidget {
                             foreground: color.onTertiaryContainer,
                           ),
                           title: Text(EsBO.settingsImpresoras),
-                          subtitle: Text('${printers.length} impresoras'),
+                          subtitle: Text(EsBO.settingsPrintersCount(printers.length)),
                           trailing: Icon(
                             Icons.chevron_right_rounded,
                             color: color.onSurfaceVariant,
@@ -253,7 +256,10 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Moneda e idioma ──
-                const _GroupLabel(icon: Icons.attach_money_rounded, titleKey: 'MONEDA E IDIOMA'),
+                _GroupLabel(
+                  icon: Icons.attach_money_rounded,
+                  title: EsBO.settingsGroupCurrencyAndLanguage,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.primary,
@@ -267,7 +273,10 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Apariencia ──
-                const _GroupLabel(icon: Icons.palette_rounded, titleKey: 'APARIENCIA'),
+                _GroupLabel(
+                  icon: Icons.palette_rounded,
+                  title: EsBO.settingsGroupAppearance,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.secondary,
@@ -284,21 +293,30 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Datos (backup) ──
-                const _GroupLabel(icon: Icons.backup_rounded, titleKey: 'TUS DATOS'),
+                _GroupLabel(
+                  icon: Icons.backup_rounded,
+                  title: EsBO.settingsGroupYourData,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 const _BackupSection(),
                 const SizedBox(height: AppSpacing.xxl),
 
                 if (canRestore) ...[
                   // ── Restaurar compras (T11) ──
-                  const _GroupLabel(icon: Icons.restore_rounded, titleKey: 'CUENTA'),
+                  _GroupLabel(
+                    icon: Icons.restore_rounded,
+                    title: EsBO.settingsGroupAccount,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   _SettingsCard(accentColor: color.primary, children: [_RestoreButton()]),
                   const SizedBox(height: AppSpacing.xxl),
                 ],
 
                 // ── Acerca de + Legal ──
-                const _GroupLabel(icon: Icons.info_outline_rounded, titleKey: 'ACERCA DE'),
+                _GroupLabel(
+                  icon: Icons.info_outline_rounded,
+                  title: EsBO.settingsGroupAbout,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 _SettingsCard(
                   accentColor: color.tertiary,
@@ -436,7 +454,7 @@ class _SettingsHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'AJUSTES',
+                          EsBO.settingsTitle.toUpperCase(),
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.5,
@@ -662,18 +680,17 @@ class _ProSheetBody extends StatelessWidget {
 /// opcional (ej: badge PRO). Una regla corta de acento cierra el titulo,
 /// como la linea pautada de un formulario.
 class _GroupLabel extends StatelessWidget {
-  const _GroupLabel({required this.icon, this.title, this.titleKey, this.trailing});
+  const _GroupLabel({required this.icon, required this.title, this.trailing});
 
   final IconData icon;
-  final String? title;
-  final String? titleKey;
+  final String title;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final text = title ?? titleKey ?? '';
+    final text = title;
 
     return Padding(
       padding: const EdgeInsets.only(left: AppSpacing.xs, right: AppSpacing.xs),
@@ -1097,7 +1114,7 @@ class _GainPreview extends StatelessWidget {
             ),
           ),
           Text(
-            'sobre costo',
+            EsBO.settingsGainMultiplierSuffix,
             style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],

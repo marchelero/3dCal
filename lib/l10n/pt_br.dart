@@ -79,6 +79,28 @@ class PtBrImpl implements AppStrings {
   @override
   String get settingsManagePrinters => 'Cadastre suas impressoras';
 
+  // === Settings page section group labels (uppercase headers) ===
+  @override
+  String get settingsGroupCatalogs => 'Catálogos';
+  @override
+  String get settingsGroupCurrencyAndLanguage => 'Moeda e idioma';
+  @override
+  String get settingsGroupAppearance => 'Aparência';
+  @override
+  String get settingsGroupYourData => 'Seus dados';
+  @override
+  String get settingsGroupAccount => 'Conta';
+  @override
+  String get settingsGroupAbout => 'Sobre';
+  @override
+  String settingsFilamentsCount(int count) =>
+      count == 1 ? '1 filamento' : '$count filamentos';
+  @override
+  String settingsPrintersCount(int count) =>
+      count == 1 ? '1 impressora' : '$count impressoras';
+  @override
+  String get settingsGainMultiplierSuffix => 'sobre o custo';
+
   @override
   String get settingsLaborPost => 'Mão de obra e pós-processamento';
   @override
