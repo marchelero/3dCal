@@ -6,6 +6,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+### 0.3.4 (2026-09-09)
+
+#### Changed
+- **Home rediseñada (dedup con Dashboard)**: ya no duplica las stats del Dashboard. Ahora muestra las 3 cotizaciones más recientes (tap → detalle), banner "Continuar cotización" cuando hay un draft en curso, y fila "Mis catálogos" con acceso directo a Filamentos e Impresoras.
+- **Guía de cotización**: movida del menú de la calculadora a la Home.
+- **Dashboard responsive**: las cards de detalle Pro se disponen en grid de 2 columnas en pantallas anchas (≥900px); mobile sin cambios.
+
+#### Added
+- Tests de Home: dedup, últimas cotizaciones, banner draft, acceso a catálogos y guía.
+
 ### Sprint 9 — Verification + Ship (2026-07-15)
 
 #### Added
