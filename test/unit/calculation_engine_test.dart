@@ -14,6 +14,7 @@ CalculationInput _input({
   String totalHours = '0',
   String discount = '0',
   String? amortizationPerHour,
+  String minimumCharge = '0',
 }) {
   return CalculationInput(
     materials: materials,
@@ -29,6 +30,7 @@ CalculationInput _input({
     amortizationPerHour: amortizationPerHour == null
         ? null
         : DecimalParse.fromString(amortizationPerHour),
+    minimumCharge: DecimalParse.fromString(minimumCharge),
   );
 }
 
@@ -402,6 +404,51 @@ void main() {
       expect(out.amortizationCost, DecimalParse.fromString('1.75'));
       expect(out.profitAmount, DecimalParse.fromString('27.5'));
       expect(out.totalPrice, DecimalParse.fromString('41.25'));
+    });
+  });
+
+  group('Cargo minimo (minimumCharge)', () {
+    test('total 50 < minimumCharge 80 → totalPrice sube a 80', () {
+      final out = CalculationEngine.compute(
+        _input(
+          materials: [_material(weight: '100', pricePerBobbin: '500')],
+          minimumCharge: '80',
+        ),
+      );
+      // materialCost = 100 * 500/1000 = 50
+      expect(out.materialCost, DecimalParse.fromString('50'));
+      expect(out.totalPrice, DecimalParse.fromString('80'));
+    });
+
+    test('total 100 >= minimumCharge 80 → totalPrice sin cambio', () {
+      final out = CalculationEngine.compute(
+        _input(
+          materials: [_material(weight: '100', pricePerBobbin: '1000')],
+          minimumCharge: '80',
+        ),
+      );
+      // materialCost = 100 * 1000/1000 = 100
+      expect(out.totalPrice, DecimalParse.fromString('100'));
+    });
+
+    test('minimumCharge 0 → sin efecto', () {
+      final out = CalculationEngine.compute(
+        _input(materials: [_material()], minimumCharge: '0'),
+      );
+      expect(out.totalPrice, DecimalParse.fromString('15'));
+    });
+
+    test('el piso se aplica DESPUES del descuento', () {
+      // totalFinal = 60, descuento 10% = 6 → 54 < 80 → piso 80.
+      final out = CalculationEngine.compute(
+        _input(
+          materials: [_material(weight: '100', pricePerBobbin: '600')],
+          discount: '10',
+          minimumCharge: '80',
+        ),
+      );
+      expect(out.discountAmount, DecimalParse.fromString('6'));
+      expect(out.totalPrice, DecimalParse.fromString('80'));
     });
   });
 }

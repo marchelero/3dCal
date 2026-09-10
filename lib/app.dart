@@ -34,6 +34,10 @@ class TresdcalApp extends ConsumerWidget {
     EsBO.setImpl(_stringsFor(locale));
 
     return MaterialApp.router(
+      // Fuerza rebuild completo del arbol al cambiar idioma: los widgets que
+      // usan `EsBO.xxx` (delegado a un `_impl` global) no dependen del provider
+      // y de otro modo no se reconstruirian.
+      key: ValueKey(locale),
       title: '3dcalc',
       debugShowCheckedModeBanner: false,
       themeMode: appThemeMode.themeMode,

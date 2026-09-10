@@ -47,9 +47,6 @@ class _FakePaymentService implements PaymentService {
   /// Precio que reporta el "store" via [getProPriceString]. `null` = la
   /// plataforma no tiene precio (fallback l10n).
   String? storePrice;
-  // ignore: close_sinks
-  final StreamController<PaymentResult> _purchaseStream =
-      StreamController<PaymentResult>.broadcast();
 
   void seedPurchase(PaymentResult r) => purchaseResult = r;
   void seedRestore(RestoreResult r) => restoreResult = r;
@@ -77,9 +74,6 @@ class _FakePaymentService implements PaymentService {
     restoreCalls++;
     return restoreResult;
   }
-
-  @override
-  Stream<PaymentResult> get purchaseStream => _purchaseStream.stream;
 
   @override
   Stream<void> get proRevocationStream => const Stream.empty();

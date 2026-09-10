@@ -125,6 +125,39 @@ class BackupService {
   // IMPORT
   // ─────────────────────────────────────────────
 
+  /// Valida que un archivo seleccionado no supere el tamaño máximo del
+  /// backup, ANTES de cargarlo a memoria.
+  ///
+  /// Retorna null si es valido, o un mensaje de error si el archivo es
+  /// demasiado grande. Revisa el tamaño reportado por el picker y, cuando el
+  /// contenido ya viene en memoria ([PlatformFile.bytes]) o hay path,
+  /// el tamaño real.
+  static String? validateFileSize(PlatformFile file) {
+    final size = file.size;
+    if (size > kBackupMaxFileBytes) {
+      return 'El archivo de backup supera el tamaño permitido '
+          '(${_formatBytes(kBackupMaxFileBytes)}).';
+    }
+    final bytes = file.bytes;
+    if (bytes != null && bytes.lengthInBytes > kBackupMaxFileBytes) {
+      return 'El archivo de backup supera el tamaño permitido '
+          '(${_formatBytes(kBackupMaxFileBytes)}).';
+    }
+    final path = file.path;
+    if (bytes == null && path != null) {
+      try {
+        if (File(path).lengthSync() > kBackupMaxFileBytes) {
+          return 'El archivo de backup supera el tamaño permitido '
+              '(${_formatBytes(kBackupMaxFileBytes)}).';
+        }
+      } on FileSystemException {
+        // No se puede stat el archivo; se dejara pasar y la lectura fallara
+        // con un mensaje generico en el paso siguiente.
+      }
+    }
+    return null;
+  }
+
   /// Permite al usuario seleccionar un archivo de backup y lo restaura.
   ///
   /// Retorna null si el usuario cancelo, o un mensaje de error si fallo.
@@ -147,10 +180,9 @@ class BackupService {
 
       // Limite de tamaño ANTES de cargar a memoria (archivos gigantes o
       // corruptos no deben agotar la RAM del dispositivo).
-      final size = file.size;
-      if (size > kBackupMaxFileBytes) {
-        return 'El archivo de backup supera el tamaño permitido '
-            '(${_formatBytes(kBackupMaxFileBytes)}).';
+      final sizeError = validateFileSize(file);
+      if (sizeError != null) {
+        return sizeError;
       }
 
       final String content;
@@ -269,6 +301,7 @@ class BackupService {
               pricePerBobbin: Value((row['pricePerBobbin'] as num).toDouble()),
               gramsPerBobbin: Value((row['gramsPerBobbin'] as num).toDouble()),
               isDefault: Value(row['isDefault'] as bool),
+              color: Value(row['color'] as String?),
               createdAt: Value(_parseDateTime(row['createdAt'])),
             ),
           );
@@ -286,6 +319,8 @@ class BackupService {
               brand: Value(row['brand'] as String?),
               name: Value(row['name'] as String),
               averageWatts: Value(row['averageWatts'] as int),
+              purchaseCost: Value((row['purchaseCost'] as num?)?.toDouble()),
+              usefulLifeHours: Value(row['usefulLifeHours'] as int?),
               isDefault: Value(row['isDefault'] as bool),
               createdAt: Value(_parseDateTime(row['createdAt'])),
             ),
@@ -323,12 +358,16 @@ class BackupService {
                 (row['profitBaseSnapshot'] as num).toDouble(),
               ),
               isSold: Value(row['isSold'] as bool),
-              isTemplate: Value(row['isTemplate'] == 1),
+              isTemplate: Value(row['isTemplate'] as bool? ?? false),
+              quantity: Value((row['quantity'] as num?)?.toInt() ?? 1),
               materialCostSnapshot: Value(
                 (row['materialCostSnapshot'] as num?)?.toDouble() ?? 0,
               ),
               electricCostSnapshot: Value(
                 (row['electricCostSnapshot'] as num?)?.toDouble() ?? 0,
+              ),
+              amortizationCostSnapshot: Value(
+                (row['amortizationCostSnapshot'] as num?)?.toDouble() ?? 0,
               ),
               laborCostSnapshot: Value(
                 (row['laborCostSnapshot'] as num?)?.toDouble() ?? 0,

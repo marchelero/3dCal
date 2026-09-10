@@ -438,20 +438,20 @@ void main() {
 
   group('History cap (T15) — Edge cases', () {
     test(
-      'form invalido con cap libre: save() retorna null (no exception, no insert)',
+      'form invalido con cap libre: save() lanza FormIncompleteException (no insert)',
       () async {
         final container = _container();
         addTearDown(container.dispose);
 
-        // 10 existentes (en el cap), pero form vacio → save retorna null,
-        // NO throws. La excepcion solo se dispara si el form es valido
-        // Y estamos en el cap.
+        // 10 existentes (en el cap), pero form vacio → save lanza
+        // FormIncompleteException. La HistoryCapReachedException solo se
+        // dispara si el form es valido Y estamos en el cap.
         await _seedCalculations(container, kFreeHistoryCap);
 
-        final id = await container
-            .read(calculatorNotifierProvider.notifier)
-            .save();
-        expect(id, isNull);
+        await expectLater(
+          container.read(calculatorNotifierProvider.notifier).save(),
+          throwsA(isA<FormIncompleteException>()),
+        );
         // 10 rows, sin cambios.
         expect(await db.select(db.calculations).get(), hasLength(10));
       },

@@ -20,13 +20,6 @@ class PrinterRepository {
     )..orderBy([(p) => OrderingTerm.asc(p.name)])).get();
   }
 
-  /// Observa la lista de impresoras (Stream para Riverpod .watch()).
-  Stream<List<PrinterProfile>> watchAll() {
-    return (_db.select(
-      _db.printers,
-    )..orderBy([(p) => OrderingTerm.asc(p.name)])).watch();
-  }
-
   /// Obtiene la impresora marcada como default. Devuelve null si no hay.
   Future<PrinterProfile?> getDefault() {
     return (_db.select(
@@ -70,6 +63,12 @@ class PrinterRepository {
   }
 
   /// Actualiza una impresora existente.
+  ///
+  /// [purchaseCost] / [usefulLifeHours] se escriben SOLO si vienen con valor:
+  /// `null` → `Value.absent()` (no toca la columna, preserva amortizacion de
+  /// callers que solo cambian nombre/watts/default). Para BORRAR la
+  /// amortizacion explicitamente, pasar [clearAmortization] = true (form al
+  /// limpiar ambos campos). Patron espejo de `FilamentRepository.updateColor`.
   Future<bool> update({
     required int id,
     required String name,
@@ -78,6 +77,7 @@ class PrinterRepository {
     bool? asDefault,
     Decimal? purchaseCost,
     int? usefulLifeHours,
+    bool clearAmortization = false,
   }) {
     // BUG-002 fix: misma proteccion transaccional que create().
     return _db.transaction(() async {
@@ -93,8 +93,16 @@ class PrinterRepository {
               isDefault: asDefault == null
                   ? const Value.absent()
                   : Value(asDefault),
-              purchaseCost: Value(purchaseCost?.toDouble()),
-              usefulLifeHours: Value(usefulLifeHours),
+              purchaseCost: clearAmortization
+                  ? const Value(null)
+                  : (purchaseCost == null
+                        ? const Value.absent()
+                        : Value(purchaseCost.toDouble())),
+              usefulLifeHours: clearAmortization
+                  ? const Value(null)
+                  : (usefulLifeHours == null
+                        ? const Value.absent()
+                        : Value(usefulLifeHours)),
             ),
           );
       return updated > 0;

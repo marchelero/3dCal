@@ -13,7 +13,7 @@ import 'package:drift/drift.dart';
 /// plan). Si la DB esta vacia y SP vacio → isPro = false. Si DB tiene
 /// una fila activa → isPro = true.
 ///
-/// **Multi-store-ready**: `source` admite 'play_store' (hoy),
+/// **Multi-store-ready**: `source` admite 'lifetime_purchase' (hoy),
 /// 'appstore' | 'license_key' (futuro). El codigo mobile no se rompe
 /// cuando se sume un nuevo store.
 ///
@@ -26,9 +26,9 @@ class Entitlements extends Table {
   /// PK auto-increment. Identificador interno de la fila.
   IntColumn get id => integer().autoIncrement()();
 
-  /// Origen de la compra. Valores esperados: 'play_store' (hoy),
-  /// 'appstore' o 'license_key' (futuro). CHECK constraint en
-  /// repository si hace falta (T3).
+  /// Origen de la compra. Valores esperados: 'lifetime_purchase' (hoy,
+  /// valor real via [kSourceLifetimePurchase]), 'appstore' o
+  /// 'license_key' (futuro). CHECK constraint en repository si hace falta (T3).
   TextColumn get source => text()();
 
   /// Producto comprado. Ej: 'tresdcal_pro_lifetime'.

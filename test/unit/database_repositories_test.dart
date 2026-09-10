@@ -90,7 +90,7 @@ void main() {
       expect(p.purchaseCost, closeTo(3500, 0.0001));
       expect(p.usefulLifeHours, 4000);
 
-      // Update a null → campos limpios (sin linea de amortizacion).
+      // Update con null → preserva amortizacion (null = no tocar).
       final ok = await printers.update(
         id: id,
         name: 'Ender 3',
@@ -99,6 +99,20 @@ void main() {
         usefulLifeHours: null,
       );
       expect(ok, isTrue);
+      p = (await printers.listAll()).first;
+      expect(p.purchaseCost, closeTo(3500, 0.0001));
+      expect(p.usefulLifeHours, 4000);
+
+      // clearAmortization: true → borra explicitamente (sin linea).
+      final ok2 = await printers.update(
+        id: id,
+        name: 'Ender 3',
+        averageWatts: 150,
+        purchaseCost: null,
+        usefulLifeHours: null,
+        clearAmortization: true,
+      );
+      expect(ok2, isTrue);
       p = (await printers.listAll()).first;
       expect(p.purchaseCost, isNull);
       expect(p.usefulLifeHours, isNull);

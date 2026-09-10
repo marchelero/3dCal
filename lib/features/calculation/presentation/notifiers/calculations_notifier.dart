@@ -103,9 +103,9 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
         pieceNameSuffix: pieceNameSuffix,
       );
       if (limitedId == null) {
-        throw const HistoryCapReachedException(
+        throw HistoryCapReachedException(
           cap: kFreeHistoryCap,
-          currentCount: kFreeHistoryCap,
+          currentCount: await repo.countAll(),
         );
       }
       newId = limitedId;

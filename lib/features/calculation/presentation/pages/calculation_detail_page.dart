@@ -230,6 +230,7 @@ class _DetailState extends ConsumerState<_Detail> {
         materials: result.breakdown,
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
         discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        currency: ref.read(selectedCurrencyProvider),
         showDetail: _showDetail,
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
@@ -280,6 +281,7 @@ class _DetailState extends ConsumerState<_Detail> {
         materials: result.breakdown,
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
         discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        currency: ref.read(selectedCurrencyProvider),
         showDetail: _showDetail,
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
@@ -952,12 +954,35 @@ _recomputeOutput(
     totalGrams += weight * qtyD;
   }
 
-  // F1 formula with current settings + snapshots
-  final watts = printer?.averageWatts ?? 0;
+  // F1 formula with historical SNAPSHOTS, fallback a settings/impresora
+  // actual SOLO si el snapshot es 0/legacy (antes la impresora/settings
+  // pudieron editarse; el snapshot persistido es la fuente de verdad).
+  final kwhRate = calc.kwhRateSnapshot > 0
+      ? Decimal.parse(calc.kwhRateSnapshot.toStringAsFixed(2))
+      : settings.kwhRate;
+  final watts = calc.printerWattsSnapshot > 0
+      ? calc.printerWattsSnapshot.toInt()
+      : (printer?.averageWatts ?? 0);
+  final laborRate = calc.laborRateSnapshot > 0
+      ? Decimal.parse(calc.laborRateSnapshot.toStringAsFixed(2))
+      : settings.laborRate;
+  final postProcessRate = calc.postProcessRateSnapshot > 0
+      ? Decimal.parse(calc.postProcessRateSnapshot.toStringAsFixed(2))
+      : settings.postProcessRate;
+  final failureRate = calc.failureRateSnapshot > 0
+      ? Decimal.parse(calc.failureRateSnapshot.toStringAsFixed(2))
+      : settings.failureRate;
+  final markupOnMaterials = calc.markupOnMaterialsSnapshot > 0
+      ? Decimal.parse(calc.markupOnMaterialsSnapshot.toStringAsFixed(2))
+      : settings.markupOnMaterials;
+  final profitBase = calc.profitBaseSnapshot > 0
+      ? Decimal.parse(calc.profitBaseSnapshot.toStringAsFixed(2))
+      : settings.profitBase;
+
   final electricCost = hours > Decimal.zero && watts > 0
       ? (Decimal.fromInt(watts) *
                 hours *
-                settings.kwhRate /
+                kwhRate /
                 Decimal.fromInt(1000))
             .toDecimal()
       : Decimal.zero;
@@ -966,9 +991,9 @@ _recomputeOutput(
   final amortizationCost = calc.amortizationCostSnapshot > 0
       ? Decimal.parse(calc.amortizationCostSnapshot.toStringAsFixed(2))
       : Decimal.zero;
-  final laborCost = hours * settings.laborRate;
-  final postProcessCost = settings.postProcessRate > Decimal.zero
-      ? (materialCost * settings.postProcessRate / Decimal.fromInt(100))
+  final laborCost = hours * laborRate;
+  final postProcessCost = postProcessRate > Decimal.zero
+      ? (materialCost * postProcessRate / Decimal.fromInt(100))
             .toDecimal()
       : Decimal.zero;
   final baseCost =
@@ -977,18 +1002,16 @@ _recomputeOutput(
       amortizationCost +
       laborCost +
       postProcessCost;
-  final failureCost = settings.failureRate > Decimal.zero
-      ? (baseCost * settings.failureRate / Decimal.fromInt(100)).toDecimal()
+  final failureCost = failureRate > Decimal.zero
+      ? (baseCost * failureRate / Decimal.fromInt(100)).toDecimal()
       : Decimal.zero;
   final costWithFailure = baseCost + failureCost;
-  final markupCost = settings.markupOnMaterials > Decimal.zero
-      ? (materialCost * settings.markupOnMaterials / Decimal.fromInt(100))
-            .toDecimal()
+  final markupCost = markupOnMaterials > Decimal.zero
+      ? (materialCost * markupOnMaterials / Decimal.fromInt(100)).toDecimal()
       : Decimal.zero;
   final totalBeforeProfit = costWithFailure + markupCost;
-  final profitAmount = settings.profitBase > Decimal.zero
-      ? (totalBeforeProfit * settings.profitBase / Decimal.fromInt(100))
-            .toDecimal()
+  final profitAmount = profitBase > Decimal.zero
+      ? (totalBeforeProfit * profitBase / Decimal.fromInt(100)).toDecimal()
       : Decimal.zero;
   final totalFinal = totalBeforeProfit + profitAmount;
 

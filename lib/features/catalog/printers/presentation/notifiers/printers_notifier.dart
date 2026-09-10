@@ -51,6 +51,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
     bool? asDefault,
     Decimal? purchaseCost,
     int? usefulLifeHours,
+    bool clearAmortization = false,
   }) async {
     final repo = ref.read(printerRepositoryProvider);
     await repo.update(
@@ -61,6 +62,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       asDefault: asDefault,
       purchaseCost: purchaseCost,
       usefulLifeHours: usefulLifeHours,
+      clearAmortization: clearAmortization,
     );
     await _reload();
   }
@@ -78,10 +80,17 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       await refresh();
       return;
     }
-    final current = list.firstWhere(
-      (p) => p.id == id,
-      orElse: () => throw StateError('Printer $id not found'),
-    );
+    // BUG-C fix: id inexistente en la lista cacheada → no-op (no crashear
+    // con StateError). La UI solo muestra ids de la lista, pero un stale
+    // state tras borrar/duplicar podria referenciar un id eliminado.
+    PrinterProfile? current;
+    for (final p in list) {
+      if (p.id == id) {
+        current = p;
+        break;
+      }
+    }
+    if (current == null) return;
     await repo.update(
       id: id,
       name: current.name,

@@ -22,6 +22,7 @@ import 'package:tresdcal/features/entitlement/presentation/providers/entitlement
 import 'package:tresdcal/features/settings/presentation/pages/settings_page.dart';
 import 'package:tresdcal/l10n/en_us.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
+import 'package:tresdcal/shared/widgets/pro_badge.dart';
 
 /// Widget tests del gate visual de items Pro-bloqueados (UX).
 ///
@@ -126,9 +127,6 @@ class _FakePaymentService implements PaymentService {
     restoreCalls++;
     return restoreResult;
   }
-
-  @override
-  Stream<PaymentResult> get purchaseStream => const Stream.empty();
 
   @override
   Future<String?> getProPriceString() async => null;
@@ -620,9 +618,9 @@ void main() {
       await _pumpSettings(tester);
 
       expect(
-        find.text(EsBO.proBadgeLabel),
+        find.byType(ProBadge),
         findsOneWidget,
-        reason: 'Free: el badge "PRO" debe verse en la seccion Empresa.',
+        reason: 'Free: el badge "PRO" de bloqueo debe verse en la seccion Empresa.',
       );
       // Campo empresa (1) + botones de logo (1) = 2 Opacity 0.6.
       expect(
@@ -635,10 +633,13 @@ void main() {
     testWidgets('pro: sin badge ni atenuacion en branding', (tester) async {
       await _pumpSettings(tester, seedPro: true);
 
+      // Pro: el badge de BLOQUEO no debe verse en la seccion Empresa.
+      // (El ProActiveBadge de estado activo en la cabecera SÍ muestra "PRO"
+      // — es legitimo y no es el gate.)
       expect(
-        find.text(EsBO.proBadgeLabel),
+        find.byType(ProBadge),
         findsNothing,
-        reason: 'Pro: no debe mostrarse el badge "PRO".',
+        reason: 'Pro: no debe mostrarse el badge "PRO" de bloqueo.',
       );
       expect(_dimmed(), findsNothing, reason: 'Pro: branding sin atenuar.');
     });

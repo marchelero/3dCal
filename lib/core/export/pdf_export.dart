@@ -16,6 +16,7 @@ import 'package:printing/printing.dart';
 import '../../features/calculation/domain/entities/calculation_output.dart';
 import '../../features/calculation/presentation/state/calculator_state.dart';
 import '../../l10n/es_bo.dart';
+import '../money/currency.dart';
 import '../money/currency_formatter.dart';
 
 /// Branding forzado para usuarios Free.
@@ -27,8 +28,8 @@ const String kFreeDefaultCompanyName = '3dCalc';
 /// Dias de validez de la oferta (se imprime como "valido hasta").
 const int kQuoteValidDays = 15;
 
-/// Shorthand: formatea un Decimal con simbolo Bs para PDF.
-String _fmt(Decimal v) => formatBob(v);
+/// Shorthand: formatea un Decimal con la moneda activa para el PDF.
+String _fmt(Decimal v, WorldCurrency currency) => formatCurrency(v, currency);
 
 /// Formatea una fecha como dd/MM/yyyy (sin depender de intl).
 String _fmtDate(DateTime d) {
@@ -75,6 +76,7 @@ Future<void> shareQuotePdf({
   required List<MaterialCostBreakdown> materials,
   required Decimal totalHours,
   required Decimal discountPct,
+  WorldCurrency currency = WorldCurrency.bob,
   bool showDetail = true,
   String? companyName,
   String? companyLogoBase64,
@@ -95,6 +97,7 @@ Future<void> shareQuotePdf({
     materials: materials,
     totalHours: totalHours,
     discountPct: discountPct,
+    currency: currency,
     showDetail: showDetail,
     companyName: companyName,
     companyLogoBase64: companyLogoBase64,
@@ -133,6 +136,7 @@ Future<Uint8List> buildQuotePdfBytes({
   required List<MaterialCostBreakdown> materials,
   required Decimal totalHours,
   required Decimal discountPct,
+  WorldCurrency currency = WorldCurrency.bob,
   bool showDetail = true,
   String? companyName,
   String? companyLogoBase64,
@@ -309,7 +313,7 @@ Future<Uint8List> buildQuotePdfBytes({
                     ),
                   ),
                   pw.Text(
-                    _fmt(output.totalPrice),
+                    _fmt(output.totalPrice, currency),
                     style: pw.TextStyle(
                       fontSize: 22,
                       fontWeight: pw.FontWeight.bold,
@@ -331,29 +335,43 @@ Future<Uint8List> buildQuotePdfBytes({
                 ),
               ),
               pw.SizedBox(height: 8),
-              _row(EsBO.pdfMaterialCosts, _fmt(output.materialCost)),
+              _row(EsBO.pdfMaterialCosts, _fmt(output.materialCost, currency)),
               if (output.electricCost > Decimal.zero)
-                _row(EsBO.pdfElectricity, _fmt(output.electricCost)),
+                _row(EsBO.pdfElectricity, _fmt(output.electricCost, currency)),
               if (output.amortizationCost > Decimal.zero)
                 _row(
                   EsBO.calcDetailAmortization,
-                  _fmt(output.amortizationCost),
+                  _fmt(output.amortizationCost, currency),
                 ),
               if (output.laborCost > Decimal.zero)
-                _row(EsBO.calcDetailLabor, _fmt(output.laborCost)),
+                _row(EsBO.calcDetailLabor, _fmt(output.laborCost, currency)),
               if (output.postProcessCost > Decimal.zero)
-                _row(EsBO.calcDetailPostProcess, _fmt(output.postProcessCost)),
-              _row(EsBO.calcDetailBase, _fmt(output.baseCost), bold: true),
+                _row(
+                  EsBO.calcDetailPostProcess,
+                  _fmt(output.postProcessCost, currency),
+                ),
+              _row(
+                EsBO.calcDetailBase,
+                _fmt(output.baseCost, currency),
+                bold: true,
+              ),
               if (output.failureCost > Decimal.zero)
-                _row(EsBO.calcDetailFailure, _fmt(output.failureCost)),
+                _row(EsBO.calcDetailFailure, _fmt(output.failureCost, currency)),
               if (output.markupCost > Decimal.zero)
-                _row(EsBO.calcFieldWaste, _fmt(output.markupCost)),
+                _row(EsBO.calcFieldWaste, _fmt(output.markupCost, currency)),
               if (output.profitAmount > Decimal.zero)
-                _row(EsBO.calcDetailProfit, _fmt(output.profitAmount)),
+                _row(EsBO.calcDetailProfit, _fmt(output.profitAmount, currency)),
               if (output.discountAmount > Decimal.zero)
-                _row(EsBO.calcLabelDiscount, '-${_fmt(output.discountAmount)}'),
+                _row(
+                  EsBO.calcLabelDiscount,
+                  '-${_fmt(output.discountAmount, currency)}',
+                ),
               pw.Divider(),
-              _row(EsBO.pdfTotalUpper, _fmt(output.totalPrice), bold: true),
+              _row(
+                EsBO.pdfTotalUpper,
+                _fmt(output.totalPrice, currency),
+                bold: true,
+              ),
               pw.SizedBox(height: 16),
 
               if (materials.isNotEmpty) ...[
@@ -369,7 +387,7 @@ Future<Uint8List> buildQuotePdfBytes({
                   pw.Padding(
                     padding: const pw.EdgeInsets.only(bottom: 4),
                     child: pw.Text(
-                      '${m.label}: ${_fmt(m.cost)}',
+                      '${m.label}: ${_fmt(m.cost, currency)}',
                       style: pw.TextStyle(fontSize: 10),
                     ),
                   ),
@@ -389,16 +407,16 @@ Future<Uint8List> buildQuotePdfBytes({
                   children: [
                     _row(
                       EsBO.quoteNoDiscount,
-                      _fmt(output.totalPrice + output.discountAmount),
+                      _fmt(output.totalPrice + output.discountAmount, currency),
                     ),
                     _row(
                       EsBO.quoteDiscountPct(discountPct.toDouble().round()),
-                      '-${_fmt(output.discountAmount)}',
+                      '-${_fmt(output.discountAmount, currency)}',
                     ),
                     pw.Divider(),
                     _row(
                       EsBO.calcTotalWithDiscount,
-                      _fmt(output.totalPrice),
+                      _fmt(output.totalPrice, currency),
                       bold: true,
                     ),
                   ],

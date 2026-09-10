@@ -603,6 +603,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             },
           ),
         );
+    } on FormIncompleteException catch (_) {
+      // Defensivo: el boton Guardar solo es accesible cuando el form es
+      // valido, pero si llega un save invalido no crasheamos ni confundimos
+      // con el mensaje generico: se muestra el hint de campos faltantes.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
     } on HistoryCapReachedException catch (_) {
       // T15: free user intento guardar la #11. SnackBar dedicado con CTA
       // "Go Pro" (reusamos calculatorGoProAction — mismo destino /paywall

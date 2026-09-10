@@ -22,6 +22,17 @@ import 'calculator_state.dart';
 export '../notifiers/calculations_notifier.dart'
     show HistoryCapReachedException;
 
+/// Thrown when [CalculatorNotifier.save] is called but the form is not valid
+/// (missing required fields or no computed output). The caller cannot
+/// distinguish "invalid form" from "history cap reached" via the nullable
+/// return value, so this typed exception provides an explicit signal.
+class FormIncompleteException implements Exception {
+  const FormIncompleteException();
+
+  @override
+  String toString() => 'FormIncompleteException: el formulario no está completo.';
+}
+
 /// Notifier reactivo para el formulario de cotizacion.
 ///
 /// **Modos**:
@@ -231,6 +242,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
             )
             .toList(),
         output: null,
+        extraLaborRate: draft.extraLaborRate,
+        extraPostProcessRate: draft.extraPostProcessRate,
+        extraFailureRate: draft.extraFailureRate,
+        extraMarkupOnMaterials: draft.extraMarkupOnMaterials,
       ),
     );
   }
@@ -343,7 +358,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     String? conditions,
     Uint8List? pieceImageBytes,
   }) async {
-    if (!state.isValid || state.output == null) return null;
+    if (!state.isValid || state.output == null) {
+      throw const FormIncompleteException();
+    }
     final repo = ref.read(calculationRepositoryProvider);
     final isPro = await resolveIsPro(ref);
     // F2: downscale antes de persistir (max 1200px lado mayor, JPEG q85).
@@ -368,9 +385,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         limit: kFreeHistoryCap,
       );
       if (id == null) {
+        final currentCount = await repo.countAll();
         throw HistoryCapReachedException(
           cap: kFreeHistoryCap,
-          currentCount: kFreeHistoryCap,
+          currentCount: currentCount,
         );
       }
       ref.invalidate(calculationsNotifierProvider);
@@ -589,6 +607,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       markupOnMaterials:
           CalculatorState.parseDecimal(s.extraMarkupOnMaterials) ??
           Decimal.zero,
+      minimumCharge: settings.minimumCharge,
       amortizationPerHour: amortizationPerHour,
     );
   }

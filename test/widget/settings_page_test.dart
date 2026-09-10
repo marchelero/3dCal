@@ -773,10 +773,6 @@ class _FakePaymentService implements PaymentService {
   }
 
   @override
-  Stream<PaymentResult> get purchaseStream =>
-      const Stream<PaymentResult>.empty();
-
-  @override
   Future<String?> getProPriceString() async => null;
 
   @override

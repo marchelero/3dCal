@@ -436,11 +436,12 @@ void main() {
       await db.close();
     });
 
-    test('form invalido: save() retorna null y no inserta nada', () async {
-      final id = await container
-          .read(calculatorNotifierProvider.notifier)
-          .save();
-      expect(id, isNull);
+    test('form invalido: save() lanza FormIncompleteException y no inserta nada',
+        () async {
+      await expectLater(
+        container.read(calculatorNotifierProvider.notifier).save(),
+        throwsA(isA<FormIncompleteException>()),
+      );
       final all = await db.select(db.calculations).get();
       expect(all, isEmpty);
     });

@@ -1680,12 +1680,14 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     // En web `path` es null: leer desde `bytes`. En movil/desktop por path.
     final file = result.files.single;
 
-    // Limite de tamaño ANTES de cargar a memoria.
-    if (file.size > kBackupMaxFileBytes) {
+    // Limite de tamaño ANTES de cargar a memoria (helper compartido con
+    // BackupService.import para no duplicar la regla).
+    final sizeError = BackupService.validateFileSize(file);
+    if (sizeError != null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(AppSnackBar.error(EsBO.settingsBackupImportSizeError));
+        ..showSnackBar(AppSnackBar.error(sizeError));
       return;
     }
 
@@ -1693,9 +1695,6 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     try {
       final bytes = file.bytes;
       if (bytes != null) {
-        if (bytes.lengthInBytes > kBackupMaxFileBytes) {
-          throw const FormatException('archivo demasiado grande');
-        }
         content = utf8.decode(bytes);
       } else if (file.path != null) {
         content = await File(file.path!).readAsString();

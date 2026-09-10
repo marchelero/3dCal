@@ -18,17 +18,28 @@ import 'currency.dart';
 ///   1234.56, BOB -> "Bs. 1.234,56"
 ///   0            -> "$ 0,00"
 String formatCurrency(Decimal amount, WorldCurrency currency) {
-  final formatter = NumberFormat('#,##0.00', 'es_BO');
-  return '${currency.symbol} ${formatter.format(amount.toDouble())}';
+  return '${currency.symbol} ${formatCurrencyNumber(amount)}';
 }
 
 /// Formatea un [Decimal] como numero sin el simbolo de moneda.
 ///
 /// Ejemplo: `1234.56` -> `"1.234,56"`
-String formatCurrencyNumber(Decimal amount, WorldCurrency currency) {
+///
+/// El formato numerico no depende de la moneda (siempre es_BO); el simbolo
+/// lo agrega [formatCurrency].
+String formatCurrencyNumber(Decimal amount) {
   final formatter = NumberFormat('#,##0.00', 'es_BO');
-  return formatter.format(amount.toDouble());
+  return formatter.format(_toFormattableDouble(amount));
 }
+
+/// Convierte [amount] a `double` para [NumberFormat.format].
+///
+/// `intl` solo acepta `num` (internamente opera con `double`), asi que este es
+/// el UNICO punto del pipeline monetario que toca `double`. Para no perder
+/// precision, primero se redondea a centavos con aritmetica [Decimal] exacta:
+/// el `double` resultante es exacto mientras los centavos quepan en 2^53.
+double _toFormattableDouble(Decimal amount, {int scale = 2}) =>
+    amount.round(scale: scale).toDouble();
 
 // ─── Backwards compat (mantener hasta migrar ultimos callers) ───
 
@@ -37,9 +48,9 @@ String formatBob(Decimal amount) {
   return formatCurrency(amount, WorldCurrency.bob);
 }
 
-/// @deprecated Usar [formatCurrencyNumber] con WorldCurrency.
+/// @deprecated Usar [formatCurrencyNumber] sin simbolo.
 String formatBobNumber(Decimal amount) {
-  return formatCurrencyNumber(amount, WorldCurrency.bob);
+  return formatCurrencyNumber(amount);
 }
 
 // ─── Funciones independientes de moneda ────────────
@@ -52,7 +63,7 @@ String formatBobNumber(Decimal amount) {
 String formatPercentage(Decimal value) {
   final formatted = NumberFormat.decimalPattern(
     'es_BO',
-  ).format(value.toDouble());
+  ).format(_toFormattableDouble(value, scale: 3));
   return '$formatted%';
 }
 

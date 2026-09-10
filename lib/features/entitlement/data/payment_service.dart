@@ -143,12 +143,6 @@ abstract class PaymentService {
   /// Retorna [RestoreActive] / [RestoreEmpty] / [RestoreError].
   Future<RestoreResult> restore();
 
-  /// Stream reactivo de purchases que llegan fuera de banda (e.g.
-  /// subscription renewal via Play Store mientras la app esta en
-  /// background). Para one-time unlock (caso de tresdcal) normalmente
-  /// no emite, pero el campo queda para futuro (suscripciones).
-  Stream<PaymentResult> get purchaseStream;
-
   /// Precio displayed del unlock Pro segun la store (e.g. `'$4.99'`),
   /// tal como lo reporta RevenueCat via `getOfferings()`.
   ///

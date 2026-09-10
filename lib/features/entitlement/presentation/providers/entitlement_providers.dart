@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 import 'dart:async';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers.dart';
@@ -85,8 +86,14 @@ Future<bool> resolveIsPro(Ref ref) async {
     // el entitlement Pro declarado para web en main.dart.
     return ref.read(isProProvider);
   } on TimeoutException {
+    // BUG-D: caso esperado — DB lenta / plataforma offline. Se degrada a la
+    // cache local sin ruido en logs.
+    debugPrint('[Entitlement] resolveIsPro timeout — degradando a cache');
     return ref.read(isProProvider);
-  } catch (_) {
+  } catch (e, st) {
+    // BUG-D: fallo inesperado (ej: error de DB). Misma degradacion funcional
+    // (fail-safe Free), pero con log visible para diagnosticar.
+    debugPrint('[Entitlement] resolveIsPro fallo inesperado: $e\n$st');
     return ref.read(isProProvider);
   }
 }

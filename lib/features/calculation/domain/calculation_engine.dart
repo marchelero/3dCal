@@ -21,7 +21,7 @@ import 'entities/material_input.dart';
 ///   profitAmount       = totalBeforeProfit * profitBase / 100
 ///   totalFinal         = totalBeforeProfit + profitAmount
 ///   discountAmount     = totalFinal * discountPercentage / 100
-///   totalPrice         = totalFinal - discountAmount
+///   totalPrice         = max(totalFinal - discountAmount, minimumCharge)
 ///
 /// **Reglas de borde**:
 /// - Si no hay materiales, `materialCost = 0`.
@@ -30,6 +30,9 @@ import 'entities/material_input.dart';
 ///   preserva para que la UI lo maneje).
 /// - Todos los parametros con default 0 no afectan el calculo.
 /// - `amortizationPerHour` null → sin linea (impresora sin costo/vida util).
+/// - `minimumCharge > 0`: piso del precio final (despues del descuento).
+///   Si el precio queda por debajo, sube a `minimumCharge`. Con
+///   `minimumCharge = 0` no hay efecto.
 ///
 /// **Precision**: todo en `Decimal`. Prohibido `double` en este archivo.
 class CalculationEngine {
@@ -113,7 +116,17 @@ class CalculationEngine {
     final discountAmount = input.discountPercentage > Decimal.zero
         ? (totalFinal * input.discountPercentage / _pct).toDecimal()
         : Decimal.zero;
-    final totalPrice = totalFinal - discountAmount;
+
+    // Cargo minimo: piso del precio FINAL (despues del descuento). Si el
+    // precio queda por debajo del piso, sube a minimumCharge. Guard en
+    // `minimumCharge > 0` para que el default no altere el caso borde de
+    // total negativo por descuento > 100%.
+    final totalAfterDiscount = totalFinal - discountAmount;
+    final totalPrice =
+        input.minimumCharge > Decimal.zero &&
+            totalAfterDiscount < input.minimumCharge
+        ? input.minimumCharge
+        : totalAfterDiscount;
 
     return CalculationOutput(
       materialCost: materialCost,

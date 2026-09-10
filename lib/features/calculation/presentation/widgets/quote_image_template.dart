@@ -320,6 +320,7 @@ class QuoteImageTemplate extends StatelessWidget {
               markupCost: (detailMarkupCost ?? Decimal.zero) * qty,
               profitAmount: (detailProfitAmount ?? Decimal.zero) * qty,
               totalFinal: (detailTotalFinal ?? Decimal.zero) * qty,
+              currency: currency,
               textColor: color.onSurface,
             ),
           ],

@@ -37,7 +37,6 @@ class _FakePaymentService implements PaymentService {
   PaymentResult purchaseResult = const PaymentCancelled();
   int restoreCalls = 0;
   RestoreResult restoreResult = const RestoreEmpty();
-  final _purchaseStream = StreamController<PaymentResult>.broadcast();
 
   void seedPurchase(PaymentResult r) => purchaseResult = r;
   void seedRestore(RestoreResult r) => restoreResult = r;
@@ -59,9 +58,6 @@ class _FakePaymentService implements PaymentService {
     restoreCalls++;
     return restoreResult;
   }
-
-  @override
-  Stream<PaymentResult> get purchaseStream => _purchaseStream.stream;
 
   @override
   Future<String?> getProPriceString() async => null;

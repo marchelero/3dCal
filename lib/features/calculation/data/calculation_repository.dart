@@ -419,13 +419,6 @@ class CalculationRepository {
         .get();
   }
 
-  Stream<List<Calculation>> watchAll() {
-    return (_db.select(_db.calculations)
-          ..where((_) => excludeTemplatesFilter())
-          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)]))
-        .watch();
-  }
-
   /// Lista las plantillas de trabajo, mas recientes primero.
   Future<List<Calculation>> listTemplates() {
     return (_db.select(_db.calculations)
@@ -482,6 +475,9 @@ class CalculationRepository {
   }
 
   /// Actualiza el nombre de pieza / cliente. Otros campos NO se modifican.
+  ///
+  /// Los parametros son opcionales: un campo NO provisto (null) se deja
+  /// intacto (`Value.absent()`), no se borra.
   Future<bool> updateMetadata({
     required int id,
     String? pieceName,
@@ -492,8 +488,12 @@ class CalculationRepository {
           _db.calculations,
         )..where((c) => c.id.equals(id))).write(
           CalculationsCompanion(
-            pieceName: Value(pieceName),
-            clientName: Value(clientName),
+            pieceName: pieceName == null
+                ? const Value.absent()
+                : Value(pieceName),
+            clientName: clientName == null
+                ? const Value.absent()
+                : Value(clientName),
           ),
         );
     return updated > 0;

@@ -255,7 +255,17 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
         .purchase(productId: productId);
     switch (result) {
       case PaymentSuccess():
-        await activate(source: kSourceLifetimePurchase);
+        final activated = await activate(source: kSourceLifetimePurchase);
+        if (!activated) {
+          // BUG-E: la store cobro pero la persistencia local fallo. Se
+          // retorna PaymentError para que el paywall muestre reintento.
+          debugPrint(
+            '[Entitlement] purchase ok pero activacion local fallo',
+          );
+          return const PaymentError(
+            'Payment successful but local activation failed. Try again.',
+          );
+        }
       case PaymentCancelled():
         // User cancelo. No tocar state.
         break;
@@ -282,7 +292,17 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
     final result = await ref.read(paymentServiceProvider).restore();
     switch (result) {
       case RestoreActive():
-        await activate(source: kSourceLifetimePurchase);
+        final activated = await activate(source: kSourceLifetimePurchase);
+        if (!activated) {
+          // BUG-E: restore reporto activo pero la persistencia local fallo.
+          // Se retorna RestoreError para que el caller muestre reintento.
+          debugPrint(
+            '[Entitlement] restore activo pero activacion local fallo',
+          );
+          return const RestoreError(
+            'Restore active but local activation failed. Try again.',
+          );
+        }
       case RestoreEmpty():
         await deactivate();
       case RestoreError(:final message):
@@ -297,12 +317,17 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
   /// Persiste fila en [EntitlementRepository] + actualiza [EntitlementCache].
   /// El state final es [EntitlementPro] con [source] del parametro.
   /// [validatedAt] = `DateTime.now().toUtc()` (momento de activacion).
-  Future<void> activate({required String source}) async {
+  ///
+  /// BUG-E: retorna `true` si la persistencia (DB + cache) fue exitosa.
+  /// Si `repo.save` o `cache.setActive` lanzan, loguea el error y retorna
+  /// `false` (state sin cambios) para que el caller (purchase/restore)
+  /// pueda reportar al paywall que el pago no quedo activado localmente.
+  Future<bool> activate({required String source}) async {
     final repo = ref.read(entitlementRepositoryProvider);
     final cache = ref.read(entitlementCacheProvider);
     final now = DateTime.now().toUtc();
 
-    final next = await AsyncValue.guard<EntitlementState>(() async {
+    try {
       await repo.save(
         EntitlementsCompanion.insert(
           source: source,
@@ -312,9 +337,12 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
         ),
       );
       await cache.setActive(source: source, validatedAt: now);
-      return EntitlementPro(source: source, validatedAt: now);
-    });
-    state = next;
+      state = AsyncData(EntitlementPro(source: source, validatedAt: now));
+      return true;
+    } catch (e, st) {
+      debugPrint('[Entitlement] activate fallo (persistencia): $e\n$st');
+      return false;
+    }
   }
 
   /// Desactiva el entitlement (tras un restore que reporta vacio).

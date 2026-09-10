@@ -3,6 +3,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../core/money/decimal_extensions.dart';
 import '../../domain/entities/calculation_output.dart';
 
 /// Modo del calculator.
@@ -103,7 +104,7 @@ class MaterialRow {
 /// Formula completa (F1):
 ///   materialCost + electricCost + laborCost + postProcessCost = baseCost
 ///   baseCost + failureCost + markup + profit = total
-///   max(total, minimumCharge) - discount = totalPrice
+///   max(total - discount, minimumCharge) = totalPrice
 @immutable
 class CalculatorState {
   const CalculatorState({
@@ -379,10 +380,11 @@ class CalculatorState {
     return d;
   }
 
-  /// Parsea un string como [Decimal]. Acepta `.` o `,` como separador decimal.
+  /// Parsea un string como [Decimal]. Acepta `.` o `,` como separador decimal
+  /// y normaliza separadores de miles (es_BO o en-US).
   /// Retorna `null` si vacio, whitespace, o no parseable.
   static Decimal? parseDecimal(String raw) {
-    final cleaned = raw.trim().replaceAll(',', '.');
+    final cleaned = normalizeDecimalString(raw.trim());
     if (cleaned.isEmpty) return null;
     try {
       return Decimal.parse(cleaned);

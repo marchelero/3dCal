@@ -3,6 +3,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
@@ -25,6 +26,7 @@ class DetailSection extends StatelessWidget {
     required this.profitAmount,
     required this.totalFinal,
     Decimal? amortizationCost,
+    this.currency = WorldCurrency.bob,
     this.textColor,
     super.key,
   }) : amortizationCost = amortizationCost ?? Decimal.zero;
@@ -43,6 +45,9 @@ class DetailSection extends StatelessWidget {
   final Decimal markupCost;
   final Decimal profitAmount;
   final Decimal totalFinal;
+
+  /// Moneda activa para formatear las filas del desglose.
+  final WorldCurrency currency;
   final Color? textColor;
 
   @override
@@ -66,38 +71,63 @@ class DetailSection extends StatelessWidget {
           ...materialBreakdown.map((m) => _materialRow(m, theme, tc)),
           const SizedBox(height: AppSpacing.sm),
         ],
-        _dr(EsBO.calcDetailMaterial, formatBob(materialCost), s, tc: tc),
-        _dr(EsBO.calcDetailEnergy, formatBob(electricCost), s, tc: tc),
+        _dr(
+          EsBO.calcDetailMaterial,
+          formatCurrency(materialCost, currency),
+          s,
+          tc: tc,
+        ),
+        _dr(
+          EsBO.calcDetailEnergy,
+          formatCurrency(electricCost, currency),
+          s,
+          tc: tc,
+        ),
         if (amortizationCost > Decimal.zero)
           _dr(
             EsBO.calcDetailAmortization,
-            formatBob(amortizationCost),
+            formatCurrency(amortizationCost, currency),
             s,
             tc: tc,
           ),
         if (laborCost > Decimal.zero)
-          _dr(EsBO.calcDetailLabor, formatBob(laborCost), s, tc: tc),
+          _dr(
+            EsBO.calcDetailLabor,
+            formatCurrency(laborCost, currency),
+            s,
+            tc: tc,
+          ),
         if (postProcessCost > Decimal.zero)
           _dr(
             EsBO.calcDetailPostProcess,
-            formatBob(postProcessCost),
+            formatCurrency(postProcessCost, currency),
             s,
             tc: tc,
           ),
         _dr(
           EsBO.calcDetailBase,
-          formatBob(baseCost),
+          formatCurrency(baseCost, currency),
           s,
           tc: tc,
           isSubtotal: hasExtras,
         ),
         if (failureCost > Decimal.zero)
-          _dr(EsBO.calcDetailFailure, formatBob(failureCost), s, tc: tc),
+          _dr(
+            EsBO.calcDetailFailure,
+            formatCurrency(failureCost, currency),
+            s,
+            tc: tc,
+          ),
         if (markupCost > Decimal.zero)
-          _dr(EsBO.calcDetailMarkup, formatBob(markupCost), s, tc: tc),
+          _dr(
+            EsBO.calcDetailMarkup,
+            formatCurrency(markupCost, currency),
+            s,
+            tc: tc,
+          ),
         _dr(
           EsBO.calcDetailProfit,
-          formatBob(profitAmount),
+          formatCurrency(profitAmount, currency),
           s,
           tc: theme.colorScheme.primary,
           isProfit: true,
@@ -112,7 +142,7 @@ class DetailSection extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         _dr(
           EsBO.calcDetailTotal,
-          formatBob(totalFinal),
+          formatCurrency(totalFinal, currency),
           s,
           tc: tc,
           isTotal: true,
@@ -139,7 +169,7 @@ class DetailSection extends StatelessWidget {
             ),
           ),
           Text(
-            formatBob(m.cost),
+            formatCurrency(m.cost, currency),
             style: theme.textTheme.bodySmall?.copyWith(
               fontFeatures: const [FontFeature.tabularFigures()],
               color: tc.withValues(alpha: 0.7),

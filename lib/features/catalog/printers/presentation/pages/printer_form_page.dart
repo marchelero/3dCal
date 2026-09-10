@@ -126,6 +126,10 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
           asDefault: _isDefault,
           purchaseCost: cost,
           usefulLifeHours: life,
+          // BUG-B fix: el form pasa null al limpiar los campos; con el flag
+          // explicito el repo BORRA la amortizacion en vez de ignorar el null
+          // (que ahora preserva valores existentes en otros callers).
+          clearAmortization: cost == null && life == null,
         );
       } else {
         await notifier.create(

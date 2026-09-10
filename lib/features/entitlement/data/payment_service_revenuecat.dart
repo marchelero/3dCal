@@ -35,13 +35,6 @@ class RevenueCatPaymentService implements PaymentService {
   @override
   bool get isAvailable => _available;
 
-  /// Stream controller para el [purchaseStream]. En la practica nunca
-  /// emite para one-time unlock (no hay renovacion), pero el campo queda
-  /// para que el type system no obligue a eliminarlo.
-  // ignore: close_sinks
-  final StreamController<PaymentResult> _purchaseController =
-      StreamController<PaymentResult>.broadcast();
-
   /// Stream controller del [proRevocationStream]. Se alimenta desde el
   /// customer info update listener registrado en [configure].
   // ignore: close_sinks
@@ -171,7 +164,9 @@ class RevenueCatPaymentService implements PaymentService {
         _ => PaymentError('Purchase failed: ${e.message ?? e.code}'),
       };
     } catch (e) {
-      return PaymentError('Unexpected error: ${e.runtimeType}');
+      // BUG-F: incluir el detalle (sin PII) para diagnosticar fallos
+      // inesperados (antes se descartaba con solo el runtimeType).
+      return PaymentError('Unexpected error: $e');
     }
   }
 
@@ -203,7 +198,7 @@ class RevenueCatPaymentService implements PaymentService {
     } on PlatformException catch (e) {
       return RestoreError('Restore failed: ${e.message ?? e.code}');
     } catch (e) {
-      return RestoreError('Unexpected error: ${e.runtimeType}');
+      return RestoreError('Unexpected error: $e');
     }
   }
 
@@ -266,7 +261,4 @@ class RevenueCatPaymentService implements PaymentService {
       return null;
     }
   }
-
-  @override
-  Stream<PaymentResult> get purchaseStream => _purchaseController.stream;
 }

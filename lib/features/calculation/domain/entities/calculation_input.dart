@@ -26,9 +26,9 @@ import 'material_input.dart';
 ///   profitAmount = totalBeforeProfit * profitBase / 100
 ///   totalFinal = totalBeforeProfit + profitAmount
 ///   discountAmount = totalFinal * discountPercentage / 100
-///   totalPrice = totalFinal - discountAmount
+///   totalPrice = max(totalFinal - discountAmount, minimumCharge)
 class CalculationInput {
-  const CalculationInput({
+  CalculationInput({
     required this.materials,
     required this.totalHours,
     required this.discountPercentage,
@@ -40,7 +40,8 @@ class CalculationInput {
     required this.failureRate,
     required this.markupOnMaterials,
     this.amortizationPerHour,
-  });
+    Decimal? minimumCharge,
+  }) : minimumCharge = minimumCharge ?? Decimal.zero;
 
   /// Lista de materiales (puede ser vacia).
   final List<MaterialInput> materials;
@@ -75,4 +76,9 @@ class CalculationInput {
   /// Amortizacion de la impresora (BOB/hora). Null = sin linea
   /// (impresora sin costo/vida util configurados).
   final Decimal? amortizationPerHour;
+
+  /// Cargo minimo por cotizacion (BOB). Piso del precio FINAL: si
+  /// `totalFinal - discountAmount` queda por debajo, sube a [minimumCharge].
+  /// `Decimal.zero` (default) = sin efecto.
+  final Decimal minimumCharge;
 }

@@ -40,8 +40,30 @@ void main() {
     'schemaVersion': db.schemaVersion,
     'exportedAt': '2026-09-07T12:00:00.000Z',
     'appName': kBackupAppName,
-    'filaments': <Map<String, dynamic>>[],
-    'printers': <Map<String, dynamic>>[],
+    'filaments': <Map<String, dynamic>>[
+      {
+        'id': 1,
+        'name': 'PLA',
+        'brand': null,
+        'pricePerBobbin': 150.0,
+        'gramsPerBobbin': 1000.0,
+        'isDefault': true,
+        'color': '#FF0000',
+        'createdAt': '2026-09-07T12:00:00.000Z',
+      },
+    ],
+    'printers': <Map<String, dynamic>>[
+      {
+        'id': 1,
+        'brand': null,
+        'name': 'Ender 3',
+        'averageWatts': 120,
+        'purchaseCost': 2400.0,
+        'usefulLifeHours': 5000,
+        'isDefault': true,
+        'createdAt': '2026-09-07T12:00:00.000Z',
+      },
+    ],
     'calculations': <Map<String, dynamic>>[
       {
         'id': 1,
@@ -50,18 +72,20 @@ void main() {
         'clientName': null,
         'notes': null,
         'conditions': null,
-        'printerId': null,
-        'printerNameSnapshot': null,
-        'printerWattsSnapshot': 0,
+        'printerId': 1,
+        'printerNameSnapshot': 'Ender 3',
+        'printerWattsSnapshot': 120,
         'totalHours': 2.0,
         'printMinutes': 120,
         'discountPercentage': 0,
         'kwhRateSnapshot': 0,
         'profitBaseSnapshot': 0,
+        'quantity': 3,
         'isSold': false,
-        'isTemplate': false,
+        'isTemplate': true,
         'materialCostSnapshot': 12.0,
         'electricCostSnapshot': 0,
+        'amortizationCostSnapshot': 3.5,
         'laborCostSnapshot': 0,
         'postProcessCostSnapshot': 0,
         'baseCostSnapshot': 12.0,
@@ -114,6 +138,25 @@ void main() {
       expect(rows.first.pieceImageBlob, isNull);
     },
   );
+
+  test('round-trip: catalogo y snapshots preservan campos nuevos', () async {
+    final json = jsonEncode(validBackupJson());
+
+    final result = await backup.restoreFromJson(json);
+    expect(result, isEmpty, reason: 'Restore debe ser exitoso.');
+
+    final filaments = await db.select(db.filaments).get();
+    expect(filaments.single.color, '#FF0000');
+
+    final printers = await db.select(db.printers).get();
+    expect(printers.single.purchaseCost, 2400.0);
+    expect(printers.single.usefulLifeHours, 5000);
+
+    final calcs = await db.select(db.calculations).get();
+    expect(calcs.single.quantity, 3);
+    expect(calcs.single.amortizationCostSnapshot, 3.5);
+    expect(calcs.single.isTemplate, isTrue);
+  });
 
   test('base64 corrupto → error claro y rollback (DB actual intacta)', () async {
     // Seed: una cotizacion existente que NO debe perderse si el restore falla.

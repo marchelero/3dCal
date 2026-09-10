@@ -20,12 +20,6 @@ class FilamentRepository {
     )..orderBy([(f) => OrderingTerm.asc(f.name)])).get();
   }
 
-  Stream<List<Filament>> watchAll() {
-    return (_db.select(
-      _db.filaments,
-    )..orderBy([(f) => OrderingTerm.asc(f.name)])).watch();
-  }
-
   Future<Filament?> getDefault() {
     return (_db.select(
       _db.filaments,

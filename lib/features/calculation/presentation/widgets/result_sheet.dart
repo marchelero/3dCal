@@ -363,7 +363,10 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   // lo usa para encontrar el RenderObject y capturarlo como PNG.
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
-  int _quantity = 1;
+  // BUG-B fix: arranca con la cantidad guardada del state (no hardcodeado a
+  // 1). La imagen exportada usa `_quantity` mientras "Guardar" persiste
+  // `state.quantity`; ambos caminos deben compartir el mismo valor inicial.
+  late int _quantity = widget.state.quantity < 1 ? 1 : widget.state.quantity;
   late final TextEditingController _quantityCtrl = TextEditingController(
     text: '$_quantity',
   );
@@ -458,6 +461,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         totalHours: state.totalHoursDecimal ?? Decimal.zero,
         discountPct:
             CalculatorState.parseDecimal(state.discountPct) ?? Decimal.zero,
+        currency: widget.currency,
         showDetail: state.showDetail,
         companyName: widget.companyName,
         companyLogoBase64: widget.companyLogoBase64,
