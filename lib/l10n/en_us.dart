@@ -1111,6 +1111,9 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String shareErrorSaveWithMessage(String msg) =>
       'Could not save the image: $msg';
+  @override
+  String get shareWebUnavailable =>
+      'This browser cannot open the share menu. The image was saved.';
 
   @override
   String get homeHeroTagline =>
@@ -1182,6 +1185,15 @@ We may update, suspend, or remove application features. These terms may also cha
   String get pdfHoursPrefix => 'Hours: ';
   @override
   String pdfDiscountPct(int pct) => 'Discount: $pct%';
+
+  @override
+  String get pdfWeight => 'Weight: ';
+  @override
+  String get pdfPrintTime => 'Print time: ';
+  @override
+  String get pdfTechnicalData => 'Technical data';
+  @override
+  String get pdfMaterialsSection => 'Materials';
 
   @override
   String get dashboardEmptySubtitle =>

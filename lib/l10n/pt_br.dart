@@ -1085,6 +1085,9 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   @override
   String shareErrorSaveWithMessage(String msg) =>
       'Não foi possível salvar a imagem: $msg';
+  @override
+  String get shareWebUnavailable =>
+      'Este navegador não pode abrir o menu de compartilhar. A imagem foi salva.';
 
   @override
   String get homeHeroTagline =>
@@ -1154,6 +1157,15 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String get pdfHoursPrefix => 'Horas: ';
   @override
   String pdfDiscountPct(int pct) => 'Desconto: $pct%';
+
+  @override
+  String get pdfWeight => 'Peso: ';
+  @override
+  String get pdfPrintTime => 'Tempo de impressão: ';
+  @override
+  String get pdfTechnicalData => 'Dados técnicos';
+  @override
+  String get pdfMaterialsSection => 'Materiais';
 
   @override
   String get dashboardEmptySubtitle => 'Crie seu primeiro orçamento do zero.';

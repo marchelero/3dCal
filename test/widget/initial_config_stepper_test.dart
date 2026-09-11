@@ -94,8 +94,8 @@ void main() {
     ) async {
       await _pumpStepper(tester);
 
-      // Ninguna preferencia previa → nada seleccionado.
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
+      // Sin preferencia previa → Claro seleccionado por defecto (2026-09).
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
 
       await tester.tap(find.text('Oscuro'));
       await tester.pumpAndSettle();

@@ -1127,6 +1127,9 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   @override
   String shareErrorSaveWithMessage(String msg) =>
       'Das Bild konnte nicht gespeichert werden: $msg';
+  @override
+  String get shareWebUnavailable =>
+      'Dieser Browser kann das Teilen-Menü nicht öffnen. Das Bild wurde gespeichert.';
 
   @override
   String get homeHeroTagline =>
@@ -1199,6 +1202,15 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   String get pdfHoursPrefix => 'Stunden: ';
   @override
   String pdfDiscountPct(int pct) => 'Rabatt: $pct %';
+
+  @override
+  String get pdfWeight => 'Gewicht: ';
+  @override
+  String get pdfPrintTime => 'Druckzeit: ';
+  @override
+  String get pdfTechnicalData => 'Technische Daten';
+  @override
+  String get pdfMaterialsSection => 'Materialien';
 
   @override
   String get dashboardEmptySubtitle =>

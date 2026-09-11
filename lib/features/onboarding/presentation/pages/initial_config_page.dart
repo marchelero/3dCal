@@ -827,7 +827,7 @@ class _ThemePicker extends ConsumerWidget {
     final selected = switch (current) {
       AppThemeMode.light => AppThemeMode.light,
       AppThemeMode.dark => AppThemeMode.dark,
-      // Sin preferencia explícita todavía (default = sigue al sistema).
+      // Sin preferencia explícita todavía (default = claro desde 2026-09).
       AppThemeMode.system => null,
     };
 

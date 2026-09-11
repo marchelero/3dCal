@@ -13,6 +13,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../l10n/es_bo.dart';
 import 'save_platform_stub.dart'
     if (dart.library.html) 'save_platform_web.dart';
+import 'web_share_support_stub.dart'
+    if (dart.library.js_interop) 'web_share_support_web.dart';
 
 /// Excepcion que se lanza cuando la generacion o el share de la imagen falla.
 /// Capturada por la UI para mostrar un AppSnackBar al usuario.
@@ -58,7 +60,17 @@ Future<Uint8List> captureQuoteImageBytes(GlobalKey captureKey) async {
 ///
 /// Usa [share_plus] internamente, que en Android/iOS muestra el share sheet
 /// nativo (con opciones de guardar, enviar por, etc.).
+///
+/// **Web**: fail-fast. Si el browser no implementa la Web Share API
+/// ([webShareFilesAvailable] == false), lanza [ShareQuoteException] con un
+/// mensaje claro ANTES de llamar a share_plus — en Chrome/Windows el pane
+/// nativo puede colgarse (y el boton fusionado del result sheet quedaria
+/// clavado en loading aunque la imagen ya se guardo).
 Future<void> shareQuoteImage(Uint8List imageBytes) async {
+  if (kIsWeb && !webShareFilesAvailable()) {
+    throw ShareQuoteException(EsBO.shareWebUnavailable);
+  }
+
   final filename =
       'cotizacion_3dcalc_${DateTime.now().millisecondsSinceEpoch}.png';
 

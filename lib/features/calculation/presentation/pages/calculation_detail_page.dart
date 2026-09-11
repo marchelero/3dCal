@@ -215,15 +215,20 @@ class _DetailState extends ConsumerState<_Detail> {
       final settingsAsync = ref.read(settingsNotifierProvider);
       final settings = settingsAsync.value ?? Settings.defaults;
       final printer = ref.read(activePrinterProvider);
-      // PDF con totales efectivos (unitario x cantidad guardada).
+      // PDF con precio UNITARIO. El PDF maneja quantity para display.
       final result = _recomputeOutput(
         calc,
         materials,
         settings,
         printer,
-        quantity: calc.quantity,
+        quantity: 1,
       );
       if (result == null) return;
+      // Gramos totales: suma de weightGrams de cada material.
+      final totalGrams = materials.fold(
+        Decimal.zero,
+        (Decimal sum, m) => sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
+      );
       await shareQuotePdf(
         isPro: ref.read(isProProvider),
         output: result.output,
@@ -244,6 +249,10 @@ class _DetailState extends ConsumerState<_Detail> {
         notes: calc.notes,
         conditions: calc.conditions,
         pieceImageBytes: calc.pieceImageBlob,
+        metaGrams: result.metaGrams,
+        metaTime: result.metaTime,
+        quantity: _quantity,
+        totalGrams: totalGrams,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -266,15 +275,19 @@ class _DetailState extends ConsumerState<_Detail> {
       final settingsAsync = ref.read(settingsNotifierProvider);
       final settings = settingsAsync.value ?? Settings.defaults;
       final printer = ref.read(activePrinterProvider);
-      // PDF con totales efectivos (unitario x cantidad guardada).
+      // PDF con precio UNITARIO. El PDF maneja quantity para display.
       final result = _recomputeOutput(
         calc,
         materials,
         settings,
         printer,
-        quantity: calc.quantity,
+        quantity: 1,
       );
       if (result == null) return;
+      final totalGrams = materials.fold(
+        Decimal.zero,
+        (Decimal sum, m) => sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
+      );
       final pdfBytes = await buildQuotePdfBytes(
         isPro: ref.read(isProProvider),
         output: result.output,
@@ -295,6 +308,10 @@ class _DetailState extends ConsumerState<_Detail> {
         notes: calc.notes,
         conditions: calc.conditions,
         pieceImageBytes: calc.pieceImageBlob,
+        metaGrams: result.metaGrams,
+        metaTime: result.metaTime,
+        quantity: _quantity,
+        totalGrams: totalGrams,
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
     } catch (e) {
@@ -849,7 +866,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   _DetailActionIcon(
                     icon: Icons.print_rounded,
                     tooltip: EsBO.commonPrint,
-                    color: AppTheme.greenSuccess,
+                    color: AppTheme.blueSuccess,
                     isBusy: _isBusy,
                     onPressed: _isBusy ? null : _handlePrint,
                   ),

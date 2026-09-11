@@ -46,10 +46,12 @@ class ThemeModeNotifier extends StateNotifier<AppThemeMode> {
 
   static AppThemeMode _load(SharedPreferences prefs) {
     final raw = prefs.getString(_kThemeModeKey);
-    if (raw == null) return AppThemeMode.system;
+    // Default = claro (2026-09): sin preferencia persistida la app arranca
+    // en tema claro; el usuario lo cambia desde Ajustes o el setup inicial.
+    if (raw == null) return AppThemeMode.light;
     return AppThemeMode.values.firstWhere(
       (m) => m.name == raw,
-      orElse: () => AppThemeMode.system,
+      orElse: () => AppThemeMode.light,
     );
   }
 

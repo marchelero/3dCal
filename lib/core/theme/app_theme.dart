@@ -46,7 +46,9 @@ class AppTheme {
   static const Color seedColor = Color(0xFF0B5394);
 
   /// Verde sello de exito ("cobrado").
-  static const Color greenSuccess = Color(0xFF1F6E43);
+  /// Azul medio (celeste-azul, elección del usuario 2026-09): feedback de
+  /// éxito. Reemplaza al verde #1F6E43 que el usuario consideraba "horrible".
+  static const Color blueSuccess = Color(0xFF1E88E5);
 
   /// Rojo sello de error ("revisar").
   static const Color redError = Color(0xFFB3261E);

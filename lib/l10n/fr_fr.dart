@@ -1081,6 +1081,9 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String shareErrorSaveWithMessage(String msg) =>
       'Impossible d’enregistrer l’image : $msg';
   @override
+  String get shareWebUnavailable =>
+      'Ce navigateur ne peut pas ouvrir le menu de partage. L’image a été enregistrée.';
+  @override
   String get homeHeroTagline =>
       'Devis 3D · Rapide · Précis · Toujours à portée de main';
   @override
@@ -1144,6 +1147,16 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get pdfHoursPrefix => 'Heures : ';
   @override
   String pdfDiscountPct(int pct) => 'Remise : $pct %';
+
+  @override
+  String get pdfWeight => 'Poids : ';
+  @override
+  String get pdfPrintTime => 'Temps d\'impression : ';
+  @override
+  String get pdfTechnicalData => 'Données techniques';
+  @override
+  String get pdfMaterialsSection => 'Matériaux';
+
   @override
   String get dashboardEmptySubtitle =>
       'Créez votre premier devis à partir de zéro.';

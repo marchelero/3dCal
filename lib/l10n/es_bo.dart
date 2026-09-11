@@ -619,6 +619,7 @@ class EsBO {
   static String get shareErrorSaveGallery => _impl.shareErrorSaveGallery;
   static String shareErrorSaveWithMessage(String msg) =>
       _impl.shareErrorSaveWithMessage(msg);
+  static String get shareWebUnavailable => _impl.shareWebUnavailable;
 
   static String get homeHeroTagline => _impl.homeHeroTagline;
   static String get homeHeroSemanticsSuffix => _impl.homeHeroSemanticsSuffix;
@@ -657,6 +658,11 @@ class EsBO {
   static String get pdfTotalUpper => _impl.pdfTotalUpper;
   static String get pdfHoursPrefix => _impl.pdfHoursPrefix;
   static String pdfDiscountPct(int pct) => _impl.pdfDiscountPct(pct);
+
+  static String get pdfWeight => _impl.pdfWeight;
+  static String get pdfPrintTime => _impl.pdfPrintTime;
+  static String get pdfTechnicalData => _impl.pdfTechnicalData;
+  static String get pdfMaterialsSection => _impl.pdfMaterialsSection;
 
   static String get dashboardEmptySubtitle => _impl.dashboardEmptySubtitle;
   static String get dashboardMonthlyTrend => _impl.dashboardMonthlyTrend;
@@ -1902,6 +1908,9 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String shareErrorSaveWithMessage(String msg) =>
       'No se pudo guardar la imagen: $msg';
+  @override
+  String get shareWebUnavailable =>
+      'Este navegador no permite abrir el menú de compartir. La imagen se guardó.';
 
   @override
   String get homeHeroTagline =>
@@ -1974,6 +1983,15 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String get pdfHoursPrefix => 'Horas: ';
   @override
   String pdfDiscountPct(int pct) => 'Descuento: $pct%';
+
+  @override
+  String get pdfWeight => 'Peso: ';
+  @override
+  String get pdfPrintTime => 'Tiempo impresion: ';
+  @override
+  String get pdfTechnicalData => 'Datos tecnicos';
+  @override
+  String get pdfMaterialsSection => 'Materiales';
 
   @override
   String get dashboardEmptySubtitle =>

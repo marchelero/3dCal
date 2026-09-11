@@ -833,6 +833,11 @@ abstract class AppStrings {
   /// Share: no se pudo guardar la imagen (con mensaje del plugin).
   String shareErrorSaveWithMessage(String msg);
 
+  /// Share web: el browser no implementa/bloquea la Web Share API. Se usa en
+  /// el pre-check fail-fast y en el timeout de la rama share del boton
+  /// fusionado (AS-2026) — la imagen ya quedo guardada en ambos casos.
+  String get shareWebUnavailable;
+
   /// Hero tagline de la home.
   String get homeHeroTagline;
 
@@ -929,6 +934,18 @@ abstract class AppStrings {
 
   /// "Descuento: $pct%" / "Discount: $pct%".
   String pdfDiscountPct(int pct);
+
+  /// "Peso: " / "Weight: " — peso total en gramos en el PDF.
+  String get pdfWeight;
+
+  /// "Tiempo impresion: " / "Print time: " — tiempo total de impresion en el PDF.
+  String get pdfPrintTime;
+
+  /// "Datos tecnicos" / "Technical data" — titulo de seccion de specs en PDF.
+  String get pdfTechnicalData;
+
+  /// "Materiales" / "Materials" — titulo de seccion de materiales en PDF.
+  String get pdfMaterialsSection;
 
   /// Empty state del dashboard (subtitulo).
   String get dashboardEmptySubtitle;

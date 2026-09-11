@@ -2,6 +2,15 @@
 ///
 /// Usa el paquete `pdf` (Dart PDF) para generar un documento vectorial
 /// con los mismos datos que la QuoteImageTemplate.
+///
+/// Diseno profesional:
+/// - Barra de color superior (accent bar)
+/// - Header con logo + branding + metadata de cotizacion
+/// - Seccion tecnica (peso + tiempo) en ambos modos
+/// - Total hero con fondo colorido
+/// - Tabla de materiales estilo profesional
+/// - Desglose con filas alternadas y subtotales marcados
+/// - Footer con atribucion
 library;
 
 import 'dart:convert';
@@ -9,6 +18,7 @@ import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -20,13 +30,25 @@ import '../money/currency.dart';
 import '../money/currency_formatter.dart';
 
 /// Branding forzado para usuarios Free.
-///
-/// El footer "Generado con 3dCalc" sigue diciendo "3dCalc" para Free y Pro
-/// (es atribucion de la app, no branding del user).
 const String kFreeDefaultCompanyName = '3dCalc';
 
 /// Dias de validez de la oferta (se imprime como "valido hasta").
 const int kQuoteValidDays = 15;
+
+// ── Colores del diseno ──────────────────────────────────────────────
+
+const PdfColor _accentColor = PdfColors.blue800;
+const PdfColor _accentLight = PdfColors.blue50;
+const PdfColor _accentMedium = PdfColors.blue100;
+const PdfColor _textPrimary = PdfColors.grey900;
+const PdfColor _textSecondary = PdfColors.grey600;
+const PdfColor _textMuted = PdfColors.grey500;
+const PdfColor _bgSubtle = PdfColors.grey50;
+const PdfColor _borderLight = PdfColors.grey200;
+const PdfColor _successColor = PdfColors.green800;
+const PdfColor _errorColor = PdfColors.red700;
+
+// ── Helpers ─────────────────────────────────────────────────────────
 
 /// Shorthand: formatea un Decimal con la moneda activa para el PDF.
 String _fmt(Decimal v, WorldCurrency currency) => formatCurrency(v, currency);
@@ -40,17 +62,6 @@ String _fmtDate(DateTime d) {
 }
 
 /// Resuelve el branding efectivo del PDF segun el estado Pro del user.
-///
-/// - **Pro** ([isPro] == true): usa el [companyName] y [companyLogoBase64]
-///   del caller. Si el user no configuro nombre, cae a [kFreeDefaultCompanyName]
-///   (mismo fallback que el resto de la app).
-/// - **Free** ([isPro] == false): IGNORA el companyName del user y fuerza
-///   el nombre generico de la app + sin logo. La razon es que el branding
-///   profesional (logo + nombre de empresa) es un feature Pro (ver plan
-///   T13, gates SC1).
-///
-/// Retorna un record con `name` (no-null, listo para `pw.Text`) y `logo`
-/// (null si no hay logo que renderizar).
 ({String name, String? logo}) resolveBranding({
   required bool isPro,
   String? companyName,
@@ -68,6 +79,169 @@ String _fmtDate(DateTime d) {
         : companyLogoBase64,
   );
 }
+
+// ── Widget helpers (PDF vectorial) ──────────────────────────────────
+
+/// Barra de acento decorativa (linea fina de color).
+pw.Widget _accentBar() => pw.Container(
+  height: 4,
+  decoration: pw.BoxDecoration(
+    color: _accentColor,
+    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(2)),
+  ),
+);
+
+/// Fila de datos estilizada: label a la izquierda, valor a la derecha.
+/// [altBackground] pinta la fila con fondo sutil para alternancia visual.
+pw.Widget _dataRow(
+  String label,
+  String value, {
+  bool bold = false,
+  bool altBackground = false,
+  PdfColor? valueColor,
+  bool strikeThrough = false,
+}) {
+  return pw.Container(
+    padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+    color: altBackground ? _bgSubtle : null,
+    child: pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            fontSize: 11,
+            fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            color: _textPrimary,
+          ),
+        ),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 11,
+            fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            color: valueColor ?? _textPrimary,
+            decoration: strikeThrough ? pw.TextDecoration.lineThrough : null,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Titulo de seccion con linea sutil debajo.
+pw.Widget _sectionHeader(String title) {
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+      pw.Text(
+        title.toUpperCase(),
+        style: pw.TextStyle(
+          fontSize: 10,
+          fontWeight: pw.FontWeight.bold,
+          color: _accentColor,
+          letterSpacing: 1.2,
+        ),
+      ),
+      pw.SizedBox(height: 4),
+      pw.Container(height: 1, color: _accentMedium),
+    ],
+  );
+}
+
+/// Caja de meta info: horas + descuento en fila 1, peso + tiempo en fila 2.
+/// Siempre se muestra (aunque solo tenga horas/descuento).
+pw.Widget _buildMetaBox({
+  required Decimal totalHours,
+  required Decimal discountPct,
+  String? metaGrams,
+  String? metaTime,
+}) {
+  final hasHours = totalHours > Decimal.zero;
+  final hasDiscount = discountPct > Decimal.zero;
+  final hasGrams = metaGrams != null;
+  final hasTime = metaTime != null;
+
+  if (!hasHours && !hasDiscount && !hasGrams && !hasTime) {
+    return pw.SizedBox.shrink();
+  }
+
+  return pw.Container(
+    width: double.infinity,
+    padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    decoration: pw.BoxDecoration(
+      color: _accentLight,
+      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+    ),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Fila 1: horas + descuento
+        if (hasHours || hasDiscount)
+          pw.Row(
+            children: [
+              if (hasHours)
+                pw.Text(
+                  '${EsBO.pdfHoursPrefix}${totalHours.toStringAsFixed(2)}h',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _accentColor,
+                  ),
+                ),
+              if (hasHours && hasDiscount)
+                pw.Text(
+                  '   ${EsBO.calcMetaSeparator}   ',
+                  style: pw.TextStyle(fontSize: 10, color: _accentColor),
+                ),
+              if (hasDiscount)
+                pw.Text(
+                  EsBO.pdfDiscountPct(discountPct.toDouble().round()),
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _accentColor,
+                  ),
+                ),
+            ],
+          ),
+        // Fila 2: peso + tiempo
+        if (hasGrams || hasTime) ...[
+          if (hasHours || hasDiscount) pw.SizedBox(height: 4),
+          pw.Row(
+            children: [
+              if (hasGrams)
+                pw.Text(
+                  '${EsBO.pdfWeight}$metaGrams',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _accentColor,
+                  ),
+                ),
+              if (hasGrams && hasTime)
+                pw.Text(
+                  '   ${EsBO.calcMetaSeparator}   ',
+                  style: pw.TextStyle(fontSize: 10, color: _accentColor),
+                ),
+              if (hasTime)
+                pw.Text(
+                  '${EsBO.pdfPrintTime}$metaTime',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _accentColor,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+// ── API publica ─────────────────────────────────────────────────────
 
 /// Genera un PDF con el resumen de cotizacion y lo comparte via share sheet.
 Future<void> shareQuotePdf({
@@ -88,6 +262,10 @@ Future<void> shareQuotePdf({
   String? notes,
   String? conditions,
   Uint8List? pieceImageBytes,
+  String? metaGrams,
+  String? metaTime,
+  int quantity = 1,
+  Decimal? totalGrams,
   pw.Font? regularFont,
   pw.Font? boldFont,
 }) async {
@@ -109,11 +287,14 @@ Future<void> shareQuotePdf({
     notes: notes,
     conditions: conditions,
     pieceImageBytes: pieceImageBytes,
+    metaGrams: metaGrams,
+    metaTime: metaTime,
+    quantity: quantity,
+    totalGrams: totalGrams,
     regularFont: regularFont,
     boldFont: boldFont,
   );
 
-  // Printing.sharePdf permite descargar / guardar o compartir el PDF en Web, Mobile y Desktop.
   await Printing.sharePdf(
     bytes: pdfBytes,
     filename: EsBO.pdfFileName,
@@ -125,11 +306,10 @@ Future<void> shareQuotePdf({
 ///
 /// Reutilizable para share, print, preview.
 ///
-/// - [isPro] gatea el branding: si false, el PDF usa "3dCalc" + sin logo
-///   (ignora [companyName] y [companyLogoBase64]).
+/// - [isPro] gatea el branding: si false, el PDF usa "3dCalc" + sin logo.
 /// - [showDetail] controla si el PDF incluye el desglose interno de costos.
-/// - [regularFont] / [boldFont] son inyectables para tests (evitan
-///   `rootBundle.load`); en runtime se cargan desde `assets/fonts/`.
+/// - [metaGrams] / [metaTime] peso total y tiempo (muetra en ambos modos).
+/// - [regularFont] / [boldFont] son inyectables para tests.
 Future<Uint8List> buildQuotePdfBytes({
   required bool isPro,
   required CalculationOutput output,
@@ -148,6 +328,10 @@ Future<Uint8List> buildQuotePdfBytes({
   String? notes,
   String? conditions,
   Uint8List? pieceImageBytes,
+  String? metaGrams,
+  String? metaTime,
+  int quantity = 1,
+  Decimal? totalGrams,
   pw.Font? regularFont,
   pw.Font? boldFont,
 }) async {
@@ -167,6 +351,31 @@ Future<Uint8List> buildQuotePdfBytes({
     theme: pw.ThemeData.withFont(base: regular, bold: bold),
   );
 
+  final hasDiscount = output.discountAmount > Decimal.zero;
+  final hasMaterials = materials.isNotEmpty;
+  final qty = quantity < 1 ? 1 : quantity;
+  final qtyD = Decimal.fromInt(qty);
+  // El output siempre viene como precio UNITARIO.
+  final unitPrice = output.totalPrice;
+  final displayTotal = unitPrice * qtyD;
+
+  // Valores escalados para el desglose (unit x quantity).
+  final dMaterialCost = output.materialCost * qtyD;
+  final dElectricCost = output.electricCost * qtyD;
+  final dAmortizationCost = output.amortizationCost * qtyD;
+  final dLaborCost = output.laborCost * qtyD;
+  final dPostProcessCost = output.postProcessCost * qtyD;
+  final dBaseCost = output.baseCost * qtyD;
+  final dFailureCost = output.failureCost * qtyD;
+  final dMarkupCost = output.markupCost * qtyD;
+  final dProfitAmount = output.profitAmount * qtyD;
+  final dDiscountAmount = output.discountAmount * qtyD;
+
+  // Gramos: usar totalGrams directo (calculado desde CalculationMaterial en el caller).
+  final effectiveGrams = totalGrams != null && totalGrams > Decimal.zero
+      ? '${NumberFormat.decimalPattern('es_BO').format(totalGrams.toDouble())} g'
+      : metaGrams;
+
   doc.addPage(
     pw.Page(
       pageFormat: PdfPageFormat.a4,
@@ -175,7 +384,11 @@ Future<Uint8List> buildQuotePdfBytes({
         return pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            // Header: branding a la izquierda, numero + fechas a la derecha
+            // ── 1. Accent bar ──
+            _accentBar(),
+            pw.SizedBox(height: 16),
+
+            // ── 2. Header: logo + branding | numero + fechas ──
             pw.Row(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -201,14 +414,16 @@ Future<Uint8List> buildQuotePdfBytes({
                             style: pw.TextStyle(
                               fontSize: 22,
                               fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.blue800,
+                              color: _accentColor,
                             ),
                           ),
+                          pw.SizedBox(height: 2),
                           pw.Text(
-                            EsBO.calcSheetTitle,
+                            EsBO.calcSheetTitle.toUpperCase(),
                             style: pw.TextStyle(
-                              fontSize: 14,
-                              color: PdfColors.grey600,
+                              fontSize: 10,
+                              color: _accentColor,
+                              letterSpacing: 1.5,
                             ),
                           ),
                         ],
@@ -219,264 +434,450 @@ Future<Uint8List> buildQuotePdfBytes({
                 if (quoteNumber != null ||
                     quoteDate != null ||
                     validUntil != null)
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      if (quoteNumber != null)
-                        pw.Text(
-                          '${EsBO.pdfQuoteNumber}'
-                          '${quoteNumber.toString().padLeft(4, '0')}',
-                          style: pw.TextStyle(
-                            fontSize: 12,
-                            fontWeight: pw.FontWeight.bold,
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(10),
+                    decoration: pw.BoxDecoration(
+                      color: _bgSubtle,
+                      borderRadius: const pw.BorderRadius.all(
+                        pw.Radius.circular(6),
+                      ),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        if (quoteNumber != null)
+                          pw.Text(
+                            '${EsBO.pdfQuoteNumber}'
+                            '${quoteNumber.toString().padLeft(4, '0')}',
+                            style: pw.TextStyle(
+                              fontSize: 12,
+                              fontWeight: pw.FontWeight.bold,
+                              color: _textPrimary,
+                            ),
                           ),
-                        ),
-                      if (quoteDate != null) ...[
-                        pw.SizedBox(height: 4),
-                        pw.Text(
-                          '${EsBO.pdfDatePrefix}${_fmtDate(quoteDate)}',
-                          style: pw.TextStyle(
-                            fontSize: 9,
-                            color: PdfColors.grey600,
+                        if (quoteDate != null) ...[
+                          pw.SizedBox(height: 3),
+                          pw.Text(
+                            '${EsBO.pdfDatePrefix}${_fmtDate(quoteDate)}',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              color: _textSecondary,
+                            ),
                           ),
-                        ),
+                        ],
+                        if (validUntil != null) ...[
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            '${EsBO.pdfValidUntilPrefix}${_fmtDate(validUntil)}',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              color: _textSecondary,
+                            ),
+                          ),
+                        ],
                       ],
-                      if (validUntil != null) ...[
-                        pw.SizedBox(height: 2),
-                        pw.Text(
-                          '${EsBO.pdfValidUntilPrefix}${_fmtDate(validUntil)}',
-                          style: pw.TextStyle(
-                            fontSize: 9,
-                            color: PdfColors.grey600,
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
               ],
             ),
-            pw.Divider(),
-            pw.SizedBox(height: 8),
+            pw.SizedBox(height: 12),
+            pw.Container(height: 1, color: _borderLight),
+            pw.SizedBox(height: 16),
 
-            // Piece name + client
-            if (pieceName != null && pieceName.isNotEmpty)
+            // ── 3. Piece name + client ──
+            if (pieceName != null && pieceName.isNotEmpty) ...[
               pw.Text(
                 pieceName,
                 style: pw.TextStyle(
                   fontSize: 16,
                   fontWeight: pw.FontWeight.bold,
+                  color: _textPrimary,
                 ),
               ),
-            if (clientName != null && clientName.trim().isNotEmpty) ...[
               pw.SizedBox(height: 4),
+            ],
+            if (clientName != null && clientName.trim().isNotEmpty)
               pw.Text(
                 '${EsBO.pdfClientPrefix}${clientName.trim()}',
-                style: pw.TextStyle(fontSize: 11, color: PdfColors.grey800),
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  color: _textSecondary,
+                ),
               ),
-            ],
-            pw.SizedBox(height: 8),
 
-            // Foto de la pieza: tamaño intermedio centrado entre fecha y total.
+            // ── 4. Piece photo ──
             if (pieceImageBytes != null) ...[
-              pw.SizedBox(height: 12),
+              pw.SizedBox(height: 14),
               pw.Center(
                 child: pw.Container(
                   width: 270,
                   height: 135,
-                  child: pw.Image(
-                    pw.MemoryImage(pieceImageBytes), // JPEG/PNG decodificable
-                    fit: pw.BoxFit.contain,
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: _borderLight),
+                    borderRadius: const pw.BorderRadius.all(
+                      pw.Radius.circular(6),
+                    ),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 6,
+                    verticalRadius: 6,
+                    child: pw.Image(
+                      pw.MemoryImage(pieceImageBytes),
+                      fit: pw.BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
-              pw.SizedBox(height: 12),
+              pw.SizedBox(height: 14),
             ],
 
-            // Total price hero
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 16,
-              ),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.blue50,
-                borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    EsBO.calcTotalFinal,
-                    style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(
-                    _fmt(output.totalPrice, currency),
-                    style: pw.TextStyle(
-                      fontSize: 22,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.blue800,
-                    ),
-                  ),
-                ],
-              ),
+            // ── 5. Meta info: horas + descuento + peso/tiempo (ambos modos) ──
+            pw.SizedBox(height: 8),
+            _buildMetaBox(
+              totalHours: totalHours,
+              discountPct: discountPct,
+              metaGrams: effectiveGrams,
+              metaTime: metaTime,
             ),
             pw.SizedBox(height: 16),
 
-            // Breakdown & Materials (solo si showDetail es true)
-            if (showDetail) ...[
-              pw.Text(
-                EsBO.detailBreakdown,
-                style: pw.TextStyle(
-                  fontSize: 14,
-                  fontWeight: pw.FontWeight.bold,
+            // ── 6. Total price hero ──
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.symmetric(
+                vertical: 14,
+                horizontal: 18,
+              ),
+              decoration: pw.BoxDecoration(
+                color: _accentColor,
+                borderRadius: const pw.BorderRadius.all(
+                  pw.Radius.circular(8),
                 ),
               ),
+              child: pw.Column(
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        EsBO.calcTotalFinal,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                      pw.Text(
+                        _fmt(displayTotal, currency),
+                        style: pw.TextStyle(
+                          fontSize: 22,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (quantity > 1) ...[
+                    pw.SizedBox(height: 4),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          '$quantity u. × ${_fmt(unitPrice, currency)}',
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 18),
+
+            // ── 7. Detail breakdown (solo si showDetail) ──
+            if (showDetail) ...[
+              _sectionHeader(EsBO.detailBreakdown),
               pw.SizedBox(height: 8),
-              _row(EsBO.pdfMaterialCosts, _fmt(output.materialCost, currency)),
-              if (output.electricCost > Decimal.zero)
-                _row(EsBO.pdfElectricity, _fmt(output.electricCost, currency)),
+              _dataRow(
+                EsBO.pdfMaterialCosts,
+                _fmt(dMaterialCost, currency),
+                altBackground: true,
+              ),
+              _dataRow(
+                EsBO.pdfElectricity,
+                _fmt(dElectricCost, currency),
+              ),
               if (output.amortizationCost > Decimal.zero)
-                _row(
+                _dataRow(
                   EsBO.calcDetailAmortization,
-                  _fmt(output.amortizationCost, currency),
+                  _fmt(dAmortizationCost, currency),
+                  altBackground: true,
                 ),
               if (output.laborCost > Decimal.zero)
-                _row(EsBO.calcDetailLabor, _fmt(output.laborCost, currency)),
-              if (output.postProcessCost > Decimal.zero)
-                _row(
-                  EsBO.calcDetailPostProcess,
-                  _fmt(output.postProcessCost, currency),
+                _dataRow(
+                  EsBO.calcDetailLabor,
+                  _fmt(dLaborCost, currency),
                 ),
-              _row(
-                EsBO.calcDetailBase,
-                _fmt(output.baseCost, currency),
-                bold: true,
+              if (output.postProcessCost > Decimal.zero)
+                _dataRow(
+                  EsBO.calcDetailPostProcess,
+                  _fmt(dPostProcessCost, currency),
+                  altBackground: true,
+                ),
+              pw.Container(
+                margin: const pw.EdgeInsets.only(top: 2),
+                padding: const pw.EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 8,
+                ),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border(
+                    top: pw.BorderSide(color: _borderLight, width: 0.5),
+                  ),
+                ),
+                child: _dataRow(
+                  EsBO.calcDetailBase,
+                  _fmt(dBaseCost, currency),
+                  bold: true,
+                ),
               ),
               if (output.failureCost > Decimal.zero)
-                _row(EsBO.calcDetailFailure, _fmt(output.failureCost, currency)),
-              if (output.markupCost > Decimal.zero)
-                _row(EsBO.calcFieldWaste, _fmt(output.markupCost, currency)),
-              if (output.profitAmount > Decimal.zero)
-                _row(EsBO.calcDetailProfit, _fmt(output.profitAmount, currency)),
-              if (output.discountAmount > Decimal.zero)
-                _row(
-                  EsBO.calcLabelDiscount,
-                  '-${_fmt(output.discountAmount, currency)}',
+                _dataRow(
+                  EsBO.calcDetailFailure,
+                  _fmt(dFailureCost, currency),
+                  altBackground: true,
                 ),
-              pw.Divider(),
-              _row(
-                EsBO.pdfTotalUpper,
-                _fmt(output.totalPrice, currency),
-                bold: true,
-              ),
-              pw.SizedBox(height: 16),
+              if (output.markupCost > Decimal.zero)
+                _dataRow(
+                  EsBO.calcFieldWaste,
+                  _fmt(dMarkupCost, currency),
+                ),
+              if (output.profitAmount > Decimal.zero)
+                _dataRow(
+                  EsBO.calcDetailProfit,
+                  _fmt(dProfitAmount, currency),
+                  valueColor: _successColor,
+                  altBackground: true,
+                ),
+              if (hasDiscount)
+                _dataRow(
+                  EsBO.calcLabelDiscount,
+                  '-${_fmt(dDiscountAmount, currency)}',
+                  valueColor: _errorColor,
+                ),
 
-              if (materials.isNotEmpty) ...[
-                pw.Text(
-                  EsBO.calcSectionMaterials,
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
+              // Total final con linea
+              pw.Container(
+                margin: const pw.EdgeInsets.only(top: 4),
+                padding: const pw.EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 8,
+                ),
+                decoration: pw.BoxDecoration(
+                  color: _accentLight,
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(4),
                   ),
                 ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      EsBO.pdfTotalUpper,
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _accentColor,
+                      ),
+                    ),
+                    pw.Text(
+                      _fmt(displayTotal, currency),
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _accentColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 18),
+
+              // ── 8. Materials table ──
+              if (hasMaterials) ...[
+                _sectionHeader(EsBO.pdfMaterialsSection),
                 pw.SizedBox(height: 8),
-                for (final m in materials)
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.only(bottom: 4),
-                    child: pw.Text(
-                      '${m.label}: ${_fmt(m.cost, currency)}',
-                      style: pw.TextStyle(fontSize: 10),
+                // Header row
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: pw.BoxDecoration(
+                    color: _accentMedium,
+                    borderRadius: const pw.BorderRadius.only(
+                      topLeft: pw.Radius.circular(4),
+                      topRight: pw.Radius.circular(4),
                     ),
                   ),
-                pw.SizedBox(height: 8),
+                  child: pw.Row(
+                    children: [
+                      pw.Expanded(
+                        child: pw.Text(
+                          EsBO.calcSectionMaterials,
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _accentColor,
+                          ),
+                        ),
+                      ),
+                      pw.Text(
+                        EsBO.pdfTotalUpper,
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _accentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Material rows
+                for (var i = 0; i < materials.length; i++)
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    color: i.isOdd ? _bgSubtle : null,
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          materials[i].label,
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            color: _textPrimary,
+                          ),
+                        ),
+                        pw.Text(
+                          _fmt(materials[i].cost * qtyD, currency),
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                pw.SizedBox(height: 14),
               ],
-            ] else if (output.discountAmount > Decimal.zero) ...[
-              // En modo basico (showDetail = false) con descuento, mostrar cuadro resumen de descuento
+            ],
+
+            // ── 7b. Discount summary (modo basico sin showDetail) ──
+            if (!showDetail && hasDiscount) ...[
               pw.Container(
+                width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
+                  color: PdfColors.red50,
+                  border: pw.Border.all(color: _errorColor, width: 0.8),
                   borderRadius: const pw.BorderRadius.all(
                     pw.Radius.circular(6),
                   ),
                 ),
                 child: pw.Column(
                   children: [
-                    _row(
+                    _dataRow(
                       EsBO.quoteNoDiscount,
-                      _fmt(output.totalPrice + output.discountAmount, currency),
+                      _fmt(
+                        displayTotal + dDiscountAmount,
+                        currency,
+                      ),
                     ),
-                    _row(
+                    _dataRow(
                       EsBO.quoteDiscountPct(discountPct.toDouble().round()),
-                      '-${_fmt(output.discountAmount, currency)}',
+                      '-${_fmt(dDiscountAmount, currency)}',
+                      valueColor: _errorColor,
+                      strikeThrough: true,
                     ),
-                    pw.Divider(),
-                    _row(
+                    pw.Container(
+                      margin: const pw.EdgeInsets.only(top: 4),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border(
+                          top: pw.BorderSide(color: _borderLight, width: 0.5),
+                        ),
+                      ),
+                      child: pw.SizedBox(height: 4),
+                    ),
+                    _dataRow(
                       EsBO.calcTotalWithDiscount,
-                      _fmt(output.totalPrice, currency),
+                      _fmt(displayTotal, currency),
                       bold: true,
                     ),
                   ],
                 ),
               ),
-              pw.SizedBox(height: 16),
+              pw.SizedBox(height: 14),
             ],
 
-            // Meta
-            if (totalHours > Decimal.zero)
-              pw.Text(
-                '${EsBO.pdfHoursPrefix}${totalHours.toStringAsFixed(2)}h',
-                style: pw.TextStyle(fontSize: 10),
-              ),
-            if (discountPct > Decimal.zero)
-              pw.Text(
-                EsBO.pdfDiscountPct(discountPct.toDouble().round()),
-                style: pw.TextStyle(fontSize: 10),
-              ),
-
-            // Notas y condiciones (opcionales)
+            // ── 9. Notes + Conditions ──
             if (notes != null && notes.trim().isNotEmpty) ...[
-              pw.SizedBox(height: 12),
-              pw.Text(
-                EsBO.pdfNotesTitle,
-                style: pw.TextStyle(
-                  fontSize: 12,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
               pw.SizedBox(height: 4),
+              _sectionHeader(EsBO.pdfNotesTitle),
+              pw.SizedBox(height: 6),
               pw.Text(
                 notes.trim(),
-                style: const pw.TextStyle(fontSize: 10, lineSpacing: 3),
-              ),
-            ],
-            if (conditions != null && conditions.trim().isNotEmpty) ...[
-              pw.SizedBox(height: 12),
-              pw.Text(
-                EsBO.pdfConditionsTitle,
-                style: pw.TextStyle(
-                  fontSize: 12,
-                  fontWeight: pw.FontWeight.bold,
+                style: const pw.TextStyle(
+                  fontSize: 10,
+                  lineSpacing: 3,
+                  color: _textPrimary,
                 ),
               ),
-              pw.SizedBox(height: 4),
+              pw.SizedBox(height: 10),
+            ],
+            if (conditions != null && conditions.trim().isNotEmpty) ...[
+              _sectionHeader(EsBO.pdfConditionsTitle),
+              pw.SizedBox(height: 6),
               pw.Text(
                 conditions.trim(),
-                style: const pw.TextStyle(fontSize: 10, lineSpacing: 3),
+                style: const pw.TextStyle(
+                  fontSize: 10,
+                  lineSpacing: 3,
+                  color: _textPrimary,
+                ),
               ),
             ],
 
-            pw.SizedBox(height: 24),
-            pw.Divider(),
+            // ── 10. Footer ──
+            pw.Spacer(),
+            pw.Container(height: 1, color: _borderLight),
             pw.SizedBox(height: 8),
-
-            // Footer
-            pw.Text(
-              EsBO.quoteGeneratedWith,
-              style: pw.TextStyle(fontSize: 9, color: PdfColors.grey500),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  EsBO.quoteGeneratedWith,
+                  style: pw.TextStyle(
+                    fontSize: 8,
+                    color: _textMuted,
+                  ),
+                ),
+                if (quoteNumber != null)
+                  pw.Text(
+                    '${EsBO.pdfQuoteNumber}'
+                    '${quoteNumber.toString().padLeft(4, '0')}',
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      color: _textMuted,
+                    ),
+                  ),
+              ],
             ),
           ],
         );
@@ -485,29 +886,4 @@ Future<Uint8List> buildQuotePdfBytes({
   );
 
   return doc.save();
-}
-
-pw.Widget _row(String label, String formatted, {bool bold = false}) {
-  return pw.Padding(
-    padding: const pw.EdgeInsets.symmetric(vertical: 2),
-    child: pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(
-          label,
-          style: pw.TextStyle(
-            fontSize: 11,
-            fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
-          ),
-        ),
-        pw.Text(
-          formatted,
-          style: pw.TextStyle(
-            fontSize: 11,
-            fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
-          ),
-        ),
-      ],
-    ),
-  );
 }

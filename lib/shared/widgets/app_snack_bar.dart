@@ -2,7 +2,7 @@
 ///
 /// Centraliza el feedback de acciones (guardar, eliminar, error de red, etc)
 /// para que el usuario identifique el tipo de un vistazo:
-///   - [AppSnackBar.success] verde con check, duracion 2s
+///   - [AppSnackBar.success] azul con check, duracion 2s
 ///   - [AppSnackBar.error]   rojo con icono error, duracion 4s
 ///   - [AppSnackBar.warning] amarillo con icono warning, duracion 3s
 ///   - [AppSnackBar.info]    color primario con icono info, duracion 2s
@@ -69,7 +69,7 @@ class AppSnackBar extends SnackBar {
                ),
        );
 
-  /// Feedback positivo (accion exitosa). Verde + check, 2s.
+  /// Feedback positivo (accion exitosa). Azul medio + check, 2s.
   factory AppSnackBar.success(
     String message, {
     String? actionLabel,
@@ -78,7 +78,7 @@ class AppSnackBar extends SnackBar {
     return AppSnackBar._(
       message: message,
       icon: Icons.check_circle,
-      backgroundColor: AppTheme.greenSuccess,
+      backgroundColor: AppTheme.blueSuccess,
       foregroundColor: Colors.white,
       duration: const Duration(seconds: 2),
       action: _buildAction(actionLabel, onAction),

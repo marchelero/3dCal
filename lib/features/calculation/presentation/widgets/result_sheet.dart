@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
@@ -454,6 +455,26 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     _inFlight = true;
     setState(() => _isBusy = true);
     try {
+      // Calcular gramos totales desde los materiales del state.
+      final gramsDec = state.mode == CalculatorMode.express
+          ? CalculatorState.parseDecimal(state.weight) ?? Decimal.zero
+          : state.materials.fold(
+              Decimal.zero,
+              (sum, m) => sum + (CalculatorState.parseDecimal(m.weight) ?? Decimal.zero),
+            );
+      final totalGrams = gramsDec > Decimal.zero ? gramsDec : null;
+
+      // Calcular meta time.
+      final h = CalculatorState.parseDecimal(state.printHours) ?? Decimal.zero;
+      final m = CalculatorState.parseDecimal(state.printMinutes) ?? Decimal.zero;
+      final totalMinutes = (h * Decimal.fromInt(60) + m).toBigInt();
+      String? metaTime;
+      if (totalMinutes > BigInt.zero) {
+        final hh = totalMinutes ~/ BigInt.from(60);
+        final mm = totalMinutes.remainder(BigInt.from(60));
+        metaTime = '${hh.toInt()}h ${mm.toInt()}m';
+      }
+
       await shareQuotePdf(
         isPro: widget.isPro,
         output: output,
@@ -467,6 +488,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         companyLogoBase64: widget.companyLogoBase64,
         pieceName: state.label.isNotEmpty ? state.label : null,
         pieceImageBytes: _pieceImageBytes,
+        quantity: _quantity,
+        totalGrams: totalGrams,
+        metaTime: metaTime,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -550,9 +574,26 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
 
   /// Rama "compartir" del boton fusionado. Idem [_trySaveImage]: falla en
   /// silencio (solo debugPrint + registro del mensaje) sin matar el save.
+  ///
+  /// **Web**: timeout anti-hang. En Chrome/Windows el pane nativo de share
+  /// puede NO resolver nunca; sin esto el `Future.wait` del handler quedaria
+  /// colgado y el boton clavado en loading aunque el save ya completo. En
+  /// mobile NO hay timeout: la share sheet nativa queda abierta hasta que el
+  /// usuario la cierra (UX del boton viejo).
   Future<void> _tryShareImage(Uint8List bytes, List<String> errors) async {
     try {
-      await shareQuoteImage(bytes);
+      final share = shareQuoteImage(bytes);
+      if (kIsWeb) {
+        await share.timeout(const Duration(seconds: 8));
+      } else {
+        await share;
+      }
+    } on TimeoutException {
+      // Hang del pane web (Chrome/Windows): la imagen ya quedo guardada por
+      // la rama save; el mensaje aclara que el menu de compartir no estaba
+      // disponible.
+      debugPrint('Quote image share timed out (8s) on web');
+      errors.add(EsBO.shareWebUnavailable);
     } catch (e) {
       debugPrint('Quote image share failed: $e');
       errors.add(e is ShareQuoteException ? e.message : EsBO.calcShareError);
