@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
@@ -1607,8 +1606,6 @@ class _MaterialRowTile extends ConsumerStatefulWidget {
     required this.gramsCtrl,
     required this.onChanged,
     required this.deletable,
-    this.showLabel = true,
-    this.showWeight = true,
     required this.onRemove,
     this.showValidation = false,
     this.isKeyWeight = false,
@@ -1621,8 +1618,6 @@ class _MaterialRowTile extends ConsumerStatefulWidget {
   final TextEditingController gramsCtrl;
   final ValueChanged<_MaterialUpdate> onChanged;
   final bool deletable;
-  final bool showLabel;
-  final bool showWeight;
   final VoidCallback onRemove;
   final bool showValidation;
   final bool isKeyWeight;
@@ -1712,22 +1707,20 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
             Row(
               children: [
                 // Etiqueta (campo del usuario)
-                if (widget.showLabel)
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: widget.labelCtrl,
-                      decoration: InputDecoration(
-                        labelText: EsBO.calcFieldLabel,
-                        hintText: EsBO.calcFieldLabelHelper,
-                        isDense: true,
-                        prefixIcon: const Icon(Icons.label_outline, size: 18),
-                      ),
-                      onChanged: (v) => _emit(),
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: widget.labelCtrl,
+                    decoration: InputDecoration(
+                      labelText: EsBO.calcFieldLabel,
+                      hintText: EsBO.calcFieldLabelHelper,
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.label_outline, size: 18),
                     ),
+                    onChanged: (v) => _emit(),
                   ),
-                if (widget.showLabel && hasCatalog)
-                  const SizedBox(width: AppSpacing.sm),
+                ),
+                if (hasCatalog) const SizedBox(width: AppSpacing.sm),
                 // Selector de filamento
                 if (hasCatalog)
                   Expanded(
@@ -1796,20 +1789,18 @@ class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                if (widget.showWeight) ...[
-                  Expanded(
-                    child: NumericInputField(
-                      label: EsBO.calcFieldWeight,
-                      controller: widget.weightCtrl,
-                      onChanged: (v) => _emit(),
-                      suffix: 'g',
-                      isKey: widget.isKeyWeight,
-                      keyHint: EsBO.calcKeyWeightHint,
-                      showValidation: widget.showValidation,
-                    ),
+                Expanded(
+                  child: NumericInputField(
+                    label: EsBO.calcFieldWeight,
+                    controller: widget.weightCtrl,
+                    onChanged: (v) => _emit(),
+                    suffix: 'g',
+                    isKey: widget.isKeyWeight,
+                    keyHint: EsBO.calcKeyWeightHint,
+                    showValidation: widget.showValidation,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                ],
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 // Si filamento del catálogo: chip compacto
                 if (_selectedFilamentName.isNotEmpty &&
                     widget.priceCtrl.text.isNotEmpty)
