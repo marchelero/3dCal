@@ -192,10 +192,11 @@ void main() {
         ),
       );
 
-      // 4 botones con tooltips (ahora icon-only, sin texto).
+      // 4 botones con tooltips (icon-only, sin texto). Post-fusion AS-2026:
+      // Guardar / PDF / Compartir y guardar / Reset.
       expect(find.byTooltip('Guardar cotización'), findsOneWidget);
-      expect(find.byTooltip('Compartir imagen'), findsOneWidget);
-      expect(find.byTooltip('Guardar imagen'), findsOneWidget);
+      expect(find.byTooltip('Compartir PDF'), findsOneWidget);
+      expect(find.byTooltip('Compartir y guardar'), findsOneWidget);
       expect(find.byTooltip('Restablecer'), findsOneWidget);
     });
 
@@ -267,6 +268,39 @@ void main() {
       expect(find.byIcon(Icons.share_rounded), findsOneWidget);
       final finder = find.ancestor(
         of: find.byIcon(Icons.share_rounded),
+        matching: find.byType(IconButton),
+      );
+      expect(finder, findsOneWidget);
+      final btn = tester.widget<IconButton>(finder);
+      expect(btn.onPressed, isNotNull);
+    });
+
+    testWidgets('boton fusionado comparte+guarda existe y arranca enabled', (
+      tester,
+    ) async {
+      // El flujo real share+save necesitaria platform channels; con tooltip
+      // + estado enabled alcanza, igual que el test de share.
+      final state = _validState();
+      await tester.pumpWidget(
+        _wrap(
+          ResultSheetContent(
+            state: state,
+            isPro: false,
+            onSave: (_) {},
+            onReset: () {},
+            onToggleDetail: () {},
+            onDiscountChanged: (_) {},
+            currency: WorldCurrency.usd,
+          ),
+        ),
+      );
+
+      // El boton fusionado conserva el icono de compartir y su tooltip
+      // nuevo (AS-2026); arranca habilitado.
+      expect(find.byIcon(Icons.share_rounded), findsOneWidget);
+      expect(find.byTooltip(EsBO.calcBtnShareSave), findsOneWidget);
+      final finder = find.ancestor(
+        of: find.byTooltip(EsBO.calcBtnShareSave),
         matching: find.byType(IconButton),
       );
       expect(finder, findsOneWidget);

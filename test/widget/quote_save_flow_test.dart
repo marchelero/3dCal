@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/money/currency.dart';
@@ -31,11 +32,17 @@ import 'package:tresdcal/l10n/es_bo.dart';
 
 /// Widget tests del save flow (guardar imagen en galeria, T2 del plan).
 ///
-/// **Scope**: el boton "Guardar imagen" de [ResultSheetContent] y de
-/// [CalculationDetailPage] dispara captura + save. En el test env no hay
-/// platform channels: `Gal.putImageBytes` falla con [GalException], el mapeo
-/// de `saveQuoteImage` lo convierte en [ShareQuoteException] y la UI surfcea
-/// un AppSnackBar de error (NUNCA deja la excepcion cruda).
+/// **Scope**: el boton fusionado "Compartir y guardar" de [ResultSheetContent]
+/// (AS-2026: guarda la imagen Y abre el share sheet) y el boton "Guardar
+/// imagen" de [CalculationDetailPage] disparan captura + save. En el test env
+/// no hay platform channels: `Gal.putImageBytes` falla con [GalException], el
+/// mapeo de `saveQuoteImage` lo convierte en [ShareQuoteException] y la UI
+/// surfcea un AppSnackBar de error (NUNCA deja la excepcion cruda).
+///
+/// La rama "compartir" del boton fusionado usa share_plus: se inyecta un
+/// [SharePlatform] fake (seam oficial de share_plus 12) para que `share`
+/// complete exitoso sin platform channels y el test pueda aislar la rama
+/// save (que es lo que ejercita este archivo).
 ///
 /// **Async**: la captura usa `RenderRepaintBoundary.toImage` (engine) y
 /// completa en el event loop real → corre dentro de `tester.runAsync`. Para
@@ -91,12 +98,13 @@ Future<void> _pumpUntilFound(
   }
 }
 
-/// Tap en "Guardar imagen" y espera a que capture + save completen (la
-/// captura es engine-async y necesita `runAsync`). El boton puede estar
-/// fuera del viewport (ListView virtualizado) → scrollea hasta encontrarlo.
+/// Tap en el boton fusionado "Compartir y guardar" (solo ResultSheetContent,
+/// AS-2026) y espera a que capture + save completen (la captura es
+/// engine-async y necesita `runAsync`). El boton puede estar fuera del
+/// viewport (ListView virtualizado) → scrollea hasta encontrarlo.
 /// Espera hasta que [expected] (el snackbar resultante) aparezca.
-Future<void> _tapSaveImage(WidgetTester tester, Finder expected) async {
-  await _tapSaveImageButton(tester);
+Future<void> _tapShareAndSave(WidgetTester tester, Finder expected) async {
+  await _tapShareAndSaveButton(tester);
   // toImage (captura) usa el engine real: esperamos (con timeout) hasta que
   // el snackbar resultante aparezca en vez de asumir un delay fijo de 300ms.
   // Los fonts JetBrainsMono estan bundleados como assets, asi que
@@ -104,10 +112,29 @@ Future<void> _tapSaveImage(WidgetTester tester, Finder expected) async {
   await _pumpUntilFound(tester, expected);
 }
 
-/// Tap en "Guardar imagen" SOLAMENTE (scrollea hasta el boton y dispara el
-/// handler de save sin esperar feedback). Usado por los tests que quieren
-/// controlar el momento en que el save completa (AC-402).
-Future<void> _tapSaveImageButton(WidgetTester tester) async {
+/// Tap en el boton fusionado "Compartir y guardar" SOLAMENTE (scrollea hasta
+/// el boton y dispara el handler sin esperar feedback). Usado por los tests
+/// que quieren controlar el momento en que el save completa (AC-402).
+Future<void> _tapShareAndSaveButton(WidgetTester tester) async {
+  final saveBtn = find.byTooltip(EsBO.calcBtnShareSave);
+  if (saveBtn.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      saveBtn,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
+  await tester.ensureVisible(saveBtn);
+  await tester.pumpAndSettle();
+  await tester.tap(saveBtn);
+  await tester.pump();
+}
+
+/// Tap en el boton "Guardar imagen" SOLO de [CalculationDetailPage] (ese
+/// boton NO se fusiono — sigue existiendo en el detalle) y espera a que la
+/// captura + save completen. Reusa la logica de scroll de
+/// [_tapShareAndSaveButton] con el tooltip del detalle.
+Future<void> _tapSaveImage(WidgetTester tester, Finder expected) async {
   final saveBtn = find.byTooltip('Guardar imagen');
   if (saveBtn.evaluate().isEmpty) {
     await tester.scrollUntilVisible(
@@ -120,6 +147,7 @@ Future<void> _tapSaveImageButton(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(saveBtn);
   await tester.pump();
+  await _pumpUntilFound(tester, expected);
 }
 
 /// Espera (con timeout) hasta que [condition] sea true. Mismo mecanismo
@@ -141,13 +169,34 @@ Future<void> _pumpUntil(
   fail('timeout esperando condicion');
 }
 
-/// Compat: tap en "Guardar imagen" esperando el snackbar de error (caso
-/// estandar del save con gal real → GalException).
+/// Compat: tap en "Guardar imagen" del DETALLE esperando el snackbar de
+/// error (caso estandar del save con gal real → GalException).
 Future<void> _tapSaveAndSettle(WidgetTester tester) async {
   await _tapSaveImage(
     tester,
     find.textContaining('No se pudo guardar la imagen'),
   );
+}
+
+/// Tap en el boton fusionado "Compartir y guardar" del RESULT SHEET
+/// esperando el snackbar de error (caso estandar: gal real → GalException
+/// en la rama save; la rama share completa OK con el fake).
+Future<void> _tapShareAndSaveAndSettle(WidgetTester tester) async {
+  await _tapShareAndSave(
+    tester,
+    find.textContaining('No se pudo guardar la imagen'),
+  );
+}
+
+/// Fake del share sheet de share_plus 12: `share` completa exitoso sin
+/// platform channels. Se inyecta via [SharePlatform.instance] (seam oficial
+/// del plugin) para que la rama "compartir" del boton fusionado no reviente
+/// con MissingPluginException en estos tests de save flow.
+class _FakeSharePlatform extends SharePlatform {
+  @override
+  Future<ShareResult> share(ShareParams params) async {
+    return const ShareResult('', ShareResultStatus.success);
+  }
 }
 
 /// Notifier que devuelve un estado fijo (mismo patron que result_sheet_test).
@@ -227,6 +276,11 @@ void main() {
   // y la captura toImage de la cotizacion falla con una excepcion cruda.
   GoogleFonts.config.allowRuntimeFetching = false;
 
+  // Rama "compartir" del boton fusionado: share fake (completa exitoso sin
+  // platform channels). SharePlus.instance captura SharePlatform.instance de
+  // forma lazy en el primer uso → el fake se toma al correr el handler.
+  SharePlatform.instance = _FakeSharePlatform();
+
   group('ResultSheetContent save button', () {
     testWidgets('error de save → AppSnackBar de error (no excepcion cruda)', (
       tester,
@@ -252,7 +306,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await _tapSaveAndSettle(tester);
+      await _tapShareAndSaveAndSettle(tester);
 
       // Error surfceado como SnackBar (sin crash ni spinner colgado).
       expect(find.byType(SnackBar), findsOneWidget);
@@ -333,7 +387,9 @@ void main() {
       (tester) async {
         await openSheetInModal(tester, saver: const _FakeGallerySaver());
 
-        await _tapSaveImage(tester, find.text(EsBO.commonImageSavedGallery));
+        // El boton fusionado corre save (fake OK) + share (fake OK) en
+        // paralelo → ambas ramas completan → snackbar de exito.
+        await _tapShareAndSave(tester, find.text(EsBO.commonImageSavedGallery));
 
         // La hoja sigue abierta (guardar imagen no la cierra).
         expect(find.byType(QuoteImageTemplate), findsOneWidget);
@@ -361,10 +417,11 @@ void main() {
       tester,
     ) async {
       // Gal REAL (default): sin platform channels el save falla →
-      // ShareQuoteException → snackbar de error. Debe verse sobre el sheet.
+      // ShareQuoteException → snackbar de error (la rama share completa OK
+      // con el fake). Debe verse sobre el sheet.
       await openSheetInModal(tester, saver: const GallerySaver());
 
-      await _tapSaveImage(
+      await _tapShareAndSave(
         tester,
         find.textContaining('No se pudo guardar la imagen'),
       );
@@ -389,8 +446,10 @@ void main() {
 
         // Dispara el save; la captura (engine real) y la cadena avanazan
         // con runAsync hasta el seam: el save queda "en vuelo" (gate
-        // pendiente, saveCalled=true) con el sheet todavia abierto.
-        await _tapSaveImageButton(tester);
+        // pendiente, saveCalled=true) con el sheet todavia abierto. La rama
+        // share (fake) completa OK al instante; el Future.wait del handler
+        // fusionado espera igualmente al save.
+        await _tapShareAndSaveButton(tester);
         await _pumpUntil(tester, () => saver.saveCalled);
 
         // El user cierra la hoja ANTES de que el save complete. Se usa pop

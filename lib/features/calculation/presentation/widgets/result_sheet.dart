@@ -480,51 +480,51 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     }
   }
 
-  Future<void> _handleShare() async {
-    if (_inFlight) return; // BUG-008: guard sincrono anti-doble-tap.
-    _inFlight = true;
-    setState(() => _isBusy = true);
-    try {
-      final bytes = await captureQuoteImageBytes(_captureKey);
-      await shareQuoteImage(bytes);
-    } on ShareQuoteException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(AppSnackBar.error('${EsBO.calcShareError}: $e'));
-    } finally {
-      _inFlight = false;
-      if (mounted) setState(() => _isBusy = false);
-    }
-  }
-
-  Future<void> _handleSave() async {
+  /// Fusion (AS-2026): un solo boton que guarda la imagen EN LA GALERIA y
+  /// a la par abre el share sheet. Captura los bytes UNA sola vez y ejecuta
+  /// ambas acciones con [Future.wait]. Errores parciales: cada accion corre
+  /// en su propio try/catch (via [_trySaveImage]/[_tryShareImage]) para que
+  /// el fallo de UNA no mate la que si funciono; el feedback es el mensaje
+  /// de la primera falla (si hubo), o el de exito si ambas OK.
+  Future<void> _handleShareAndSave() async {
     if (_inFlight) return; // BUG-008: guard sincrono anti-doble-tap.
     _inFlight = true;
     setState(() => _isBusy = true);
     // F4: referenciar el messenger ANTES del async. Con el Scaffold local
     // dentro del sheet, `ScaffoldMessenger.of(context)` resuelve al
-    // messenger del sheet → el SnackBar se muestra SOBRE la hoja modal
-    // (antes quedaba oculto debajo del barrier). La referencia capturada
-    // sobrevive aunque el sheet se cierre durante el save.
+    // messenger del sheet → el SnackBar se muestra SOBRE la hoja modal.
+    // La referencia capturada sobrevive aunque el sheet se cierre durante
+    // el flujo.
     final messenger = ScaffoldMessenger.of(context);
-    // AC-402: si el sheet se cierra durante el save, ese messenger muere
+    // AC-402: si el sheet se cierra durante el flujo, ese messenger muere
     // (mounted=false); el fallback es el messenger ROOT de la page.
     final rootMessenger = widget.rootMessenger;
     try {
+      // Una sola captura: la imagen PNG es la misma para ambas acciones.
       final bytes = await captureQuoteImageBytes(_captureKey);
-      await saveQuoteImage(bytes, gallerySaver: widget.gallerySaver);
+      final errors = <String>[];
+      await Future.wait<void>([
+        _trySaveImage(bytes, errors),
+        _tryShareImage(bytes, errors),
+      ]);
+      if (errors.isNotEmpty) {
+        _showSaveFeedback(
+          messenger,
+          rootMessenger,
+          AppSnackBar.error(errors.first),
+        );
+        return;
+      }
       final msg = kIsWeb
           ? EsBO.commonImageDownloaded
           : EsBO.commonImageSavedGallery;
       _showSaveFeedback(messenger, rootMessenger, AppSnackBar.success(msg));
     } on ShareQuoteException catch (e) {
+      // Fallo de la captura en si: sin bytes no hay ninguna accion que
+      // ejecutar.
       _showSaveFeedback(messenger, rootMessenger, AppSnackBar.error(e.message));
     } catch (e) {
-      debugPrint('Quote image save failed: $e');
+      debugPrint('Quote image capture failed: $e');
       _showSaveFeedback(
         messenger,
         rootMessenger,
@@ -533,6 +533,29 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     } finally {
       _inFlight = false;
       if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  /// Rama "guardar" del boton fusionado compartir+guardar. Los fallos se
+  /// acumulan en [errors] como mensajes de feedback (no se relanzan): la
+  /// otra accion sigue corriendo aunque esta falle.
+  Future<void> _trySaveImage(Uint8List bytes, List<String> errors) async {
+    try {
+      await saveQuoteImage(bytes, gallerySaver: widget.gallerySaver);
+    } catch (e) {
+      debugPrint('Quote image save failed: $e');
+      errors.add(e is ShareQuoteException ? e.message : EsBO.calcShareError);
+    }
+  }
+
+  /// Rama "compartir" del boton fusionado. Idem [_trySaveImage]: falla en
+  /// silencio (solo debugPrint + registro del mensaje) sin matar el save.
+  Future<void> _tryShareImage(Uint8List bytes, List<String> errors) async {
+    try {
+      await shareQuoteImage(bytes);
+    } catch (e) {
+      debugPrint('Quote image share failed: $e');
+      errors.add(e is ShareQuoteException ? e.message : EsBO.calcShareError);
     }
   }
 
@@ -915,16 +938,16 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
               ),
               const SizedBox(height: AppSpacing.sm),
 
-              // Action row: Guardar cotización + Compartir + Guardar img + Reset.
+              // Action row: Guardar cotización + PDF + Compartir y guardar +
+              // Reset (fusion AS-2026: share + save en un solo boton).
               _ActionIconRow(
                 isBusy: _isBusy,
                 onSaveDb: () {
                   Navigator.of(context).pop();
                   widget.onSave(_pieceImageBytes);
                 },
-                onShare: _handleShare,
+                onShareAndSave: _handleShareAndSave,
                 onSharePdf: _handleSharePdf,
-                onSaveImage: _handleSave,
                 onReset: () {
                   Navigator.of(context).pop();
                   widget.onReset();
@@ -938,23 +961,21 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
   }
 }
 
-/// Fila de 5 botones-sello cuadrados centrados: Guardar, PDF, Compartir,
-/// Descargar, Reset.
+/// Fila de 4 botones-sello cuadrados centrados: Guardar, PDF, Compartir y
+/// guardar (fusionado AS-2026), Reset.
 class _ActionIconRow extends StatelessWidget {
   const _ActionIconRow({
     required this.isBusy,
     required this.onSaveDb,
-    required this.onShare,
+    required this.onShareAndSave,
     required this.onSharePdf,
-    required this.onSaveImage,
     required this.onReset,
   });
 
   final bool isBusy;
   final VoidCallback onSaveDb;
-  final VoidCallback onShare;
+  final VoidCallback onShareAndSave;
   final VoidCallback onSharePdf;
-  final VoidCallback onSaveImage;
   final VoidCallback onReset;
 
   @override
@@ -978,19 +999,15 @@ class _ActionIconRow extends StatelessWidget {
           isBusy: isBusy,
           onPressed: isBusy ? null : onSharePdf,
         ),
+        // Fusion AS-2026: compartir + guardar en un solo boton. Conserva el
+        // icono de compartir (share_rounded) para no romper la busqueda por
+        // icono en tests, con el tooltip nuevo calcBtnShareSave.
         _ActionIcon(
           icon: Icons.share_rounded,
-          tooltip: EsBO.calcBtnShare,
+          tooltip: EsBO.calcBtnShareSave,
           color: color.primary,
           isBusy: isBusy,
-          onPressed: isBusy ? null : onShare,
-        ),
-        _ActionIcon(
-          icon: Icons.download_rounded,
-          tooltip: EsBO.commonSaveImage,
-          color: color.primary,
-          isBusy: isBusy,
-          onPressed: isBusy ? null : onSaveImage,
+          onPressed: isBusy ? null : onShareAndSave,
         ),
         _ActionIcon(
           icon: Icons.refresh_rounded,

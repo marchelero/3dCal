@@ -5,6 +5,9 @@
 /// `EsBO.xxx`. Internamente delega a la implementacion del locale activo.
 library;
 
+import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:intl/intl.dart';
+
 import 'app_strings.dart';
 
 // ─── API publica (sin cambios en call sites) ─────
@@ -362,6 +365,7 @@ class EsBO {
   static String get calcSheetTitle => _impl.calcSheetTitle;
   static String get calcBtnShare => _impl.calcBtnShare;
   static String get calcBtnShareTooltip => _impl.calcBtnShareTooltip;
+  static String get calcBtnShareSave => _impl.calcBtnShareSave;
   static String get calcShareError => _impl.calcShareError;
   static String get calcShareSubject => _impl.calcShareSubject;
   static String get calcShareText => _impl.calcShareText;
@@ -687,11 +691,33 @@ class EsBO {
       _impl.insightTopClient(name, amount);
   static String insightFilament(String amount) => _impl.insightFilament(amount);
 
-  static String get historySearchHint => _impl.historySearchHint;
   static String get historyFilterAll => _impl.historyFilterAll;
   static String get historyFilterSold => _impl.historyFilterSold;
   static String get historyFilterPending => _impl.historyFilterPending;
   static String get historyNoQuotesToExport => _impl.historyNoQuotesToExport;
+
+  static String get historyFilterDate => _impl.historyFilterDate;
+  static String get historyDatePresetToday => _impl.historyDatePresetToday;
+  static String get historyDatePreset7d => _impl.historyDatePreset7d;
+  static String get historyDatePreset30d => _impl.historyDatePreset30d;
+  static String get historyDatePresetMonth => _impl.historyDatePresetMonth;
+  static String get historyDatePresetYear => _impl.historyDatePresetYear;
+  static String get historyDatePresetAll => _impl.historyDatePresetAll;
+  static String get historyDatePresetCustom => _impl.historyDatePresetCustom;
+  static String historyDateRangeLabel(DateTimeRange range) =>
+      _impl.historyDateRangeLabel(range);
+  static String get historySortTitle => _impl.historySortTitle;
+  static String get historySortDateNewest => _impl.historySortDateNewest;
+  static String get historySortDateOldest => _impl.historySortDateOldest;
+  static String get historySortPriceHigh => _impl.historySortPriceHigh;
+  static String get historySortPriceLow => _impl.historySortPriceLow;
+  static String get historySortClientAz => _impl.historySortClientAz;
+  static String historyClientFilterChip(String name) =>
+      _impl.historyClientFilterChip(name);
+  static String historyFilterSummary(int count, String total) =>
+      _impl.historyFilterSummary(count, total);
+  static String get historySearchMaterialsHint =>
+      _impl.historySearchMaterialsHint;
 
   static String get chartNoMonthlyData => _impl.chartNoMonthlyData;
   static List<String> get chartShortMonths => _impl.chartShortMonths;
@@ -1344,6 +1370,8 @@ class EsImpl implements AppStrings {
   String get calcBtnShare => 'Compartir imagen';
   @override
   String get calcBtnShareTooltip => 'Genera una imagen lista para enviar';
+  @override
+  String get calcBtnShareSave => 'Compartir y guardar';
   @override
   String get calcShareError => 'No se pudo generar la imagen';
   @override
@@ -2003,8 +2031,6 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String insightFilament(String amount) => 'Has cotizado $amount de filamento';
 
   @override
-  String get historySearchHint => 'Buscar por nombre o cliente...';
-  @override
   String get historyFilterAll => 'Todas';
   @override
   String get historyFilterSold => 'Vendidas';
@@ -2012,6 +2038,50 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String get historyFilterPending => 'Pendientes';
   @override
   String get historyNoQuotesToExport => 'No hay cotizaciones para exportar';
+
+  @override
+  String get historyFilterDate => 'Fechas';
+  @override
+  String get historyDatePresetToday => 'Hoy';
+  @override
+  String get historyDatePreset7d => '7 días';
+  @override
+  String get historyDatePreset30d => '30 días';
+  @override
+  String get historyDatePresetMonth => 'Este mes';
+  @override
+  String get historyDatePresetYear => 'Este año';
+  @override
+  String get historyDatePresetAll => 'Todo';
+  @override
+  String get historyDatePresetCustom => 'Personalizado';
+  @override
+  String historyDateRangeLabel(DateTimeRange range) {
+    final from = DateFormat('dd/MM').format(range.start);
+    final to = DateFormat('dd/MM').format(range.end);
+    return '$from – $to';
+  }
+
+  @override
+  String get historySortTitle => 'Orden';
+  @override
+  String get historySortDateNewest => 'Más recientes';
+  @override
+  String get historySortDateOldest => 'Más antiguos';
+  @override
+  String get historySortPriceHigh => 'Precio mayor';
+  @override
+  String get historySortPriceLow => 'Precio menor';
+  @override
+  String get historySortClientAz => 'Cliente A-Z';
+  @override
+  String historyClientFilterChip(String name) => 'Cliente: $name';
+  @override
+  String historyFilterSummary(int count, String total) =>
+      count == 1 ? '1 cotización · $total' : '$count cotizaciones · $total';
+  @override
+  String get historySearchMaterialsHint =>
+      'Buscar por pieza, cliente o material...';
 
   @override
   String get chartNoMonthlyData => 'Sin datos mensuales';

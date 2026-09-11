@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/data/calculation_repository.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 import 'package:tresdcal/features/calculation/domain/entities/material_input.dart';
+import 'package:tresdcal/features/calculation/presentation/notifiers/calculations_notifier.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculations_list_page.dart';
 import 'package:tresdcal/features/entitlement/data/entitlement_repository.dart';
 import 'package:tresdcal/features/entitlement/data/payment_service.dart';
@@ -155,15 +157,71 @@ Future<void> _seedOneCalculation(
   );
 }
 
-/// Helper: monta [CalculationsListPage] en estado FREE con un GoRouter
-/// minimal (incluye `/paywall` para verificar la navegacion del SnackBar
-/// action). Inserta 1 cotizacion dummy para que la lista no este vacia.
-Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
-  WidgetTester tester, {
-  int seedCount = 1,
-  Uint8List? pieceImageBytes,
+/// Helper: inserta una cotizacion con control de fecha, cliente, material,
+/// precio, cantidad y estado vendida (PRD historial avanzado 2026-09-11).
+Future<void> _seed(
+  ProviderContainer container, {
+  required String piece,
+  String? clientName,
+  String materialLabel = 'PLA',
+  Decimal? price,
+  int quantity = 1,
+  DateTime? createdAtUtc,
+  bool sold = false,
 }) async {
-  SharedPreferences.setMockInitialValues(<String, Object>{});
+  final repo = container.read(calculationRepositoryProvider);
+  final db = container.read(appDatabaseProvider);
+  final id = await repo.create(
+    CalculationDraft(
+      materials: [
+        MaterialInput(
+          label: materialLabel,
+          weightGrams: Decimal.parse('100'),
+          pricePerBobbin: Decimal.parse('120'),
+          gramsPerBobbin: Decimal.parse('1000'),
+        ),
+      ],
+      totalHours: Decimal.parse('2'),
+      discountPercentage: Decimal.zero,
+      output: CalculationOutput.simple(
+        materialCost: Decimal.parse('10'),
+        discountAmount: Decimal.zero,
+        totalPrice: price ?? Decimal.parse('10'),
+      ),
+      pieceName: piece,
+      clientName: clientName,
+      quantity: quantity,
+    ),
+  );
+  if (createdAtUtc != null || sold) {
+    await (db.update(db.calculations)..where((c) => c.id.equals(id))).write(
+      CalculationsCompanion(
+        createdAt: createdAtUtc != null
+            ? Value(createdAtUtc)
+            : const Value.absent(),
+        isSold: sold ? const Value(true) : const Value.absent(),
+      ),
+    );
+  }
+}
+
+/// Helper: construye un [ProviderContainer] con DB in-memory + fakes de
+/// entitlement (mismos fakes que [_pumpPageFree]). Con [pro]=true pre-puebla
+/// el cache de SharedPreferences y fuerza la resolucion del
+/// [EntitlementNotifier] a Pro antes de devolver.
+Future<({ProviderContainer container, AppDatabase db})> _buildFreeContainer({
+  bool pro = false,
+}) async {
+  if (pro) {
+    final validated = DateTime.now().toUtc();
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      kIsProKey: true,
+      kEntitlementSourceKey: kSourceLifetimePurchase,
+      kEntitlementValidatedAtKey: validated.toIso8601String(),
+    });
+  } else {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+  }
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final repo = _FakeEntitlementRepository();
@@ -180,14 +238,20 @@ Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
   addTearDown(() async {
     await db.close();
   });
-
-  for (var i = 0; i < seedCount; i++) {
-    await _seedOneCalculation(container, pieceImageBytes: pieceImageBytes);
+  if (pro) {
+    await container.read(entitlementNotifierProvider.future);
   }
+  return (container: container, db: db);
+}
 
+/// Helper: monta [CalculationsListPage] (con el GoRouter minimal que incluye
+/// `/paywall`) sobre un container ya construido.
+Future<void> _pumpContainer(
+  WidgetTester tester,
+  ProviderContainer container,
+) async {
   final router = _buildRouter();
   addTearDown(router.dispose);
-
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
@@ -195,7 +259,21 @@ Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
     ),
   );
   await tester.pumpAndSettle();
-  return (container: container, db: db);
+}
+
+/// Helper: monta [CalculationsListPage] en estado FREE sobre el container de
+/// [_buildFreeContainer]. Inserta [seedCount] cotizaciones "dummy".
+Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
+  WidgetTester tester, {
+  int seedCount = 1,
+  Uint8List? pieceImageBytes,
+}) async {
+  final res = await _buildFreeContainer();
+  for (var i = 0; i < seedCount; i++) {
+    await _seedOneCalculation(res.container, pieceImageBytes: pieceImageBytes);
+  }
+  await _pumpContainer(tester, res.container);
+  return res;
 }
 
 /// Helper: monta [CalculationsListPage] en estado PRO (via cache SP
@@ -203,48 +281,10 @@ Future<({ProviderContainer container, AppDatabase db})> _pumpPageFree(
 Future<({ProviderContainer container, AppDatabase db})> _pumpPagePro(
   WidgetTester tester,
 ) async {
-  final validated = DateTime.now().toUtc();
-  SharedPreferences.setMockInitialValues(<String, Object>{
-    kIsProKey: true,
-    kEntitlementSourceKey: kSourceLifetimePurchase,
-    kEntitlementValidatedAtKey: validated.toIso8601String(),
-  });
-  final prefs = await SharedPreferences.getInstance();
-  final db = AppDatabase.forTesting(NativeDatabase.memory());
-  final repo = _FakeEntitlementRepository();
-  final payment = _FakePaymentService();
-  final container = ProviderContainer(
-    overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      sharedPreferencesProvider.overrideWithValue(prefs),
-      entitlementRepositoryProvider.overrideWithValue(repo),
-      paymentServiceProvider.overrideWithValue(payment),
-    ],
-  );
-  addTearDown(container.dispose);
-  addTearDown(() async {
-    await db.close();
-  });
-
-  // Forzar la resolucion del [EntitlementNotifier] ANTES de pumpWidget.
-  // Si no, el primer pump corre con AsyncValue.loading y `isProProvider`
-  // lee valueOrNull=null → isPro=false → el gate se dispara
-  // incorrectamente en Pro.
-  await container.read(entitlementNotifierProvider.future);
-
-  await _seedOneCalculation(container);
-
-  final router = _buildRouter();
-  addTearDown(router.dispose);
-
-  await tester.pumpWidget(
-    UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp.router(routerConfig: router),
-    ),
-  );
-  await tester.pumpAndSettle();
-  return (container: container, db: db);
+  final res = await _buildFreeContainer(pro: true);
+  await _seedOneCalculation(res.container);
+  await _pumpContainer(tester, res.container);
+  return res;
 }
 
 /// GoRouter minimal con la lista + el destino /paywall. Se reutiliza
@@ -492,6 +532,179 @@ void main() {
         findsOneWidget,
         reason: 'Sin foto el card mantiene el leading icono de siempre.',
       );
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // Historial avanzado (PRD 2026-09-11): filtros de fecha, cliente,
+  // material, orden y barra de resumen
+  // ─────────────────────────────────────────────────────────────
+
+  group('CalculationsListPage — historial avanzado (PRD 2026-09-11)', () {
+    double dy(WidgetTester tester, String text) =>
+        tester.getTopLeft(find.text(text)).dy;
+
+    testWidgets('preset "7 días" filtra por fecha y el chip muestra "7 d"', (
+      tester,
+    ) async {
+      final res = await _buildFreeContainer();
+      final now = DateTime.now();
+      await _seed(res.container, piece: 'Reciente', clientName: 'Ana');
+      await _seed(
+        res.container,
+        piece: 'Vieja',
+        clientName: 'Ana',
+        createdAtUtc: now.toUtc().subtract(const Duration(days: 10)),
+      );
+      await _pumpContainer(tester, res.container);
+
+      // Chip "Fechas" → sheet → preset "7 días".
+      await tester.tap(find.text(EsBO.historyFilterDate));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.historyDatePreset7d));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reciente'), findsOneWidget);
+      expect(find.text('Vieja'), findsNothing);
+      expect(find.text('7 d'), findsOneWidget);
+
+      // Con dateRange activo el contador free queda oculto y aparece la
+      // barra de resumen ("· $" solo existe en ella).
+      expect(find.textContaining('· \$', findRichText: true), findsOneWidget);
+    });
+
+    testWidgets('resumen visible SOLO con filtro activo', (tester) async {
+      final res = await _buildFreeContainer();
+      await _seed(res.container, piece: 'Sola', clientName: 'Ana');
+      await _pumpContainer(tester, res.container);
+
+      // Sin filtros no hay barra de resumen.
+      expect(find.textContaining('· \$', findRichText: true), findsNothing);
+
+      // Tap en el cliente filtra → aparece la barra.
+      await tester.tap(find.text('Ana'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('· \$', findRichText: true), findsOneWidget);
+    });
+
+    testWidgets('tap en el cliente filtra y el × del chip limpia', (
+      tester,
+    ) async {
+      final res = await _buildFreeContainer();
+      await _seed(res.container, piece: 'De Ana', clientName: 'Ana');
+      await _seed(res.container, piece: 'De Beto', clientName: 'Beto');
+      await _pumpContainer(tester, res.container);
+
+      await tester.tap(find.text('Beto'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(EsBO.historyClientFilterChip('Beto')), findsOneWidget);
+      expect(find.text('De Beto'), findsOneWidget);
+      expect(find.text('De Ana'), findsNothing);
+
+      // × del chip limpia el filtro de cliente.
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.text(EsBO.historyClientFilterChip('Beto')), findsNothing);
+      expect(find.text('De Ana'), findsOneWidget);
+    });
+
+    testWidgets('menú de orden: "Precio mayor" reordena por total efectivo', (
+      tester,
+    ) async {
+      final res = await _buildFreeContainer();
+      final now = DateTime.now();
+      // Totales efectivos: A=100, B=60x3=180, C=50.
+      await _seed(
+        res.container,
+        piece: 'A',
+        price: Decimal.parse('100'),
+        quantity: 1,
+        createdAtUtc: now.toUtc().subtract(const Duration(days: 3)),
+      );
+      await _seed(
+        res.container,
+        piece: 'B',
+        price: Decimal.parse('60'),
+        quantity: 3,
+        createdAtUtc: now.toUtc().subtract(const Duration(days: 2)),
+      );
+      await _seed(
+        res.container,
+        piece: 'C',
+        price: Decimal.parse('50'),
+        quantity: 1,
+        createdAtUtc: now.toUtc().subtract(const Duration(days: 1)),
+      );
+      await _pumpContainer(tester, res.container);
+
+      // Default: fecha reciente → C (arriba) < B < A.
+      expect(dy(tester, 'C') < dy(tester, 'B'), isTrue);
+      expect(dy(tester, 'B') < dy(tester, 'A'), isTrue);
+
+      // AppBar actions → orden → "Precio mayor".
+      await tester.tap(find.byTooltip(EsBO.historySortTitle));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.historySortPriceHigh));
+      await tester.pumpAndSettle();
+
+      // Precio mayor → B (180) < A (100) < C (50).
+      expect(dy(tester, 'B') < dy(tester, 'A'), isTrue);
+      expect(dy(tester, 'A') < dy(tester, 'C'), isTrue);
+    });
+
+    testWidgets('búsqueda encuentra por label de material', (tester) async {
+      final res = await _buildFreeContainer();
+      await _seed(
+        res.container,
+        piece: 'Engranaje',
+        clientName: 'Ana',
+        materialLabel: 'PLA+',
+      );
+      await _seed(
+        res.container,
+        piece: 'Soporte',
+        clientName: 'Ana',
+        materialLabel: 'PETG',
+      );
+      await _pumpContainer(tester, res.container);
+
+      await tester.enterText(find.byType(TextField), 'pla+');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Engranaje'), findsOneWidget);
+      expect(find.text('Soporte'), findsNothing);
+    });
+
+    testWidgets('320dp: fila de chips extendida sin overflow', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final res = await _buildFreeContainer();
+      final now = DateTime.now();
+      await _seed(res.container, piece: 'A', clientName: 'Cliente Largo');
+      await _seed(
+        res.container,
+        piece: 'B',
+        clientName: 'Cliente Largo',
+        sold: true,
+      );
+      await _pumpContainer(tester, res.container);
+
+      // Filtros activos via notifier (el canal de estado real del page).
+      final notifier = res.container.read(
+        calculationsNotifierProvider.notifier,
+      );
+      notifier.setClientFilter('Cliente Largo');
+      notifier.setDateRange(
+        DateTimeRange(start: now.subtract(const Duration(days: 6)), end: now),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(InputChip), findsWidgets);
     });
   });
 }

@@ -2,6 +2,9 @@
 library;
 // ignore_for_file: public_member_api_docs
 
+import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:intl/intl.dart';
+
 import 'app_strings.dart';
 
 class EnImpl implements AppStrings {
@@ -578,6 +581,8 @@ class EnImpl implements AppStrings {
   String get calcBtnShare => 'Share image';
   @override
   String get calcBtnShareTooltip => 'Generates a ready-to-share image';
+  @override
+  String get calcBtnShareSave => 'Share and save';
   @override
   String get calcShareError => 'Could not generate the image';
   @override
@@ -1233,8 +1238,6 @@ We may update, suspend, or remove application features. These terms may also cha
   String insightFilament(String amount) => 'You quoted $amount of filament';
 
   @override
-  String get historySearchHint => 'Search by name or customer...';
-  @override
   String get historyFilterAll => 'All';
   @override
   String get historyFilterSold => 'Sold';
@@ -1242,6 +1245,50 @@ We may update, suspend, or remove application features. These terms may also cha
   String get historyFilterPending => 'Pending';
   @override
   String get historyNoQuotesToExport => 'No quotes to export';
+
+  @override
+  String get historyFilterDate => 'Dates';
+  @override
+  String get historyDatePresetToday => 'Today';
+  @override
+  String get historyDatePreset7d => '7 days';
+  @override
+  String get historyDatePreset30d => '30 days';
+  @override
+  String get historyDatePresetMonth => 'This month';
+  @override
+  String get historyDatePresetYear => 'This year';
+  @override
+  String get historyDatePresetAll => 'All';
+  @override
+  String get historyDatePresetCustom => 'Custom';
+  @override
+  String historyDateRangeLabel(DateTimeRange range) {
+    final from = DateFormat('dd/MM').format(range.start);
+    final to = DateFormat('dd/MM').format(range.end);
+    return '$from – $to';
+  }
+
+  @override
+  String get historySortTitle => 'Sort';
+  @override
+  String get historySortDateNewest => 'Newest first';
+  @override
+  String get historySortDateOldest => 'Oldest first';
+  @override
+  String get historySortPriceHigh => 'Highest price';
+  @override
+  String get historySortPriceLow => 'Lowest price';
+  @override
+  String get historySortClientAz => 'Customer A-Z';
+  @override
+  String historyClientFilterChip(String name) => 'Customer: $name';
+  @override
+  String historyFilterSummary(int count, String total) =>
+      count == 1 ? '1 quote · $total' : '$count quotes · $total';
+  @override
+  String get historySearchMaterialsHint =>
+      'Search by part, customer or material...';
 
   @override
   String get chartNoMonthlyData => 'No monthly data';

@@ -2,6 +2,9 @@
 library;
 // ignore_for_file: public_member_api_docs
 
+import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:intl/intl.dart';
+
 import 'app_strings.dart';
 
 class PtBrImpl implements AppStrings {
@@ -594,6 +597,8 @@ class PtBrImpl implements AppStrings {
   String get calcBtnShare => 'Compartilhar imagem';
   @override
   String get calcBtnShareTooltip => 'Gera uma imagem pronta para compartilhar';
+  @override
+  String get calcBtnShareSave => 'Compartilhar e salvar';
   @override
   String get calcShareError => 'Não foi possível gerar a imagem';
   @override
@@ -1204,8 +1209,6 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String insightFilament(String amount) => 'Você orçou $amount de filamento';
 
   @override
-  String get historySearchHint => 'Pesquisar por nome ou cliente...';
-  @override
   String get historyFilterAll => 'Todas';
   @override
   String get historyFilterSold => 'Vendidos';
@@ -1213,6 +1216,50 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String get historyFilterPending => 'Pendentes';
   @override
   String get historyNoQuotesToExport => 'Nenhum orçamento para exportar';
+
+  @override
+  String get historyFilterDate => 'Datas';
+  @override
+  String get historyDatePresetToday => 'Hoje';
+  @override
+  String get historyDatePreset7d => '7 dias';
+  @override
+  String get historyDatePreset30d => '30 dias';
+  @override
+  String get historyDatePresetMonth => 'Este mês';
+  @override
+  String get historyDatePresetYear => 'Este ano';
+  @override
+  String get historyDatePresetAll => 'Todas';
+  @override
+  String get historyDatePresetCustom => 'Personalizado';
+  @override
+  String historyDateRangeLabel(DateTimeRange range) {
+    final from = DateFormat('dd/MM').format(range.start);
+    final to = DateFormat('dd/MM').format(range.end);
+    return '$from – $to';
+  }
+
+  @override
+  String get historySortTitle => 'Ordem';
+  @override
+  String get historySortDateNewest => 'Mais recentes';
+  @override
+  String get historySortDateOldest => 'Mais antigos';
+  @override
+  String get historySortPriceHigh => 'Maior preço';
+  @override
+  String get historySortPriceLow => 'Menor preço';
+  @override
+  String get historySortClientAz => 'Cliente A-Z';
+  @override
+  String historyClientFilterChip(String name) => 'Cliente: $name';
+  @override
+  String historyFilterSummary(int count, String total) =>
+      count == 1 ? '1 orçamento · $total' : '$count orçamentos · $total';
+  @override
+  String get historySearchMaterialsHint =>
+      'Pesquisar por peça, cliente ou material...';
 
   @override
   String get chartNoMonthlyData => 'Nenhum dado mensal';

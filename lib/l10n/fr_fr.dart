@@ -1,4 +1,7 @@
 // ignore_for_file: public_member_api_docs
+import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:intl/intl.dart';
+
 import 'app_strings.dart';
 
 /// Chaînes localisées en français (fr_FR).
@@ -564,6 +567,8 @@ class FrImpl implements AppStrings {
   String get calcBtnShare => 'Partager l’image';
   @override
   String get calcBtnShareTooltip => 'Génère une image prête à partager';
+  @override
+  String get calcBtnShareSave => 'Partager et enregistrer';
   @override
   String get calcShareError => 'Impossible de générer l’image';
   @override
@@ -1194,8 +1199,6 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String insightFilament(String amount) =>
       'Vous avez devisé $amount de filament';
   @override
-  String get historySearchHint => 'Rechercher par nom ou client...';
-  @override
   String get historyFilterAll => 'Tous';
   @override
   String get historyFilterSold => 'Vendus';
@@ -1203,6 +1206,49 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get historyFilterPending => 'En attente';
   @override
   String get historyNoQuotesToExport => 'Aucun devis à exporter';
+  @override
+  String get historyFilterDate => 'Dates';
+  @override
+  String get historyDatePresetToday => "Aujourd'hui";
+  @override
+  String get historyDatePreset7d => '7 jours';
+  @override
+  String get historyDatePreset30d => '30 jours';
+  @override
+  String get historyDatePresetMonth => 'Ce mois-ci';
+  @override
+  String get historyDatePresetYear => 'Cette année';
+  @override
+  String get historyDatePresetAll => 'Tous';
+  @override
+  String get historyDatePresetCustom => 'Personnalisé';
+  @override
+  String historyDateRangeLabel(DateTimeRange range) {
+    final from = DateFormat('dd/MM').format(range.start);
+    final to = DateFormat('dd/MM').format(range.end);
+    return '$from – $to';
+  }
+
+  @override
+  String get historySortTitle => 'Tri';
+  @override
+  String get historySortDateNewest => 'Plus récents';
+  @override
+  String get historySortDateOldest => 'Plus anciens';
+  @override
+  String get historySortPriceHigh => 'Prix le plus élevé';
+  @override
+  String get historySortPriceLow => 'Prix le plus bas';
+  @override
+  String get historySortClientAz => 'Client A-Z';
+  @override
+  String historyClientFilterChip(String name) => 'Client : $name';
+  @override
+  String historyFilterSummary(int count, String total) =>
+      count == 1 ? '1 devis · $total' : '$count devis · $total';
+  @override
+  String get historySearchMaterialsHint =>
+      'Rechercher par pièce, client ou matériau...';
   @override
   String get chartNoMonthlyData => 'Aucune donnée mensuelle';
   @override

@@ -23,9 +23,11 @@ import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
+import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../data/calculation_repository.dart';
 import '../notifiers/calculations_notifier.dart';
+import '../notifiers/history_sort.dart';
 
 /// Historial de cotizaciones guardadas con search + filtros.
 class CalculationsListPage extends ConsumerStatefulWidget {
@@ -38,7 +40,6 @@ class CalculationsListPage extends ConsumerStatefulWidget {
 
 class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
   late final TextEditingController _searchCtrl;
-  bool? _soldFilter;
 
   @override
   void initState() {
@@ -58,6 +59,12 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     final async = ref.watch(calculationsNotifierProvider);
     final notifier = ref.read(calculationsNotifierProvider.notifier);
 
+    // Estado de filtros activos (PRD 2026-09-11): el notifier es la unica
+    // fuente de verdad; esto es lectura pura para pintar chips/resumen.
+    final soldFilter = notifier.soldFilter;
+    final dateRange = notifier.dateRange;
+    final clientFilter = notifier.clientFilter;
+
     // Patron de estado del gate visual (UX): "locked" solo cuando el
     // entitlement esta resuelto y el user es free. Durante el boot async
     // (loading) el boton se ve normal (evita falso "locked" en cold start).
@@ -66,33 +73,57 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     final csvLocked = !ent.isLoading && !isPro;
     final usedCount = async.value?.length ?? 0;
 
-    // Contador "x/$kFreeHistoryCap": solo para free, y solo cuando la
-    // lista muestra el set completo (sin busqueda ni filtro de venta —
-    // con filtros el count del state no representa el historial total).
-    // `async.hasValue` evita mostrar "0/10" durante loading/error.
-    final showHistoryCounter =
-        csvLocked &&
-        async.hasValue &&
-        _searchCtrl.text.isEmpty &&
-        _soldFilter == null;
+    // Barra de resumen: visible SOLO con >=1 filtro activo (search, venta,
+    // fechas o cliente). El orden NO cuenta como filtro.
+    final hasActiveFilter =
+        notifier.searchQuery.isNotEmpty ||
+        soldFilter != null ||
+        dateRange != null ||
+        clientFilter != null;
+
+    // Contador "x/$kFreeHistoryCap": solo free, y solo cuando la lista
+    // muestra el set completo (sin filtros activos — con filtros el count
+    // del state no representa el historial total).
+    final showHistoryCounter = csvLocked && async.hasValue && !hasActiveFilter;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(EsBO.historyTitle),
         actions: [
-          IconButton(
-            icon: Opacity(
-              opacity: csvLocked ? kLockedOpacity : 1.0,
-              child: Icon(
-                csvLocked ? Icons.lock_rounded : Icons.file_download_outlined,
-                size: 20,
+          SmartAppBarActions(
+            // M3 (review): CSV directo en pantallas normales; solo el orden
+            // colapsa al menu ⋮ en angosto.
+            priority: [
+              Tooltip(
+                message: csvLocked
+                    ? EsBO.csvExportTooltipLocked
+                    : EsBO.historyExportCsv,
+                child: IconButton(
+                  icon: Opacity(
+                    opacity: csvLocked ? kLockedOpacity : 1.0,
+                    child: Icon(
+                      csvLocked
+                          ? Icons.lock_rounded
+                          : Icons.file_download_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  onPressed: () => _exportCsv(notifier),
+                ),
               ),
-            ),
-            tooltip: csvLocked
-                ? EsBO.csvExportTooltipLocked
-                : EsBO.historyExportCsv,
-            onPressed: () => _exportCsv(notifier),
+            ],
+            menuActions: [
+              (
+                icon: Icon(
+                  Icons.sort_rounded,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                label: EsBO.historySortTitle,
+                onTap: _showSortSheet,
+              ),
+            ],
           ),
         ],
       ),
@@ -104,7 +135,7 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: EsBO.historySearchHint,
+                hintText: EsBO.historySearchMaterialsHint,
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
@@ -128,19 +159,25 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
               },
             ),
           ),
-          // Filter chips
+          // Filter chips (Venta + Fechas + Cliente activo)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Wrap(
               spacing: 8,
+              runSpacing: 4,
               children: [
                 _filterChip(EsBO.historyFilterAll, null),
                 _filterChip(EsBO.historyFilterSold, true),
                 _filterChip(EsBO.historyFilterPending, false),
+                ..._dateChips(dateRange, notifier),
+                ..._clientChips(clientFilter, notifier),
               ],
             ),
           ),
-          // History usage counter (free only)
+          // Barra de resumen: "N cotizaciones · total efectivo" (PRD 2026-09-11)
+          if (hasActiveFilter && async.hasValue)
+            _SummaryBar(calcs: async.value!),
+          // History usage counter (free only, sin filtros activos)
           if (showHistoryCounter)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
@@ -212,20 +249,243 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
   }
 
   Widget _filterChip(String label, bool? filter) {
-    final selected = _soldFilter == filter;
+    final notifier = ref.read(calculationsNotifierProvider.notifier);
+    final soldFilter = notifier.soldFilter;
+    final selected = soldFilter == filter;
     return FilterChip(
       label: Text(label, style: Theme.of(context).textTheme.labelMedium),
       selected: selected,
       onSelected: (_) {
-        setState(() => _soldFilter = _soldFilter == filter ? null : filter);
-        ref
-            .read(calculationsNotifierProvider.notifier)
-            .setSoldFilter(_soldFilter);
+        // Toggle: repetir el valor activo lo limpia (null = todas).
+        notifier.setSoldFilter(selected ? null : filter);
       },
       visualDensity: VisualDensity.compact,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
+
+  /// Chips del filtro de fechas (PRD 2026-09-11): sin rango abren el
+  /// selector de presets; con rango muestran el label compacto + ×.
+  List<Widget> _dateChips(DateTimeRange? range, CalculationsNotifier n) {
+    if (range != null) {
+      return [
+        InputChip(
+          label: Text(_dateChipLabel(range)),
+          onDeleted: () => n.setDateRange(null),
+          deleteIcon: const Icon(Icons.close_rounded, size: 16),
+          visualDensity: VisualDensity.compact,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ];
+    }
+    return [
+      FilterChip(
+        label: Text(
+          EsBO.historyFilterDate,
+          style: Theme.of(context).textTheme.labelMedium,
+        ),
+        selected: false,
+        onSelected: (_) => _showDateSheet(),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    ];
+  }
+
+  /// Chip del cliente activo (PRD 2026-09-11): avatar + label + × para
+  /// limpiar. Fuera del filtro no se muestra chip.
+  List<Widget> _clientChips(String? client, CalculationsNotifier n) {
+    if (client == null) return const [];
+    return [
+      InputChip(
+        avatar: Icon(
+          Icons.person_rounded,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        label: Text(EsBO.historyClientFilterChip(client)),
+        onDeleted: () => n.setClientFilter(null),
+        deleteIcon: const Icon(Icons.close_rounded, size: 16),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    ];
+  }
+
+  /// Label compacto del chip de fechas: '7 d' / '30 d' para los presets
+  /// por dias, 'dd/MM – dd/MM' para el resto (incluye bornes, por eso +1).
+  String _dateChipLabel(DateTimeRange range) {
+    final start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final end = DateTime(range.end.year, range.end.month, range.end.day);
+    final days = end.difference(start).inDays + 1;
+    if (days == 7) return '7 d';
+    if (days == 30) return '30 d';
+    return EsBO.historyDateRangeLabel(range);
+  }
+
+  /// Sheet de presets de fecha (PRD 2026-09-11): Hoy / 7d / 30d / Este mes /
+  /// Este año / Todo / Personalizado.
+  Future<void> _showDateSheet() async {
+    final now = DateTime.now();
+    final preset = await showModalBottomSheet<_DatePreset>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        // SingleChildScrollView: el sheet nada scrollable puede medir menos
+        // que su contenido (7 presets + header) en superficies bajas.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(
+                  EsBO.historyFilterDate,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              for (final (preset, label) in _datePresetOptions)
+                ListTile(
+                  leading: const Icon(Icons.date_range_rounded, size: 20),
+                  title: Text(label),
+                  onTap: () => Navigator.of(context).pop(preset),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (preset == null || !mounted) return;
+    switch (preset) {
+      case _DatePreset.today:
+        _applyDateRange(
+          DateTimeRange(start: _startOfDay(now), end: _endOfDay(now)),
+        );
+      case _DatePreset.sevenDays:
+        _applyDateRange(
+          DateTimeRange(
+            start: _startOfDay(now.subtract(const Duration(days: 6))),
+            end: _endOfDay(now),
+          ),
+        );
+      case _DatePreset.thirtyDays:
+        _applyDateRange(
+          DateTimeRange(
+            start: _startOfDay(now.subtract(const Duration(days: 29))),
+            end: _endOfDay(now),
+          ),
+        );
+      case _DatePreset.month:
+        _applyDateRange(
+          DateTimeRange(
+            start: _startOfDay(DateTime(now.year, now.month, 1)),
+            end: _endOfDay(DateTime(now.year, now.month + 1, 0)),
+          ),
+        );
+      case _DatePreset.year:
+        _applyDateRange(
+          DateTimeRange(
+            start: _startOfDay(DateTime(now.year, 1, 1)),
+            end: _endOfDay(DateTime(now.year, 12, 31)),
+          ),
+        );
+      case _DatePreset.all:
+        // "Todo" elimina el filtro de fechas.
+        ref.read(calculationsNotifierProvider.notifier).setDateRange(null);
+      case _DatePreset.custom:
+        await _pickCustomRange(now);
+    }
+  }
+
+  /// Presets accesibles del sheet de fechas.
+  List<(_DatePreset, String)> get _datePresetOptions => [
+    (_DatePreset.today, EsBO.historyDatePresetToday),
+    (_DatePreset.sevenDays, EsBO.historyDatePreset7d),
+    (_DatePreset.thirtyDays, EsBO.historyDatePreset30d),
+    (_DatePreset.month, EsBO.historyDatePresetMonth),
+    (_DatePreset.year, EsBO.historyDatePresetYear),
+    (_DatePreset.all, EsBO.historyDatePresetAll),
+    (_DatePreset.custom, EsBO.historyDatePresetCustom),
+  ];
+
+  /// "Personalizado": date range picker; el end seleccionado se lleva a
+  /// fin-de-dia para que el filtro del notifier sea inclusivo en el dia.
+  Future<void> _pickCustomRange(DateTime now) async {
+    final notifier = ref.read(calculationsNotifierProvider.notifier);
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5),
+      lastDate: _startOfDay(now),
+      initialDateRange: notifier.dateRange,
+    );
+    if (picked == null || !mounted) return;
+    notifier.setDateRange(
+      DateTimeRange(
+        start: _startOfDay(picked.start),
+        end: _endOfDay(picked.end),
+      ),
+    );
+  }
+
+  void _applyDateRange(DateTimeRange range) {
+    ref.read(calculationsNotifierProvider.notifier).setDateRange(range);
+  }
+
+  /// Sheet de orden (PRD 2026-09-11): 5 opciones con check en la activa.
+  /// El orden NO es un filtro (no afecta contador free ni resumen).
+  Future<void> _showSortSheet() async {
+    final notifier = ref.read(calculationsNotifierProvider.notifier);
+    final current = notifier.sort;
+    final selected = await showModalBottomSheet<HistorySort>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        // SingleChildScrollView: mismo patron que el sheet de fechas.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(
+                  EsBO.historySortTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              for (final (sort, label) in _sortOptions)
+                ListTile(
+                  leading: sort == current
+                      ? const Icon(Icons.check_rounded, size: 20)
+                      : null,
+                  title: Text(label),
+                  onTap: () => Navigator.of(context).pop(sort),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected == null) return;
+    notifier.setSort(selected);
+  }
+
+  /// Opciones del sheet de orden, ordenadas como aparecen en la UI.
+  List<(HistorySort, String)> get _sortOptions => [
+    (HistorySort.dateNewest, EsBO.historySortDateNewest),
+    (HistorySort.dateOldest, EsBO.historySortDateOldest),
+    (HistorySort.priceHigh, EsBO.historySortPriceHigh),
+    (HistorySort.priceLow, EsBO.historySortPriceLow),
+    (HistorySort.clientAz, EsBO.historySortClientAz),
+  ];
+
+  static DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  static DateTime _endOfDay(DateTime d) =>
+      DateTime(d.year, d.month, d.day, 23, 59, 59, 999, 999);
 
   Future<void> _exportCsv(CalculationsNotifier notifier) async {
     // T16 (plan de monetizacion): CSV export es Pro. En Free, gate con
@@ -256,9 +516,10 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
       return;
     }
 
-    final async = ref.read(calculationsNotifierProvider);
-    final calcs = async.value;
-    if (calcs == null || calcs.isEmpty) {
+    // PRD criterio #10: el CSV exporta el historial COMPLETO (`notifier.all`),
+    // no el set filtrado que se muestra en pantalla.
+    final calcs = notifier.all;
+    if (calcs.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -312,17 +573,55 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
   }
 }
 
+/// Barra de resumen del historial (PRD 2026-09-11).
+///
+/// Muestra "N cotizaciones · $total" con el TOTAL EFECTIVO del set filtrado
+/// (unitario x cantidad). Visible SOLO con >=1 filtro activo.
+class _SummaryBar extends ConsumerWidget {
+  const _SummaryBar({required this.calcs});
+
+  final List<CalculationListItem> calcs;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final currency = ref.watch(selectedCurrencyProvider);
+    final total = calcs.fold<Decimal>(
+      Decimal.zero,
+      (acc, c) => acc + c.effectiveTotal,
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              EsBO.historyFilterSummary(
+                calcs.length,
+                formatCurrency(total, currency),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Presets del sheet de fechas del historial.
+enum _DatePreset { today, sevenDays, thirtyDays, month, year, all, custom }
+
 class _CalculationCard extends ConsumerWidget {
   const _CalculationCard({required this.calc, required this.notifier});
 
   final CalculationListItem calc;
   final CalculationsNotifier notifier;
-
-  /// Total efectivo de la cotizacion: `unitario x cantidad`.
-  /// Los snapshots se guardan unitarios; la cantidad vive en su columna.
-  Decimal _effectiveTotal(CalculationListItem c) =>
-      Decimal.parse(c.totalPriceSnapshot.toStringAsFixed(2)) *
-      Decimal.fromInt(c.quantity < 1 ? 1 : c.quantity);
 
   String _title() {
     final piece = calc.pieceName;
@@ -334,12 +633,27 @@ class _CalculationCard extends ConsumerWidget {
     return EsBO.calcDetailNoName;
   }
 
+  /// PRD 2026-09-11: togglea el filtro de cliente desde el tap en el nombre
+  /// del card (una columna con filtros a nivel historial).
+  void _toggleClientFilter(String name) {
+    // N1 (review): el filtro del notifier es case-insensitive; normalizar
+    // ambos lados para que toggle y highlight no diverjan.
+    notifier.setClientFilter(
+      notifier.clientFilter?.toLowerCase() == name.toLowerCase() ? null : name,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final client = calc.clientName;
     final currency = ref.watch(selectedCurrencyProvider);
+    // PRD 2026-09-11: resaltar el cliente cuando el historial lo filtra.
+    // N1: comparacion case-insensitive (igual que el filtro del notifier).
+    final isClientFiltered =
+        client != null &&
+        client.toLowerCase() == (notifier.clientFilter ?? '').toLowerCase();
 
     return Semantics(
       container: true,
@@ -347,7 +661,7 @@ class _CalculationCard extends ConsumerWidget {
           // BUG-017 fix: toStringAsFixed(2) evita notacion cientifica/NaN
           // en Decimal.parse para snapshots corruptos. Total efectivo =
           // unitario x cantidad (lotes).
-          '${_title()}, ${formatCurrency(_effectiveTotal(calc), currency)}'
+          '${_title()}, ${formatCurrency(calc.effectiveTotal, currency)}'
           '${calc.isSold ? ", ${EsBO.calcDetailSold}" : ""}',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -399,13 +713,30 @@ class _CalculationCard extends ConsumerWidget {
                               ),
                               const SizedBox(width: AppSpacing.xs),
                               Flexible(
-                                child: Text(
-                                  client,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: color.onSurfaceVariant,
+                                child: InkWell(
+                                  onTap: () => _toggleClientFilter(client),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.sm,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.xxs,
+                                    ),
+                                    child: Text(
+                                      client,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: isClientFiltered
+                                                ? color.primary
+                                                : color.onSurfaceVariant,
+                                            fontWeight: isClientFiltered
+                                                ? FontWeight.w600
+                                                : null,
+                                          ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.sm),
@@ -419,12 +750,16 @@ class _CalculationCard extends ConsumerWidget {
                               ),
                               const SizedBox(width: AppSpacing.sm),
                             ],
-                            Text(
-                              DateFormat(
-                                'dd MMM HH:mm',
-                              ).format(calc.createdAt.toLocal()),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: color.onSurfaceVariant,
+                            Flexible(
+                              child: Text(
+                                DateFormat(
+                                  'dd MMM HH:mm',
+                                ).format(calc.createdAt.toLocal()),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: color.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -440,7 +775,7 @@ class _CalculationCard extends ConsumerWidget {
                       Text(
                         // BUG-017 fix: idem, toStringAsFixed(2).
                         // Total efectivo = unitario x cantidad (lotes).
-                        formatCurrency(_effectiveTotal(calc), currency),
+                        formatCurrency(calc.effectiveTotal, currency),
                         // M2: precio en list item usa JetBrains Mono + tabular
                         // para alineacion vertical de cifras en el listado.
                         style: GoogleFonts.jetBrainsMono(

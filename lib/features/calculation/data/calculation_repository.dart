@@ -44,6 +44,17 @@ class CalculationListItem {
   final double profitAmountSnapshot;
   final double totalPriceSnapshot;
   final bool hasImage;
+
+  /// Total efectivo de la cotizacion: `totalPriceSnapshot` (normalizado a 2
+  /// decimales, ver doc de precision monetaria de este archivo) x `quantity`,
+  /// con `quantity < 1` tratada como 1 unidad.
+  ///
+  /// Dinero es SIEMPRE [Decimal]; el `double` es solo la frontera de
+  /// persistencia de drift.
+  Decimal get effectiveTotal {
+    final unit = Decimal.parse(totalPriceSnapshot.toStringAsFixed(2));
+    return unit * Decimal.fromInt(quantity < 1 ? 1 : quantity);
+  }
 }
 
 /// Datos de entrada para crear una cotizacion.
@@ -464,6 +475,27 @@ class CalculationRepository {
     return (_db.select(
       _db.calculationMaterials,
     )..where((m) => m.calculationId.equals(calculationId))).get();
+  }
+
+  /// Mapa `calculation_id -> labels de materiales` unidos con `|`, para la
+  /// busqueda por filamento del historial (PRD 2026-09-11).
+  ///
+  /// Usa un `LEFT JOIN` para que las cotizaciones SIN materiales mapeen a
+  /// `''` (la busqueda no debe romperse) y excluye plantillas. Query
+  /// agregada read-only: no toca BLOBs ni el schema.
+  Future<Map<int, String>> materialLabelsByCalcId() async {
+    final rows = await _db.customSelect('''
+      SELECT c.id AS calc_id,
+             GROUP_CONCAT(cm.label, '|') AS labels
+      FROM calculations c
+      LEFT JOIN calculation_materials cm ON cm.calculation_id = c.id
+      WHERE c.is_template = 0
+      GROUP BY c.id
+      ''').get();
+    return {
+      for (final row in rows)
+        row.read<int>('calc_id'): row.read<String?>('labels') ?? '',
+    };
   }
 
   /// Cambia el flag isSold de una cotizacion.

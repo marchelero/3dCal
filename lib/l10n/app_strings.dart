@@ -4,6 +4,8 @@
 /// [EsBO] delega a una implementacion concreta segun el locale activo.
 library;
 
+import 'package:flutter/material.dart' show DateTimeRange;
+
 abstract class AppStrings {
   const AppStrings();
 
@@ -412,6 +414,10 @@ abstract class AppStrings {
   String get calcSheetTitle;
   String get calcBtnShare;
   String get calcBtnShareTooltip;
+
+  /// "Compartir y guardar" / "Share and save" — tooltip del boton fusionado
+  /// del result sheet (AS-2026): guarda la imagen y abre el share sheet.
+  String get calcBtnShareSave;
   String get calcShareError;
   String get calcShareSubject;
   String get calcShareText;
@@ -996,9 +1002,6 @@ abstract class AppStrings {
   /// Insight de filamento: "Has cotizado 1,2 kg de filamento".
   String insightFilament(String amount);
 
-  /// Hint de busqueda del historial.
-  String get historySearchHint;
-
   /// Filtro "Todas" / "All".
   String get historyFilterAll;
 
@@ -1010,6 +1013,62 @@ abstract class AppStrings {
 
   /// Snackbar "No hay cotizaciones para exportar".
   String get historyNoQuotesToExport;
+
+  // === Historial avanzado (PRD 2026-09-11) ===
+
+  /// Chip "Fechas" del historial (abre el selector de presets).
+  String get historyFilterDate;
+
+  /// Preset "Hoy".
+  String get historyDatePresetToday;
+
+  /// Preset "7 días".
+  String get historyDatePreset7d;
+
+  /// Preset "30 días".
+  String get historyDatePreset30d;
+
+  /// Preset "Este mes".
+  String get historyDatePresetMonth;
+
+  /// Preset "Este año".
+  String get historyDatePresetYear;
+
+  /// Preset "Todo" (sin filtro de fechas).
+  String get historyDatePresetAll;
+
+  /// Preset "Personalizado" (abre el date range picker).
+  String get historyDatePresetCustom;
+
+  /// Label del chip de fechas activo para rangos custom (ej: "11/09 – 17/09").
+  String historyDateRangeLabel(DateTimeRange range);
+
+  /// Titulo del menu de orden del historial.
+  String get historySortTitle;
+
+  /// Orden "Mas recientes primero".
+  String get historySortDateNewest;
+
+  /// Orden "Mas antiguos primero".
+  String get historySortDateOldest;
+
+  /// Orden "Precio mayor".
+  String get historySortPriceHigh;
+
+  /// Orden "Precio menor".
+  String get historySortPriceLow;
+
+  /// Orden "Cliente A-Z".
+  String get historySortClientAz;
+
+  /// Chip de cliente activo: "Cliente: $name".
+  String historyClientFilterChip(String name);
+
+  /// Barra de resumen: "N cotizaciones · $total".
+  String historyFilterSummary(int count, String total);
+
+  /// Hint de busqueda con materiales: "Buscar por pieza, cliente o material...".
+  String get historySearchMaterialsHint;
 
   /// "Sin datos mensuales" / "No monthly data".
   String get chartNoMonthlyData;

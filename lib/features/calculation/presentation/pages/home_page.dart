@@ -3,7 +3,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -471,7 +470,8 @@ class HomePage extends ConsumerWidget {
     final label = draft.label.trim();
     return Semantics(
       container: true,
-      label: '${EsBO.homeDraftTitle}: ${label.isEmpty ? EsBO.homeDraftBody : label}',
+      label:
+          '${EsBO.homeDraftTitle}: ${label.isEmpty ? EsBO.homeDraftBody : label}',
       child: Card(
         color: color.primaryContainer.withValues(alpha: 0.35),
         child: Padding(
@@ -572,7 +572,9 @@ class HomePage extends ConsumerWidget {
           label: EsBO.homeCatalogsTitle,
           child: Text(
             EsBO.homeCatalogsTitle,
-            style: theme.textTheme.titleMedium?.copyWith(color: color.onSurface),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: color.onSurface,
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -660,7 +662,11 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyQuotes(BuildContext context, ThemeData theme, ColorScheme color) {
+  Widget _buildEmptyQuotes(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme color,
+  ) {
     return Card(
       color: color.surfaceContainerLow,
       child: Padding(
@@ -827,7 +833,11 @@ class _CatalogCard extends StatelessWidget {
                     color: color.secondaryContainer,
                     borderRadius: BorderRadius.circular(AppRadii.sm),
                   ),
-                  child: Icon(icon, size: 16, color: color.onSecondaryContainer),
+                  child: Icon(
+                    icon,
+                    size: 16,
+                    color: color.onSecondaryContainer,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
@@ -859,11 +869,6 @@ class _RecentQuoteCard extends ConsumerWidget {
 
   final CalculationListItem calc;
 
-  /// Total efectivo: `unitario x cantidad` (misma regla que el historial).
-  Decimal _effectiveTotal(CalculationListItem c) =>
-      Decimal.parse(c.totalPriceSnapshot.toStringAsFixed(2)) *
-      Decimal.fromInt(c.quantity < 1 ? 1 : c.quantity);
-
   String _title() {
     final piece = calc.pieceName;
     if (piece != null && piece.isNotEmpty) return piece;
@@ -883,7 +888,7 @@ class _RecentQuoteCard extends ConsumerWidget {
 
     return Semantics(
       container: true,
-      label: '${_title()}, ${formatCurrency(_effectiveTotal(calc), currency)}',
+      label: '${_title()}, ${formatCurrency(calc.effectiveTotal, currency)}',
       child: Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -953,9 +958,9 @@ class _RecentQuoteCard extends ConsumerWidget {
                             const SizedBox(width: AppSpacing.sm),
                           ],
                           Text(
-                            DateFormat('dd MMM').format(
-                              calc.createdAt.toLocal(),
-                            ),
+                            DateFormat(
+                              'dd MMM',
+                            ).format(calc.createdAt.toLocal()),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: color.onSurfaceVariant,
                             ),
@@ -967,7 +972,7 @@ class _RecentQuoteCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  formatCurrency(_effectiveTotal(calc), currency),
+                  formatCurrency(calc.effectiveTotal, currency),
                   style: AppTheme.num(
                     theme.textTheme.labelLarge ?? const TextStyle(),
                     color: color.onSurface,
