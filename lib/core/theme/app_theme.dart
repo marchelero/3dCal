@@ -245,7 +245,19 @@ class AppTheme {
           0,
           AppSpacing.sm,
         ),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        // Los labels de campo son anotaciones de plano: 14px en reposo,
+        // 12px al flotar. Dos escalones por debajo del titulo de rubrica
+        // (titleMedium 16px), asi la jerarquia se lee de un vistazo.
+        labelStyle: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        floatingLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurfaceVariant,
+        ),
         helperStyle: TextStyle(
           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
         ),

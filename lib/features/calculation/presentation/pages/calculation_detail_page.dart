@@ -253,6 +253,12 @@ class _DetailState extends ConsumerState<_Detail> {
         metaTime: result.metaTime,
         quantity: _quantity,
         totalGrams: totalGrams,
+        batchDiscountPct: calc.batchDiscountPercent != null
+            ? Decimal.tryParse(calc.batchDiscountPercent!)
+            : null,
+        batchDiscountAmount: calc.batchDiscountAmount != null
+            ? Decimal.tryParse(calc.batchDiscountAmount!)
+            : null,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -811,6 +817,12 @@ class _DetailState extends ConsumerState<_Detail> {
                   currency: currency,
                   quantity: _quantity,
                   pieceImageBytes: calc.pieceImageBlob,
+                  batchDiscountPct: calc.batchDiscountPercent != null
+                      ? Decimal.tryParse(calc.batchDiscountPercent!)
+                      : null,
+                  batchDiscountAmount: calc.batchDiscountAmount != null
+                      ? Decimal.tryParse(calc.batchDiscountAmount!)
+                      : null,
                 ),
               ),
             ),

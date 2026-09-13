@@ -6,7 +6,7 @@
 // 5 call sites) navega a la [PaywallPage] con el router REAL ([TresdcalApp] +
 // `appRouter`). Cubre:
 // - AC-102: free → navega; pro (o entitlement loading) → NO navega.
-// - AC-103: los badges anidados dentro de otra InkWell (header "Otros",
+// - AC-103: los badges anidados dentro de otra InkWell (header "Costos de la pieza",
 //   pill de modo) disparan UNA sola navegacion — sin doble PaywallPage.
 // - El badge del result sheet (custom onTap) cierra el sheet antes de
 //   navegar.
@@ -285,7 +285,7 @@ void main() {
       return container;
     }
 
-    testWidgets('Calculator: badge del header "Otros" → PaywallPage (AC-103)', (
+    testWidgets('Calculator: badge del header "Costos de la pieza" → PaywallPage (AC-103)', (
       tester,
     ) async {
       _useTallViewport(tester);
@@ -294,7 +294,7 @@ void main() {
       unawaited(appRouter.push('/calculator'));
       await tester.pumpAndSettle();
 
-      // El badge del header "Otros" (dentro del onTap del SectionHeader:
+      // El badge del header "Costos de la pieza" (dentro del onTap del SectionHeader:
       // el InkWell externo del header NO debe disparar su propio push).
       final otrosBadge = find.descendant(
         of: find.byType(SectionHeader),
@@ -317,7 +317,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // El pill "Avanzado" (locked en free) contiene su propio ProBadge,
-        // FUERA del SectionHeader de "Otros". La calculator tiene 2 badges:
+        // FUERA del SectionHeader de "Costos de la pieza". La calculator tiene 2 badges:
         // el del header (dentro de SectionHeader) + el del pill.
         final scaffoldBadges = find.descendant(
           of: find.byType(CalculatorPage),
@@ -326,7 +326,7 @@ void main() {
         expect(
           scaffoldBadges,
           findsNWidgets(2),
-          reason: 'badges en free: header "Otros" + pill Avanzado (AC-103)',
+          reason: 'badges en free: header "Costos de la pieza" + pill Avanzado (AC-103)',
         );
         final pillBadge = find.byWidget(
           scaffoldBadges.evaluate().last.widget as ProBadge,

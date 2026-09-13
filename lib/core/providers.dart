@@ -10,7 +10,9 @@ import '../../features/catalog/filaments/data/filament_repository.dart';
 import '../../features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../features/catalog/printers/data/printer_repository.dart';
 import '../../features/catalog/printers/presentation/notifiers/printers_notifier.dart';
+import '../../features/settings/data/discount_tiers_repository.dart';
 import '../../features/settings/data/settings_repository.dart';
+import '../../features/settings/domain/discount_tier.dart';
 import 'database/app_database.dart';
 import 'utils/image_downscale.dart';
 
@@ -60,6 +62,18 @@ final filamentRepositoryProvider = Provider<FilamentRepository>((ref) {
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(appDatabaseProvider));
 });
+
+/// Repo de escalones de descuento por cantidad (feature A — Hito 1).
+final discountTiersRepositoryProvider = Provider<DiscountTiersRepository>((ref) {
+  return DiscountTiersRepository(ref.watch(appDatabaseProvider));
+});
+
+/// Stream reactivo de escalones (ordenado por `sort_order`). El calculator lo
+/// escucha para resolver el escalón aplicado sobre la cantidad del lote.
+final discountTiersProvider =
+    StreamProvider<List<DiscountTier>>((ref) {
+      return ref.watch(discountTiersRepositoryProvider).watchAll();
+    });
 
 /// Repos de cotizaciones.
 final calculationRepositoryProvider = Provider<CalculationRepository>((ref) {

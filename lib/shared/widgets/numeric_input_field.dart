@@ -253,6 +253,12 @@ class _NumericInputFieldState extends State<NumericInputField> {
       labelStyle: TextStyle(
         color: keyLabelColor,
         fontWeight: isKey ? FontWeight.w600 : FontWeight.w500,
+        fontSize: 14,
+      ),
+      floatingLabelStyle: TextStyle(
+        color: keyLabelColor,
+        fontWeight: isKey ? FontWeight.w600 : FontWeight.w500,
+        fontSize: 12,
       ),
     );
 

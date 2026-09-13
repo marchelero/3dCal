@@ -73,6 +73,39 @@ class EsBO {
   static String get settingsGroupYourData => _impl.settingsGroupYourData;
   static String get settingsGroupAccount => _impl.settingsGroupAccount;
   static String get settingsGroupAbout => _impl.settingsGroupAbout;
+
+  // === Hito 1: lotes y reorganización (T-H1) ===
+  static String get calcSectionPieceCosts => _impl.calcSectionPieceCosts;
+  static String get calcSectionTarifas => _impl.calcSectionTarifas;
+  static String get settingsGroupEnergy => _impl.settingsGroupEnergy;
+  static String get settingsGroupPrintingCosts =>
+      _impl.settingsGroupPrintingCosts;
+  static String get settingsGroupDiscountTiers =>
+      _impl.settingsGroupDiscountTiers;
+  static String get discountTierAdd => _impl.discountTierAdd;
+  static String get discountTierEdit => _impl.discountTierEdit;
+  static String get discountTierDelete => _impl.discountTierDelete;
+  static String get discountTierEmpty => _impl.discountTierEmpty;
+  static String get discountTierHeaderMinQty =>
+      _impl.discountTierHeaderMinQty;
+  static String get discountTierHeaderPercent =>
+      _impl.discountTierHeaderPercent;
+  static String get discountTierMinQty => _impl.discountTierMinQty;
+  static String get discountTierPercent => _impl.discountTierPercent;
+  static String get discountTierValidationMinQty =>
+      _impl.discountTierValidationMinQty;
+  static String get discountTierValidationPercent =>
+      _impl.discountTierValidationPercent;
+  static String get discountTierCapHint => _impl.discountTierCapHint;
+  static String calcDetailBatchDiscount(int pct) =>
+      _impl.calcDetailBatchDiscount(pct);
+  static String calcQuantityBatchHint(int pct, int minQty) =>
+      _impl.calcQuantityBatchHint(pct, minQty);
+  static String quoteBatchDiscountPct(int pct) =>
+      _impl.quoteBatchDiscountPct(pct);
+  static String pdfBatchDiscountPct(int pct) =>
+      _impl.pdfBatchDiscountPct(pct);
+
   static String settingsFilamentsCount(int count) =>
       _impl.settingsFilamentsCount(count);
   static String settingsPrintersCount(int count) =>
@@ -610,6 +643,7 @@ class EsBO {
   static String get commonDefaultSuffix => _impl.commonDefaultSuffix;
   static String get historyExportCsv => _impl.historyExportCsv;
   static String get historyEmptyCta => _impl.historyEmptyCta;
+  @Deprecated('Use calcSectionPieceCosts instead')
   static String get calcSectionOthers => _impl.calcSectionOthers;
   static String get settingsProfitBaseRange => _impl.settingsProfitBaseRange;
   static String get settingsKwhRateRange => _impl.settingsKwhRateRange;
@@ -888,6 +922,57 @@ class EsImpl implements AppStrings {
   String get settingsGroupAccount => 'Cuenta';
   @override
   String get settingsGroupAbout => 'Acerca de';
+
+  // === Hito 1: lotes y reorganización (T-H1) ===
+  @override
+  String get calcSectionPieceCosts => 'Costos de la pieza';
+  @override
+  String get calcSectionTarifas => 'Tarifas';
+  @override
+  String get settingsGroupEnergy => 'Energía';
+  @override
+  String get settingsGroupPrintingCosts => 'Costos de impresión';
+  @override
+  String get settingsGroupDiscountTiers => 'Descuentos por cantidad';
+  @override
+  String get discountTierAdd => 'Agregar escalón';
+  @override
+  String get discountTierEdit => 'Editar escalón';
+  @override
+  String get discountTierDelete => 'Eliminar escalón';
+  @override
+  String get discountTierEmpty =>
+      'Aún no hay descuentos por cantidad. Agrega el primero para ofrecer '
+      'precio mayorista.';
+  @override
+  String get discountTierHeaderMinQty => 'Cantidad mínima';
+  @override
+  String get discountTierHeaderPercent => '%';
+  @override
+  String get discountTierMinQty => 'Cantidad mínima';
+  @override
+  String get discountTierPercent => 'Descuento (%)';
+  @override
+  String get discountTierValidationMinQty =>
+      'La cantidad mínima debe ser de al menos 2 unidades';
+  @override
+  String get discountTierValidationPercent =>
+      'El descuento debe estar entre 1 y 100 %';
+  @override
+  String get discountTierCapHint =>
+      'Máximo 10 escalones por configuración';
+  @override
+  String calcDetailBatchDiscount(int pct) =>
+      'Descuento por cantidad ($pct%)';
+  @override
+  String calcQuantityBatchHint(int pct, int minQty) =>
+      '$pct % desde $minQty u.';
+  @override
+  String quoteBatchDiscountPct(int pct) => 'Descuento por cantidad $pct%';
+  @override
+  String pdfBatchDiscountPct(int pct) =>
+      'Descuento por cantidad: $pct%';
+
   @override
   String settingsFilamentsCount(int count) =>
       count == 1 ? '1 filamento' : '$count filamentos';
@@ -1587,6 +1672,8 @@ class EsImpl implements AppStrings {
     'Materiales',
     'Horas',
     'Descuento',
+    'DescLote%',
+    'DescLote',
     'CostoMat',
     'Elect',
     'Ganancia',
@@ -1889,6 +1976,7 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String get historyEmptyCta => 'Crea una desde la calculadora y toca Guardar.';
   @override
+  @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Otros';
   @override
   String get settingsProfitBaseRange => 'Rango: 0-1000';

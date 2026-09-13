@@ -104,6 +104,55 @@ class DeImpl implements AppStrings {
   String get settingsGroupAccount => 'Konto';
   @override
   String get settingsGroupAbout => 'Über';
+
+  // === Hito 1: lotes y reorganización (T-H1) ===
+  @override
+  String get calcSectionPieceCosts => 'Teilekosten';
+  @override
+  String get calcSectionTarifas => 'Tarife';
+  @override
+  String get settingsGroupEnergy => 'Energie';
+  @override
+  String get settingsGroupPrintingCosts => 'Druckkosten';
+  @override
+  String get settingsGroupDiscountTiers => 'Mengenrabatte';
+  @override
+  String get discountTierAdd => 'Stufe hinzufügen';
+  @override
+  String get discountTierEdit => 'Stufe bearbeiten';
+  @override
+  String get discountTierDelete => 'Stufe löschen';
+  @override
+  String get discountTierEmpty =>
+      'Noch keine Mengenrabatte. Füge die erste Stufe hinzu, um '
+      'Großhandelspreise anzubieten.';
+  @override
+  String get discountTierHeaderMinQty => 'Mindestmenge';
+  @override
+  String get discountTierHeaderPercent => '%';
+  @override
+  String get discountTierMinQty => 'Mindestmenge';
+  @override
+  String get discountTierPercent => 'Rabatt (%)';
+  @override
+  String get discountTierValidationMinQty =>
+      'Die Mindestmenge muss mindestens 2 Einheiten betragen';
+  @override
+  String get discountTierValidationPercent =>
+      'Der Rabatt muss zwischen 1 und 100 % liegen';
+  @override
+  String get discountTierCapHint =>
+      'Maximal 10 Stufen pro Konfiguration';
+  @override
+  String calcDetailBatchDiscount(int pct) => 'Mengenrabatt ($pct %)';
+  @override
+  String calcQuantityBatchHint(int pct, int minQty) =>
+      '$pct % ab $minQty St.';
+  @override
+  String quoteBatchDiscountPct(int pct) => 'Mengenrabatt $pct %';
+  @override
+  String pdfBatchDiscountPct(int pct) => 'Mengenrabatt: $pct %';
+
   @override
   String settingsFilamentsCount(int count) =>
       count == 1 ? '1 Filament' : '$count Filamente';
@@ -807,6 +856,8 @@ class DeImpl implements AppStrings {
     'Materialien',
     'Stunden',
     'Rabatt',
+    'LosRabatt%',
+    'LosRabatt',
     'MatKosten',
     'Strom',
     'Gewinn',
@@ -1108,6 +1159,7 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   String get historyEmptyCta =>
       'Erstellen Sie eines im Rechner und tippen Sie auf Speichern.';
   @override
+  @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Sonstiges';
   @override
   String get settingsProfitBaseRange => 'Bereich: 0-1000';

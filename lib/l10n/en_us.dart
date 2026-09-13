@@ -100,6 +100,55 @@ class EnImpl implements AppStrings {
   String get settingsGroupAccount => 'Account';
   @override
   String get settingsGroupAbout => 'About';
+
+  // === Hito 1: lotes y reorganización (T-H1) ===
+  @override
+  String get calcSectionPieceCosts => 'Piece costs';
+  @override
+  String get calcSectionTarifas => 'Rates';
+  @override
+  String get settingsGroupEnergy => 'Energy';
+  @override
+  String get settingsGroupPrintingCosts => 'Printing costs';
+  @override
+  String get settingsGroupDiscountTiers => 'Quantity discounts';
+  @override
+  String get discountTierAdd => 'Add tier';
+  @override
+  String get discountTierEdit => 'Edit tier';
+  @override
+  String get discountTierDelete => 'Delete tier';
+  @override
+  String get discountTierEmpty =>
+      'No quantity discounts yet. Add the first one to offer wholesale '
+      'pricing.';
+  @override
+  String get discountTierHeaderMinQty => 'Min. quantity';
+  @override
+  String get discountTierHeaderPercent => '%';
+  @override
+  String get discountTierMinQty => 'Minimum quantity';
+  @override
+  String get discountTierPercent => 'Discount (%)';
+  @override
+  String get discountTierValidationMinQty =>
+      'Minimum quantity must be at least 2 units';
+  @override
+  String get discountTierValidationPercent =>
+      'Discount must be between 1 and 100%';
+  @override
+  String get discountTierCapHint => 'Up to 10 tiers per configuration';
+  @override
+  String calcDetailBatchDiscount(int pct) => 'Quantity discount ($pct%)';
+
+  @override
+  String calcQuantityBatchHint(int pct, int minQty) =>
+      '$pct% off from $minQty pcs.';
+  @override
+  String quoteBatchDiscountPct(int pct) => 'Quantity discount $pct%';
+  @override
+  String pdfBatchDiscountPct(int pct) => 'Quantity discount: $pct%';
+
   @override
   String settingsFilamentsCount(int count) =>
       count == 1 ? '1 filament' : '$count filaments';
@@ -792,6 +841,8 @@ class EnImpl implements AppStrings {
     'Materials',
     'Hours',
     'Discount',
+    'LotDisc%',
+    'LotDisc',
     'MatCost',
     'Electric',
     'Profit',
@@ -1092,6 +1143,7 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String get historyEmptyCta => 'Create one from the calculator and tap Save.';
   @override
+  @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Others';
   @override
   String get settingsProfitBaseRange => 'Range: 0-1000';

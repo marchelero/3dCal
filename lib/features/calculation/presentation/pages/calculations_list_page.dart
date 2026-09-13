@@ -540,12 +540,18 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
       final sold = c.isSold ? EsBO.csvValueYes : EsBO.csvValueNo;
       final hours = (c.totalHours * c.quantity).toStringAsFixed(2);
       final discount = c.discountPercentage.toStringAsFixed(1);
+      final batchPct = c.batchDiscountPercent != null
+          ? double.tryParse(c.batchDiscountPercent!)?.toStringAsFixed(1) ?? ''
+          : '';
+      final batchAmt = c.batchDiscountAmount != null
+          ? formatRaw(double.tryParse(c.batchDiscountAmount!) ?? 0)
+          : '';
       final matCost = formatRaw(c.materialCostSnapshot * c.quantity);
       final elect = formatRaw(c.electricCostSnapshot * c.quantity);
       final profit = formatRaw(c.profitAmountSnapshot * c.quantity);
       buf.writeln(
         '$date,$piece,$client,${c.quantity},$total,$sold,$hours,$discount,'
-        '$matCost,$elect,$profit',
+        '$batchPct,$batchAmt,$matCost,$elect,$profit',
       );
     }
 

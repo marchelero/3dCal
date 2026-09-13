@@ -101,6 +101,56 @@ class PtBrImpl implements AppStrings {
   String get settingsGroupAccount => 'Conta';
   @override
   String get settingsGroupAbout => 'Sobre';
+
+  // === Hito 1: lotes y reorganización (T-H1) ===
+  @override
+  String get calcSectionPieceCosts => 'Custos da peça';
+  @override
+  String get calcSectionTarifas => 'Tarifas';
+  @override
+  String get settingsGroupEnergy => 'Energia';
+  @override
+  String get settingsGroupPrintingCosts => 'Custos de impressão';
+  @override
+  String get settingsGroupDiscountTiers => 'Descontos por quantidade';
+  @override
+  String get discountTierAdd => 'Adicionar faixa';
+  @override
+  String get discountTierEdit => 'Editar faixa';
+  @override
+  String get discountTierDelete => 'Excluir faixa';
+  @override
+  String get discountTierEmpty =>
+      'Ainda não há descontos por quantidade. Adicione o primeiro para '
+      'oferecer preço de atacado.';
+  @override
+  String get discountTierHeaderMinQty => 'Quantidade mínima';
+  @override
+  String get discountTierHeaderPercent => '%';
+  @override
+  String get discountTierMinQty => 'Quantidade mínima';
+  @override
+  String get discountTierPercent => 'Desconto (%)';
+  @override
+  String get discountTierValidationMinQty =>
+      'A quantidade mínima deve ser de pelo menos 2 unidades';
+  @override
+  String get discountTierValidationPercent =>
+      'O desconto deve estar entre 1 e 100%';
+  @override
+  String get discountTierCapHint => 'Até 10 faixas por configuração';
+  @override
+  String calcDetailBatchDiscount(int pct) =>
+      'Desconto por quantidade ($pct%)';
+  @override
+  String calcQuantityBatchHint(int pct, int minQty) =>
+      '$pct% de desconto a partir de $minQty un.';
+  @override
+  String quoteBatchDiscountPct(int pct) => 'Desconto por quantidade $pct%';
+  @override
+  String pdfBatchDiscountPct(int pct) =>
+      'Desconto por quantidade: $pct%';
+
   @override
   String settingsFilamentsCount(int count) =>
       count == 1 ? '1 filamento' : '$count filamentos';
@@ -1066,6 +1116,7 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   @override
   String get historyEmptyCta => 'Crie um orçamento e toque em Salvar.';
   @override
+  @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Outros';
   @override
   String get settingsProfitBaseRange => 'Faixa: 0-1000';
@@ -1368,6 +1419,8 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
     'Materiais',
     'Horas',
     'Desconto',
+    'DescLote%',
+    'DescLote',
     'CustoMat',
     'Energia',
     'Lucro',

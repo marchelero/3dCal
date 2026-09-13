@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
@@ -24,11 +25,13 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/filament_color_palette.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
+import '../../../../shared/widgets/perforation.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
+import '../../../settings/domain/discount_tier.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/cost_help_dialog.dart';
@@ -73,6 +76,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   late final TextEditingController _extraFailureRateCtrl;
   late final TextEditingController _extraMarkupOnMaterialsCtrl;
 
+  // Quantity controller.
+  late final TextEditingController _quantityCtrl;
+
   // Advanced controllers.
   final List<_MaterialCtrls> _materialCtrls = [];
   final _advancedListKey = GlobalKey<AnimatedListState>();
@@ -106,6 +112,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _extraMarkupOnMaterialsCtrl = TextEditingController(
       text: initial.extraMarkupOnMaterials,
     );
+    _quantityCtrl = TextEditingController(text: '${initial.quantity}');
 
     for (final c in [
       _weightCtrl,
@@ -293,6 +300,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _extraPostProcessRateCtrl.dispose();
     _extraFailureRateCtrl.dispose();
     _extraMarkupOnMaterialsCtrl.dispose();
+    _quantityCtrl.dispose();
     for (final c in _materialCtrls) {
       c.dispose();
     }
@@ -666,11 +674,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final currency = ref.watch(selectedCurrencyProvider);
     final theme = Theme.of(context);
     final isValid = state.isValid && state.output != null;
+    // feature A (Hito 1): escalones de descuento. El stream se escucha ACÁ
+    // (no en el notifier) para no sostener una suscripción drift en unit
+    // tests; al emitir se actualiza el lote (lotTotal, líneas, hint).
+    ref.listen(discountTiersProvider, (_, next) {
+      notifier.updateTiers(next.value ?? const <DiscountTier>[]);
+    });
     final totalText = isValid
-        ? formatCurrency(
-            state.output!.totalPrice * Decimal.fromInt(state.quantity),
-            currency,
-          )
+        ? formatCurrency(state.lotTotal, currency)
         : null;
 
     return Scaffold(
@@ -704,7 +715,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   label: '${EsBO.calcResultBarTapHint}: $totalText',
                   child: _TotalChip(
                     totalText: totalText,
-                    hasDiscount: state.output!.discountAmount > Decimal.zero,
+                    hasDiscount:
+                        state.output!.discountAmount > Decimal.zero ||
+                            state.showsBatchLine,
                     onTap: _openResultSheet,
                   ),
                 ),
@@ -743,14 +756,31 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       // Bottom bar: ahora muestra hint de validación (cuando inválido) y
       // también el total como recordatorio (tap abre el sheet). Ya NO es
       // la única fuente del total — el AppBar lo muestra siempre.
-      bottomNavigationBar: ResultBottomBar(
-        totalText: totalText ?? '—',
-        hasDiscount:
-            state.output != null && state.output!.discountAmount > Decimal.zero,
-        emptyHint: state.isValid
-            ? null
-            : _buildEmptyHint(state.missingRequiredFields),
-        onTap: _openResultSheet,
+      // feature A (Hito 1): cuando hay escalón aplicado, se muestran arriba
+      // las líneas compactas del lote (descuento por cantidad X % y descuento
+      // manual Y %) — el total refleja el lote completo.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (state.showsBatchLine && totalText != null) ...[
+              _BatchLines(state: state, currency: currency),
+              const Perforation(),
+            ],
+            ResultBottomBar(
+              totalText: totalText ?? '—',
+              hasDiscount:
+                  state.output != null &&
+                      (state.output!.discountAmount > Decimal.zero ||
+                          state.showsBatchLine),
+              emptyHint: state.isValid
+                  ? null
+                  : _buildEmptyHint(state.missingRequiredFields),
+              onTap: _openResultSheet,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -869,7 +899,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
               // ── Tiempo de impresión ──
               _RubricSection(
@@ -905,7 +935,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
               // ── Impresora ──
               _RubricSection(
@@ -913,7 +943,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 title: EsBO.calcSectionPrinter,
                 child: const _PrinterIndicator(),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
+
+              // ── Cantidad (Pro) ──
+              _buildQuantitySection(notifier),
+              const SizedBox(height: AppSpacing.xl),
 
               // ── OTROS (con peek preview) ──
               _buildOtrosSection(notifier, currency),
@@ -970,7 +1004,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
               // Rubrica: Materiales (multi-material, agregable)
               _RubricSection(
@@ -1020,7 +1054,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
               // Rubrica: Tiempo de impresion
               _RubricSection(
@@ -1056,7 +1090,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
 
               // Rubrica: Impresora
               _RubricSection(
@@ -1064,7 +1098,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 title: EsBO.calcSectionPrinter,
                 child: const _PrinterIndicator(),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Rubrica: Cantidad (Pro)
+              _buildQuantitySection(notifier),
+              const SizedBox(height: AppSpacing.xl),
 
               // Rubrica colapsable: OTROS (con peek preview)
               _buildOtrosSection(notifier, currency),
@@ -1102,7 +1140,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       children: [
         SectionHeader(
           icon: Icons.more_horiz_rounded,
-          title: EsBO.calcSectionOthers,
+          title: EsBO.calcSectionPieceCosts,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1194,6 +1232,125 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 )
               : const SizedBox.shrink(),
         ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // QUANTITY SECTION — Pro-gated
+  // ============================================================
+
+  /// Seccion de cantidad de unidades (Pro). Muestra +/- y campo de texto.
+  /// Free ve el ProBadge; al tocar se redirige al paywall.
+  Widget _buildQuantitySection(CalculatorNotifier notifier) {
+    final theme = Theme.of(context);
+    final isPro = ref.watch(isProProvider);
+    final entitlementState = ref.watch(entitlementNotifierProvider);
+    final isLoading = entitlementState.isLoading;
+    final showProBadge = !isPro && !isLoading;
+    final quantity = ref.watch(calculatorNotifierProvider).quantity;
+
+    // Escalón aplicado (feature A): hint "X % desde N u." bajo el campo.
+    final batchPct = ref.watch(
+      calculatorNotifierProvider.select((s) => s.batchAppliedPercent),
+    );
+    final batchMinQty = ref.watch(
+      calculatorNotifierProvider.select((s) => s.batchAppliedMinQty),
+    );
+    final showBatchHint = quantity > 1 && batchPct != null;
+    final hintPct = _pctInt(batchPct);
+    final hintMinQty = batchMinQty ?? 0;
+
+    // Sincronizar el controller cuando cambia quantity desde +/-
+    if (_quantityCtrl.text != '$quantity') {
+      _quantityCtrl.text = '$quantity';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          icon: Icons.layers_rounded,
+          title: EsBO.resultQuantityLabel,
+          trailing: showProBadge ? const ProBadge() : null,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            IconButton.outlined(
+              icon: const Icon(Icons.remove_rounded),
+              onPressed: quantity > 1
+                  ? () {
+                      if (!isPro) {
+                        context.push('/paywall');
+                      } else {
+                        notifier.setQuantity(quantity - 1);
+                      }
+                    }
+                  : null,
+            ),
+            SizedBox(
+              width: 64,
+              child: TextFormField(
+                controller: _quantityCtrl,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: AppTheme.num(
+                  theme.textTheme.titleMedium ?? const TextStyle(),
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.xs,
+                  ),
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (val) {
+                  if (!isPro) {
+                    context.push('/paywall');
+                    return;
+                  }
+                  final parsed = int.tryParse(val) ?? 1;
+                  final clamped = parsed.clamp(1, kMaxQuantity);
+                  notifier.setQuantity(clamped);
+                },
+              ),
+            ),
+            IconButton.outlined(
+              icon: const Icon(Icons.add_rounded),
+              onPressed: () {
+                if (!isPro) {
+                  context.push('/paywall');
+                } else {
+                  notifier.setQuantity(quantity + 1);
+                }
+              },
+            ),
+          ],
+        ),
+        // Hint del escalón aplicado (feature A — Hito 1): informa el umbral
+        // activo del descuento mayorista, p.ej. "10 % desde 10 u.".
+        if (showBatchHint) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Icon(
+                Icons.percent_rounded,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                EsBO.calcQuantityBatchHint(hintPct, hintMinQty),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -2670,6 +2827,95 @@ class _FilamentColorSwatch extends StatelessWidget {
           color: isWhite ? cs.outline : cs.outlineVariant,
           width: 1,
         ),
+      ),
+    );
+  }
+}
+
+/// Parte entera del porcentaje para los labels l10n (p.ej. escalón 10 %
+/// → "10"). Si el valor no es entero, redondea (display only; el cálculo
+/// usa siempre el Decimal exacto).
+int _pctInt(Decimal? value) =>
+    value == null ? 0 : value.round().toBigInt().toInt();
+
+/// Líneas compactas del lote mayorista (feature A — Hito 1).
+///
+/// Se muestran arriba de la barra de total SOLO cuando aplica un escalón de
+/// descuento por cantidad (N=1 sin escalón → flujo visual idéntico a antes):
+/// - "Descuento por cantidad (X %)"  −$monto (batch)
+/// - "Descuento (Y %)"               −$monto (manual, si hay)
+/// La barra de total sigue mostrando el `lotTotal` completo.
+class _BatchLines extends StatelessWidget {
+  const _BatchLines({required this.state, required this.currency});
+
+  final CalculatorState state;
+  final WorldCurrency currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    // Descuento manual del lote: el engine lo calcula por unidad; escalado
+    // por N == el desglose de hoy (mismo total que cuando N=1).
+    final manualAmount =
+        (state.output?.discountAmount ?? Decimal.zero) *
+        Decimal.fromInt(state.quantity);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  EsBO.calcDetailBatchDiscount(
+                    _pctInt(state.batchAppliedPercent),
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '-${formatCurrency(state.batchDiscountAmount, currency)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (manualAmount > Decimal.zero) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    EsBO.detailDiscountPct(_pctInt(state.detailDiscountPct)),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '-${formatCurrency(manualAmount, currency)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

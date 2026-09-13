@@ -186,10 +186,6 @@ void main() {
         findsWidgets,
       ); // header + company name field default
       expect(
-        find.text('PARÁMETROS GLOBALES'),
-        findsOneWidget,
-      ); // _SettingsSection usa toUpperCase
-      expect(
         find.text('EMPRESA'),
         findsOneWidget,
       ); // _SettingsSection usa toUpperCase

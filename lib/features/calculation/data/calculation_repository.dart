@@ -29,6 +29,8 @@ class CalculationListItem {
     required this.profitAmountSnapshot,
     required this.totalPriceSnapshot,
     required this.hasImage,
+    this.batchDiscountPercent,
+    this.batchDiscountAmount,
   });
 
   final int id;
@@ -44,6 +46,12 @@ class CalculationListItem {
   final double profitAmountSnapshot;
   final double totalPriceSnapshot;
   final bool hasImage;
+
+  /// Porcentaje del escalón de descuento mayorista (snapshot).
+  final String? batchDiscountPercent;
+
+  /// Monto del descuento mayorista (snapshot).
+  final String? batchDiscountAmount;
 
   /// Total efectivo de la cotizacion: `totalPriceSnapshot` (normalizado a 2
   /// decimales, ver doc de precision monetaria de este archivo) x `quantity`,
@@ -75,6 +83,8 @@ class CalculationDraft {
     this.isTemplate = false,
     this.quantity = 1,
     this.pieceImageBytes,
+    this.batchDiscountPercent,
+    this.batchDiscountAmount,
   });
 
   final List<MaterialInput> materials;
@@ -106,6 +116,13 @@ class CalculationDraft {
   /// Foto de la pieza persistida (F2): BLOB ya downscaled (max 1200px,
   /// JPEG q85). Null = cotizacion sin foto.
   final Uint8List? pieceImageBytes;
+
+  /// Porcentaje del escalón de descuento mayorista (snapshot).
+  /// Null cuando no aplica escalón.
+  final Decimal? batchDiscountPercent;
+
+  /// Monto del descuento mayorista (snapshot). 0 sin escalón.
+  final Decimal? batchDiscountAmount;
 }
 
 /// CRUD + queries de cotizaciones.
@@ -220,6 +237,10 @@ class CalculationRepository {
             markupOnMaterialsSnapshot: 0,
             isTemplate: Value(isTemplate),
             pieceImageBlob: Value(draft.pieceImageBytes),
+            batchDiscountPercent:
+                Value(draft.batchDiscountPercent?.toString()),
+            batchDiscountAmount:
+                Value(draft.batchDiscountAmount?.toString()),
           ),
         );
     for (final m in draft.materials) {
@@ -382,6 +403,8 @@ class CalculationRepository {
                 t.profitAmountSnapshot,
                 t.totalPriceSnapshot,
                 hasImage,
+                t.batchDiscountPercent,
+                t.batchDiscountAmount,
               ])
               ..where(excludeTemplatesFilter())
               ..orderBy([OrderingTerm.desc(t.createdAt)]))
@@ -402,6 +425,8 @@ class CalculationRepository {
           profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
           totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
           hasImage: r.read(hasImage) ?? false,
+          batchDiscountPercent: r.read(t.batchDiscountPercent),
+          batchDiscountAmount: r.read(t.batchDiscountAmount),
         ),
     ];
   }

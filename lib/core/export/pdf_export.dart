@@ -266,6 +266,8 @@ Future<void> shareQuotePdf({
   String? metaTime,
   int quantity = 1,
   Decimal? totalGrams,
+  Decimal? batchDiscountPct,
+  Decimal? batchDiscountAmount,
   pw.Font? regularFont,
   pw.Font? boldFont,
 }) async {
@@ -291,6 +293,8 @@ Future<void> shareQuotePdf({
     metaTime: metaTime,
     quantity: quantity,
     totalGrams: totalGrams,
+    batchDiscountPct: batchDiscountPct,
+    batchDiscountAmount: batchDiscountAmount,
     regularFont: regularFont,
     boldFont: boldFont,
   );
@@ -332,6 +336,8 @@ Future<Uint8List> buildQuotePdfBytes({
   String? metaTime,
   int quantity = 1,
   Decimal? totalGrams,
+  Decimal? batchDiscountPct,
+  Decimal? batchDiscountAmount,
   pw.Font? regularFont,
   pw.Font? boldFont,
 }) async {
@@ -662,6 +668,19 @@ Future<Uint8List> buildQuotePdfBytes({
                   valueColor: _successColor,
                   altBackground: true,
                 ),
+              // Descuento por cantidad (feature A, Hito 1)
+              if (batchDiscountPct != null &&
+                  batchDiscountPct > Decimal.zero &&
+                  batchDiscountAmount != null &&
+                  batchDiscountAmount > Decimal.zero)
+                _dataRow(
+                  EsBO.calcDetailBatchDiscount(
+                    batchDiscountPct.toBigInt().toInt(),
+                  ),
+                  '-${_fmt(batchDiscountAmount * qtyD, currency)}',
+                  valueColor: _errorColor,
+                ),
+
               if (hasDiscount)
                 _dataRow(
                   EsBO.calcLabelDiscount,

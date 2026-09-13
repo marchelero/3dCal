@@ -9,12 +9,16 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart' as storage;
+import '../../../../features/settings/domain/discount_tier.dart';
 import '../../../../features/settings/domain/settings.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../data/calculation_repository.dart';
+import '../../domain/batch_discount_resolver.dart';
+import '../../domain/batch_lot_composer.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_input.dart';
+import '../../domain/entities/calculation_output.dart';
 import '../../domain/entities/material_input.dart';
 import '../notifiers/calculations_notifier.dart';
 import 'calculator_state.dart';
@@ -45,6 +49,11 @@ class FormIncompleteException implements Exception {
 /// El output se recalcula en cada cambio, sincronamente (engine es pure).
 /// Si el form no es valido, [CalculatorState.output] queda en `null`.
 class CalculatorNotifier extends Notifier<CalculatorState> {
+  /// Últimos escalones de descuento leídos del repo (feature A). Se mantiene
+  /// sincronizado con la DB vía [discountTiersProvider]; cada cambio dispara
+  /// un recompute para que el lotTotal refleje el escalón aplicado.
+  List<DiscountTier> _tiers = const <DiscountTier>[];
+
   @override
   CalculatorState build() {
     // Recalcula cuando cambia la impresora activa (elegida en el selector,
@@ -63,7 +72,22 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         state = _recompute(state);
       }
     });
+    // Los escalones de descuento (feature A) NO se escuchan acá: el stream de
+    // la DB vive en la página (ref.listen en build) para que los unit tests
+    // sin widget no sostengan una suscripción drift abierta (haría colgar
+    // `db.close()` en tearDown). La página llama [updateTiers] al cambiar la
+    // lista, que por acá recalcula el lote si el form es válido.
     return CalculatorState.initial();
+  }
+
+  /// Carga la última lista de escalones de descuento vigentes (feature A).
+  /// Llamado por la UI cuando [discountTiersProvider] emite. Recalcula el
+  /// lote si el form es válido para reflejar el escalón aplicado.
+  void updateTiers(List<DiscountTier> tiers) {
+    _tiers = tiers;
+    if (state.isValid) {
+      state = _recompute(state);
+    }
   }
 
   // === Mode ===
@@ -440,6 +464,8 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           ? null
           : conditions.trim(),
       pieceImageBytes: pieceImageBytes,
+      batchDiscountPercent: state.batchAppliedPercent,
+      batchDiscountAmount: state.batchDiscountAmount,
     );
   }
 
@@ -473,6 +499,8 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           ? null
           : clientName.trim(),
       isTemplate: true,
+      batchDiscountPercent: state.batchAppliedPercent,
+      batchDiscountAmount: state.batchDiscountAmount,
     );
     final id = await repo.createTemplate(draft);
     ref.invalidate(calculationsNotifierProvider);
@@ -503,6 +531,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       return next.copyWith(
         clearOutput: true,
         clearDetail: true,
+        clearBatch: true,
         computeVersion: version,
       );
     }
@@ -517,6 +546,16 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final discountPct =
         CalculatorState.parseDecimal(next.discountPct) ?? Decimal.zero;
 
+    // Lote mayorista (feature A — Hito 1): el motor NO se toca, solo se
+    // consume su OUTPUT. Sin escalón (o N=1) el resultado es `output.totalPrice
+    // × N` — idéntico al math actual (regla 95 %).
+    final batch = _composeBatch(
+      output: output,
+      quantity: next.quantity,
+      manualDiscountPct: discountPct,
+      minimumCharge: input.minimumCharge,
+    );
+
     return next.copyWith(
       output: output,
       detailMaterialBreakdown: breakdown,
@@ -530,7 +569,35 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       detailProfitAmount: output.profitAmount,
       detailTotalFinal: output.totalFinal,
       detailDiscountPct: discountPct,
+      batchAppliedPercent: batch.appliedTier?.percent,
+      batchAppliedMinQty: batch.appliedTier?.minQty,
+      batchDiscountAmount: batch.batchDiscountAmount,
+      subtotalImpression: batch.subtotalImpression,
+      lotTotal: batch.lotTotal,
+      showsBatchLine: batch.appliedTier != null,
       computeVersion: version,
+    );
+  }
+
+  /// Resuelve el escalón aplicado (mayor `min_qty <= quantity`) y compone el
+  /// lote. Nunca devuelve null: sin escalón, `lotTotal` == el math actual
+  /// escalado y las líneas de lote quedan en cero.
+  BatchLotResult _composeBatch({
+    required CalculationOutput output,
+    required int quantity,
+    required Decimal manualDiscountPct,
+    required Decimal minimumCharge,
+  }) {
+    final tier = BatchDiscountResolver.resolve(
+      quantity: quantity,
+      tiers: _tiers,
+    );
+    return BatchLotComposer.compose(
+      output: output,
+      quantity: quantity,
+      minimumCharge: minimumCharge,
+      tier: tier,
+      manualDiscountPct: manualDiscountPct,
     );
   }
 

@@ -655,4 +655,90 @@ void main() {
       expect(template.pieceImageBytes, isNull);
     });
   });
+
+  group('Snapshot batch (feature A — Hito 1)', () {
+    testWidgets('guarda batch fields cuando hay escalón', (tester) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final prefs = await SharedPreferences.getInstance();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final repo = CalculationRepository(db);
+      final draft = CalculationDraft(
+        materials: [
+          MaterialInput(
+            label: 'PLA',
+            weightGrams: Decimal.parse('50'),
+            pricePerBobbin: Decimal.parse('120'),
+            gramsPerBobbin: Decimal.parse('1000'),
+          ),
+        ],
+        totalHours: Decimal.parse('2'),
+        discountPercentage: Decimal.zero,
+        output: CalculationOutput.simple(
+          materialCost: Decimal.parse('6'),
+          discountAmount: Decimal.zero,
+          totalPrice: Decimal.parse('6'),
+        ),
+        quantity: 10,
+        batchDiscountPercent: Decimal.parse('10'),
+        batchDiscountAmount: Decimal.parse('6'),
+      );
+      final id = await repo.create(draft);
+      final saved = await repo.getById(id);
+
+      expect(saved, isNotNull);
+      expect(saved!.batchDiscountPercent, '10');
+      expect(saved.batchDiscountAmount, '6');
+    });
+
+    testWidgets('batch fields null cuando no hay escalón', (tester) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final prefs = await SharedPreferences.getInstance();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final repo = CalculationRepository(db);
+      final draft = CalculationDraft(
+        materials: [
+          MaterialInput(
+            label: 'PLA',
+            weightGrams: Decimal.parse('50'),
+            pricePerBobbin: Decimal.parse('120'),
+            gramsPerBobbin: Decimal.parse('1000'),
+          ),
+        ],
+        totalHours: Decimal.parse('2'),
+        discountPercentage: Decimal.zero,
+        output: CalculationOutput.simple(
+          materialCost: Decimal.parse('6'),
+          discountAmount: Decimal.zero,
+          totalPrice: Decimal.parse('6'),
+        ),
+        quantity: 1,
+      );
+      final id = await repo.create(draft);
+      final saved = await repo.getById(id);
+
+      expect(saved, isNotNull);
+      expect(saved!.batchDiscountPercent, isNull);
+      expect(saved.batchDiscountAmount, isNull);
+    });
+  });
 }

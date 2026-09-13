@@ -810,6 +810,7 @@ abstract class AppStrings {
   String get historyEmptyCta;
 
   /// "Otros" / "Others" — seccion colapsable de la calculadora.
+  @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers;
 
   /// "Rango: 0-1000" / "Range: 0-1000" — validacion de ganancia base.
@@ -1215,4 +1216,70 @@ abstract class AppStrings {
   String get colorNameGray;
   String get colorNameBlack;
   String get colorNameWhite;
+
+  // === Hito 1: lotes y reorganización (T-H1) ===
+
+  /// "Costos de la pieza" / "Piece costs" — nombre de la sección colapsable
+  /// del cotizador (reemplaza y deja deprecado a [calcSectionOthers]).
+  String get calcSectionPieceCosts;
+
+  /// "Tarifas" / "Rates" — subgrupo de overrides (mano de obra,
+  /// post-procesado, falla, markup) dentro de "Costos de la pieza".
+  String get calcSectionTarifas;
+
+  /// Titulo de la seccion Energía en Ajustes (tarifa kWh).
+  String get settingsGroupEnergy;
+
+  /// Titulo de la seccion "Costos de impresión" en Ajustes (ganancia base).
+  String get settingsGroupPrintingCosts;
+
+  /// Titulo de la seccion "Descuentos por cantidad" en Ajustes (escalones).
+  String get settingsGroupDiscountTiers;
+
+  /// "Agregar escalón" / "Add tier" — CTA para crear un escalón nuevo.
+  String get discountTierAdd;
+
+  /// "Editar escalón" / "Edit tier" — accion de editar un escalón.
+  String get discountTierEdit;
+
+  /// "Eliminar escalón" / "Delete tier" — accion de borrar un escalón.
+  String get discountTierDelete;
+
+  /// Empty state de la lista de escalones: aun no hay ninguno.
+  String get discountTierEmpty;
+
+  /// Header de la columna "Cantidad mínima" de la tabla de escalones.
+  String get discountTierHeaderMinQty;
+
+  /// Header de la columna "% de descuento" de la tabla de escalones.
+  String get discountTierHeaderPercent;
+
+  /// Label del campo de cantidad mínima en el formulario de escalón.
+  String get discountTierMinQty;
+
+  /// Label del campo de porcentaje de descuento en el formulario.
+  String get discountTierPercent;
+
+  /// Validacion del campo min_qty: debe ser >= 2 unidades.
+  String get discountTierValidationMinQty;
+
+  /// Validacion del campo percent: 0 < % <= 100.
+  String get discountTierValidationPercent;
+
+  /// Hint del tope de escalones (decisión P5: default 10).
+  String get discountTierCapHint;
+
+  /// "Descuento por cantidad ($pct%)" — linea de desglose del descuento
+  /// mayorista aplicado (se muestra antes del descuento manual).
+  String calcDetailBatchDiscount(int pct);
+
+  /// Hint del campo Cantidad cuando hay escalón aplicable.
+  /// "X % desde N u." — informa al usuario del umbral del siguiente escalón.
+  String calcQuantityBatchHint(int pct, int minQty);
+
+  /// "Descuento por cantidad $pct%" — linea en la quote image.
+  String quoteBatchDiscountPct(int pct);
+
+  /// "Descuento por cantidad: $pct%" — linea en el PDF.
+  String pdfBatchDiscountPct(int pct);
 }

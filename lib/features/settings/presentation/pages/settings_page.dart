@@ -22,6 +22,7 @@ import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
+import '../widgets/discount_tiers_section.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
@@ -134,10 +135,10 @@ class _SettingsBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
-                // ── Costos y parametros (Ganancia + Electricidad) ──
+                // ── Costos de impresión (Ganancia base) ──
                 _GroupLabel(
                   icon: Icons.tune_rounded,
-                  title: EsBO.settingsGlobalParams,
+                  title: EsBO.settingsGroupPrintingCosts,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 _StatParamTile(
@@ -176,6 +177,13 @@ class _SettingsBody extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: AppSpacing.xxl),
+
+                // ── Energía (kWh) ──
+                _GroupLabel(
+                  icon: Icons.bolt_rounded,
+                  title: EsBO.settingsGroupEnergy,
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 _StatParamTile(
                   icon: Icons.bolt_rounded,
                   title: EsBO.settingsKwhRate(currency.symbol),
@@ -209,6 +217,15 @@ class _SettingsBody extends ConsumerWidget {
                     _showSavedSnack(context);
                   },
                 ),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // ── Descuentos por cantidad (feature A — Hito 1) ──
+                _GroupLabel(
+                  icon: Icons.inventory_2_rounded,
+                  title: EsBO.settingsGroupDiscountTiers,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const DiscountTiersSection(),
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Catalogos ──

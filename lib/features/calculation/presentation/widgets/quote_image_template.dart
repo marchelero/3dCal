@@ -49,6 +49,8 @@ class QuoteImageTemplate extends StatelessWidget {
     required this.currency,
     this.pieceImageBytes,
     this.quantity = 1,
+    this.batchDiscountPct,
+    this.batchDiscountAmount,
     super.key,
   });
 
@@ -82,6 +84,12 @@ class QuoteImageTemplate extends StatelessWidget {
 
   /// Foto de la pieza (efimera, solo en el envio). Si es null, no hay hero.
   final Uint8List? pieceImageBytes;
+
+  /// Porcentaje del escalón de descuento mayorista (null = no aplica).
+  final Decimal? batchDiscountPct;
+
+  /// Monto del descuento mayorista (null = 0).
+  final Decimal? batchDiscountAmount;
 
   @override
   Widget build(BuildContext context) {
@@ -235,7 +243,7 @@ class QuoteImageTemplate extends StatelessWidget {
           // ── Discount breakdown: correccion de recibo ──
           // El descuento se aplica sobre el total incluyendo la cantidad:
           // Desglose de descuento: totalOriginal → descuento % → totalFinal.
-          if (hasDiscount) ...[
+          if (hasDiscount || (batchDiscountPct != null && batchDiscountPct! > Decimal.zero)) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -249,6 +257,19 @@ class QuoteImageTemplate extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  if (batchDiscountPct != null &&
+                      batchDiscountPct! > Decimal.zero) ...[
+                    _discountRow(
+                      EsBO.calcDetailBatchDiscount(
+                        batchDiscountPct!.toBigInt().toInt(),
+                      ),
+                      '-${formatCurrency(batchDiscountAmount ?? Decimal.zero, currency)}',
+                      theme,
+                      color.error,
+                      bold: true,
+                    ),
+                    const SizedBox(height: 6),
+                  ],
                   _discountRow(
                     EsBO.quoteNoDiscount,
                     formatCurrency(totalOriginal * qty, currency),

@@ -108,6 +108,18 @@ class Calculations extends Table {
   /// sin foto o pre-v9 (migracion aditiva).
   BlobColumn get pieceImageBlob => blob().nullable()();
 
+  /// Snapshot del % del escalón de descuento por cantidad aplicado (feature A,
+  /// Hito 1, v12). TEXT `decimal`; `null` cuando N no cumple ningún escalón o
+  /// la cotización es pre-v12. Se persiste como snapshot para que editar
+  /// escalones después NO altere cotizaciones guardadas (regla del PRD).
+  TextColumn get batchDiscountPercent => text().nullable()();
+
+  /// Snapshot del monto descontado por cantidad (sobre el subtotal de la
+  /// impresión del lote, decisión P3). TEXT `decimal`, `null` cuando no
+  /// aplicó escalón. Defaults NULL preservan el comportamiento actual
+  /// (regla del 95 % en N=1 o sin escalones).
+  TextColumn get batchDiscountAmount => text().nullable()();
+
   @override
   List<Set<Column>> get uniqueKeys => [];
 }

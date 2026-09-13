@@ -1476,6 +1476,28 @@ class $CalculationsTable extends Calculations
         type: DriftSqlType.blob,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _batchDiscountPercentMeta =
+      const VerificationMeta('batchDiscountPercent');
+  @override
+  late final GeneratedColumn<String> batchDiscountPercent =
+      GeneratedColumn<String>(
+        'batch_discount_percent',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _batchDiscountAmountMeta =
+      const VerificationMeta('batchDiscountAmount');
+  @override
+  late final GeneratedColumn<String> batchDiscountAmount =
+      GeneratedColumn<String>(
+        'batch_discount_amount',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1513,6 +1535,8 @@ class $CalculationsTable extends Calculations
     minimumChargeSnapshot,
     markupOnMaterialsSnapshot,
     pieceImageBlob,
+    batchDiscountPercent,
+    batchDiscountAmount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1847,6 +1871,24 @@ class $CalculationsTable extends Calculations
         ),
       );
     }
+    if (data.containsKey('batch_discount_percent')) {
+      context.handle(
+        _batchDiscountPercentMeta,
+        batchDiscountPercent.isAcceptableOrUnknown(
+          data['batch_discount_percent']!,
+          _batchDiscountPercentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('batch_discount_amount')) {
+      context.handle(
+        _batchDiscountAmountMeta,
+        batchDiscountAmount.isAcceptableOrUnknown(
+          data['batch_discount_amount']!,
+          _batchDiscountAmountMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1996,6 +2038,14 @@ class $CalculationsTable extends Calculations
         DriftSqlType.blob,
         data['${effectivePrefix}piece_image_blob'],
       ),
+      batchDiscountPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_discount_percent'],
+      ),
+      batchDiscountAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_discount_amount'],
+      ),
     );
   }
 
@@ -2099,6 +2149,18 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// lado mayor, calidad 85) para no inflar la DB. `null` en cotizaciones
   /// sin foto o pre-v9 (migracion aditiva).
   final Uint8List? pieceImageBlob;
+
+  /// Snapshot del % del escalón de descuento por cantidad aplicado (feature A,
+  /// Hito 1, v12). TEXT `decimal`; `null` cuando N no cumple ningún escalón o
+  /// la cotización es pre-v12. Se persiste como snapshot para que editar
+  /// escalones después NO altere cotizaciones guardadas (regla del PRD).
+  final String? batchDiscountPercent;
+
+  /// Snapshot del monto descontado por cantidad (sobre el subtotal de la
+  /// impresión del lote, decisión P3). TEXT `decimal`, `null` cuando no
+  /// aplicó escalón. Defaults NULL preservan el comportamiento actual
+  /// (regla del 95 % en N=1 o sin escalones).
+  final String? batchDiscountAmount;
   const Calculation({
     required this.id,
     required this.createdAt,
@@ -2135,6 +2197,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.minimumChargeSnapshot,
     required this.markupOnMaterialsSnapshot,
     this.pieceImageBlob,
+    this.batchDiscountPercent,
+    this.batchDiscountAmount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2198,6 +2262,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     if (!nullToAbsent || pieceImageBlob != null) {
       map['piece_image_blob'] = Variable<Uint8List>(pieceImageBlob);
     }
+    if (!nullToAbsent || batchDiscountPercent != null) {
+      map['batch_discount_percent'] = Variable<String>(batchDiscountPercent);
+    }
+    if (!nullToAbsent || batchDiscountAmount != null) {
+      map['batch_discount_amount'] = Variable<String>(batchDiscountAmount);
+    }
     return map;
   }
 
@@ -2252,6 +2322,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       pieceImageBlob: pieceImageBlob == null && nullToAbsent
           ? const Value.absent()
           : Value(pieceImageBlob),
+      batchDiscountPercent: batchDiscountPercent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batchDiscountPercent),
+      batchDiscountAmount: batchDiscountAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batchDiscountAmount),
     );
   }
 
@@ -2332,6 +2408,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
         json['markupOnMaterialsSnapshot'],
       ),
       pieceImageBlob: serializer.fromJson<Uint8List?>(json['pieceImageBlob']),
+      batchDiscountPercent: serializer.fromJson<String?>(
+        json['batchDiscountPercent'],
+      ),
+      batchDiscountAmount: serializer.fromJson<String?>(
+        json['batchDiscountAmount'],
+      ),
     );
   }
   @override
@@ -2385,6 +2467,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
         markupOnMaterialsSnapshot,
       ),
       'pieceImageBlob': serializer.toJson<Uint8List?>(pieceImageBlob),
+      'batchDiscountPercent': serializer.toJson<String?>(batchDiscountPercent),
+      'batchDiscountAmount': serializer.toJson<String?>(batchDiscountAmount),
     };
   }
 
@@ -2424,6 +2508,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     double? minimumChargeSnapshot,
     double? markupOnMaterialsSnapshot,
     Value<Uint8List?> pieceImageBlob = const Value.absent(),
+    Value<String?> batchDiscountPercent = const Value.absent(),
+    Value<String?> batchDiscountAmount = const Value.absent(),
   }) => Calculation(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -2470,6 +2556,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     pieceImageBlob: pieceImageBlob.present
         ? pieceImageBlob.value
         : this.pieceImageBlob,
+    batchDiscountPercent: batchDiscountPercent.present
+        ? batchDiscountPercent.value
+        : this.batchDiscountPercent,
+    batchDiscountAmount: batchDiscountAmount.present
+        ? batchDiscountAmount.value
+        : this.batchDiscountAmount,
   );
   Calculation copyWithCompanion(CalculationsCompanion data) {
     return Calculation(
@@ -2564,6 +2656,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       pieceImageBlob: data.pieceImageBlob.present
           ? data.pieceImageBlob.value
           : this.pieceImageBlob,
+      batchDiscountPercent: data.batchDiscountPercent.present
+          ? data.batchDiscountPercent.value
+          : this.batchDiscountPercent,
+      batchDiscountAmount: data.batchDiscountAmount.present
+          ? data.batchDiscountAmount.value
+          : this.batchDiscountAmount,
     );
   }
 
@@ -2606,7 +2704,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('failureRateSnapshot: $failureRateSnapshot, ')
           ..write('minimumChargeSnapshot: $minimumChargeSnapshot, ')
           ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot, ')
-          ..write('pieceImageBlob: $pieceImageBlob')
+          ..write('pieceImageBlob: $pieceImageBlob, ')
+          ..write('batchDiscountPercent: $batchDiscountPercent, ')
+          ..write('batchDiscountAmount: $batchDiscountAmount')
           ..write(')'))
         .toString();
   }
@@ -2648,6 +2748,8 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     minimumChargeSnapshot,
     markupOnMaterialsSnapshot,
     $driftBlobEquality.hash(pieceImageBlob),
+    batchDiscountPercent,
+    batchDiscountAmount,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2688,7 +2790,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.failureRateSnapshot == this.failureRateSnapshot &&
           other.minimumChargeSnapshot == this.minimumChargeSnapshot &&
           other.markupOnMaterialsSnapshot == this.markupOnMaterialsSnapshot &&
-          $driftBlobEquality.equals(other.pieceImageBlob, this.pieceImageBlob));
+          $driftBlobEquality.equals(
+            other.pieceImageBlob,
+            this.pieceImageBlob,
+          ) &&
+          other.batchDiscountPercent == this.batchDiscountPercent &&
+          other.batchDiscountAmount == this.batchDiscountAmount);
 }
 
 class CalculationsCompanion extends UpdateCompanion<Calculation> {
@@ -2727,6 +2834,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<double> minimumChargeSnapshot;
   final Value<double> markupOnMaterialsSnapshot;
   final Value<Uint8List?> pieceImageBlob;
+  final Value<String?> batchDiscountPercent;
+  final Value<String?> batchDiscountAmount;
   const CalculationsCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -2763,6 +2872,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.minimumChargeSnapshot = const Value.absent(),
     this.markupOnMaterialsSnapshot = const Value.absent(),
     this.pieceImageBlob = const Value.absent(),
+    this.batchDiscountPercent = const Value.absent(),
+    this.batchDiscountAmount = const Value.absent(),
   });
   CalculationsCompanion.insert({
     this.id = const Value.absent(),
@@ -2800,6 +2911,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     required double minimumChargeSnapshot,
     required double markupOnMaterialsSnapshot,
     this.pieceImageBlob = const Value.absent(),
+    this.batchDiscountPercent = const Value.absent(),
+    this.batchDiscountAmount = const Value.absent(),
   }) : createdAt = Value(createdAt),
        totalHours = Value(totalHours),
        discountPercentage = Value(discountPercentage),
@@ -2857,6 +2970,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<double>? minimumChargeSnapshot,
     Expression<double>? markupOnMaterialsSnapshot,
     Expression<Uint8List>? pieceImageBlob,
+    Expression<String>? batchDiscountPercent,
+    Expression<String>? batchDiscountAmount,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2911,6 +3026,10 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       if (markupOnMaterialsSnapshot != null)
         'markup_on_materials_snapshot': markupOnMaterialsSnapshot,
       if (pieceImageBlob != null) 'piece_image_blob': pieceImageBlob,
+      if (batchDiscountPercent != null)
+        'batch_discount_percent': batchDiscountPercent,
+      if (batchDiscountAmount != null)
+        'batch_discount_amount': batchDiscountAmount,
     });
   }
 
@@ -2950,6 +3069,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<double>? minimumChargeSnapshot,
     Value<double>? markupOnMaterialsSnapshot,
     Value<Uint8List?>? pieceImageBlob,
+    Value<String?>? batchDiscountPercent,
+    Value<String?>? batchDiscountAmount,
   }) {
     return CalculationsCompanion(
       id: id ?? this.id,
@@ -2994,6 +3115,8 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       markupOnMaterialsSnapshot:
           markupOnMaterialsSnapshot ?? this.markupOnMaterialsSnapshot,
       pieceImageBlob: pieceImageBlob ?? this.pieceImageBlob,
+      batchDiscountPercent: batchDiscountPercent ?? this.batchDiscountPercent,
+      batchDiscountAmount: batchDiscountAmount ?? this.batchDiscountAmount,
     );
   }
 
@@ -3133,6 +3256,16 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     if (pieceImageBlob.present) {
       map['piece_image_blob'] = Variable<Uint8List>(pieceImageBlob.value);
     }
+    if (batchDiscountPercent.present) {
+      map['batch_discount_percent'] = Variable<String>(
+        batchDiscountPercent.value,
+      );
+    }
+    if (batchDiscountAmount.present) {
+      map['batch_discount_amount'] = Variable<String>(
+        batchDiscountAmount.value,
+      );
+    }
     return map;
   }
 
@@ -3175,7 +3308,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('failureRateSnapshot: $failureRateSnapshot, ')
           ..write('minimumChargeSnapshot: $minimumChargeSnapshot, ')
           ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot, ')
-          ..write('pieceImageBlob: $pieceImageBlob')
+          ..write('pieceImageBlob: $pieceImageBlob, ')
+          ..write('batchDiscountPercent: $batchDiscountPercent, ')
+          ..write('batchDiscountAmount: $batchDiscountAmount')
           ..write(')'))
         .toString();
   }
@@ -4195,9 +4330,9 @@ class Entitlement extends DataClass implements Insertable<Entitlement> {
   /// PK auto-increment. Identificador interno de la fila.
   final int id;
 
-  /// Origen de la compra. Valores esperados: 'play_store' (hoy),
-  /// 'appstore' o 'license_key' (futuro). CHECK constraint en
-  /// repository si hace falta (T3).
+  /// Origen de la compra. Valores esperados: 'lifetime_purchase' (hoy,
+  /// valor real via [kSourceLifetimePurchase]), 'appstore' o
+  /// 'license_key' (futuro). CHECK constraint en repository si hace falta (T3).
   final String source;
 
   /// Producto comprado. Ej: 'tresdcal_pro_lifetime'.
@@ -4502,6 +4637,321 @@ class EntitlementsCompanion extends UpdateCompanion<Entitlement> {
   }
 }
 
+class $DiscountTiersTableTable extends DiscountTiersTable
+    with TableInfo<$DiscountTiersTableTable, DiscountTiers> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DiscountTiersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minQtyMeta = const VerificationMeta('minQty');
+  @override
+  late final GeneratedColumn<int> minQty = GeneratedColumn<int>(
+    'min_qty',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _percentMeta = const VerificationMeta(
+    'percent',
+  );
+  @override
+  late final GeneratedColumn<String> percent = GeneratedColumn<String>(
+    'percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, minQty, percent, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'discount_tiers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DiscountTiers> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('min_qty')) {
+      context.handle(
+        _minQtyMeta,
+        minQty.isAcceptableOrUnknown(data['min_qty']!, _minQtyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_minQtyMeta);
+    }
+    if (data.containsKey('percent')) {
+      context.handle(
+        _percentMeta,
+        percent.isAcceptableOrUnknown(data['percent']!, _percentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_percentMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DiscountTiers map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DiscountTiers(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      minQty: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}min_qty'],
+      )!,
+      percent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}percent'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $DiscountTiersTableTable createAlias(String alias) {
+    return $DiscountTiersTableTable(attachedDatabase, alias);
+  }
+}
+
+class DiscountTiers extends DataClass implements Insertable<DiscountTiers> {
+  /// Id texto tipo UUID del escalón.
+  final String id;
+
+  /// Cantidad mínima de unidades que dispara el escalón (>= 2).
+  final int minQty;
+
+  /// Porcentaje de descuento como texto `decimal` (0 < % <= 100).
+  final String percent;
+
+  /// Posición en la lista (0..n-1). Re-secuenciado por el repository.
+  final int sortOrder;
+  const DiscountTiers({
+    required this.id,
+    required this.minQty,
+    required this.percent,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['min_qty'] = Variable<int>(minQty);
+    map['percent'] = Variable<String>(percent);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  DiscountTiersTableCompanion toCompanion(bool nullToAbsent) {
+    return DiscountTiersTableCompanion(
+      id: Value(id),
+      minQty: Value(minQty),
+      percent: Value(percent),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory DiscountTiers.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DiscountTiers(
+      id: serializer.fromJson<String>(json['id']),
+      minQty: serializer.fromJson<int>(json['minQty']),
+      percent: serializer.fromJson<String>(json['percent']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'minQty': serializer.toJson<int>(minQty),
+      'percent': serializer.toJson<String>(percent),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  DiscountTiers copyWith({
+    String? id,
+    int? minQty,
+    String? percent,
+    int? sortOrder,
+  }) => DiscountTiers(
+    id: id ?? this.id,
+    minQty: minQty ?? this.minQty,
+    percent: percent ?? this.percent,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  DiscountTiers copyWithCompanion(DiscountTiersTableCompanion data) {
+    return DiscountTiers(
+      id: data.id.present ? data.id.value : this.id,
+      minQty: data.minQty.present ? data.minQty.value : this.minQty,
+      percent: data.percent.present ? data.percent.value : this.percent,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DiscountTiers(')
+          ..write('id: $id, ')
+          ..write('minQty: $minQty, ')
+          ..write('percent: $percent, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, minQty, percent, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DiscountTiers &&
+          other.id == this.id &&
+          other.minQty == this.minQty &&
+          other.percent == this.percent &&
+          other.sortOrder == this.sortOrder);
+}
+
+class DiscountTiersTableCompanion extends UpdateCompanion<DiscountTiers> {
+  final Value<String> id;
+  final Value<int> minQty;
+  final Value<String> percent;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const DiscountTiersTableCompanion({
+    this.id = const Value.absent(),
+    this.minQty = const Value.absent(),
+    this.percent = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DiscountTiersTableCompanion.insert({
+    required String id,
+    required int minQty,
+    required String percent,
+    required int sortOrder,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       minQty = Value(minQty),
+       percent = Value(percent),
+       sortOrder = Value(sortOrder);
+  static Insertable<DiscountTiers> custom({
+    Expression<String>? id,
+    Expression<int>? minQty,
+    Expression<String>? percent,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (minQty != null) 'min_qty': minQty,
+      if (percent != null) 'percent': percent,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DiscountTiersTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? minQty,
+    Value<String>? percent,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return DiscountTiersTableCompanion(
+      id: id ?? this.id,
+      minQty: minQty ?? this.minQty,
+      percent: percent ?? this.percent,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (minQty.present) {
+      map['min_qty'] = Variable<int>(minQty.value);
+    }
+    if (percent.present) {
+      map['percent'] = Variable<String>(percent.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DiscountTiersTableCompanion(')
+          ..write('id: $id, ')
+          ..write('minQty: $minQty, ')
+          ..write('percent: $percent, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4512,6 +4962,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CalculationMaterialsTable(this);
   late final $SettingsTableTable settingsTable = $SettingsTableTable(this);
   late final $EntitlementsTable entitlements = $EntitlementsTable(this);
+  late final $DiscountTiersTableTable discountTiersTable =
+      $DiscountTiersTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4523,6 +4975,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     calculationMaterials,
     settingsTable,
     entitlements,
+    discountTiersTable,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5079,6 +5532,8 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       required double minimumChargeSnapshot,
       required double markupOnMaterialsSnapshot,
       Value<Uint8List?> pieceImageBlob,
+      Value<String?> batchDiscountPercent,
+      Value<String?> batchDiscountAmount,
     });
 typedef $$CalculationsTableUpdateCompanionBuilder =
     CalculationsCompanion Function({
@@ -5117,6 +5572,8 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<double> minimumChargeSnapshot,
       Value<double> markupOnMaterialsSnapshot,
       Value<Uint8List?> pieceImageBlob,
+      Value<String?> batchDiscountPercent,
+      Value<String?> batchDiscountAmount,
     });
 
 final class $$CalculationsTableReferences
@@ -5333,6 +5790,16 @@ class $$CalculationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get batchDiscountPercent => $composableBuilder(
+    column: $table.batchDiscountPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get batchDiscountAmount => $composableBuilder(
+    column: $table.batchDiscountAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> calculationMaterialsRefs(
     Expression<bool> Function($$CalculationMaterialsTableFilterComposer f) f,
   ) {
@@ -5543,6 +6010,16 @@ class $$CalculationsTableOrderingComposer
     column: $table.pieceImageBlob,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get batchDiscountPercent => $composableBuilder(
+    column: $table.batchDiscountPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get batchDiscountAmount => $composableBuilder(
+    column: $table.batchDiscountAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CalculationsTableAnnotationComposer
@@ -5716,6 +6193,16 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get batchDiscountPercent => $composableBuilder(
+    column: $table.batchDiscountPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get batchDiscountAmount => $composableBuilder(
+    column: $table.batchDiscountAmount,
+    builder: (column) => column,
+  );
+
   Expression<T> calculationMaterialsRefs<T extends Object>(
     Expression<T> Function($$CalculationMaterialsTableAnnotationComposer a) f,
   ) {
@@ -5807,6 +6294,8 @@ class $$CalculationsTableTableManager
                 Value<double> minimumChargeSnapshot = const Value.absent(),
                 Value<double> markupOnMaterialsSnapshot = const Value.absent(),
                 Value<Uint8List?> pieceImageBlob = const Value.absent(),
+                Value<String?> batchDiscountPercent = const Value.absent(),
+                Value<String?> batchDiscountAmount = const Value.absent(),
               }) => CalculationsCompanion(
                 id: id,
                 createdAt: createdAt,
@@ -5843,6 +6332,8 @@ class $$CalculationsTableTableManager
                 minimumChargeSnapshot: minimumChargeSnapshot,
                 markupOnMaterialsSnapshot: markupOnMaterialsSnapshot,
                 pieceImageBlob: pieceImageBlob,
+                batchDiscountPercent: batchDiscountPercent,
+                batchDiscountAmount: batchDiscountAmount,
               ),
           createCompanionCallback:
               ({
@@ -5881,6 +6372,8 @@ class $$CalculationsTableTableManager
                 required double minimumChargeSnapshot,
                 required double markupOnMaterialsSnapshot,
                 Value<Uint8List?> pieceImageBlob = const Value.absent(),
+                Value<String?> batchDiscountPercent = const Value.absent(),
+                Value<String?> batchDiscountAmount = const Value.absent(),
               }) => CalculationsCompanion.insert(
                 id: id,
                 createdAt: createdAt,
@@ -5917,6 +6410,8 @@ class $$CalculationsTableTableManager
                 minimumChargeSnapshot: minimumChargeSnapshot,
                 markupOnMaterialsSnapshot: markupOnMaterialsSnapshot,
                 pieceImageBlob: pieceImageBlob,
+                batchDiscountPercent: batchDiscountPercent,
+                batchDiscountAmount: batchDiscountAmount,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -6771,6 +7266,196 @@ typedef $$EntitlementsTableProcessedTableManager =
       Entitlement,
       PrefetchHooks Function()
     >;
+typedef $$DiscountTiersTableTableCreateCompanionBuilder =
+    DiscountTiersTableCompanion Function({
+      required String id,
+      required int minQty,
+      required String percent,
+      required int sortOrder,
+      Value<int> rowid,
+    });
+typedef $$DiscountTiersTableTableUpdateCompanionBuilder =
+    DiscountTiersTableCompanion Function({
+      Value<String> id,
+      Value<int> minQty,
+      Value<String> percent,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+class $$DiscountTiersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $DiscountTiersTableTable> {
+  $$DiscountTiersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minQty => $composableBuilder(
+    column: $table.minQty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get percent => $composableBuilder(
+    column: $table.percent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DiscountTiersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $DiscountTiersTableTable> {
+  $$DiscountTiersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minQty => $composableBuilder(
+    column: $table.minQty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get percent => $composableBuilder(
+    column: $table.percent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DiscountTiersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DiscountTiersTableTable> {
+  $$DiscountTiersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get minQty =>
+      $composableBuilder(column: $table.minQty, builder: (column) => column);
+
+  GeneratedColumn<String> get percent =>
+      $composableBuilder(column: $table.percent, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+}
+
+class $$DiscountTiersTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DiscountTiersTableTable,
+          DiscountTiers,
+          $$DiscountTiersTableTableFilterComposer,
+          $$DiscountTiersTableTableOrderingComposer,
+          $$DiscountTiersTableTableAnnotationComposer,
+          $$DiscountTiersTableTableCreateCompanionBuilder,
+          $$DiscountTiersTableTableUpdateCompanionBuilder,
+          (
+            DiscountTiers,
+            BaseReferences<
+              _$AppDatabase,
+              $DiscountTiersTableTable,
+              DiscountTiers
+            >,
+          ),
+          DiscountTiers,
+          PrefetchHooks Function()
+        > {
+  $$DiscountTiersTableTableTableManager(
+    _$AppDatabase db,
+    $DiscountTiersTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DiscountTiersTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DiscountTiersTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DiscountTiersTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> minQty = const Value.absent(),
+                Value<String> percent = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DiscountTiersTableCompanion(
+                id: id,
+                minQty: minQty,
+                percent: percent,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int minQty,
+                required String percent,
+                required int sortOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => DiscountTiersTableCompanion.insert(
+                id: id,
+                minQty: minQty,
+                percent: percent,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DiscountTiersTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DiscountTiersTableTable,
+      DiscountTiers,
+      $$DiscountTiersTableTableFilterComposer,
+      $$DiscountTiersTableTableOrderingComposer,
+      $$DiscountTiersTableTableAnnotationComposer,
+      $$DiscountTiersTableTableCreateCompanionBuilder,
+      $$DiscountTiersTableTableUpdateCompanionBuilder,
+      (
+        DiscountTiers,
+        BaseReferences<_$AppDatabase, $DiscountTiersTableTable, DiscountTiers>,
+      ),
+      DiscountTiers,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6787,4 +7472,6 @@ class $AppDatabaseManager {
       $$SettingsTableTableTableManager(_db, _db.settingsTable);
   $$EntitlementsTableTableManager get entitlements =>
       $$EntitlementsTableTableManager(_db, _db.entitlements);
+  $$DiscountTiersTableTableTableManager get discountTiersTable =>
+      $$DiscountTiersTableTableTableManager(_db, _db.discountTiersTable);
 }

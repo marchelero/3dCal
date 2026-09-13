@@ -491,6 +491,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         quantity: _quantity,
         totalGrams: totalGrams,
         metaTime: metaTime,
+        batchDiscountPct: state.batchAppliedPercent,
+        batchDiscountAmount: state.batchDiscountAmount,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -715,6 +717,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   currency: widget.currency,
                   pieceImageBytes: _pieceImageBytes,
                   quantity: _quantity,
+                  batchDiscountPct: state.batchAppliedPercent,
+                  batchDiscountAmount: state.batchDiscountAmount,
                 ),
               ),
 
@@ -880,6 +884,47 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   );
                 },
               ),
+
+              // ── Descuento por cantidad (feature A, Hito 1) ──
+              // Linea informativa: no editable, solo lectura del escalón.
+              if (state.showsBatchLine) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.inventory_2_rounded,
+                          size: 18,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            EsBO.calcDetailBatchDiscount(
+                              state.batchAppliedPercent?.toBigInt().toInt() ?? 0,
+                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '-${formatCurrency(state.batchDiscountAmount, widget.currency)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
 
               // ── Descuento (Debajo de Cantidad, disponible para todos) ──
               // Fuente unica de verdad: state.discountPct (engine). Escribir

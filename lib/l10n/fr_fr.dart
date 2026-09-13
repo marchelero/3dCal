@@ -98,6 +98,55 @@ class FrImpl implements AppStrings {
   String get settingsGroupAccount => 'Compte';
   @override
   String get settingsGroupAbout => 'À propos';
+
+  // === Hito 1: lotes y reorganización (T-H1) ===
+  @override
+  String get calcSectionPieceCosts => 'Coûts de la pièce';
+  @override
+  String get calcSectionTarifas => 'Tarifs';
+  @override
+  String get settingsGroupEnergy => 'Énergie';
+  @override
+  String get settingsGroupPrintingCosts => "Coûts d'impression";
+  @override
+  String get settingsGroupDiscountTiers => 'Remises sur quantité';
+  @override
+  String get discountTierAdd => 'Ajouter un palier';
+  @override
+  String get discountTierEdit => 'Modifier le palier';
+  @override
+  String get discountTierDelete => 'Supprimer le palier';
+  @override
+  String get discountTierEmpty =>
+      "Aucune remise sur quantité pour l'instant. Ajoutez la première pour "
+      'proposer un tarif de gros.';
+  @override
+  String get discountTierHeaderMinQty => 'Quantité minimale';
+  @override
+  String get discountTierHeaderPercent => '%';
+  @override
+  String get discountTierMinQty => 'Quantité minimale';
+  @override
+  String get discountTierPercent => 'Remise (%)';
+  @override
+  String get discountTierValidationMinQty =>
+      "La quantité minimale doit être d'au moins 2 unités";
+  @override
+  String get discountTierValidationPercent =>
+      'La remise doit être comprise entre 1 et 100 %';
+  @override
+  String get discountTierCapHint =>
+      '10 paliers maximum par configuration';
+  @override
+  String calcDetailBatchDiscount(int pct) => 'Remise sur quantité ($pct %)';
+  @override
+  String calcQuantityBatchHint(int pct, int minQty) =>
+      '$pct % de remise dès $minQty pcs.';
+  @override
+  String quoteBatchDiscountPct(int pct) => 'Remise sur quantité $pct %';
+  @override
+  String pdfBatchDiscountPct(int pct) => 'Remise sur quantité : $pct %';
+
   @override
   String settingsFilamentsCount(int count) =>
       count <= 1 ? '1 filament' : '$count filaments';
@@ -774,6 +823,8 @@ class FrImpl implements AppStrings {
     'Matériaux',
     'Heures',
     'Remise',
+    'RemiseLot%',
+    'RemiseLot',
     'CoûtMat',
     'Électricité',
     'Bénéfice',
@@ -1061,6 +1112,7 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get historyEmptyCta =>
       'Créez-en un dans la calculatrice et appuyez sur Enregistrer.';
   @override
+  @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Autres';
   @override
   String get settingsProfitBaseRange => 'Plage : 0-1000';

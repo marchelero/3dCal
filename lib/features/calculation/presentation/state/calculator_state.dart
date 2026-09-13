@@ -107,7 +107,7 @@ class MaterialRow {
 ///   max(total - discount, minimumCharge) = totalPrice
 @immutable
 class CalculatorState {
-  const CalculatorState({
+  CalculatorState({
     required this.mode,
     required this.printHours,
     required this.printMinutes,
@@ -137,10 +137,19 @@ class CalculatorState {
     this.extraMarkupOnMaterials = '',
     this.quantity = 1,
     this.computeVersion = 0,
-  });
+    this.batchAppliedPercent,
+    this.batchAppliedMinQty,
+    Decimal? batchDiscountAmount,
+    Decimal? subtotalImpression,
+    Decimal? lotTotal,
+    this.showsBatchLine = false,
+  })  : assert(quantity >= 1, 'La cantidad minima es 1.'),
+        batchDiscountAmount = batchDiscountAmount ?? Decimal.zero,
+        subtotalImpression = subtotalImpression ?? Decimal.zero,
+        lotTotal = lotTotal ?? Decimal.zero;
 
   /// Estado inicial (modo express, sin materiales).
-  factory CalculatorState.initial() => const CalculatorState(
+  factory CalculatorState.initial() => CalculatorState(
     mode: CalculatorMode.express,
     printHours: '',
     printMinutes: '',
@@ -222,6 +231,30 @@ class CalculatorState {
   /// Usado por la UI para animar "calculando..." cuando cambia el output.
   final int computeVersion;
 
+  // === Lote mayorista (feature A — Hito 1) ===
+  /// Porcentaje del escalón aplicado (`%` del descuento por cantidad).
+  /// `null` cuando no aplica escalón (N=1 o N bajo el primer escalón).
+  final Decimal? batchAppliedPercent;
+
+  /// Cantidad mínima del escalón aplicado. `null` cuando no aplica.
+  /// Usado por el hint del campo Cantidad ("X % desde N u.").
+  final int? batchAppliedMinQty;
+
+  /// Monto del descuento mayorista (0 sin escalón).
+  final Decimal batchDiscountAmount;
+
+  /// `(baseCost + failureCost + markupCost) × N` — base del descuento
+  /// mayorista. `0` sin escalón.
+  final Decimal subtotalImpression;
+
+  /// Total del lote (`max(totalFinal × N − desc_cantidad − desc_manual,
+  /// minimumCharge × N)`). Sin escalón == el math actual escalado
+  /// (`output.totalPrice × N`, regla 95 %).
+  final Decimal lotTotal;
+
+  /// True cuando hay línea de "Descuento por cantidad (X %)" para mostrar.
+  final bool showsBatchLine;
+
   CalculatorState copyWith({
     CalculatorMode? mode,
     String? printHours,
@@ -237,6 +270,13 @@ class CalculatorState {
     List<MaterialCostBreakdown>? detailMaterialBreakdown,
     bool clearOutput = false,
     bool? showDetail,
+    Decimal? batchAppliedPercent,
+    int? batchAppliedMinQty,
+    Decimal? batchDiscountAmount,
+    Decimal? subtotalImpression,
+    Decimal? lotTotal,
+    bool? showsBatchLine,
+    bool clearBatch = false,
     Decimal? detailElectricCost,
     Decimal? detailAmortizationCost,
     Decimal? detailLaborCost,
@@ -269,6 +309,20 @@ class CalculatorState {
     detailMaterialBreakdown:
         detailMaterialBreakdown ?? this.detailMaterialBreakdown,
     showDetail: showDetail ?? this.showDetail,
+    batchAppliedPercent: clearBatch
+        ? null
+        : (batchAppliedPercent ?? this.batchAppliedPercent),
+    batchAppliedMinQty: clearBatch
+        ? null
+        : (batchAppliedMinQty ?? this.batchAppliedMinQty),
+    batchDiscountAmount: clearBatch
+        ? Decimal.zero
+        : (batchDiscountAmount ?? this.batchDiscountAmount),
+    subtotalImpression: clearBatch
+        ? Decimal.zero
+        : (subtotalImpression ?? this.subtotalImpression),
+    lotTotal: clearBatch ? Decimal.zero : (lotTotal ?? this.lotTotal),
+    showsBatchLine: clearBatch ? false : (showsBatchLine ?? this.showsBatchLine),
     detailElectricCost: clearDetail
         ? null
         : (detailElectricCost ?? this.detailElectricCost),
@@ -425,7 +479,13 @@ class CalculatorState {
         extraFailureRate == other.extraFailureRate &&
         extraMarkupOnMaterials == other.extraMarkupOnMaterials &&
         quantity == other.quantity &&
-        computeVersion == other.computeVersion;
+        computeVersion == other.computeVersion &&
+        batchAppliedPercent == other.batchAppliedPercent &&
+        batchAppliedMinQty == other.batchAppliedMinQty &&
+        batchDiscountAmount == other.batchDiscountAmount &&
+        subtotalImpression == other.subtotalImpression &&
+        lotTotal == other.lotTotal &&
+        showsBatchLine == other.showsBatchLine;
   }
 
   static bool _listEq(List<MaterialRow> a, List<MaterialRow> b) {
@@ -478,5 +538,11 @@ class CalculatorState {
     extraMarkupOnMaterials,
     quantity,
     computeVersion,
+    batchAppliedPercent,
+    batchAppliedMinQty,
+    batchDiscountAmount,
+    subtotalImpression,
+    lotTotal,
+    showsBatchLine,
   ]);
 }

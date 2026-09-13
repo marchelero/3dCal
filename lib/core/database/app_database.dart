@@ -8,6 +8,7 @@ import '../../features/catalog/filaments/data/filaments_table.dart';
 import '../../features/catalog/printers/data/printers_table.dart';
 import '../../features/entitlement/data/entitlements_table.dart';
 import '../../features/settings/data/settings_table.dart';
+import '../../features/settings/data/tables/discount_tiers_table.dart';
 
 part 'app_database.g.dart';
 
@@ -28,6 +29,7 @@ part 'app_database.g.dart';
     CalculationMaterials,
     SettingsTable,
     Entitlements,
+    DiscountTiersTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -40,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -126,6 +128,16 @@ class AppDatabase extends _$AppDatabase {
         // El backup/restore de drift cubre la columna automaticamente via
         // `toJson()` de la data class.
         await m.addColumn(filaments, filaments.color);
+      }
+      if (from < 12) {
+        // v11→v12: feature A (Hito 1 — descuento mayorista por cantidad).
+        // + Tabla `discount_tiers` (escalones min_qty → %).
+        // + Columnas batch en `calculations` (snapshot del escalón aplicado).
+        //   Aditiva: registros viejos quedan batch_* NULL (sin línea de
+        //   descuento de lote — comportamiento actual intacto, regla 95 %).
+        await m.createTable(discountTiersTable);
+        await m.addColumn(calculations, calculations.batchDiscountPercent);
+        await m.addColumn(calculations, calculations.batchDiscountAmount);
       }
     },
   );

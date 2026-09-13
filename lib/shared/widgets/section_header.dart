@@ -1,10 +1,12 @@
 /// Header de seccion: icono + titulo en una fila con regla de cota.
 ///
 /// Usado como rubrica impresa en pages (settings, calculator, dashboard).
-/// El titulo se muestra en MAYUSCULAS con tracking (voz de documento
-/// plano) y una regla de cota de 1.5px lo cierra por abajo, como la
-/// linea pautada de un formulario. El icono usa [accentColor] (default:
-/// `colorScheme.primary`).
+/// El titulo se muestra en MAYUSCULAS en el rol titleMedium (16px, w700)
+/// con tracking (voz de documento plano) y una regla de cota de 1.5px lo
+/// cierra por abajo, como la linea pautada de un formulario. El escalon
+/// tipografico sobre los labels de campo (anotacion 14px) hace que la
+/// rubrica se imponga al squint test: titulo > label, nunca al reves.
+/// El icono usa [accentColor] (default: `colorScheme.primary`).
 library;
 
 import 'package:flutter/material.dart';
@@ -57,12 +59,12 @@ class SectionHeader extends StatelessWidget {
     final color = accentColor ?? cs.primary;
 
     final rowChildren = <Widget>[
-      Icon(icon, size: 18, color: color),
+      Icon(icon, size: 20, color: color),
       const SizedBox(width: AppSpacing.sm),
       Expanded(
         child: Text(
           title.toUpperCase(),
-          style: theme.textTheme.labelLarge?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
             color: cs.onSurface,
