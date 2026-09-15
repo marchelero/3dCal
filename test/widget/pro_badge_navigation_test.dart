@@ -285,27 +285,35 @@ void main() {
       return container;
     }
 
-    testWidgets('Calculator: badge del header "Costos de la pieza" → PaywallPage (AC-103)', (
-      tester,
-    ) async {
-      _useTallViewport(tester);
-      await pumpApp(tester);
+    testWidgets(
+      'Calculator: badge del header "Costos de la pieza" → PaywallPage (AC-103)',
+      (tester) async {
+        _useTallViewport(tester);
+        await pumpApp(tester);
 
-      unawaited(appRouter.push('/calculator'));
-      await tester.pumpAndSettle();
+        unawaited(appRouter.push('/calculator'));
+        await tester.pumpAndSettle();
 
-      // El badge del header "Costos de la pieza" (dentro del onTap del SectionHeader:
-      // el InkWell externo del header NO debe disparar su propio push).
-      final otrosBadge = find.descendant(
-        of: find.byType(SectionHeader),
-        matching: find.byType(ProBadge),
-      );
-      expect(otrosBadge, findsOneWidget);
-      await tester.tap(otrosBadge);
+        // Wizard (rediseño 2026-09): "Costos de la pieza" vive en el paso
+        // Ajustes. Se navega y se identifica SU header (hay otro SectionHeader
+        // con badge en Cantidad, en el mismo paso).
+        await tester.tap(find.text('Otros'));
+        await tester.pumpAndSettle();
+        final otrosHeader = find.ancestor(
+          of: find.text('COSTOS DE LA PIEZA'),
+          matching: find.byType(SectionHeader),
+        );
+        final otrosBadge = find.descendant(
+          of: otrosHeader,
+          matching: find.byType(ProBadge),
+        );
+        expect(otrosBadge, findsOneWidget);
+        await tester.tap(otrosBadge);
 
-      // UNA sola PaywallPage (sin doble navegacion del InkWell externo).
-      await expectPaywall(tester);
-    });
+        // UNA sola PaywallPage (sin doble navegacion del InkWell externo).
+        await expectPaywall(tester);
+      },
+    );
 
     testWidgets(
       'Calculator: badge del pill "Avanzado" → PaywallPage (AC-103)',
@@ -317,16 +325,17 @@ void main() {
         await tester.pumpAndSettle();
 
         // El pill "Avanzado" (locked en free) contiene su propio ProBadge,
-        // FUERA del SectionHeader de "Costos de la pieza". La calculator tiene 2 badges:
-        // el del header (dentro de SectionHeader) + el del pill.
+        // FUERA del SectionHeader de "Costos de la pieza". En el wizard el
+        // paso visible (Pieza) muestra UN solo badge: el del pill (los de
+        // Cantidad/OTROS estan en el paso Ajustes, offstage).
         final scaffoldBadges = find.descendant(
           of: find.byType(CalculatorPage),
           matching: find.byType(ProBadge),
         );
         expect(
           scaffoldBadges,
-          findsNWidgets(2),
-          reason: 'badges en free: header "Costos de la pieza" + pill Avanzado (AC-103)',
+          findsOneWidget,
+          reason: 'badges visibles en free paso 1: pill Avanzado (AC-103)',
         );
         final pillBadge = find.byWidget(
           scaffoldBadges.evaluate().last.widget as ProBadge,
@@ -346,14 +355,15 @@ void main() {
         unawaited(appRouter.push('/calculator'));
         await tester.pumpAndSettle();
 
-        // Llenar el form express (Peso / Horas / Precio bobina).
+        // Llenar el form express. Horas esta en el paso Impresion (oculto):
+        // enterText no hit-testea, basta con desactivar skipOffstage.
         await tester.enterText(
           find.widgetWithText(NumericInputField, 'Peso'),
           '100',
         );
         await tester.pumpAndSettle();
         await tester.enterText(
-          find.widgetWithText(NumericInputField, 'Horas'),
+          find.widgetWithText(NumericInputField, 'Horas', skipOffstage: false),
           '5',
         );
         await tester.pumpAndSettle();
@@ -363,7 +373,8 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Abrir el result sheet (bottom bar se vuelve valida).
+        // Abrir el result sheet: la barra de total vive fija abajo en todos
+        // los pasos del wizard (rediseño 2026-09), tap directo.
         await tester.tap(find.byType(ResultBottomBar));
         await tester.pumpAndSettle();
 

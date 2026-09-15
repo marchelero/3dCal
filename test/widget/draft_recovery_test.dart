@@ -79,8 +79,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Draft fue restaurado — inputs muestran valores pre-cargados.
+      // '77' (peso) esta en el paso 1 visible; '3' (horas) en el paso 2
+      // del wizard: montado pero offstage (IndexedStack) → skipOffstage.
       expect(find.widgetWithText(TextField, '77'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '3'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, '3', skipOffstage: false),
+        findsOneWidget,
+      );
 
       await db.close();
     },

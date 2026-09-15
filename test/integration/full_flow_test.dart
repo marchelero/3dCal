@@ -95,6 +95,14 @@ void main() {
 
     expect(find.byType(CalculatorPage), findsOneWidget);
     expect(find.widgetWithText(NumericInputField, 'Peso'), findsOneWidget);
+    // Wizard: 'Horas' vive en el paso "Impresión" (rediseño 2026-09).
+    expect(
+      find.widgetWithText(NumericInputField, 'Horas'),
+      findsNothing,
+      reason: 'El paso 2 no esta visible todavia.',
+    );
+    await tester.tap(find.text('Impresión'));
+    await tester.pumpAndSettle();
     expect(find.widgetWithText(NumericInputField, 'Horas'), findsOneWidget);
   });
 
@@ -121,13 +129,16 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Horas'),
-        '5',
-      );
-      await tester.pumpAndSettle();
-      await tester.enterText(
         find.widgetWithText(NumericInputField, 'Precio bobina'),
         '120',
+      );
+      await tester.pumpAndSettle();
+      // Horas esta en el paso "Impresión" del wizard.
+      await tester.tap(find.text('Impresión'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(NumericInputField, 'Horas'),
+        '5',
       );
       await tester.pumpAndSettle();
       // Gramos / bobina ya no se muestra — default 1000 internamente.

@@ -572,6 +572,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       batchAppliedPercent: batch.appliedTier?.percent,
       batchAppliedMinQty: batch.appliedTier?.minQty,
       batchDiscountAmount: batch.batchDiscountAmount,
+      manualDiscountAmount: batch.manualDiscountAmount,
       subtotalImpression: batch.subtotalImpression,
       lotTotal: batch.lotTotal,
       showsBatchLine: batch.appliedTier != null,

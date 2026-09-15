@@ -460,13 +460,16 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
           ? CalculatorState.parseDecimal(state.weight) ?? Decimal.zero
           : state.materials.fold(
               Decimal.zero,
-              (sum, m) => sum + (CalculatorState.parseDecimal(m.weight) ?? Decimal.zero),
+              (sum, m) =>
+                  sum +
+                  (CalculatorState.parseDecimal(m.weight) ?? Decimal.zero),
             );
       final totalGrams = gramsDec > Decimal.zero ? gramsDec : null;
 
       // Calcular meta time.
       final h = CalculatorState.parseDecimal(state.printHours) ?? Decimal.zero;
-      final m = CalculatorState.parseDecimal(state.printMinutes) ?? Decimal.zero;
+      final m =
+          CalculatorState.parseDecimal(state.printMinutes) ?? Decimal.zero;
       final totalMinutes = (h * Decimal.fromInt(60) + m).toBigInt();
       String? metaTime;
       if (totalMinutes > BigInt.zero) {
@@ -493,6 +496,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         metaTime: metaTime,
         batchDiscountPct: state.batchAppliedPercent,
         batchDiscountAmount: state.batchDiscountAmount,
+        lotTotal: state.lotTotal,
+        manualDiscountAmount: state.manualDiscountAmount,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -719,6 +724,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   quantity: _quantity,
                   batchDiscountPct: state.batchAppliedPercent,
                   batchDiscountAmount: state.batchDiscountAmount,
+                  lotTotal: state.lotTotal,
+                  manualDiscountAmount: state.manualDiscountAmount,
                 ),
               ),
 
@@ -841,7 +848,6 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                       vertical: AppSpacing.xs,
                                     ),
                                     border: OutlineInputBorder(),
-                                    suffixText: 'u.',
                                   ),
                                   onChanged: (val) {
                                     final parsed = int.tryParse(val) ?? 1;
@@ -885,112 +891,6 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                 },
               ),
 
-              // ── Descuento por cantidad (feature A, Hito 1) ──
-              // Linea informativa: no editable, solo lectura del escalón.
-              if (state.showsBatchLine) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.inventory_2_rounded,
-                          size: 18,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: Text(
-                            EsBO.calcDetailBatchDiscount(
-                              state.batchAppliedPercent?.toBigInt().toInt() ?? 0,
-                            ),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '-${formatCurrency(state.batchDiscountAmount, widget.currency)}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.error,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-
-              // ── Descuento (Debajo de Cantidad, disponible para todos) ──
-              // Fuente unica de verdad: state.discountPct (engine). Escribir
-              // aqui actualiza el total, la imagen, el PDF, el draft y la DB.
-              const SizedBox(height: AppSpacing.xs),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.xs,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.local_offer_rounded, size: 18),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              EsBO.calcLabelDiscount,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(
-                        width: 80,
-                        child: TextFormField(
-                          initialValue:
-                              (double.tryParse(
-                                        widget.state.discountPct,
-                                      )?.round() ??
-                                      0)
-                                  .toString(),
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm,
-                              vertical: AppSpacing.xs,
-                            ),
-                            border: OutlineInputBorder(),
-                            suffixText: '%',
-                          ),
-                          onChanged: (val) {
-                            final parsed = int.tryParse(val) ?? 0;
-                            // BUG-013: clamp al maximo definido en constants
-                            // (antes hardcodeado a 100, permitia -50% del
-                            // total con valores intermedios).
-                            widget.onDiscountChanged(
-                              parsed
-                                  .clamp(0, kMaxDiscountPercentage)
-                                  .toString(),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
               const SizedBox(height: AppSpacing.sm),
               Align(
                 child: TextButton.icon(
@@ -1006,6 +906,179 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                         : EsBO.calcToggleShowDetail,
                   ),
                   onPressed: widget.onToggleDetail,
+                ),
+              ),
+
+              // ── Tarjeta unificada: Descuentos + Total ──
+              // Solo muestra el desglose de batch cuando el detalle es
+              // visible. El input de descuento manual y el total siempre
+              // aparecen.
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ── Desglose de descuentos (solo si showDetail) ──
+                      if (state.showDetail && state.showsBatchLine) ...[
+                        // Subtotal antes de descuentos
+                        _DetailRow(
+                          label: EsBO.calcSubtotal,
+                          value: formatCurrency(
+                            state.lotTotal +
+                                state.batchDiscountAmount +
+                                state.manualDiscountAmount,
+                            widget.currency,
+                          ),
+                          labelColor:
+                              theme.colorScheme.onSurfaceVariant,
+                          valueColor:
+                              theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        // Descuento por cantidad
+                        _DetailRow(
+                          label: EsBO.calcDetailBatchDiscount(
+                            state.batchAppliedPercent
+                                    ?.toBigInt()
+                                    .toInt() ??
+                                0,
+                          ),
+                          value:
+                              '-${formatCurrency(state.batchDiscountAmount, widget.currency)}',
+                          icon: Icons.inventory_2_rounded,
+                          labelWeight: FontWeight.w600,
+                          valueColor: theme.colorScheme.error,
+                          valueWeight: FontWeight.w600,
+                        ),
+                        // Subtotal parcial: SOLO si hay descuento manual
+                        if (state.manualDiscountAmount >
+                            Decimal.zero) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          _DetailRow(
+                            label: EsBO.calcSubtotal,
+                            value: formatCurrency(
+                              state.lotTotal +
+                                  state.manualDiscountAmount,
+                              widget.currency,
+                            ),
+                            labelColor:
+                                theme.colorScheme.onSurfaceVariant,
+                            valueColor:
+                                theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.xs),
+                        Divider(
+                          height: 1,
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                      ],
+
+                      // ── Descuento manual (input editable) ──
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.local_offer_rounded,
+                            size: 18,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              state.showDetail &&
+                                      state.showsBatchLine &&
+                                      (int.tryParse(
+                                                widget.state.discountPct,
+                                              ) ??
+                                              0) >
+                                          0
+                                  ? EsBO.calcDetailManualDiscount(
+                                      int.tryParse(
+                                                widget.state.discountPct,
+                                              ) ??
+                                              0,
+                                    )
+                                  : EsBO.calcLabelDiscount,
+                              style:
+                                  theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 80,
+                            child: TextFormField(
+                              initialValue:
+                                  (double.tryParse(
+                                            widget.state.discountPct,
+                                          )?.round() ??
+                                          0)
+                                      .toString(),
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.sm,
+                                  vertical: AppSpacing.xs,
+                                ),
+                                border: OutlineInputBorder(),
+                                suffixText: '%',
+                              ),
+                              onChanged: (val) {
+                                final parsed =
+                                    int.tryParse(val) ?? 0;
+                                widget.onDiscountChanged(
+                                  parsed
+                                      .clamp(
+                                        0,
+                                        kMaxDiscountPercentage,
+                                      )
+                                      .toString(),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // ── Separador + Total final ──
+                      const SizedBox(height: AppSpacing.xs),
+                      Divider(
+                        height: 1,
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              EsBO.calcTotalFinal,
+                              style:
+                                  theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                          Text(
+                            formatCurrency(
+                              state.lotTotal,
+                              widget.currency,
+                            ),
+                            style:
+                                theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -1043,6 +1116,57 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Fila de detalle reutilizable: [icon] opcional + label + value.
+/// Usada en la tarjeta unificada de descuentos/total del modal.
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.icon,
+    this.labelColor,
+    this.valueColor,
+    this.labelWeight,
+    this.valueWeight,
+  });
+
+  final String label;
+  final String value;
+  final IconData? icon;
+  final Color? labelColor;
+  final Color? valueColor;
+  final FontWeight? labelWeight;
+  final FontWeight? valueWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 18),
+          const SizedBox(width: AppSpacing.xs),
+        ],
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: labelColor,
+              fontWeight: labelWeight,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: valueColor,
+            fontWeight: valueWeight,
+          ),
+        ),
+      ],
     );
   }
 }

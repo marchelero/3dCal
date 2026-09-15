@@ -134,6 +134,14 @@ void _fillExpress(CalculatorNotifier n) {
     ..setPrintMinutes('0');
 }
 
+/// Finder de textos de pasos OCULTOS del wizard (IndexedStack): los widgets
+/// de los pasos no visibles quedan montados pero offstage — estos asserts
+/// verifican contenido/derivación del estado, no la pintura.
+Finder offStep(String text) => find.text(text, skipOffstage: false);
+
+Finder offStepContaining(String text) =>
+    find.textContaining(text, skipOffstage: false);
+
 void main() {
   setUp(() {
     EsBO.setImpl(const EsImpl());
@@ -152,9 +160,11 @@ void main() {
     final container = await _makeContainer(db: db, prefs: prefs);
     addTearDown(container.dispose);
     if (seedTier) {
-      await container.read(discountTiersRepositoryProvider).upsert(
-        DiscountTier.create(minQty: 10, percent: Decimal.fromInt(10)),
-      );
+      await container
+          .read(discountTiersRepositoryProvider)
+          .upsert(
+            DiscountTier.create(minQty: 10, percent: Decimal.fromInt(10)),
+          );
     }
     await _pumpCalculator(tester, container);
     return container;
@@ -172,7 +182,11 @@ void main() {
       final st = container.read(calculatorNotifierProvider);
       final currency = container.read(selectedCurrencyProvider);
 
-      expect(st.showsBatchLine, isFalse, reason: 'Sin tier no hay línea batch.');
+      expect(
+        st.showsBatchLine,
+        isFalse,
+        reason: 'Sin tier no hay línea batch.',
+      );
       expect(st.batchAppliedPercent, isNull);
       // Regla 95 %: N=1 sin escalón → lotTotal == el math de hoy.
       expect(
@@ -180,10 +194,11 @@ void main() {
         st.output!.totalPrice * Decimal.fromInt(st.quantity),
         reason: 'N=1 debe reproducir el total actual exacto.',
       );
-      // Cero líneas nuevas (batch ni manual).
-      expect(find.textContaining('Descuento por cantidad'), findsNothing);
-      expect(find.textContaining('Descuento ('), findsNothing);
-      expect(find.text('10 % desde 10 u.'), findsNothing);
+      // Cero líneas nuevas (batch ni manual) — ni siquiera montadas
+      // (offstage incluido: el paso resultado también está construido).
+      expect(offStepContaining('Descuento por cantidad'), findsNothing);
+      expect(offStepContaining('Descuento ('), findsNothing);
+      expect(offStep('10 % desde 10 u.'), findsNothing);
       // El total mostrado es idéntico al de hoy.
       expect(
         find.text(formatCurrency(st.lotTotal, currency)),
@@ -221,17 +236,15 @@ void main() {
           reason: 'El lotTotal ya incluye el desc. mayorista.',
         );
 
-        // Línea batch ("Descuento por cantidad (10 %)").
-        expect(find.text('Descuento por cantidad (10%)'), findsOneWidget);
-        // Línea manual ("Descuento (10%)").
-        expect(find.text('Descuento (10%)'), findsOneWidget);
-        // Hint del umbral activo.
-        expect(find.text('10 % desde 10 u.'), findsOneWidget);
+        // Línea batch ("Descuento por cantidad (10 %)") — paso Resultado,
+        // montada pero offstage (el test ejercita el estado, no la pintura).
+        expect(offStep('Descuento por cantidad (10%)'), findsOneWidget);
+        // Línea manual ("Descuento manual (10%)").
+        expect(offStep('Descuento manual (10%)'), findsOneWidget);
+        // Hint del umbral activo (paso Ajustes).
+        expect(offStep('10 % desde 10 u.'), findsOneWidget);
         // Total = lotTotal (AppBar + bottom bar).
-        expect(
-          find.text(formatCurrency(st.lotTotal, currency)),
-          findsWidgets,
-        );
+        expect(find.text(formatCurrency(st.lotTotal, currency)), findsWidgets);
       },
     );
 
@@ -246,13 +259,10 @@ void main() {
       final st = container.read(calculatorNotifierProvider);
       expect(st.showsBatchLine, isFalse, reason: 'N=5 < min_qty 10.');
       expect(st.batchAppliedPercent, isNull);
-      expect(find.textContaining('Descuento por cantidad'), findsNothing);
-      expect(find.text('10 % desde 10 u.'), findsNothing);
+      expect(offStepContaining('Descuento por cantidad'), findsNothing);
+      expect(offStep('10 % desde 10 u.'), findsNothing);
       // Total del lote sin descuento mayorista (igual al math de hoy).
-      expect(
-        st.lotTotal,
-        st.output!.totalPrice * Decimal.fromInt(st.quantity),
-      );
+      expect(st.lotTotal, st.output!.totalPrice * Decimal.fromInt(st.quantity));
     });
   });
 }

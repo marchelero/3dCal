@@ -141,13 +141,23 @@ class DeImpl implements AppStrings {
   String get discountTierValidationPercent =>
       'Der Rabatt muss zwischen 1 und 100 % liegen';
   @override
-  String get discountTierCapHint =>
-      'Maximal 10 Stufen pro Konfiguration';
+  String get discountTierCapHint => 'Maximal 10 Stufen pro Konfiguration';
   @override
   String calcDetailBatchDiscount(int pct) => 'Mengenrabatt ($pct %)';
   @override
-  String calcQuantityBatchHint(int pct, int minQty) =>
-      '$pct % ab $minQty St.';
+  String get calcSubtotal => 'Zwischensumme';
+  @override
+  String calcDetailManualDiscount(int pct) => 'Manueller Rabatt ($pct %)';
+  @override
+  String calcQuantityBatchHint(int pct, int minQty) => '$pct % ab $minQty St.';
+  @override
+  String get calcQuantityNoTiers => 'Keine Stufen konfiguriert';
+  @override
+  String get calcQuantityTiersTitle => 'Rabattstufen:';
+  @override
+  String get calcQuantityFrom => 'ab';
+  @override
+  String get calcQuantityUnits => 'St.';
   @override
   String quoteBatchDiscountPct(int pct) => 'Mengenrabatt $pct %';
   @override
@@ -395,6 +405,14 @@ class DeImpl implements AppStrings {
   String get calcLabelDiscount => 'Rabatt';
   @override
   String get calcLabelDiscountHelper => 'Prozentualer Abzug vom Endbetrag';
+  @override
+  String get calcWizardStepPrint => 'Druck';
+  @override
+@override
+  String get calcWizardStepAdjust => 'Sonstiges';
+  @override
+  @override
+  String get calcWizardFullBreakdown => 'Vollständige Aufschlüsselung';
   @override
   String get calcBtnSave => 'Angebot speichern';
   @override

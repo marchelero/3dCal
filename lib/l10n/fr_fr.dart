@@ -135,13 +135,24 @@ class FrImpl implements AppStrings {
   String get discountTierValidationPercent =>
       'La remise doit être comprise entre 1 et 100 %';
   @override
-  String get discountTierCapHint =>
-      '10 paliers maximum par configuration';
+  String get discountTierCapHint => '10 paliers maximum par configuration';
   @override
   String calcDetailBatchDiscount(int pct) => 'Remise sur quantité ($pct %)';
   @override
+  String get calcSubtotal => 'Sous-total';
+  @override
+  String calcDetailManualDiscount(int pct) => 'Remise manuelle ($pct %)';
+  @override
   String calcQuantityBatchHint(int pct, int minQty) =>
       '$pct % de remise dès $minQty pcs.';
+  @override
+  String get calcQuantityNoTiers => 'Aucun palier configuré';
+  @override
+  String get calcQuantityTiersTitle => 'Paliers de remise :';
+  @override
+  String get calcQuantityFrom => 'dès';
+  @override
+  String get calcQuantityUnits => 'pces.';
   @override
   String quoteBatchDiscountPct(int pct) => 'Remise sur quantité $pct %';
   @override
@@ -375,6 +386,14 @@ class FrImpl implements AppStrings {
   String get calcLabelDiscount => 'Remise';
   @override
   String get calcLabelDiscountHelper => 'Pourcentage retiré du total final';
+  @override
+  String get calcWizardStepPrint => 'Impression';
+  @override
+@override
+  String get calcWizardStepAdjust => 'Autres';
+  @override
+  @override
+  String get calcWizardFullBreakdown => 'Voir le détail complet';
   @override
   String get calcBtnSave => 'Enregistrer le devis';
   @override

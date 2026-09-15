@@ -140,10 +140,22 @@ class EnImpl implements AppStrings {
   String get discountTierCapHint => 'Up to 10 tiers per configuration';
   @override
   String calcDetailBatchDiscount(int pct) => 'Quantity discount ($pct%)';
+  @override
+  String get calcSubtotal => 'Subtotal';
+  @override
+  String calcDetailManualDiscount(int pct) => 'Manual discount ($pct%)';
 
   @override
   String calcQuantityBatchHint(int pct, int minQty) =>
       '$pct% off from $minQty pcs.';
+  @override
+  String get calcQuantityNoTiers => 'No quantity discounts configured';
+  @override
+  String get calcQuantityTiersTitle => 'Quantity discounts:';
+  @override
+  String get calcQuantityFrom => 'from';
+  @override
+  String get calcQuantityUnits => 'pcs.';
   @override
   String quoteBatchDiscountPct(int pct) => 'Quantity discount $pct%';
   @override
@@ -386,6 +398,14 @@ class EnImpl implements AppStrings {
   String get calcLabelDiscount => 'Discount';
   @override
   String get calcLabelDiscountHelper => 'Percentage off the final total';
+  @override
+  String get calcWizardStepPrint => 'Print';
+  @override
+@override
+  String get calcWizardStepAdjust => 'Other';
+  @override
+  @override
+  String get calcWizardFullBreakdown => 'View full breakdown';
   @override
   String get calcBtnSave => 'Save quotation';
   @override

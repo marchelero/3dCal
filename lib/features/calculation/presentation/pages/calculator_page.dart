@@ -34,20 +34,29 @@ import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/discount_tier.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
+import '../widgets/calculator_wizard.dart';
 import '../widgets/cost_help_dialog.dart';
 import '../widgets/filament_selector_dialog.dart';
 import '../widgets/printer_selector_dialog.dart';
 import '../widgets/result_sheet.dart';
 
-/// Pantalla principal del calculator con UX mejorada.
+/// Pantalla principal del calculator — WIZARD de 3 pasos (rediseño 2026-09).
 ///
-/// **Secciones en Cards** (Express y Advanced):
-/// 1. Materiales (tile "Material 1" en Express, lista en Advanced)
-/// 2. Impresora activa
-/// 3. OTROS (mano obra, post-procesado, falla, minimo, markup) — collapsable
-/// 4. Tiempo de impresion (horas + minutos)
-/// 5. Descuento
-/// 6. Output (resumen con animacion "calculando...")
+/// Pasos (modo Express | modo Advanced comparten los pasos 2-3):
+/// 1. Pieza: nombre + peso + filamento (Express) | nombre + materiales
+///    (Advanced). Incluye membrete y selector de modo.
+/// 2. Impresion: horas/minutos + impresora activa.
+/// 3. Otros: cantidad (Pro) + descuento + OTROS/costos de la pieza (Pro).
+///
+/// El resultado NO es un paso: la barra de total fija abajo (con lineas de
+/// lote y hint de validacion) se conserva en todos los pasos y su tap abre
+/// el desglose completo — solo que ahora debajo vive el mini-footer de
+/// navegacion del wizard: dos flechas espejo (atras/adelante, la de avance
+/// disabled en el ultimo paso) con el contador "Paso X de 3" en el medio.
+///
+/// El indice del paso es estado efimero de UI (setState permitido, ver
+/// Non-Negotiables). El negocio vive en [CalculatorNotifier]; el chip de
+/// total del AppBar conserva el feedback live en cualquier paso.
 class CalculatorPage extends ConsumerStatefulWidget {
   const CalculatorPage({super.key, this.prefillCalc});
 
@@ -86,13 +95,32 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   /// Toggle local para la seccion OTROS (puramente visual, no persiste).
   bool _showOtros = false;
 
+  /// Paso visible del wizard (0-based). Estado efimero de UI: setState es
+  /// el mecanismo permitido (no se persiste ni se comparte).
+  int _step = 0;
+
+  /// Total de pasos del wizard.
+  static const int _kStepCount = 3;
+
   /// Si `true`, los campos requeridos muestran error visual (border rojo).
   /// Se activa al tocar la barra inferior con form invalido.
   bool _showValidationErrors = false;
 
+  /// Scroll controller para el scroll continuo del wizard.
+  late final ScrollController _scrollCtrl;
+
+  /// Keys de cada seccion para detectar posicion via scroll.
+  final GlobalKey _section1Key = GlobalKey();
+  final GlobalKey _section2Key = GlobalKey();
+  final GlobalKey _section3Key = GlobalKey();
+
+  /// Timestamp del ultimo cambio de step para evitar loops de scroll.
+  DateTime _lastStepChange = DateTime.fromMillisecondsSinceEpoch(0);
+
   @override
   void initState() {
     super.initState();
+    _scrollCtrl = ScrollController();
     final initial = ref.read(calculatorNotifierProvider);
     _weightCtrl = TextEditingController(text: initial.weight);
     _hoursCtrl = TextEditingController(text: initial.printHours);
@@ -288,6 +316,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _scrollCtrl.dispose();
     _weightCtrl.dispose();
     _hoursCtrl.dispose();
     _minutesCtrl.dispose();
@@ -390,6 +419,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       c.dispose();
     }
     _materialCtrls.clear();
+    // Tras un reset el usuario vuelve al inicio del wizard (el paso
+    // resultado ya no tiene contenido util sin form valido).
+    if (mounted) setState(() => _step = 0);
   }
 
   /// Bottom sheet de plantillas de trabajo: tap = aplica al form
@@ -667,22 +699,89 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     }
   }
 
+  /// Navegacion del wizard: scroll suave a la seccion del paso indicado.
+  /// Cuando el usuario toca un paso en el step bar, hace scroll automatico.
+  void _goStep(int index) {
+    final clamped = index.clamp(0, _kStepCount - 1);
+    if (clamped == _step) return;
+    FocusScope.of(context).unfocus();
+    _lastStepChange = DateTime.now();
+    setState(() => _step = clamped);
+    _scrollToSection(clamped);
+  }
+
+  /// Scroll suave a la seccion indicada (0=pieza, 1=impresion, 2=ajustes).
+  void _scrollToSection(int sectionIndex) {
+    final keys = [_section1Key, _section2Key, _section3Key];
+    final key = keys[sectionIndex];
+    final context = key.currentContext;
+    if (context == null) return;
+
+    // Calcular la posicion offsetando el step bar (~60px) y un padding.
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final offset = box.localToGlobal(Offset.zero).dy -
+        box.size.height * 0.05; // 5% padding arriba
+
+    _scrollCtrl.animateTo(
+      _scrollCtrl.offset + offset,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  /// Callback del ScrollNotification: detecta cual seccion esta visible
+  /// y actualiza _step automaticamente.
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is! ScrollUpdateNotification) return false;
+    if (_scrollCtrl.position.maxScrollExtent == 0) return false;
+
+    // Evitar loops: si acabamos de cambiar de step por tap, ignorar.
+    final now = DateTime.now();
+    if (now.difference(_lastStepChange).inMilliseconds < 500) return false;
+
+    final viewportHeight = MediaQuery.of(context).size.height;
+
+    // Determinar qué sección está más visible.
+    final keys = [_section1Key, _section2Key, _section3Key];
+    var mostVisible = 0;
+    var bestVisibility = double.infinity;
+
+    for (var i = 0; i < keys.length; i++) {
+      final ctx = keys[i].currentContext;
+      if (ctx == null) continue;
+      final box = ctx.findRenderObject() as RenderBox?;
+      if (box == null) continue;
+      final position = box.localToGlobal(Offset.zero).dy;
+      final center = position + box.size.height / 2;
+      final distFromCenter = (center - viewportHeight / 2).abs();
+      if (distFromCenter < bestVisibility) {
+        bestVisibility = distFromCenter;
+        mostVisible = i;
+      }
+    }
+
+    if (mostVisible != _step) {
+      setState(() => _step = mostVisible);
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calculatorNotifierProvider);
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     final currency = ref.watch(selectedCurrencyProvider);
-    final theme = Theme.of(context);
     final isValid = state.isValid && state.output != null;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     // feature A (Hito 1): escalones de descuento. El stream se escucha ACÁ
     // (no en el notifier) para no sostener una suscripción drift en unit
     // tests; al emitir se actualiza el lote (lotTotal, líneas, hint).
     ref.listen(discountTiersProvider, (_, next) {
       notifier.updateTiers(next.value ?? const <DiscountTier>[]);
     });
-    final totalText = isValid
-        ? formatCurrency(state.lotTotal, currency)
-        : null;
+    final totalText = isValid ? formatCurrency(state.lotTotal, currency) : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -717,7 +816,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                     totalText: totalText,
                     hasDiscount:
                         state.output!.discountAmount > Decimal.zero ||
-                            state.showsBatchLine,
+                        state.showsBatchLine,
                     onTap: _openResultSheet,
                   ),
                 ),
@@ -749,16 +848,86 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ],
       ),
       body: SafeArea(
-        child: state.mode == CalculatorMode.express
-            ? _buildExpressForm(state, notifier, theme, currency)
-            : _buildAdvancedForm(state, notifier, theme, currency),
+        child: Column(
+          // stretch: el step bar (Row con Expanded) y la perforacion
+          // (CustomPaint de ancho infinito) necesitan ancho acotado.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Barra de pasos: actualiza automaticamente al hacer scroll.
+            CalcWizardStepBar(
+              labels: [
+                EsBO.calcSectionPiece,
+                EsBO.calcWizardStepPrint,
+                EsBO.calcWizardStepAdjust,
+              ],
+              current: _step,
+              onTapStep: _goStep,
+            ),
+            const Perforation(),
+            // Scroll continuo: las 3 secciones en una sola vista.
+            // El ScrollController detecta cual seccion esta visible y
+            // actualiza el step bar automaticamente.
+            Expanded(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _onScrollNotification,
+                child: SingleChildScrollView(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
+                  child: MaxWidthScrollView(
+                    maxWidth: 720,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Membrete fuera de cualquier card: siempre arriba.
+                        _buildMembrete(context),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // Seccion 1: Pieza
+                        _buildScrollSection(
+                          key: _section1Key,
+                          sectionIndex: 0,
+                          theme: theme,
+                          cs: cs,
+                          child: state.mode == CalculatorMode.express
+                              ? _buildStepPieceExpress(state, notifier, currency)
+                              : _buildStepAdvancedMaterials(state, notifier),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        // Seccion 2: Impresion
+                        _buildScrollSection(
+                          key: _section2Key,
+                          sectionIndex: 1,
+                          theme: theme,
+                          cs: cs,
+                          child: _buildStepPrint(notifier),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        // Seccion 3: Ajustes
+                        _buildScrollSection(
+                          key: _section3Key,
+                          sectionIndex: 2,
+                          theme: theme,
+                          cs: cs,
+                          child: _buildStepAdjust(notifier, currency),
+                        ),
+                        // Padding inferior para que el ultimo paso no quede
+                        // tapado por la bottom bar.
+                        const SizedBox(height: 120),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-      // Bottom bar: ahora muestra hint de validación (cuando inválido) y
-      // también el total como recordatorio (tap abre el sheet). Ya NO es
-      // la única fuente del total — el AppBar lo muestra siempre.
-      // feature A (Hito 1): cuando hay escalón aplicado, se muestran arriba
-      // las líneas compactas del lote (descuento por cantidad X % y descuento
-      // manual Y %) — el total refleja el lote completo.
+      // Barra INFERIOR simplificada: solo el total / hint de validacion.
+      // El footer de navegacion (atras/adelante) se elimina porque la
+      // navegacion ahora es por scroll continuo.
       bottomNavigationBar: SafeArea(
         top: false,
         child: Column(
@@ -772,8 +941,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               totalText: totalText ?? '—',
               hasDiscount:
                   state.output != null &&
-                      (state.output!.discountAmount > Decimal.zero ||
-                          state.showsBatchLine),
+                  (state.output!.discountAmount > Decimal.zero ||
+                      state.showsBatchLine),
               emptyHint: state.isValid
                   ? null
                   : _buildEmptyHint(state.missingRequiredFields),
@@ -819,297 +988,258 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 
   // ============================================================
-  // EXPRESS FORM
+  // WIZARD STEPS (scroll continuo 2026-09)
   // ============================================================
 
-  Widget _buildExpressForm(
+  /// Seccion del scroll continuo: hoja de plano sin header duplicado.
+  /// El step bar ya muestra el nombre de la seccion. Esta wrapper solo
+  /// provee el paper sheet.
+  Widget _buildScrollSection({
+    Key? key,
+    required int sectionIndex,
+    required ThemeData theme,
+    required ColorScheme cs,
+    required Widget child,
+  }) {
+    return _paperSheet(
+      key: key,
+      child: child,
+    );
+  }
+
+  /// PASO 1 (Express): Pieza — nombre opcional + peso (hero) + filamento.
+  /// Mantiene la regla del 95%: los 3 inputs clave van en esta primera
+  /// pantalla, sin scrollear.
+  Widget _buildStepPieceExpress(
     CalculatorState state,
     CalculatorNotifier notifier,
-    ThemeData theme,
     WorldCurrency currency,
   ) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      child: MaxWidthScrollView(
-        maxWidth: 720,
-        child: _paperSheet(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Mode selector compacto (alineado a la derecha)
+        Align(
+          alignment: Alignment.centerRight,
+          child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+
+        // Pieza: nombre + peso + filamento
+        _RubricSection(
+          icon: Icons.category_rounded,
+          title: EsBO.calcSectionPiece,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Bloque de titulo: el cotizador es una hoja de plano.
-              _buildMembrete(context),
-              const SizedBox(height: AppSpacing.md),
-
-              // Mode selector compacto (alineado a la derecha)
-              Align(
-                alignment: Alignment.centerRight,
-                child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ── SECCIÓN UNIFICADA: Pieza + Material ──
-              // En Express, peso + filamento van juntos para reducir scroll.
-              // El usuario elige filamento del catálogo (trae precio/grams)
-              // y pone el peso de la pieza — todo en una tarjeta.
-              _RubricSection(
-                icon: Icons.category_rounded,
-                title: EsBO.calcSectionPiece,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Nombre de la pieza (opcional, compacto)
-                    TextField(
-                      controller: _pieceLabelCtrl,
-                      decoration: InputDecoration(
-                        labelText: EsBO.calcLabelOptional,
-                        helperText: EsBO.calcLabelOptionalHelper,
-                        isDense: true,
-                        prefixIcon: const Icon(Icons.label_outline, size: 18),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    // Peso — campo hero (grande, clave)
-                    NumericInputField(
-                      label: EsBO.calcFieldWeight,
-                      controller: _weightCtrl,
-                      onChanged: notifier.setWeight,
-                      suffix: 'g',
-                      helperText: EsBO.calcLabelWeightHelper,
-                      keyHint: EsBO.calcKeyWeightHint,
-                      isKey: true,
-                      fontSize: 22,
-                      showValidation: _showValidationErrors,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    // Filamento: selector inline del catálogo
-                    _ExpressFilamentRow(
-                      labelCtrl: _labelCtrl,
-                      priceCtrl: _priceCtrl,
-                      gramsCtrl: _gramsCtrl,
-                      showValidation: _showValidationErrors,
-                      onChanged: (m) {
-                        notifier.setFilamentLabel(m.label);
-                        notifier.setFilamentPrice(m.pricePerBobbin);
-                        notifier.setFilamentGrams(m.gramsPerBobbin);
-                      },
-                    ),
-                  ],
+              // Nombre de la pieza (opcional, compacto)
+              TextField(
+                controller: _pieceLabelCtrl,
+                decoration: InputDecoration(
+                  labelText: EsBO.calcLabelOptional,
+                  helperText: EsBO.calcLabelOptionalHelper,
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.label_outline, size: 18),
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // ── Tiempo de impresión ──
-              _RubricSection(
-                icon: Icons.timer_rounded,
-                title: EsBO.calcSectionTime,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: NumericInputField(
-                        label: EsBO.calcLabelHours,
-                        controller: _hoursCtrl,
-                        onChanged: notifier.setPrintHours,
-                        suffix: 'h',
-                        keyHint: EsBO.calcKeyHoursHint,
-                        isKey: true,
-                        fontSize: 22,
-                        showValidation: _showValidationErrors,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: NumericInputField(
-                        label: EsBO.calcLabelMinutes,
-                        controller: _minutesCtrl,
-                        onChanged: notifier.setPrintMinutes,
-                        suffix: 'min',
-                        keyHint: EsBO.calcKeyMinutesHint,
-                        isKey: true,
-                        fontSize: 22,
-                        showValidation: _showValidationErrors,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: AppSpacing.sm),
+              // Peso — campo hero (grande, clave)
+              NumericInputField(
+                label: EsBO.calcFieldWeight,
+                controller: _weightCtrl,
+                onChanged: notifier.setWeight,
+                suffix: 'g',
+                helperText: EsBO.calcLabelWeightHelper,
+                keyHint: EsBO.calcKeyWeightHint,
+                isKey: true,
+                fontSize: 22,
+                showValidation: _showValidationErrors,
               ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // ── Impresora ──
-              _RubricSection(
-                icon: Icons.print_rounded,
-                title: EsBO.calcSectionPrinter,
-                child: const _PrinterIndicator(),
+              const SizedBox(height: AppSpacing.sm),
+              // Filamento: selector inline del catálogo
+              _ExpressFilamentRow(
+                labelCtrl: _labelCtrl,
+                priceCtrl: _priceCtrl,
+                gramsCtrl: _gramsCtrl,
+                showValidation: _showValidationErrors,
+                onChanged: (m) {
+                  notifier.setFilamentLabel(m.label);
+                  notifier.setFilamentPrice(m.pricePerBobbin);
+                  notifier.setFilamentGrams(m.gramsPerBobbin);
+                },
               ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // ── Cantidad (Pro) ──
-              _buildQuantitySection(notifier),
-              const SizedBox(height: AppSpacing.xl),
-
-              // ── OTROS (con peek preview) ──
-              _buildOtrosSection(notifier, currency),
             ],
           ),
         ),
-      ),
+      ],
+    );
+  }
+
+  /// PASO 2 (comun): Impresion — tiempo (horas+minutos) + impresora activa.
+  Widget _buildStepPrint(CalculatorNotifier notifier) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Tiempo de impresión ──
+        _RubricSection(
+          icon: Icons.timer_rounded,
+          title: EsBO.calcSectionTime,
+          child: Row(
+            children: [
+              Expanded(
+                child: NumericInputField(
+                  label: EsBO.calcLabelHours,
+                  controller: _hoursCtrl,
+                  onChanged: notifier.setPrintHours,
+                  suffix: 'h',
+                  keyHint: EsBO.calcKeyHoursHint,
+                  isKey: true,
+                  fontSize: 22,
+                  showValidation: _showValidationErrors,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: NumericInputField(
+                  label: EsBO.calcLabelMinutes,
+                  controller: _minutesCtrl,
+                  onChanged: notifier.setPrintMinutes,
+                  suffix: 'min',
+                  keyHint: EsBO.calcKeyMinutesHint,
+                  isKey: true,
+                  fontSize: 22,
+                  showValidation: _showValidationErrors,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+
+        // ── Impresora ──
+        _RubricSection(
+          icon: Icons.print_rounded,
+          title: EsBO.calcSectionPrinter,
+          child: const _PrinterIndicator(),
+        ),
+      ],
+    );
+  }
+
+  /// PASO 3 (comun): Otros — cantidad (Pro) + descuento + OTROS/costos de
+  /// la pieza (Pro). El descuento subio desde el result sheet al form:
+  /// ahora es un campo de primer nivel del wizard.
+  Widget _buildStepAdjust(CalculatorNotifier notifier, WorldCurrency currency) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Cantidad (Pro) ──
+        _buildQuantitySection(notifier),
+        const SizedBox(height: AppSpacing.xl),
+
+        // ── Descuento ──
+        _RubricSection(
+          icon: Icons.percent_rounded,
+          title: EsBO.calcSectionDiscount,
+          child: NumericInputField(
+            label: EsBO.calcLabelDiscount,
+            controller: _discountCtrl,
+            onChanged: notifier.setDiscountPct,
+            suffix: '%',
+            helperText: EsBO.calcLabelDiscountHelper,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+
+        // ── OTROS (con peek preview) ──
+        _buildOtrosSection(notifier, currency),
+      ],
     );
   }
 
   // ============================================================
-  // ADVANCED FORM
+  // ADVANCED MATERIALS STEP (paso 1 del modo multi-material)
   // ============================================================
 
-  Widget _buildAdvancedForm(
+  Widget _buildStepAdvancedMaterials(
     CalculatorState state,
     CalculatorNotifier notifier,
-    ThemeData theme,
-    WorldCurrency currency,
   ) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      child: MaxWidthScrollView(
-        maxWidth: 720,
-        child: _paperSheet(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Mode selector compacto
+        Align(
+          alignment: Alignment.centerRight,
+          child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+
+        // Pieza: nombre opcional
+        _RubricSection(
+          icon: Icons.category_rounded,
+          title: EsBO.calcSectionPiece,
+          child: TextField(
+            controller: _pieceLabelCtrl,
+            decoration: InputDecoration(
+              labelText: EsBO.calcLabelOptional,
+              helperText: EsBO.calcLabelOptionalHelper,
+              isDense: true,
+              prefixIcon: const Icon(Icons.label_outline, size: 18),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+
+        // Materiales (multi-material, agregable)
+        _RubricSection(
+          icon: Icons.inventory_2_rounded,
+          title: EsBO.calcSectionMaterials,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Bloque de titulo: el cotizador es una hoja de plano.
-              _buildMembrete(context),
-              const SizedBox(height: AppSpacing.md),
-
-              // Mode selector compacto
-              Align(
-                alignment: Alignment.centerRight,
-                child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // Rubrica: Pieza (nombre opcional de la pieza)
-              _RubricSection(
-                icon: Icons.category_rounded,
-                title: EsBO.calcSectionPiece,
-                child: TextField(
-                  controller: _pieceLabelCtrl,
-                  decoration: InputDecoration(
-                    labelText: EsBO.calcLabelOptional,
-                    helperText: EsBO.calcLabelOptionalHelper,
-                    isDense: true,
-                    prefixIcon: const Icon(Icons.label_outline, size: 18),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Rubrica: Materiales (multi-material, agregable)
-              _RubricSection(
-                icon: Icons.inventory_2_rounded,
-                title: EsBO.calcSectionMaterials,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AnimatedList(
-                      key: _advancedListKey,
-                      initialItemCount: _materialCtrls.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index, animation) {
-                        if (index >= _materialCtrls.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return SizeTransition(
-                          sizeFactor: animation,
-                          child: _MaterialRowTile(
-                            index: index,
-                            labelCtrl: _materialCtrls[index].label,
-                            weightCtrl: _materialCtrls[index].weight,
-                            priceCtrl: _materialCtrls[index].price,
-                            gramsCtrl: _materialCtrls[index].grams,
-                            deletable: true,
-                            showValidation: _showValidationErrors,
-                            isKeyWeight: true,
-                            onChanged: (m) => notifier.updateMaterial(
-                              index,
-                              label: m.label,
-                              weight: m.weight,
-                              pricePerBobbin: m.pricePerBobbin,
-                              gramsPerBobbin: m.gramsPerBobbin,
-                            ),
-                            onRemove: () => _removeMaterial(index),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    OutlinedButton.icon(
-                      onPressed: _addMaterial,
-                      icon: const Icon(Icons.add_rounded),
-                      label: Text(EsBO.calcAddMaterial),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Rubrica: Tiempo de impresion
-              _RubricSection(
-                icon: Icons.timer_rounded,
-                title: EsBO.calcSectionTime,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: NumericInputField(
-                        label: EsBO.calcLabelHours,
-                        controller: _hoursCtrl,
-                        onChanged: notifier.setPrintHours,
-                        suffix: 'h',
-                        keyHint: EsBO.calcKeyHoursHint,
-                        isKey: true,
-                        fontSize: 22,
-                        showValidation: _showValidationErrors,
+              AnimatedList(
+                key: _advancedListKey,
+                initialItemCount: _materialCtrls.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index, animation) {
+                  if (index >= _materialCtrls.length) {
+                    return const SizedBox.shrink();
+                  }
+                  return SizeTransition(
+                    sizeFactor: animation,
+                    child: _MaterialRowTile(
+                      index: index,
+                      labelCtrl: _materialCtrls[index].label,
+                      weightCtrl: _materialCtrls[index].weight,
+                      priceCtrl: _materialCtrls[index].price,
+                      gramsCtrl: _materialCtrls[index].grams,
+                      deletable: true,
+                      showValidation: _showValidationErrors,
+                      isKeyWeight: true,
+                      onChanged: (m) => notifier.updateMaterial(
+                        index,
+                        label: m.label,
+                        weight: m.weight,
+                        pricePerBobbin: m.pricePerBobbin,
+                        gramsPerBobbin: m.gramsPerBobbin,
                       ),
+                      onRemove: () => _removeMaterial(index),
                     ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: NumericInputField(
-                        label: EsBO.calcLabelMinutes,
-                        controller: _minutesCtrl,
-                        onChanged: notifier.setPrintMinutes,
-                        suffix: 'min',
-                        keyHint: EsBO.calcKeyMinutesHint,
-                        isKey: true,
-                        fontSize: 22,
-                        showValidation: _showValidationErrors,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Rubrica: Impresora
-              _RubricSection(
-                icon: Icons.print_rounded,
-                title: EsBO.calcSectionPrinter,
-                child: const _PrinterIndicator(),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: _addMaterial,
+                icon: const Icon(Icons.add_rounded),
+                label: Text(EsBO.calcAddMaterial),
               ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Rubrica: Cantidad (Pro)
-              _buildQuantitySection(notifier),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Rubrica colapsable: OTROS (con peek preview)
-              _buildOtrosSection(notifier, currency),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1178,8 +1308,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   padding: const EdgeInsets.only(top: AppSpacing.md),
                   child: Column(
                     children: [
-                      // Row 1: Mano de obra + Post-procesado
+                      // Fila 1: Mano de obra + Post-procesado
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: NumericInputField(
@@ -1190,7 +1321,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                               helperText: EsBO.calcFieldLaborHelper,
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.md),
+                          const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: NumericInputField(
                               label: EsBO.calcFieldPostProcess,
@@ -1203,8 +1334,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      // Row 2: Tasa de falla + Desperdicio
+                      // Fila 2: Falla + Desperdicio
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: NumericInputField(
@@ -1215,7 +1347,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                               helperText: EsBO.calcFieldFailureHelper,
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.md),
+                          const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: NumericInputField(
                               label: EsBO.calcFieldWaste,
@@ -1242,8 +1374,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
   /// Seccion de cantidad de unidades (Pro). Muestra +/- y campo de texto.
   /// Free ve el ProBadge; al tocar se redirige al paywall.
+  /// Al lado del titulo muestra un icono de info con los escalones configurados.
   Widget _buildQuantitySection(CalculatorNotifier notifier) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final isPro = ref.watch(isProProvider);
     final entitlementState = ref.watch(entitlementNotifierProvider);
     final isLoading = entitlementState.isLoading;
@@ -1261,6 +1395,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final hintPct = _pctInt(batchPct);
     final hintMinQty = batchMinQty ?? 0;
 
+    // Escalones configurados en Settings (para el tooltip informativo).
+    final tiersAsync = ref.watch(discountTiersProvider);
+    final tiers = tiersAsync.value ?? const <DiscountTier>[];
+    final hasTiers = tiers.isNotEmpty;
+
     // Sincronizar el controller cuando cambia quantity desde +/-
     if (_quantityCtrl.text != '$quantity') {
       _quantityCtrl.text = '$quantity';
@@ -1272,7 +1411,31 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         SectionHeader(
           icon: Icons.layers_rounded,
           title: EsBO.resultQuantityLabel,
-          trailing: showProBadge ? const ProBadge() : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showProBadge) const ProBadge(),
+              const SizedBox(width: AppSpacing.xs),
+              // Icono de info: muestra los escalones al tocar (siempre visible).
+              Tooltip(
+                message: _buildTiersTooltip(tiers),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: hasTiers
+                        ? cs.primaryContainer.withValues(alpha: 0.5)
+                        : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    size: 14,
+                    color: hasTiers ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         Row(
@@ -1355,11 +1518,25 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 
+  /// Construye el texto del tooltip de escalones de descuento.
+  /// Lista los escalones configurados en Settings: "10% desde 5 u.\n15% desde 10 u."
+  String _buildTiersTooltip(List<DiscountTier> tiers) {
+    if (tiers.isEmpty) return EsBO.calcQuantityNoTiers;
+    final buffer = StringBuffer(EsBO.calcQuantityTiersTitle);
+    for (final tier in tiers) {
+      buffer.writeln(
+        '${_pctInt(tier.percent)}% ${EsBO.calcQuantityFrom} ${tier.minQty} ${EsBO.calcQuantityUnits}',
+      );
+    }
+    return buffer.toString().trimRight();
+  }
+
   /// Hoja de plano: superficie que sostiene las rubric.
-  Widget _paperSheet({required Widget child}) {
+  Widget _paperSheet({Key? key, required Widget child}) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Container(
+      key: key,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.xl,
@@ -2094,8 +2271,12 @@ class _ModeSelector extends ConsumerWidget {
             ? EsBO.calcModeExpress
             : EsBO.calcModeAdvanced,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      // Wrap (no Row): en pantallas angostas las pills + ProBadge pasan de
+      // 360dp y hacen overflow si no envuelven.
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
         children: [
           _ModePill(
             icon: Icons.flash_on_rounded,
@@ -2104,7 +2285,6 @@ class _ModeSelector extends ConsumerWidget {
             onTap: () => onChanged(CalculatorMode.express),
             activeColor: cs.primary,
           ),
-          const SizedBox(width: AppSpacing.xs),
           _ModePill(
             icon: Icons.layers_rounded,
             label: EsBO.calcModeAdvanced,
@@ -2842,9 +3022,11 @@ int _pctInt(Decimal? value) =>
 ///
 /// Se muestran arriba de la barra de total SOLO cuando aplica un escalón de
 /// descuento por cantidad (N=1 sin escalón → flujo visual idéntico a antes):
-/// - "Descuento por cantidad (X %)"  −$monto (batch)
-/// - "Descuento (Y %)"               −$monto (manual, si hay)
-/// La barra de total sigue mostrando el `lotTotal` completo.
+/// - Subtotal: $X (base antes de descuentos)
+/// - Descuento por cantidad (X%) −$monto
+/// - Subtotal parcial: $Y
+/// - Descuento manual (Y%) −$monto (si hay)
+/// - Total: $Z
 class _BatchLines extends StatelessWidget {
   const _BatchLines({required this.state, required this.currency});
 
@@ -2853,13 +3035,13 @@ class _BatchLines extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    // Descuento manual del lote: el engine lo calcula por unidad; escalado
-    // por N == el desglose de hoy (mismo total que cuando N=1).
-    final manualAmount =
-        (state.output?.discountAmount ?? Decimal.zero) *
-        Decimal.fromInt(state.quantity);
+    final manualAmount = state.manualDiscountAmount;
+    // Subtotal antes de descuentos: lotTotal + batchDiscount + manualDiscount
+    final subtotalBefore = state.lotTotal +
+        state.batchDiscountAmount +
+        manualAmount;
+    // Subtotal después del descuento por cantidad
+    final subtotalAfterBatch = state.lotTotal + manualAmount;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -2868,55 +3050,120 @@ class _BatchLines extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  EsBO.calcDetailBatchDiscount(
-                    _pctInt(state.batchAppliedPercent),
-                  ),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Text(
-                '-${formatCurrency(state.batchDiscountAmount, currency)}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          // Subtotal antes de descuentos
+          _subtotalRow(
+            context,
+            label: EsBO.calcSubtotal,
+            amount: subtotalBefore,
           ),
-          if (manualAmount > Decimal.zero) ...[
+          if (state.batchDiscountAmount > Decimal.zero) ...[
             const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    EsBO.detailDiscountPct(_pctInt(state.detailDiscountPct)),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Text(
-                  '-${formatCurrency(manualAmount, currency)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            _discountRow(
+              context,
+              label: EsBO.calcDetailBatchDiscount(
+                _pctInt(state.batchAppliedPercent),
+              ),
+              amount: state.batchDiscountAmount,
             ),
           ],
+          if (manualAmount > Decimal.zero) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _subtotalRow(
+              context,
+              label: EsBO.calcSubtotal,
+              amount: subtotalAfterBatch,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _discountRow(
+              context,
+              label: EsBO.calcDetailManualDiscount(
+                _pctInt(state.detailDiscountPct),
+              ),
+              amount: manualAmount,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          // Total final
+          _totalRow(
+            context,
+            label: EsBO.calcTotalFinal,
+            amount: state.lotTotal,
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _subtotalRow(BuildContext context, {required String label, required Decimal amount}) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          formatCurrency(amount, currency),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _discountRow(BuildContext context, {required String label, required Decimal amount}) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          '-${formatCurrency(amount, currency)}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _totalRow(BuildContext context, {required String label, required Decimal amount}) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          formatCurrency(amount, currency),
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

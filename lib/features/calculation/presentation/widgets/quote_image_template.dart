@@ -51,6 +51,8 @@ class QuoteImageTemplate extends StatelessWidget {
     this.quantity = 1,
     this.batchDiscountPct,
     this.batchDiscountAmount,
+    this.lotTotal,
+    this.manualDiscountAmount,
     super.key,
   });
 
@@ -90,6 +92,12 @@ class QuoteImageTemplate extends StatelessWidget {
 
   /// Monto del descuento mayorista (null = 0).
   final Decimal? batchDiscountAmount;
+
+  /// Total del lote con todos los descuentos aplicados (null = usar totalFinal).
+  final Decimal? lotTotal;
+
+  /// Monto del descuento manual escalado (null = 0).
+  final Decimal? manualDiscountAmount;
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +203,7 @@ class QuoteImageTemplate extends StatelessWidget {
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  formatCurrency(totalFinal, currency),
+                  formatCurrency(lotTotal ?? totalFinal, currency),
                   style: AppTheme.num(
                     theme.textTheme.displayMedium ??
                         theme.textTheme.headlineMedium ??
@@ -241,8 +249,8 @@ class QuoteImageTemplate extends StatelessWidget {
           ],
 
           // ── Discount breakdown: correccion de recibo ──
-          // El descuento se aplica sobre el total incluyendo la cantidad:
-          // Desglose de descuento: totalOriginal → descuento % → totalFinal.
+          // Orden claro: Subtotal → Descuento por cantidad → Subtotal parcial
+          // → Descuento manual (solo si > 0%) → Total con descuento.
           if (hasDiscount || (batchDiscountPct != null && batchDiscountPct! > Decimal.zero)) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
@@ -257,8 +265,17 @@ class QuoteImageTemplate extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  // Subtotal antes de descuentos
+                  _discountRow(
+                    EsBO.calcSubtotal,
+                    formatCurrency(totalOriginal * qty, currency),
+                    theme,
+                    color.onSurface,
+                  ),
+                  // Descuento por cantidad (si aplica)
                   if (batchDiscountPct != null &&
                       batchDiscountPct! > Decimal.zero) ...[
+                    const SizedBox(height: 6),
                     _discountRow(
                       EsBO.calcDetailBatchDiscount(
                         batchDiscountPct!.toBigInt().toInt(),
@@ -268,23 +285,36 @@ class QuoteImageTemplate extends StatelessWidget {
                       color.error,
                       bold: true,
                     ),
-                    const SizedBox(height: 6),
+                    // Subtotal parcial después del descuento por cantidad
+                    // SOLO si hay descuento manual aplicado
+                    if (int.tryParse(discountPct) != null &&
+                        int.parse(discountPct) > 0) ...[
+                      const SizedBox(height: 6),
+                      _discountRow(
+                        EsBO.calcSubtotal,
+                        formatCurrency(
+                          totalOriginal * qty -
+                              (batchDiscountAmount ?? Decimal.zero),
+                          currency,
+                        ),
+                        theme,
+                        color.onSurface,
+                      ),
+                    ],
                   ],
-                  _discountRow(
-                    EsBO.quoteNoDiscount,
-                    formatCurrency(totalOriginal * qty, currency),
-                    theme,
-                    color.onSurface,
-                  ),
-                  const SizedBox(height: 6),
-                  _discountRow(
-                    EsBO.quoteDiscountPct(int.parse(discountPct)),
-                    '-${formatCurrency(output.discountAmount * qty, currency)}',
-                    theme,
-                    color.error,
-                    bold: true,
-                    strikeThrough: true,
-                  ),
+                  // Descuento manual: SOLO si > 0%
+                  if (int.tryParse(discountPct) != null &&
+                      int.parse(discountPct) > 0) ...[
+                    const SizedBox(height: 6),
+                    _discountRow(
+                      EsBO.quoteDiscountPct(int.parse(discountPct)),
+                      '-${formatCurrency(output.discountAmount * qty, currency)}',
+                      theme,
+                      color.error,
+                      bold: true,
+                      strikeThrough: true,
+                    ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Divider(
@@ -294,7 +324,7 @@ class QuoteImageTemplate extends StatelessWidget {
                   ),
                   _discountRow(
                     EsBO.calcTotalWithDiscount,
-                    formatCurrency(totalFinal, currency),
+                    formatCurrency(lotTotal ?? totalFinal, currency),
                     theme,
                     color.onSurface,
                     bold: true,

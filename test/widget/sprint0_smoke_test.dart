@@ -48,13 +48,18 @@ void main() {
 
     expect(find.byType(CalculatorPage), findsOneWidget);
     expect(find.text('Cotización'), findsOneWidget);
+    // Wizard (rediseño 2026-09): paso 1 = Pieza. Peso/filamento a la vista;
+    // tiempo e impresora viven en el paso "Impresión" (navegable por chip).
     expect(find.text('Peso'), findsOneWidget);
-    expect(find.text('Horas'), findsOneWidget);
     expect(find.text('Precio bobina'), findsOneWidget);
     expect(find.text('Gramos / bobina'), findsOneWidget);
+    expect(find.text('Tarifa kWh'), findsNothing);
+
+    await tester.tap(find.text('Impresión'));
+    await tester.pumpAndSettle();
+    expect(find.text('Horas'), findsOneWidget);
     expect(find.text('IMPRESORA'), findsOneWidget);
     expect(find.text('Sin impresora registrada'), findsOneWidget);
-    expect(find.text('Tarifa kWh'), findsNothing);
 
     // Cleanup: volver a home para no contaminar el siguiente test.
     // Con go_router StatefulShellRoute, dejar el calculator en la
@@ -94,20 +99,23 @@ void main() {
       );
       expect(find.text('Precio final'), findsNothing);
 
-      // Llenar los inputs requeridos por label.
+      // Llenar los inputs requeridos por label. El wizard tiene el tiempo en
+      // el paso "Impresión": navegan los campos de peso/precio al paso 1.
       await tester.enterText(
         find.widgetWithText(NumericInputField, 'Peso'),
         '100',
       );
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Horas'),
-        '5',
-      );
-      await tester.pumpAndSettle();
-      await tester.enterText(
         find.widgetWithText(NumericInputField, 'Precio bobina'),
         '120',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Impresión'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(NumericInputField, 'Horas'),
+        '5',
       );
       await tester.pumpAndSettle();
       // Gramos / bobina ya no se muestra — default 1000 internamente.

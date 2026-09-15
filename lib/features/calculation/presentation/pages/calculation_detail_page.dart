@@ -259,6 +259,12 @@ class _DetailState extends ConsumerState<_Detail> {
         batchDiscountAmount: calc.batchDiscountAmount != null
             ? Decimal.tryParse(calc.batchDiscountAmount!)
             : null,
+        lotTotal: result.output.totalPrice * Decimal.fromInt(_quantity) -
+            (calc.batchDiscountAmount != null
+                ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
+                : Decimal.zero),
+        manualDiscountAmount: result.output.discountAmount *
+            Decimal.fromInt(_quantity),
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -318,6 +324,18 @@ class _DetailState extends ConsumerState<_Detail> {
         metaTime: result.metaTime,
         quantity: _quantity,
         totalGrams: totalGrams,
+        batchDiscountPct: calc.batchDiscountPercent != null
+            ? Decimal.tryParse(calc.batchDiscountPercent!)
+            : null,
+        batchDiscountAmount: calc.batchDiscountAmount != null
+            ? Decimal.tryParse(calc.batchDiscountAmount!)
+            : null,
+        lotTotal: result.output.totalPrice * Decimal.fromInt(_quantity) -
+            (calc.batchDiscountAmount != null
+                ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
+                : Decimal.zero),
+        manualDiscountAmount: result.output.discountAmount *
+            Decimal.fromInt(_quantity),
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
     } catch (e) {

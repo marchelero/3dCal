@@ -225,7 +225,10 @@ class _SettingsBody extends ConsumerWidget {
                   title: EsBO.settingsGroupDiscountTiers,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                const DiscountTiersSection(),
+                _SettingsCard(
+                  accentColor: color.tertiary,
+                  children: const [DiscountTiersSection()],
+                ),
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Catalogos ──

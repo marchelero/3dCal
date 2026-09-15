@@ -268,6 +268,8 @@ Future<void> shareQuotePdf({
   Decimal? totalGrams,
   Decimal? batchDiscountPct,
   Decimal? batchDiscountAmount,
+  Decimal? lotTotal,
+  Decimal? manualDiscountAmount,
   pw.Font? regularFont,
   pw.Font? boldFont,
 }) async {
@@ -295,6 +297,8 @@ Future<void> shareQuotePdf({
     totalGrams: totalGrams,
     batchDiscountPct: batchDiscountPct,
     batchDiscountAmount: batchDiscountAmount,
+    lotTotal: lotTotal,
+    manualDiscountAmount: manualDiscountAmount,
     regularFont: regularFont,
     boldFont: boldFont,
   );
@@ -338,6 +342,8 @@ Future<Uint8List> buildQuotePdfBytes({
   Decimal? totalGrams,
   Decimal? batchDiscountPct,
   Decimal? batchDiscountAmount,
+  Decimal? lotTotal,
+  Decimal? manualDiscountAmount,
   pw.Font? regularFont,
   pw.Font? boldFont,
 }) async {
@@ -363,7 +369,24 @@ Future<Uint8List> buildQuotePdfBytes({
   final qtyD = Decimal.fromInt(qty);
   // El output siempre viene como precio UNITARIO.
   final unitPrice = output.totalPrice;
-  final displayTotal = unitPrice * qtyD;
+  // Total final: lotTotal si viene del caller (incluye batch + manual);
+  // si no, fallback al math legacy (unitPrice × qty).
+  final effectiveTotal = lotTotal != null && lotTotal > Decimal.zero
+      ? lotTotal
+      : unitPrice * qtyD;
+
+  // Descuento manual escalado: manualDiscountAmount si viene del caller;
+  // si no, calcular desde output.discountAmount × qty.
+  final effectiveManualDiscount = manualDiscountAmount ?? (hasDiscount
+      ? output.discountAmount * qtyD
+      : Decimal.zero);
+
+  // Subtotal antes de descuentos: effectiveTotal + batch + manual.
+  // batchDiscountAmount ya viene escalado del caller (BatchLotComposer).
+  final effectiveBatchDiscount = batchDiscountAmount ?? Decimal.zero;
+  final subtotalBeforeDiscounts = effectiveTotal +
+      effectiveBatchDiscount +
+      effectiveManualDiscount;
 
   // Valores escalados para el desglose (unit x quantity).
   final dMaterialCost = output.materialCost * qtyD;
@@ -375,7 +398,6 @@ Future<Uint8List> buildQuotePdfBytes({
   final dFailureCost = output.failureCost * qtyD;
   final dMarkupCost = output.markupCost * qtyD;
   final dProfitAmount = output.profitAmount * qtyD;
-  final dDiscountAmount = output.discountAmount * qtyD;
 
   // Gramos: usar totalGrams directo (calculado desde CalculationMaterial en el caller).
   final effectiveGrams = totalGrams != null && totalGrams > Decimal.zero
@@ -555,7 +577,7 @@ Future<Uint8List> buildQuotePdfBytes({
                 horizontal: 18,
               ),
               decoration: pw.BoxDecoration(
-                color: _accentColor,
+                border: pw.Border.all(color: _accentColor, width: 2),
                 borderRadius: const pw.BorderRadius.all(
                   pw.Radius.circular(8),
                 ),
@@ -570,15 +592,15 @@ Future<Uint8List> buildQuotePdfBytes({
                         style: pw.TextStyle(
                           fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white,
+                          color: _accentColor,
                         ),
                       ),
                       pw.Text(
-                        _fmt(displayTotal, currency),
+                        _fmt(effectiveTotal, currency),
                         style: pw.TextStyle(
                           fontSize: 22,
                           fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white,
+                          color: _accentColor,
                         ),
                       ),
                     ],
@@ -592,7 +614,7 @@ Future<Uint8List> buildQuotePdfBytes({
                           '$quantity u. × ${_fmt(unitPrice, currency)}',
                           style: pw.TextStyle(
                             fontSize: 9,
-                            color: PdfColors.white,
+                            color: _textSecondary,
                           ),
                         ),
                       ],
@@ -668,65 +690,68 @@ Future<Uint8List> buildQuotePdfBytes({
                   valueColor: _successColor,
                   altBackground: true,
                 ),
-              // Descuento por cantidad (feature A, Hito 1)
+              pw.SizedBox(height: 14),
+            ],
+
+            // ── 8. Discount breakdown (después del detalle) ──
+            // Subtotal → Desc. por cantidad → Desc. manual → Total final.
+            if (showDetail &&
+                ((batchDiscountPct != null &&
+                        batchDiscountPct > Decimal.zero) ||
+                    hasDiscount)) ...[
+              _sectionHeader(EsBO.calcLabelDiscount),
+              pw.SizedBox(height: 8),
+              // Subtotal antes de descuentos
+              _dataRow(
+                EsBO.calcSubtotal,
+                _fmt(subtotalBeforeDiscounts, currency),
+                bold: true,
+              ),
+              // Descuento por cantidad
               if (batchDiscountPct != null &&
                   batchDiscountPct > Decimal.zero &&
-                  batchDiscountAmount != null &&
-                  batchDiscountAmount > Decimal.zero)
+                  effectiveBatchDiscount > Decimal.zero) ...[
+                pw.SizedBox(height: 2),
                 _dataRow(
                   EsBO.calcDetailBatchDiscount(
                     batchDiscountPct.toBigInt().toInt(),
                   ),
-                  '-${_fmt(batchDiscountAmount * qtyD, currency)}',
+                  '-${_fmt(effectiveBatchDiscount, currency)}',
                   valueColor: _errorColor,
                 ),
-
-              if (hasDiscount)
+              ],
+              // Descuento manual
+              if (hasDiscount) ...[
+                pw.SizedBox(height: 2),
                 _dataRow(
-                  EsBO.calcLabelDiscount,
-                  '-${_fmt(dDiscountAmount, currency)}',
+                  EsBO.calcDetailManualDiscount(
+                    discountPct.toDouble().round(),
+                  ),
+                  '-${_fmt(effectiveManualDiscount, currency)}',
                   valueColor: _errorColor,
+                  strikeThrough: true,
                 ),
-
-              // Total final con linea
+              ],
               pw.Container(
                 margin: const pw.EdgeInsets.only(top: 4),
-                padding: const pw.EdgeInsets.symmetric(
-                  vertical: 6,
-                  horizontal: 8,
-                ),
                 decoration: pw.BoxDecoration(
-                  color: _accentLight,
-                  borderRadius: const pw.BorderRadius.all(
-                    pw.Radius.circular(4),
+                  border: pw.Border(
+                    top: pw.BorderSide(color: _borderLight, width: 0.5),
                   ),
                 ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      EsBO.pdfTotalUpper,
-                      style: pw.TextStyle(
-                        fontSize: 12,
-                        fontWeight: pw.FontWeight.bold,
-                        color: _accentColor,
-                      ),
-                    ),
-                    pw.Text(
-                      _fmt(displayTotal, currency),
-                      style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold,
-                        color: _accentColor,
-                      ),
-                    ),
-                  ],
-                ),
+                child: pw.SizedBox(height: 4),
               ),
-              pw.SizedBox(height: 18),
+              // Total final
+              _dataRow(
+                EsBO.calcTotalFinal,
+                _fmt(effectiveTotal, currency),
+                bold: true,
+              ),
+              pw.SizedBox(height: 14),
+            ],
 
-              // ── 8. Materials table ──
-              if (hasMaterials) ...[
+            // ── 8b. Materials table ──
+            if (showDetail && hasMaterials) ...[
                 _sectionHeader(EsBO.pdfMaterialsSection),
                 pw.SizedBox(height: 8),
                 // Header row
@@ -796,10 +821,14 @@ Future<Uint8List> buildQuotePdfBytes({
                   ),
                 pw.SizedBox(height: 14),
               ],
-            ],
 
             // ── 7b. Discount summary (modo basico sin showDetail) ──
-            if (!showDetail && hasDiscount) ...[
+            // Muestra la progresión: Subtotal → Desc. por cantidad →
+            // Desc. manual → Total final.
+            if (!showDetail &&
+                (hasDiscount ||
+                    (batchDiscountPct != null &&
+                        batchDiscountPct > Decimal.zero))) ...[
               pw.Container(
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
@@ -812,19 +841,36 @@ Future<Uint8List> buildQuotePdfBytes({
                 ),
                 child: pw.Column(
                   children: [
+                    // Subtotal antes de descuentos
                     _dataRow(
-                      EsBO.quoteNoDiscount,
-                      _fmt(
-                        displayTotal + dDiscountAmount,
-                        currency,
+                      EsBO.calcSubtotal,
+                      _fmt(subtotalBeforeDiscounts, currency),
+                    ),
+                    // Descuento por cantidad (si aplica)
+                    if (batchDiscountPct != null &&
+                        batchDiscountPct > Decimal.zero &&
+                        effectiveBatchDiscount > Decimal.zero) ...[
+                      pw.SizedBox(height: 2),
+                      _dataRow(
+                        EsBO.calcDetailBatchDiscount(
+                          batchDiscountPct.toBigInt().toInt(),
+                        ),
+                        '-${_fmt(effectiveBatchDiscount, currency)}',
+                        valueColor: _errorColor,
                       ),
-                    ),
-                    _dataRow(
-                      EsBO.quoteDiscountPct(discountPct.toDouble().round()),
-                      '-${_fmt(dDiscountAmount, currency)}',
-                      valueColor: _errorColor,
-                      strikeThrough: true,
-                    ),
+                    ],
+                    // Descuento manual (si > 0%)
+                    if (hasDiscount) ...[
+                      pw.SizedBox(height: 2),
+                      _dataRow(
+                        EsBO.calcDetailManualDiscount(
+                          discountPct.toDouble().round(),
+                        ),
+                        '-${_fmt(effectiveManualDiscount, currency)}',
+                        valueColor: _errorColor,
+                        strikeThrough: true,
+                      ),
+                    ],
                     pw.Container(
                       margin: const pw.EdgeInsets.only(top: 4),
                       decoration: pw.BoxDecoration(
@@ -835,8 +881,8 @@ Future<Uint8List> buildQuotePdfBytes({
                       child: pw.SizedBox(height: 4),
                     ),
                     _dataRow(
-                      EsBO.calcTotalWithDiscount,
-                      _fmt(displayTotal, currency),
+                      EsBO.calcTotalFinal,
+                      _fmt(effectiveTotal, currency),
                       bold: true,
                     ),
                   ],

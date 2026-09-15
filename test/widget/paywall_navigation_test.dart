@@ -305,14 +305,15 @@ void main() {
         unawaited(appRouter.push('/calculator'));
         await tester.pumpAndSettle();
 
-        // Llenar el form express (Peso / Horas / Precio bobina).
+        // Llenar el form express. Horas esta en el paso Impresion del
+        // wizard (oculto): enterText no hit-testea → skipOffstage:false.
         await tester.enterText(
           find.widgetWithText(NumericInputField, 'Peso'),
           '100',
         );
         await tester.pumpAndSettle();
         await tester.enterText(
-          find.widgetWithText(NumericInputField, 'Horas'),
+          find.widgetWithText(NumericInputField, 'Horas', skipOffstage: false),
           '5',
         );
         await tester.pumpAndSettle();
@@ -322,7 +323,8 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Abrir el result sheet (bottom bar se vuelve valida).
+        // Abrir el result sheet: la barra de total vive fija abajo en todos
+        // los pasos del wizard (rediseño 2026-09), tap directo.
         await tester.tap(find.byType(ResultBottomBar));
         await tester.pumpAndSettle();
 

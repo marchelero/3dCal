@@ -86,8 +86,7 @@ class EsBO {
   static String get discountTierEdit => _impl.discountTierEdit;
   static String get discountTierDelete => _impl.discountTierDelete;
   static String get discountTierEmpty => _impl.discountTierEmpty;
-  static String get discountTierHeaderMinQty =>
-      _impl.discountTierHeaderMinQty;
+  static String get discountTierHeaderMinQty => _impl.discountTierHeaderMinQty;
   static String get discountTierHeaderPercent =>
       _impl.discountTierHeaderPercent;
   static String get discountTierMinQty => _impl.discountTierMinQty;
@@ -99,12 +98,18 @@ class EsBO {
   static String get discountTierCapHint => _impl.discountTierCapHint;
   static String calcDetailBatchDiscount(int pct) =>
       _impl.calcDetailBatchDiscount(pct);
+  static String get calcSubtotal => _impl.calcSubtotal;
+  static String calcDetailManualDiscount(int pct) =>
+      _impl.calcDetailManualDiscount(pct);
   static String calcQuantityBatchHint(int pct, int minQty) =>
       _impl.calcQuantityBatchHint(pct, minQty);
+  static String get calcQuantityNoTiers => _impl.calcQuantityNoTiers;
+  static String get calcQuantityTiersTitle => _impl.calcQuantityTiersTitle;
+  static String get calcQuantityFrom => _impl.calcQuantityFrom;
+  static String get calcQuantityUnits => _impl.calcQuantityUnits;
   static String quoteBatchDiscountPct(int pct) =>
       _impl.quoteBatchDiscountPct(pct);
-  static String pdfBatchDiscountPct(int pct) =>
-      _impl.pdfBatchDiscountPct(pct);
+  static String pdfBatchDiscountPct(int pct) => _impl.pdfBatchDiscountPct(pct);
 
   static String settingsFilamentsCount(int count) =>
       _impl.settingsFilamentsCount(count);
@@ -250,6 +255,9 @@ class EsBO {
   static String get calcLabelMinutesHelper => _impl.calcLabelMinutesHelper;
   static String get calcLabelDiscount => _impl.calcLabelDiscount;
   static String get calcLabelDiscountHelper => _impl.calcLabelDiscountHelper;
+  static String get calcWizardStepPrint => _impl.calcWizardStepPrint;
+  static String get calcWizardStepAdjust => _impl.calcWizardStepAdjust;
+  static String get calcWizardFullBreakdown => _impl.calcWizardFullBreakdown;
   static String get calcBtnSave => _impl.calcBtnSave;
   static String get calcBtnReset => _impl.calcBtnReset;
   static String get calcToggleShowDetail => _impl.calcToggleShowDetail;
@@ -959,19 +967,28 @@ class EsImpl implements AppStrings {
   String get discountTierValidationPercent =>
       'El descuento debe estar entre 1 y 100 %';
   @override
-  String get discountTierCapHint =>
-      'Máximo 10 escalones por configuración';
+  String get discountTierCapHint => 'Máximo 10 escalones por configuración';
   @override
-  String calcDetailBatchDiscount(int pct) =>
-      'Descuento por cantidad ($pct%)';
+  String calcDetailBatchDiscount(int pct) => 'Descuento por cantidad ($pct%)';
+  @override
+  String get calcSubtotal => 'Subtotal';
+  @override
+  String calcDetailManualDiscount(int pct) => 'Descuento manual ($pct%)';
   @override
   String calcQuantityBatchHint(int pct, int minQty) =>
       '$pct % desde $minQty u.';
   @override
+  String get calcQuantityNoTiers => 'Sin descuentos por cantidad configurados';
+  @override
+  String get calcQuantityTiersTitle => 'Descuentos por cantidad:';
+  @override
+  String get calcQuantityFrom => 'desde';
+  @override
+  String get calcQuantityUnits => 'u.';
+  @override
   String quoteBatchDiscountPct(int pct) => 'Descuento por cantidad $pct%';
   @override
-  String pdfBatchDiscountPct(int pct) =>
-      'Descuento por cantidad: $pct%';
+  String pdfBatchDiscountPct(int pct) => 'Descuento por cantidad: $pct%';
 
   @override
   String settingsFilamentsCount(int count) =>
@@ -1213,6 +1230,14 @@ class EsImpl implements AppStrings {
   String get calcLabelDiscount => 'Descuento';
   @override
   String get calcLabelDiscountHelper => 'Porcentaje sobre el total final';
+  @override
+  String get calcWizardStepPrint => 'Impresión';
+  @override
+@override
+  String get calcWizardStepAdjust => 'Otros';
+  @override
+  @override
+  String get calcWizardFullBreakdown => 'Ver desglose completo';
   @override
   String get calcBtnSave => 'Guardar cotización';
   @override

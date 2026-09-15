@@ -180,7 +180,7 @@ class _EmptyState extends StatelessWidget {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
       child: Column(
         children: [
           Icon(

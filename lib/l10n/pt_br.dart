@@ -140,16 +140,26 @@ class PtBrImpl implements AppStrings {
   @override
   String get discountTierCapHint => 'Até 10 faixas por configuração';
   @override
-  String calcDetailBatchDiscount(int pct) =>
-      'Desconto por quantidade ($pct%)';
+  String calcDetailBatchDiscount(int pct) => 'Desconto por quantidade ($pct%)';
+  @override
+  String get calcSubtotal => 'Subtotal';
+  @override
+  String calcDetailManualDiscount(int pct) => 'Desconto manual ($pct%)';
   @override
   String calcQuantityBatchHint(int pct, int minQty) =>
       '$pct% de desconto a partir de $minQty un.';
   @override
+  String get calcQuantityNoTiers => 'Sem patamares configurados';
+  @override
+  String get calcQuantityTiersTitle => 'Patamares de desconto:';
+  @override
+  String get calcQuantityFrom => 'a partir de';
+  @override
+  String get calcQuantityUnits => 'un.';
+  @override
   String quoteBatchDiscountPct(int pct) => 'Desconto por quantidade $pct%';
   @override
-  String pdfBatchDiscountPct(int pct) =>
-      'Desconto por quantidade: $pct%';
+  String pdfBatchDiscountPct(int pct) => 'Desconto por quantidade: $pct%';
 
   @override
   String settingsFilamentsCount(int count) =>
@@ -393,6 +403,14 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcLabelDiscountHelper =>
       'Percentual de desconto sobre o total final';
+  @override
+  String get calcWizardStepPrint => 'Impressão';
+  @override
+@override
+  String get calcWizardStepAdjust => 'Outros';
+  @override
+  @override
+  String get calcWizardFullBreakdown => 'Ver detalhamento completo';
   @override
   String get calcBtnSave => 'Salvar orçamento';
   @override

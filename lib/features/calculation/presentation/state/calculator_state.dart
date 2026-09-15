@@ -140,11 +140,13 @@ class CalculatorState {
     this.batchAppliedPercent,
     this.batchAppliedMinQty,
     Decimal? batchDiscountAmount,
+    Decimal? manualDiscountAmount,
     Decimal? subtotalImpression,
     Decimal? lotTotal,
     this.showsBatchLine = false,
   })  : assert(quantity >= 1, 'La cantidad minima es 1.'),
         batchDiscountAmount = batchDiscountAmount ?? Decimal.zero,
+        manualDiscountAmount = manualDiscountAmount ?? Decimal.zero,
         subtotalImpression = subtotalImpression ?? Decimal.zero,
         lotTotal = lotTotal ?? Decimal.zero;
 
@@ -243,6 +245,10 @@ class CalculatorState {
   /// Monto del descuento mayorista (0 sin escalón).
   final Decimal batchDiscountAmount;
 
+  /// Monto del descuento manual escalado: `manualPct × (totalFinal × N)`.
+  /// `0` sin descuento manual.
+  final Decimal manualDiscountAmount;
+
   /// `(baseCost + failureCost + markupCost) × N` — base del descuento
   /// mayorista. `0` sin escalón.
   final Decimal subtotalImpression;
@@ -273,6 +279,7 @@ class CalculatorState {
     Decimal? batchAppliedPercent,
     int? batchAppliedMinQty,
     Decimal? batchDiscountAmount,
+    Decimal? manualDiscountAmount,
     Decimal? subtotalImpression,
     Decimal? lotTotal,
     bool? showsBatchLine,
@@ -318,6 +325,9 @@ class CalculatorState {
     batchDiscountAmount: clearBatch
         ? Decimal.zero
         : (batchDiscountAmount ?? this.batchDiscountAmount),
+    manualDiscountAmount: clearBatch
+        ? Decimal.zero
+        : (manualDiscountAmount ?? this.manualDiscountAmount),
     subtotalImpression: clearBatch
         ? Decimal.zero
         : (subtotalImpression ?? this.subtotalImpression),
@@ -483,6 +493,7 @@ class CalculatorState {
         batchAppliedPercent == other.batchAppliedPercent &&
         batchAppliedMinQty == other.batchAppliedMinQty &&
         batchDiscountAmount == other.batchDiscountAmount &&
+        manualDiscountAmount == other.manualDiscountAmount &&
         subtotalImpression == other.subtotalImpression &&
         lotTotal == other.lotTotal &&
         showsBatchLine == other.showsBatchLine;
@@ -541,6 +552,7 @@ class CalculatorState {
     batchAppliedPercent,
     batchAppliedMinQty,
     batchDiscountAmount,
+    manualDiscountAmount,
     subtotalImpression,
     lotTotal,
     showsBatchLine,

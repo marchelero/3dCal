@@ -244,6 +244,16 @@ abstract class AppStrings {
   String get calcLabelMinutesHelper;
   String get calcLabelDiscount;
   String get calcLabelDiscountHelper;
+
+  // === Cotizador wizard (rediseño 2026-09) ===
+  /// Nombre del paso 2 del wizard ("Impresión").
+  String get calcWizardStepPrint;
+
+  /// Nombre del paso 3 del wizard ("Otros").
+  String get calcWizardStepAdjust;
+
+  /// Botón que abre el desglose completo (result sheet) desde el paso final.
+  String get calcWizardFullBreakdown;
   String get calcBtnSave;
   String get calcBtnReset;
   String get calcToggleShowDetail;
@@ -1273,9 +1283,28 @@ abstract class AppStrings {
   /// mayorista aplicado (se muestra antes del descuento manual).
   String calcDetailBatchDiscount(int pct);
 
+  /// "Subtotal" — base antes de descuentos en el desglose del lote.
+  String get calcSubtotal;
+
+  /// "Descuento manual ($pct%)" — linea de desglose del descuento manual
+  /// en el desglose del lote (se muestra después del descuento por cantidad).
+  String calcDetailManualDiscount(int pct);
+
   /// Hint del campo Cantidad cuando hay escalón aplicable.
   /// "X % desde N u." — informa al usuario del umbral del siguiente escalón.
   String calcQuantityBatchHint(int pct, int minQty);
+
+  /// "Sin escalones configurados" — tooltip cuando no hay escalones.
+  String get calcQuantityNoTiers;
+
+  /// "Escalones de descuento:" — titulo del tooltip de escalones.
+  String get calcQuantityTiersTitle;
+
+  /// "desde" — texto del tooltip de escalones.
+  String get calcQuantityFrom;
+
+  /// "u." — abreviatura de unidades en el tooltip.
+  String get calcQuantityUnits;
 
   /// "Descuento por cantidad $pct%" — linea en la quote image.
   String quoteBatchDiscountPct(int pct);
