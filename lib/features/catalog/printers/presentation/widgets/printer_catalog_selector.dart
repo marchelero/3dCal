@@ -19,14 +19,14 @@ const String _kModelOther = '__model_other__';
 /// de esa marca) -> Watts auto-completado (editable).
 ///
 /// Reemplaza el par `BrandSelectorField + TextFormField(modelo)` en los forms
-/// de impresora. Recibe los 3 controllers para que el form padre conserve la
+/// de impresora. Recibe los 4 controllers para que el form padre conserve la
 /// validacion y el guardado intactos.
 ///
 /// Comportamiento:
 /// - **Marca**: dropdown = `catalogBrands()` ∪ marcas ya registradas por el
 ///   usuario (del `printersNotifierProvider`) ∪ sentinel "Otro...".
 /// - **Modelo**: dropdown parametrico = `catalogModels(marca)` ∪ "Otro...".
-///   Elegir un modelo del catalogo auto-completa el watts (editable).
+///   Elegir un modelo del catalogo auto-completa watts y usefulLifeHours.
 /// - **"Otro..." en marca**: desactiva la cascada -> campos manuales de
 ///   marca y modelo (watts manual).
 /// - **"Otro..." en modelo**: campo modelo manual, watts vacio (requerido).
@@ -39,6 +39,7 @@ class PrinterCatalogSelector extends ConsumerStatefulWidget {
     required this.brandController,
     required this.modelController,
     required this.wattsController,
+    this.usefulLifeHoursController,
     this.enabled = true,
     this.compact = false,
   });
@@ -52,6 +53,10 @@ class PrinterCatalogSelector extends ConsumerStatefulWidget {
   /// Watts (consumo promedio W). Se auto-llena al elegir un modelo del
   /// catalogo; el usuario puede editarlo.
   final TextEditingController wattsController;
+
+  /// Vida util estimada (horas). Se auto-llena del catalogo al elegir modelo.
+  /// Opcional: si es null, el selector no modifica este campo.
+  final TextEditingController? usefulLifeHoursController;
 
   final bool enabled;
 
@@ -294,6 +299,12 @@ class _PrinterCatalogSelectorState
                   final spec = findModel(brand, v);
                   if (spec != null) {
                     widget.wattsController.text = spec.watts.toString();
+                    // Auto-llenar vida util del catalogo si el controller existe.
+                    if (widget.usefulLifeHoursController != null &&
+                        spec.usefulLifeHours != null) {
+                      widget.usefulLifeHoursController!.text =
+                          spec.usefulLifeHours.toString();
+                    }
                   }
                 });
               }

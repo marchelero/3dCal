@@ -483,6 +483,9 @@ class EsBO {
   static String get printerUsefulLifeHours => _impl.printerUsefulLifeHours;
   static String get printerUsefulLifeHoursHelper =>
       _impl.printerUsefulLifeHoursHelper;
+  static String get printerCurrentHours => _impl.printerCurrentHours;
+  static String get printerCurrentHoursHelper =>
+      _impl.printerCurrentHoursHelper;
   static String get printerLifePositiveIfCost =>
       _impl.printerLifePositiveIfCost;
   static String get calcDetailAmortization => _impl.calcDetailAmortization;
@@ -1632,7 +1635,14 @@ class EsImpl implements AppStrings {
 
   @override
   String get printerUsefulLifeHoursHelper =>
-      'Ej: 4000. Con costo, la cotización suma amortización de máquina.';
+      'Ej: 6000. Se auto-carga del catálogo al seleccionar modelo.';
+
+  @override
+  String get printerCurrentHours => 'Horas acumuladas';
+
+  @override
+  String get printerCurrentHoursHelper =>
+      'Horas de uso registradas. Se actualiza al validar cotizaciones.';
 
   @override
   String get printerLifePositiveIfCost =>

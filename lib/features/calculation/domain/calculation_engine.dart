@@ -6,14 +6,13 @@ import 'entities/material_input.dart';
 
 /// Motor de calculo de cotizaciones. **Pure Dart, sin dependencias de Flutter**.
 ///
-/// Formula completa (F1 + F5 amortizacion):
+/// Formula completa (sin amortizacion en costo):
 ///
 ///   materialCost       = Σ(weightGrams[i] * pricePerBobbin[i] / gramsPerBobbin[i])
 ///   electricCost       = printerWatts * totalHours * kwhRate / 1000
-///   amortizationCost   = amortizationPerHour * totalHours
 ///   laborCost          = totalHours * laborRate
 ///   postProcessCost    = materialCost * postProcessRate / 100
-///   baseCost           = materialCost + electricCost + amortizationCost + laborCost + postProcessCost
+///   baseCost           = materialCost + electricCost + laborCost + postProcessCost
 ///   failureCost        = baseCost * failureRate / 100
 ///   costWithFailure    = baseCost + failureCost
 ///   markupCost         = materialCost * markupOnMaterials / 100
@@ -29,10 +28,12 @@ import 'entities/material_input.dart';
 /// - Si descuento > 100%, `totalPrice` quedaria negativo (caso borde, se
 ///   preserva para que la UI lo maneje).
 /// - Todos los parametros con default 0 no afectan el calculo.
-/// - `amortizationPerHour` null → sin linea (impresora sin costo/vida util).
 /// - `minimumCharge > 0`: piso del precio final (despues del descuento).
 ///   Si el precio queda por debajo, sube a `minimumCharge`. Con
 ///   `minimumCharge = 0` no hay efecto.
+///
+/// **Nota**: `amortizationPerHour` existe para estadisticas/depreciacion,
+/// pero NO se incluye en el costo de la cotizacion.
 ///
 /// **Precision**: todo en `Decimal`. Prohibido `double` en este archivo.
 class CalculationEngine {
@@ -41,11 +42,11 @@ class CalculationEngine {
   /// Divisor para pasar de % a fraccion.
   static final Decimal _pct = Decimal.fromInt(100);
 
-  /// Amortizacion fija por hora de la impresora (F5).
+  /// Amortizacion fija por hora de la impresora (para estadisticas).
   ///
   /// `costo / vida_util_horas`, escala interna 6. Retorna `null` si la vida
-  /// util es <= 0 o el costo no es positivo (linea ausente, sin division
-  /// por cero). El display redondea a 2 decimales en la UI.
+  /// util es <= 0 o el costo no es positivo. NO se incluye en el costo
+  /// de la cotizacion, solo se usa para metricas de depreciacion.
   static Decimal? amortizationPerHour({
     required Decimal purchaseCost,
     required int usefulLifeHours,
@@ -70,14 +71,6 @@ class CalculationEngine {
               .toDecimal()
         : Decimal.zero;
 
-    // Amortizacion de la impresora (F5): costo fijo por hora.
-    // `Decimal * Decimal` ya da Decimal; solo la division del helper
-    // necesita escala explicita (scaleOnInfinitePrecision: 6).
-    final amortizationCost =
-        input.amortizationPerHour != null && input.totalHours > Decimal.zero
-        ? input.amortizationPerHour! * input.totalHours
-        : Decimal.zero;
-
     // Mano de obra
     final laborCost = input.totalHours * input.laborRate;
 
@@ -86,11 +79,10 @@ class CalculationEngine {
         ? (materialCost * input.postProcessRate / _pct).toDecimal()
         : Decimal.zero;
 
-    // Base
+    // Base (sin amortizacion — la amortizacion es solo para estadisticas)
     final baseCost =
         materialCost +
         electricCost +
-        amortizationCost +
         laborCost +
         postProcessCost;
 
@@ -131,7 +123,7 @@ class CalculationEngine {
     return CalculationOutput(
       materialCost: materialCost,
       electricCost: electricCost,
-      amortizationCost: amortizationCost,
+      amortizationCost: Decimal.zero, // Solo para estadisticas, no en costo
       laborCost: laborCost,
       postProcessCost: postProcessCost,
       baseCost: baseCost,

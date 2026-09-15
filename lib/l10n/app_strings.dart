@@ -528,6 +528,8 @@ abstract class AppStrings {
   String get printerPurchaseCostHelper;
   String get printerUsefulLifeHours;
   String get printerUsefulLifeHoursHelper;
+  String get printerCurrentHours;
+  String get printerCurrentHoursHelper;
   String get printerLifePositiveIfCost;
   String get calcDetailAmortization;
 

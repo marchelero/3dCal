@@ -6,9 +6,8 @@ import 'package:drift/drift.dart';
 /// Cada impresora tiene una marca, un modelo (nombre) y consumo en Watts.
 /// Una sola puede marcarse como `isDefault = true`.
 ///
-/// F5 (amortizacion): [purchaseCost] + [usefulLifeHours] opcionales.
-/// Ambos configurados → la cotizacion suma "amortizacion maquina" (costo
-/// fijo por hora). Vacio → linea ausente (cero friccion).
+/// F5 (depreciacion): [purchaseCost] + [usefulLifeHours] opcionales.
+/// [currentHours] registra las horas acumuladas de uso.
 @DataClassName('PrinterProfile')
 class Printers extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -22,13 +21,16 @@ class Printers extends Table {
   /// Consumo promedio en Watts (>= 0). 0 = sin impresora.
   IntColumn get averageWatts => integer()();
 
-  /// Precio de compra de la impresora (BOB). Null = no configurado
-  /// (sin linea de amortizacion).
+  /// Precio de compra de la impresora (BOB). Null = no configurado.
   RealColumn get purchaseCost => real().nullable()();
 
-  /// Vida util estimada (horas). Null = no configurado.
-  /// Con [purchaseCost], la cotizacion suma amortizacion por hora.
+  /// Vida util estimada en horas de impresion. Null = no configurado.
+  /// Se auto-carga del catalogo al seleccionar modelo.
   IntColumn get usefulLifeHours => integer().nullable()();
+
+  /// Horas acumuladas de uso. Se incrementa automaticamente al validar
+  /// cotizaciones. Null = 0 (impresora nueva sin uso registrado).
+  IntColumn get currentHours => integer().nullable()();
 
   /// Marca como default. Solo uno a la vez (enforcement en repository).
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();

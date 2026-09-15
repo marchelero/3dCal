@@ -30,8 +30,6 @@ class PrinterRepository {
   /// Inserta una nueva impresora.
   ///
   /// Si [asDefault] es true, desmarca cualquier otra default primero.
-  /// F5: [purchaseCost] (BOB) + [usefulLifeHours] opcionales — ambos
-  /// configurados habilitan la linea de amortizacion en las cotizaciones.
   Future<int> create({
     required String name,
     String? brand,
@@ -39,9 +37,8 @@ class PrinterRepository {
     bool asDefault = false,
     Decimal? purchaseCost,
     int? usefulLifeHours,
+    int? currentHours,
   }) {
-    // BUG-002 fix: transaccion para evitar dos impresoras con isDefault=true
-    // en inserts concurrentes (multi-tab web, autosave).
     return _db.transaction(() async {
       if (asDefault) {
         await _clearDefault();
@@ -56,6 +53,7 @@ class PrinterRepository {
               isDefault: Value(asDefault),
               purchaseCost: Value(purchaseCost?.toDouble()),
               usefulLifeHours: Value(usefulLifeHours),
+              currentHours: Value(currentHours),
               createdAt: DateTime.now().toUtc(),
             ),
           );
@@ -63,12 +61,6 @@ class PrinterRepository {
   }
 
   /// Actualiza una impresora existente.
-  ///
-  /// [purchaseCost] / [usefulLifeHours] se escriben SOLO si vienen con valor:
-  /// `null` → `Value.absent()` (no toca la columna, preserva amortizacion de
-  /// callers que solo cambian nombre/watts/default). Para BORRAR la
-  /// amortizacion explicitamente, pasar [clearAmortization] = true (form al
-  /// limpiar ambos campos). Patron espejo de `FilamentRepository.updateColor`.
   Future<bool> update({
     required int id,
     required String name,
@@ -77,9 +69,9 @@ class PrinterRepository {
     bool? asDefault,
     Decimal? purchaseCost,
     int? usefulLifeHours,
+    int? currentHours,
     bool clearAmortization = false,
   }) {
-    // BUG-002 fix: misma proteccion transaccional que create().
     return _db.transaction(() async {
       if (asDefault == true) {
         await _clearDefault();
@@ -103,10 +95,26 @@ class PrinterRepository {
                   : (usefulLifeHours == null
                         ? const Value.absent()
                         : Value(usefulLifeHours)),
+              currentHours: currentHours == null
+                  ? const Value.absent()
+                  : Value(currentHours),
             ),
           );
       return updated > 0;
     });
+  }
+
+  /// Suma horas impresas a una impresora (para estadisticas).
+  Future<void> addHours(int printerId, double hours) async {
+    final printer =
+        await (_db.select(
+          _db.printers,
+        )..where((p) => p.id.equals(printerId))).getSingleOrNull();
+    if (printer == null) return;
+    final current = printer.currentHours ?? 0;
+    final added = hours.ceil(); // Redondeo hacia arriba
+    await (_db.update(_db.printers)..where((p) => p.id.equals(printerId)))
+        .write(PrintersCompanion(currentHours: Value(current + added)));
   }
 
   /// Elimina una impresora por id.

@@ -28,6 +28,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
     bool asDefault = false,
     Decimal? purchaseCost,
     int? usefulLifeHours,
+    int? currentHours,
   }) async {
     final repo = ref.read(printerRepositoryProvider);
     await repo.create(
@@ -37,6 +38,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       asDefault: asDefault,
       purchaseCost: purchaseCost,
       usefulLifeHours: usefulLifeHours,
+      currentHours: currentHours,
     );
     await _reload();
   }
@@ -51,6 +53,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
     bool? asDefault,
     Decimal? purchaseCost,
     int? usefulLifeHours,
+    int? currentHours,
     bool clearAmortization = false,
   }) async {
     final repo = ref.read(printerRepositoryProvider);
@@ -62,6 +65,7 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       asDefault: asDefault,
       purchaseCost: purchaseCost,
       usefulLifeHours: usefulLifeHours,
+      currentHours: currentHours,
       clearAmortization: clearAmortization,
     );
     await _reload();
@@ -97,10 +101,9 @@ class PrintersNotifier extends AsyncNotifier<List<PrinterProfile>> {
       brand: current.brand,
       averageWatts: current.averageWatts,
       asDefault: true,
-      // F5: preservar campos de amortizacion al marcar default (el update
-      // reconstruye el companion completo).
       purchaseCost: _toDecimal(current.purchaseCost),
       usefulLifeHours: current.usefulLifeHours,
+      currentHours: current.currentHours,
     );
     await _reload();
   }

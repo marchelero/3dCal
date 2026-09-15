@@ -274,6 +274,8 @@ class _NumericInputFieldState extends State<NumericInputField> {
         FilteringTextInputFormatter.allow(
           widget.allowDecimals ? RegExp('[0-9.,]') : RegExp('[0-9]'),
         ),
+        // Bloquear multiples puntos/comas consecutivos.
+        _NumericFormatFormatter(allowDecimals: widget.allowDecimals),
       ],
       decoration: decoration,
       // Si no hay validator, manejamos errorText en vivo via _onTextChanged.
@@ -318,5 +320,42 @@ class _NumericInputFieldState extends State<NumericInputField> {
         );
       },
     );
+  }
+}
+
+/// Formatter que previene multiples puntos/comas consecutivos y asegura
+/// que solo se ingresen caracteres numericos validos.
+class _NumericFormatFormatter extends TextInputFormatter {
+  _NumericFormatFormatter({required this.allowDecimals});
+
+  final bool allowDecimals;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final newText = newValue.text;
+
+    // Rechazar si contiene multiples separadores decimales.
+    if (allowDecimals) {
+      final dotCount = newText.split('.').length - 1;
+      final commaCount = newText.split(',').length - 1;
+      if (dotCount + commaCount > 1) return oldValue;
+    } else {
+      // Sin decimales: rechazar puntos y comas.
+      if (newText.contains('.') || newText.contains(',')) return oldValue;
+    }
+
+    // Rechazar empieza con separador (excepto "0." o "0,").
+    if ((newText.startsWith('.') || newText.startsWith(',')) &&
+        newText.length > 1) {
+      return TextEditingValue(
+        text: '0$newText',
+        selection: TextSelection.collapsed(offset: newText.length + 1),
+      );
+    }
+
+    return newValue;
   }
 }

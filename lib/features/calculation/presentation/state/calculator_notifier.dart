@@ -9,10 +9,11 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart' as storage;
-import '../../../../features/settings/domain/discount_tier.dart';
 import '../../../../features/settings/domain/settings.dart';
 import '../../../../features/settings/presentation/notifiers/settings_notifier.dart';
+import '../../../catalog/printers/data/printer_repository.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
+import '../../../settings/domain/discount_tier.dart';
 import '../../data/calculation_repository.dart';
 import '../../domain/batch_discount_resolver.dart';
 import '../../domain/batch_lot_composer.dart';
@@ -375,6 +376,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// [kFreeHistoryCap] cotizaciones, lanza [HistoryCapReachedException]
   /// y NO inserta nada. Los items existentes quedan intactos.
   /// Pro users: sin cap.
+  /// Al guardar, suma las horas impresas al `currentHours` de la impresora.
   Future<int?> save({
     String? pieceName,
     String? clientName,
@@ -386,17 +388,12 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       throw const FormIncompleteException();
     }
     final repo = ref.read(calculationRepositoryProvider);
+    final printerRepo = ref.read(printerRepositoryProvider);
     final isPro = await resolveIsPro(ref);
     // F2: downscale antes de persistir (max 1200px lado mayor, JPEG q85).
-    // Correr en un isolate: decode+resize+encode de una foto de camara
-    // (variarios MB) puede congelar la UI 0.5-2s. `package:image` es Dart
-    // puro (isolate-safe) y Uint8List es trasferible por el SendPort.
-    // El provider es inyectable: en widget tests (fake-async) `Isolate.run`
-    // nunca resuelve, asi que los tests overridan con la version sincrona.
     final downscale = ref.read(pieceImageDownscalerProvider);
     final pieceImage = await downscale(pieceImageBytes);
-    // El repositorio hace conteo + insercion en una sola transaccion para
-    // evitar que dos guardados concurrentes superen el cap.
+    // El repositorio hace conteo + insercion en una sola transaccion.
     if (!isPro) {
       final id = await repo.createIfWithinLimit(
         _buildDraft(
@@ -415,6 +412,8 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           currentCount: currentCount,
         );
       }
+      // Sumar horas impresas a la impresora activa.
+      await _addHoursToPrinter(printerRepo);
       ref.invalidate(calculationsNotifierProvider);
       return id;
     }
@@ -427,8 +426,20 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         pieceImageBytes: pieceImage,
       ),
     );
+    // Sumar horas impresas a la impresora activa.
+    await _addHoursToPrinter(printerRepo);
     ref.invalidate(calculationsNotifierProvider);
     return id;
+  }
+
+  /// Suma las horas estimadas de la cotizacion al `currentHours` de la
+  /// impresora activa (para estadisticas de depreciacion).
+  Future<void> _addHoursToPrinter(PrinterRepository printerRepo) async {
+    final printer = ref.read(activePrinterProvider);
+    if (printer == null) return;
+    final totalHours = state.totalHoursDecimal;
+    if (totalHours == null || totalHours <= Decimal.zero) return;
+    await printerRepo.addHours(printer.id, totalHours.toDouble());
   }
 
   CalculationDraft _buildDraft({

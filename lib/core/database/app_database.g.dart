@@ -77,6 +77,17 @@ class $PrintersTable extends Printers
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _currentHoursMeta = const VerificationMeta(
+    'currentHours',
+  );
+  @override
+  late final GeneratedColumn<int> currentHours = GeneratedColumn<int>(
+    'current_hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDefaultMeta = const VerificationMeta(
     'isDefault',
   );
@@ -111,6 +122,7 @@ class $PrintersTable extends Printers
     averageWatts,
     purchaseCost,
     usefulLifeHours,
+    currentHours,
     isDefault,
     createdAt,
   ];
@@ -172,6 +184,15 @@ class $PrintersTable extends Printers
         ),
       );
     }
+    if (data.containsKey('current_hours')) {
+      context.handle(
+        _currentHoursMeta,
+        currentHours.isAcceptableOrUnknown(
+          data['current_hours']!,
+          _currentHoursMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_default')) {
       context.handle(
         _isDefaultMeta,
@@ -219,6 +240,10 @@ class $PrintersTable extends Printers
         DriftSqlType.int,
         data['${effectivePrefix}useful_life_hours'],
       ),
+      currentHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_hours'],
+      ),
       isDefault: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_default'],
@@ -248,13 +273,16 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
   /// Consumo promedio en Watts (>= 0). 0 = sin impresora.
   final int averageWatts;
 
-  /// Precio de compra de la impresora (BOB). Null = no configurado
-  /// (sin linea de amortizacion).
+  /// Precio de compra de la impresora (BOB). Null = no configurado.
   final double? purchaseCost;
 
-  /// Vida util estimada (horas). Null = no configurado.
-  /// Con [purchaseCost], la cotizacion suma amortizacion por hora.
+  /// Vida util estimada en horas de impresion. Null = no configurado.
+  /// Se auto-carga del catalogo al seleccionar modelo.
   final int? usefulLifeHours;
+
+  /// Horas acumuladas de uso. Se incrementa automaticamente al validar
+  /// cotizaciones. Null = 0 (impresora nueva sin uso registrado).
+  final int? currentHours;
 
   /// Marca como default. Solo uno a la vez (enforcement en repository).
   final bool isDefault;
@@ -268,6 +296,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     required this.averageWatts,
     this.purchaseCost,
     this.usefulLifeHours,
+    this.currentHours,
     required this.isDefault,
     required this.createdAt,
   });
@@ -285,6 +314,9 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     }
     if (!nullToAbsent || usefulLifeHours != null) {
       map['useful_life_hours'] = Variable<int>(usefulLifeHours);
+    }
+    if (!nullToAbsent || currentHours != null) {
+      map['current_hours'] = Variable<int>(currentHours);
     }
     map['is_default'] = Variable<bool>(isDefault);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -305,6 +337,9 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
       usefulLifeHours: usefulLifeHours == null && nullToAbsent
           ? const Value.absent()
           : Value(usefulLifeHours),
+      currentHours: currentHours == null && nullToAbsent
+          ? const Value.absent()
+          : Value(currentHours),
       isDefault: Value(isDefault),
       createdAt: Value(createdAt),
     );
@@ -322,6 +357,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
       averageWatts: serializer.fromJson<int>(json['averageWatts']),
       purchaseCost: serializer.fromJson<double?>(json['purchaseCost']),
       usefulLifeHours: serializer.fromJson<int?>(json['usefulLifeHours']),
+      currentHours: serializer.fromJson<int?>(json['currentHours']),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -336,6 +372,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
       'averageWatts': serializer.toJson<int>(averageWatts),
       'purchaseCost': serializer.toJson<double?>(purchaseCost),
       'usefulLifeHours': serializer.toJson<int?>(usefulLifeHours),
+      'currentHours': serializer.toJson<int?>(currentHours),
       'isDefault': serializer.toJson<bool>(isDefault),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -348,6 +385,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     int? averageWatts,
     Value<double?> purchaseCost = const Value.absent(),
     Value<int?> usefulLifeHours = const Value.absent(),
+    Value<int?> currentHours = const Value.absent(),
     bool? isDefault,
     DateTime? createdAt,
   }) => PrinterProfile(
@@ -359,6 +397,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     usefulLifeHours: usefulLifeHours.present
         ? usefulLifeHours.value
         : this.usefulLifeHours,
+    currentHours: currentHours.present ? currentHours.value : this.currentHours,
     isDefault: isDefault ?? this.isDefault,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -376,6 +415,9 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
       usefulLifeHours: data.usefulLifeHours.present
           ? data.usefulLifeHours.value
           : this.usefulLifeHours,
+      currentHours: data.currentHours.present
+          ? data.currentHours.value
+          : this.currentHours,
       isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -390,6 +432,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
           ..write('averageWatts: $averageWatts, ')
           ..write('purchaseCost: $purchaseCost, ')
           ..write('usefulLifeHours: $usefulLifeHours, ')
+          ..write('currentHours: $currentHours, ')
           ..write('isDefault: $isDefault, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -404,6 +447,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
     averageWatts,
     purchaseCost,
     usefulLifeHours,
+    currentHours,
     isDefault,
     createdAt,
   );
@@ -417,6 +461,7 @@ class PrinterProfile extends DataClass implements Insertable<PrinterProfile> {
           other.averageWatts == this.averageWatts &&
           other.purchaseCost == this.purchaseCost &&
           other.usefulLifeHours == this.usefulLifeHours &&
+          other.currentHours == this.currentHours &&
           other.isDefault == this.isDefault &&
           other.createdAt == this.createdAt);
 }
@@ -428,6 +473,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
   final Value<int> averageWatts;
   final Value<double?> purchaseCost;
   final Value<int?> usefulLifeHours;
+  final Value<int?> currentHours;
   final Value<bool> isDefault;
   final Value<DateTime> createdAt;
   const PrintersCompanion({
@@ -437,6 +483,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     this.averageWatts = const Value.absent(),
     this.purchaseCost = const Value.absent(),
     this.usefulLifeHours = const Value.absent(),
+    this.currentHours = const Value.absent(),
     this.isDefault = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -447,6 +494,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     required int averageWatts,
     this.purchaseCost = const Value.absent(),
     this.usefulLifeHours = const Value.absent(),
+    this.currentHours = const Value.absent(),
     this.isDefault = const Value.absent(),
     required DateTime createdAt,
   }) : name = Value(name),
@@ -459,6 +507,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     Expression<int>? averageWatts,
     Expression<double>? purchaseCost,
     Expression<int>? usefulLifeHours,
+    Expression<int>? currentHours,
     Expression<bool>? isDefault,
     Expression<DateTime>? createdAt,
   }) {
@@ -469,6 +518,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
       if (averageWatts != null) 'average_watts': averageWatts,
       if (purchaseCost != null) 'purchase_cost': purchaseCost,
       if (usefulLifeHours != null) 'useful_life_hours': usefulLifeHours,
+      if (currentHours != null) 'current_hours': currentHours,
       if (isDefault != null) 'is_default': isDefault,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -481,6 +531,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     Value<int>? averageWatts,
     Value<double?>? purchaseCost,
     Value<int?>? usefulLifeHours,
+    Value<int?>? currentHours,
     Value<bool>? isDefault,
     Value<DateTime>? createdAt,
   }) {
@@ -491,6 +542,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
       averageWatts: averageWatts ?? this.averageWatts,
       purchaseCost: purchaseCost ?? this.purchaseCost,
       usefulLifeHours: usefulLifeHours ?? this.usefulLifeHours,
+      currentHours: currentHours ?? this.currentHours,
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -517,6 +569,9 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
     if (usefulLifeHours.present) {
       map['useful_life_hours'] = Variable<int>(usefulLifeHours.value);
     }
+    if (currentHours.present) {
+      map['current_hours'] = Variable<int>(currentHours.value);
+    }
     if (isDefault.present) {
       map['is_default'] = Variable<bool>(isDefault.value);
     }
@@ -535,6 +590,7 @@ class PrintersCompanion extends UpdateCompanion<PrinterProfile> {
           ..write('averageWatts: $averageWatts, ')
           ..write('purchaseCost: $purchaseCost, ')
           ..write('usefulLifeHours: $usefulLifeHours, ')
+          ..write('currentHours: $currentHours, ')
           ..write('isDefault: $isDefault, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -4997,6 +5053,7 @@ typedef $$PrintersTableCreateCompanionBuilder =
       required int averageWatts,
       Value<double?> purchaseCost,
       Value<int?> usefulLifeHours,
+      Value<int?> currentHours,
       Value<bool> isDefault,
       required DateTime createdAt,
     });
@@ -5008,6 +5065,7 @@ typedef $$PrintersTableUpdateCompanionBuilder =
       Value<int> averageWatts,
       Value<double?> purchaseCost,
       Value<int?> usefulLifeHours,
+      Value<int?> currentHours,
       Value<bool> isDefault,
       Value<DateTime> createdAt,
     });
@@ -5048,6 +5106,11 @@ class $$PrintersTableFilterComposer
 
   ColumnFilters<int> get usefulLifeHours => $composableBuilder(
     column: $table.usefulLifeHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get currentHours => $composableBuilder(
+    column: $table.currentHours,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5101,6 +5164,11 @@ class $$PrintersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get currentHours => $composableBuilder(
+    column: $table.currentHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDefault => $composableBuilder(
     column: $table.isDefault,
     builder: (column) => ColumnOrderings(column),
@@ -5142,6 +5210,11 @@ class $$PrintersTableAnnotationComposer
 
   GeneratedColumn<int> get usefulLifeHours => $composableBuilder(
     column: $table.usefulLifeHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get currentHours => $composableBuilder(
+    column: $table.currentHours,
     builder: (column) => column,
   );
 
@@ -5189,6 +5262,7 @@ class $$PrintersTableTableManager
                 Value<int> averageWatts = const Value.absent(),
                 Value<double?> purchaseCost = const Value.absent(),
                 Value<int?> usefulLifeHours = const Value.absent(),
+                Value<int?> currentHours = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => PrintersCompanion(
@@ -5198,6 +5272,7 @@ class $$PrintersTableTableManager
                 averageWatts: averageWatts,
                 purchaseCost: purchaseCost,
                 usefulLifeHours: usefulLifeHours,
+                currentHours: currentHours,
                 isDefault: isDefault,
                 createdAt: createdAt,
               ),
@@ -5209,6 +5284,7 @@ class $$PrintersTableTableManager
                 required int averageWatts,
                 Value<double?> purchaseCost = const Value.absent(),
                 Value<int?> usefulLifeHours = const Value.absent(),
+                Value<int?> currentHours = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
                 required DateTime createdAt,
               }) => PrintersCompanion.insert(
@@ -5218,6 +5294,7 @@ class $$PrintersTableTableManager
                 averageWatts: averageWatts,
                 purchaseCost: purchaseCost,
                 usefulLifeHours: usefulLifeHours,
+                currentHours: currentHours,
                 isDefault: isDefault,
                 createdAt: createdAt,
               ),

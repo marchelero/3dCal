@@ -47,9 +47,6 @@ dev_dependencies:
   riverpod_lint: 3.1.4
   share_plus_platform_interface: ^6.1.0
 
-dependency_overrides:
-  test: 1.31.0
-
 flutter:
   uses-material-design: true
 

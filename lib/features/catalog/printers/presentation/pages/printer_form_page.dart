@@ -33,6 +33,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
   late final TextEditingController _wattsCtrl;
   late final TextEditingController _costCtrl;
   late final TextEditingController _lifeCtrl;
+  late final TextEditingController _currentHoursCtrl;
   late bool _isDefault;
   bool _saving = false;
 
@@ -45,12 +46,14 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     _wattsCtrl = TextEditingController(
       text: p == null ? '' : p.averageWatts.toString(),
     );
-    // F5: campos opcionales de amortizacion (vacio = sin linea).
     _costCtrl = TextEditingController(
       text: p?.purchaseCost == null ? '' : p!.purchaseCost!.toString(),
     );
     _lifeCtrl = TextEditingController(
       text: p?.usefulLifeHours == null ? '' : p!.usefulLifeHours!.toString(),
+    );
+    _currentHoursCtrl = TextEditingController(
+      text: p?.currentHours == null ? '' : p!.currentHours!.toString(),
     );
     _isDefault = p?.isDefault ?? false;
   }
@@ -62,6 +65,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     _wattsCtrl.dispose();
     _costCtrl.dispose();
     _lifeCtrl.dispose();
+    _currentHoursCtrl.dispose();
     super.dispose();
   }
 
@@ -109,13 +113,15 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
     final name = _nameCtrl.text.trim();
     final brand = _brandCtrl.text.trim();
     final watts = int.parse(_wattsCtrl.text.trim());
-    // F5: null si vacio (sin linea de amortizacion).
     final cost = _costCtrl.text.trim().isEmpty
         ? null
         : Decimal.parse(_costCtrl.text.trim().replaceAll(',', '.'));
     final life = _lifeCtrl.text.trim().isEmpty
         ? null
         : int.parse(_lifeCtrl.text.trim());
+    final currentHours = _currentHoursCtrl.text.trim().isEmpty
+        ? null
+        : int.parse(_currentHoursCtrl.text.trim());
     try {
       if (_isEdit) {
         await notifier.updatePrinter(
@@ -126,9 +132,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
           asDefault: _isDefault,
           purchaseCost: cost,
           usefulLifeHours: life,
-          // BUG-B fix: el form pasa null al limpiar los campos; con el flag
-          // explicito el repo BORRA la amortizacion en vez de ignorar el null
-          // (que ahora preserva valores existentes en otros callers).
+          currentHours: currentHours,
           clearAmortization: cost == null && life == null,
         );
       } else {
@@ -139,6 +143,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
           asDefault: _isDefault,
           purchaseCost: cost,
           usefulLifeHours: life,
+          currentHours: currentHours,
         );
       }
       if (mounted) {
@@ -178,6 +183,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                   brandController: _brandCtrl,
                   modelController: _nameCtrl,
                   wattsController: _wattsCtrl,
+                  usefulLifeHoursController: _lifeCtrl,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 NumericInputField(
@@ -189,7 +195,7 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                   validator: _requiredWatts,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                // F5: amortizacion (opcional). Ambos vacios → sin linea.
+                // Costo de compra (opcional).
                 NumericInputField(
                   label: EsBO.printerPurchaseCost,
                   controller: _costCtrl,
@@ -199,13 +205,23 @@ class _PrinterFormPageState extends ConsumerState<PrinterFormPage> {
                   validator: _validateCost,
                 ),
                 const SizedBox(height: AppSpacing.lg),
+                // Vida util estimada (horas). Se auto-carga del catalogo.
                 NumericInputField(
                   label: EsBO.printerUsefulLifeHours,
                   controller: _lifeCtrl,
                   allowDecimals: false,
                   helperText: EsBO.printerUsefulLifeHoursHelper,
-                  textInputAction: TextInputAction.done,
+                  textInputAction: TextInputAction.next,
                   validator: _validateLife,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                // Horas acumuladas de uso.
+                NumericInputField(
+                  label: EsBO.printerCurrentHours,
+                  controller: _currentHoursCtrl,
+                  allowDecimals: false,
+                  helperText: EsBO.printerCurrentHoursHelper,
+                  textInputAction: TextInputAction.done,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SwitchListTile(

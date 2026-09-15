@@ -811,7 +811,14 @@ class PtBrImpl implements AppStrings {
 
   @override
   String get printerUsefulLifeHoursHelper =>
-      'Ex: 4000. Com custo, o orçamento soma amortização da máquina.';
+      'Ex: 6000. Preenchido automaticamente ao selecionar modelo.';
+
+  @override
+  String get printerCurrentHours => 'Horas acumuladas';
+
+  @override
+  String get printerCurrentHoursHelper =>
+      'Horas de uso registradas. Atualizado ao validar orcamentos.';
 
   @override
   String get printerLifePositiveIfCost =>

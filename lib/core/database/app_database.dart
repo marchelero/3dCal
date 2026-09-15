@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -138,6 +138,12 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(discountTiersTable);
         await m.addColumn(calculations, calculations.batchDiscountPercent);
         await m.addColumn(calculations, calculations.batchDiscountAmount);
+      }
+      if (from < 13) {
+        // v12→v13: horas acumuladas de impresora (currentHours).
+        // Aditiva: impresoras viejas quedan current_hours NULL (0 horas
+        // usadas, comportamiento actual intacto).
+        await m.addColumn(printers, printers.currentHours);
       }
     },
   );

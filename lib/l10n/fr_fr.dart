@@ -780,7 +780,14 @@ class FrImpl implements AppStrings {
 
   @override
   String get printerUsefulLifeHoursHelper =>
-      'Ex : 4000. Avec un coût, le devis ajoute l\'amortissement machine.';
+      'Ex : 6000. Rempli automatiquement lors de la sélection du modèle.';
+
+  @override
+  String get printerCurrentHours => 'Heures cumulées';
+
+  @override
+  String get printerCurrentHoursHelper =>
+      'Heures d\'utilisation enregistrées. Mis à jour lors de la validation.';
 
   @override
   String get printerLifePositiveIfCost =>

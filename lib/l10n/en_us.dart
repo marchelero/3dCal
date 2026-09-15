@@ -796,7 +796,14 @@ class EnImpl implements AppStrings {
 
   @override
   String get printerUsefulLifeHoursHelper =>
-      'E.g. 4000. With a cost, quotes add machine amortization.';
+      'E.g. 6000. Auto-filled from catalog when selecting model.';
+
+  @override
+  String get printerCurrentHours => 'Current hours';
+
+  @override
+  String get printerCurrentHoursHelper =>
+      'Hours used so far. Updated automatically when validating quotes.';
 
   @override
   String get printerLifePositiveIfCost =>

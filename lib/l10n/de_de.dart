@@ -809,7 +809,14 @@ class DeImpl implements AppStrings {
 
   @override
   String get printerUsefulLifeHoursHelper =>
-      'Z.B. 4000. Mit Kosten addiert der Angebot Maschinenamortisation.';
+      'Z.B. 6000. Wird beim Modellauswahl automatisch ausgefüllt.';
+
+  @override
+  String get printerCurrentHours => 'Aktuelle Stunden';
+
+  @override
+  String get printerCurrentHoursHelper =>
+      'Bisherige Betriebsstunden. Wird bei Angeboten aktualisiert.';
 
   @override
   String get printerLifePositiveIfCost =>
