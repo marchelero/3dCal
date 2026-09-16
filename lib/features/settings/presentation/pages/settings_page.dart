@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:decimal/decimal.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,11 +21,10 @@ import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
-import '../widgets/discount_tiers_section.dart';
+import '../widgets/settings_widgets.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
-import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/pro_active_badge.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
@@ -108,7 +106,7 @@ class _SettingsBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Empresa (arriba) ──
-                _GroupLabel(
+                GroupLabel(
                   icon: Icons.business_rounded,
                   title: EsBO.settingsCompany.toUpperCase(),
                   trailing: locked
@@ -116,7 +114,7 @@ class _SettingsBody extends ConsumerWidget {
                       : null,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                _SettingsCard(
+                SettingsCard(
                   accentColor: color.tertiary,
                   divider: true,
                   children: [
@@ -135,169 +133,13 @@ class _SettingsBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
-                // ── Costos de impresión (Ganancia base) ──
-                _GroupLabel(
-                  icon: Icons.tune_rounded,
-                  title: EsBO.settingsGroupPrintingCosts,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _StatParamTile(
-                  icon: Icons.percent_rounded,
-                  title: EsBO.settingsProfitBase,
-                  helper: EsBO.settingsProfitBaseHelper,
-                  infoTooltip: EsBO.settingsProfitBaseInfo,
-                  accent: color.primary,
-                  initialValue: settings.profitBase == Decimal.zero
-                      ? ''
-                      : settings.profitBase.toString(),
-                  allowDecimals: false,
-                  sliderMin: 0,
-                  sliderMax: 500,
-                  sliderDivisions: 50,
-                  suffix: '%',
-                  sliderLeadingIcon: Icons.trending_down_rounded,
-                  sliderTrailingIcon: Icons.trending_up_rounded,
-                  showProfitPreview: true,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return EsBO.commonRequired;
-                    }
-                    final n = int.tryParse(v.trim());
-                    if (n == null) return EsBO.commonInvalidNumber;
-                    if (n < 0 || n > 1000) {
-                      return EsBO.settingsProfitBaseRange;
-                    }
-                    return null;
-                  },
-                  onSave: (v) {
-                    ref
-                        .read(settingsNotifierProvider.notifier)
-                        .updateProfitBase(v);
-                    _showSavedSnack(context);
-                  },
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-
-                // ── Energía (kWh) ──
-                _GroupLabel(
-                  icon: Icons.bolt_rounded,
-                  title: EsBO.settingsGroupEnergy,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _StatParamTile(
-                  icon: Icons.bolt_rounded,
-                  title: EsBO.settingsKwhRate(currency.symbol),
-                  helper: EsBO.settingsKwhRateHelper,
-                  accent: color.tertiary,
-                  initialValue: settings.kwhRate == Decimal.zero
-                      ? ''
-                      : settings.kwhRate.toString(),
-                  allowDecimals: true,
-                  sliderMin: 0,
-                  sliderMax: 5,
-                  sliderDivisions: 50,
-                  suffix: '${currency.symbol}/kWh',
-                  sliderLeadingIcon: Icons.eco_rounded,
-                  sliderTrailingIcon: Icons.bolt,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return EsBO.commonRequired;
-                    }
-                    final n = Decimal.tryParse(v.trim().replaceAll(',', '.'));
-                    if (n == null) return EsBO.commonInvalidNumber;
-                    if (n < Decimal.zero || n > Decimal.parse('5.00')) {
-                      return EsBO.settingsKwhRateRange;
-                    }
-                    return null;
-                  },
-                  onSave: (v) {
-                    ref
-                        .read(settingsNotifierProvider.notifier)
-                        .updateKwhRate(v);
-                    _showSavedSnack(context);
-                  },
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-
-                // ── Descuentos por cantidad (feature A — Hito 1) ──
-                _GroupLabel(
-                  icon: Icons.inventory_2_rounded,
-                  title: EsBO.settingsGroupDiscountTiers,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _SettingsCard(
-                  accentColor: color.tertiary,
-                  children: const [DiscountTiersSection()],
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-
-                // ── Catalogos ──
-                _GroupLabel(
-                  icon: Icons.inventory_2_rounded,
-                  title: EsBO.settingsGroupCatalogs,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _SettingsCard(
-                  accentColor: color.secondary,
-                  children: [
-                    Builder(
-                      builder: (ctx) {
-                        final filaments =
-                            ref.watch(filamentsNotifierProvider).value ?? [];
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: _IconBadge(
-                            icon: Icons.label_rounded,
-                            background: color.secondaryContainer,
-                            foreground: color.onSecondaryContainer,
-                          ),
-                          title: Text(EsBO.settingsFilamentos),
-                          subtitle: Text(
-                            EsBO.settingsFilamentsCount(filaments.length),
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right_rounded,
-                            color: color.onSurfaceVariant,
-                          ),
-                          onTap: () => context.push('/settings/filaments'),
-                        );
-                      },
-                    ),
-                    const _CardDivider(),
-                    Builder(
-                      builder: (ctx) {
-                        final printers =
-                            ref.watch(printersNotifierProvider).value ?? [];
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: _IconBadge(
-                            icon: Icons.print_rounded,
-                            background: color.tertiaryContainer,
-                            foreground: color.onTertiaryContainer,
-                          ),
-                          title: Text(EsBO.settingsImpresoras),
-                          subtitle: Text(
-                            EsBO.settingsPrintersCount(printers.length),
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right_rounded,
-                            color: color.onSurfaceVariant,
-                          ),
-                          onTap: () => context.push('/settings/printers'),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-
                 // ── Moneda e idioma ──
-                _GroupLabel(
+                GroupLabel(
                   icon: Icons.attach_money_rounded,
                   title: EsBO.settingsGroupCurrencyAndLanguage,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                _SettingsCard(
+                SettingsCard(
                   accentColor: color.primary,
                   divider: true,
                   children: [
@@ -309,12 +151,12 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Apariencia ──
-                _GroupLabel(
+                GroupLabel(
                   icon: Icons.palette_rounded,
                   title: EsBO.settingsGroupAppearance,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                _SettingsCard(
+                SettingsCard(
                   accentColor: color.secondary,
                   divider: true,
                   children: [
@@ -331,7 +173,7 @@ class _SettingsBody extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
 
                 // ── Datos (backup) ──
-                _GroupLabel(
+                GroupLabel(
                   icon: Icons.backup_rounded,
                   title: EsBO.settingsGroupYourData,
                 ),
@@ -341,12 +183,12 @@ class _SettingsBody extends ConsumerWidget {
 
                 if (canRestore) ...[
                   // ── Restaurar compras (T11) ──
-                  _GroupLabel(
+                  GroupLabel(
                     icon: Icons.restore_rounded,
                     title: EsBO.settingsGroupAccount,
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  _SettingsCard(
+                  SettingsCard(
                     accentColor: color.primary,
                     children: [RestoreButton()],
                   ),
@@ -354,18 +196,18 @@ class _SettingsBody extends ConsumerWidget {
                 ],
 
                 // ── Acerca de + Legal ──
-                _GroupLabel(
+                GroupLabel(
                   icon: Icons.info_outline_rounded,
                   title: EsBO.settingsGroupAbout,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                _SettingsCard(
+                SettingsCard(
                   accentColor: color.tertiary,
                   divider: true,
                   children: [
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: _IconBadge(
+                      leading: IconBadge(
                         icon: Icons.privacy_tip_rounded,
                         background: color.primaryContainer,
                         foreground: color.onPrimaryContainer,
@@ -377,10 +219,10 @@ class _SettingsBody extends ConsumerWidget {
                       ),
                       onTap: () => context.push('/legal/privacy'),
                     ),
-                    const _CardDivider(),
+                    const CardDivider(),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: _IconBadge(
+                      leading: IconBadge(
                         icon: Icons.gavel_rounded,
                         background: color.secondaryContainer,
                         foreground: color.onSecondaryContainer,
@@ -561,161 +403,6 @@ class _SettingsHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────
-// SECTION — container con BARRA DE ACENTO IZQUIERDA
-// ─────────────────────────────────────────────────
-
-/// El badge de estado PRO activo y la sheet de beneficios viven en
-/// `lib/shared/widgets/pro_active_badge.dart` ([ProActiveBadge]) para
-/// reutilizarse en la cabecera de settings y en la home.
-
-/// Etiqueta de grupo que subdivide el menu de ajustes.
-///
-/// Titulo en MAYUSCULAS con tracking + icono en caja tintada + trailing
-/// opcional (ej: badge PRO). Una regla corta de acento cierra el titulo,
-/// como la linea pautada de un formulario.
-class _GroupLabel extends StatelessWidget {
-  const _GroupLabel({required this.icon, required this.title, this.trailing});
-
-  final IconData icon;
-  final String title;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-    final text = title;
-
-    return Padding(
-      padding: const EdgeInsets.only(left: AppSpacing.xs, right: AppSpacing.xs),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: color.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppRadii.sm),
-            ),
-            child: Icon(icon, size: 16, color: color.onSurfaceVariant),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Flexible(
-            child: Text(
-              text.toUpperCase(),
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.1,
-                color: color.onSurfaceVariant,
-              ),
-            ),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: AppSpacing.sm),
-            trailing!,
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Icono de badge reutilizable para filas (leading de ListTile).
-class _IconBadge extends StatelessWidget {
-  const _IconBadge({
-    required this.icon,
-    required this.background,
-    required this.foreground,
-  });
-
-  final IconData icon;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-      ),
-      child: Icon(icon, size: 20, color: foreground),
-    );
-  }
-}
-
-/// Divisor horizontal de una card.
-class _CardDivider extends StatelessWidget {
-  const _CardDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: color.outlineVariant.withValues(alpha: 0.5),
-    );
-  }
-}
-
-/// Card contenedora de un grupo de ajustes.
-///
-/// Reemplaza el patron de barra lateral: una card limpia y redondeada con
-/// contenido separado por hairlines ([_CardDivider]) si `divider` es true.
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({
-    required this.accentColor,
-    required this.children,
-    this.divider = false,
-  });
-
-  final Color accentColor;
-  final List<Widget> children;
-
-  /// Aplica un borde superior de acento y separa los hijos con hairlines.
-  final bool divider;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: color.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.xxl),
-        border: Border.all(
-          color: color.outlineVariant.withValues(alpha: 0.6),
-          width: 0.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (divider) Container(height: 3, color: accentColor),
-          // Material transparente para que ListTile/InkWell dibujen su
-          // ink splash sobre la DecoratedBox de la card.
-          Material(
-            color: Colors.transparent,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: children,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────
 // ThemeModeSelector — Claro / Oscuro / Sistema
 // ─────────────────────────────────────────────────
 
@@ -745,331 +432,6 @@ class _ThemeModeSelector extends ConsumerWidget {
         ref.read(themeModeProvider.notifier).setMode(selected.first);
       },
       showSelectedIcon: false,
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────
-// StatParamTile — tarjeta de parametro estilo "stat"
-// ─────────────────────────────────────────────────
-
-/// Tarjeta editable presentada igual que los KPIs de la home ([StatTile]):
-/// icono en caja tintada + titulo arriba y un valor numerico grande en mono
-/// tabular debajo. Auto-save on blur.
-///
-/// Internamente usa [NumericInputField] para mantener el filtrado numerico,
-/// la validacion y el comportamiento de [TextField] (requerido por tests).
-class _StatParamTile extends StatefulWidget {
-  const _StatParamTile({
-    required this.icon,
-    required this.title,
-    required this.helper,
-    required this.accent,
-    required this.initialValue,
-    required this.validator,
-    required this.onSave,
-    required this.allowDecimals,
-    required this.sliderMin,
-    required this.sliderMax,
-    required this.sliderDivisions,
-    this.suffix = '',
-    this.sliderLeadingIcon,
-    this.sliderTrailingIcon,
-    this.showProfitPreview = false,
-    this.infoTooltip,
-  });
-
-  final IconData icon;
-  final String title;
-  final String helper;
-  final Color accent;
-  final String initialValue;
-  final FormFieldValidator<String> validator;
-  final ValueChanged<Decimal> onSave;
-  final bool allowDecimals;
-  final double sliderMin;
-  final double sliderMax;
-  final int sliderDivisions;
-  final String suffix;
-  final IconData? sliderLeadingIcon;
-  final IconData? sliderTrailingIcon;
-  final bool showProfitPreview;
-
-  /// Tooltip de ayuda con icono de informacion junto al titulo.
-  /// Null = no se muestra el icono.
-  final String? infoTooltip;
-
-  @override
-  State<_StatParamTile> createState() => _StatParamTileState();
-}
-
-class _StatParamTileState extends State<_StatParamTile> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void didUpdateWidget(covariant _StatParamTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue) {
-      _ctrl.text = widget.initialValue;
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _handleBlur(String raw) {
-    final err = widget.validator(raw);
-    if (err != null) return;
-    final cleaned = raw.trim().replaceAll(',', '.');
-    final parsed = Decimal.tryParse(cleaned);
-    if (parsed == null) return;
-    widget.onSave(parsed);
-  }
-
-  double get _current {
-    return double.tryParse(_ctrl.text.trim().replaceAll(',', '.')) ??
-        widget.sliderMin;
-  }
-
-  void _onSliderChange(double v) {
-    setState(() {
-      _ctrl.text = widget.allowDecimals
-          ? v.toStringAsFixed(2)
-          : v.round().toString();
-    });
-  }
-
-  void _onSliderEnd(double v) {
-    if (!widget.allowDecimals) {
-      widget.onSave(Decimal.fromInt(v.round()));
-    } else {
-      widget.onSave(Decimal.parse(v.toStringAsFixed(2)));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-    final raw = _current;
-    final value = raw < widget.sliderMin
-        ? widget.sliderMin
-        : (raw > widget.sliderMax ? widget.sliderMax : raw);
-
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: color.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.xxl),
-        border: Border.all(
-          color: color.outlineVariant.withValues(alpha: 0.6),
-          width: 0.5,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Barra de acento izquierda (formato del config inicial) ──
-          Container(width: 4, color: widget.accent),
-          // ── Contenido ──
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header: icon chip + titulo
-                  Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: widget.accent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          widget.icon,
-                          size: 18,
-                          color: widget.accent,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          widget.title,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (widget.infoTooltip != null) ...[
-                        Tooltip(
-                          message: widget.infoTooltip,
-                          triggerMode: TooltipTriggerMode.tap,
-                          child: Icon(
-                            Icons.info_outline_rounded,
-                            size: 18,
-                            color: color.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  // Helper
-                  Text(
-                    widget.helper,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  // Slider con iconos de tendencia (igual al paso 2)
-                  Row(
-                    children: [
-                      if (widget.sliderLeadingIcon != null) ...[
-                        Icon(
-                          widget.sliderLeadingIcon,
-                          size: 16,
-                          color: color.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                      ],
-                      Expanded(
-                        child: SliderTheme(
-                          data: SliderThemeData(
-                            trackHeight: 6,
-                            activeTrackColor: widget.accent,
-                            inactiveTrackColor: widget.accent.withValues(
-                              alpha: 0.25,
-                            ),
-                            thumbColor: widget.accent,
-                            thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 10,
-                            ),
-                            overlayColor: widget.accent.withValues(alpha: 0.15),
-                            overlayShape: const RoundSliderOverlayShape(
-                              overlayRadius: 20,
-                            ),
-                          ),
-                          child: Slider(
-                            value: value,
-                            min: widget.sliderMin,
-                            max: widget.sliderMax,
-                            divisions: widget.sliderDivisions,
-                            label: widget.allowDecimals
-                                ? value.toStringAsFixed(2)
-                                : value.round().toString(),
-                            onChanged: _onSliderChange,
-                            onChangeEnd: _onSliderEnd,
-                          ),
-                        ),
-                      ),
-                      if (widget.sliderTrailingIcon != null) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Icon(
-                          widget.sliderTrailingIcon,
-                          size: 16,
-                          color: color.onSurfaceVariant,
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  // Valor + input (con preview si aplica)
-                  if (widget.showProfitPreview)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: NumericInputField(
-                            label: widget.title,
-                            controller: _ctrl,
-                            allowDecimals: widget.allowDecimals,
-                            suffix: widget.suffix,
-                            validator: widget.validator,
-                            onBlur: _handleBlur,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        // Flexible: evita overflow cuando la fuente es
-                        // grande y el preview no cabe junto al input.
-                        Flexible(
-                          child: _GainPreview(
-                            value: _current,
-                            accent: widget.accent,
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    NumericInputField(
-                      label: widget.title,
-                      controller: _ctrl,
-                      allowDecimals: widget.allowDecimals,
-                      suffix: widget.suffix,
-                      validator: widget.validator,
-                      onBlur: _handleBlur,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Preview visual del porcentaje de ganancia (igual al paso 2 del config
-/// inicial): muestra cuánto se multiplica sobre el costo.
-class _GainPreview extends StatelessWidget {
-  const _GainPreview({required this.value, required this.accent});
-
-  final double value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final multiplier = 1 + (value / 100);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'x${multiplier.toStringAsFixed(1)}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: accent,
-            ),
-          ),
-          Text(
-            EsBO.settingsGainMultiplierSuffix,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -1848,7 +1210,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     final isPro = ref.watch(isProProvider);
     final locked = !ent.isLoading && !isPro;
 
-    return _SettingsCard(
+    return SettingsCard(
       accentColor: color.primary,
       children: [
         Text(

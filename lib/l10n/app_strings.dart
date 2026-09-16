@@ -34,6 +34,7 @@ abstract class AppStrings {
   // === Navigation ===
   String get navHome;
   String get navHistory;
+  String get navPrint;
   String get navDashboard;
   String get navSettings;
 
@@ -57,6 +58,13 @@ abstract class AppStrings {
   String get settingsTheme;
   String get settingsManageFilaments;
   String get settingsManagePrinters;
+
+  // === Print settings page ===
+  /// Titulo de la sub-pagina de configuracion de impresion.
+  String get settingsPrintConfigTitle;
+
+  /// Subtitulo / descripcion de la seccion de configuracion de impresion.
+  String get settingsPrintConfigSubtitle;
 
   // === Settings page section group labels (uppercase headers) ===
   /// Titulo de la seccion Catalogos (Filamentos / Impresoras).

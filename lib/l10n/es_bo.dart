@@ -43,6 +43,7 @@ class EsBO {
   // === Navigation ===
   static String get navHome => _impl.navHome;
   static String get navHistory => _impl.navHistory;
+  static String get navPrint => _impl.navPrint;
   static String get navDashboard => _impl.navDashboard;
   static String get navSettings => _impl.navSettings;
 
@@ -64,6 +65,12 @@ class EsBO {
   static String get settingsTheme => _impl.settingsTheme;
   static String get settingsManageFilaments => _impl.settingsManageFilaments;
   static String get settingsManagePrinters => _impl.settingsManagePrinters;
+
+  // === Print settings page ===
+  static String get settingsPrintConfigTitle =>
+      _impl.settingsPrintConfigTitle;
+  static String get settingsPrintConfigSubtitle =>
+      _impl.settingsPrintConfigSubtitle;
 
   // === Settings page section group labels (uppercase headers) ===
   static String get settingsGroupCatalogs => _impl.settingsGroupCatalogs;
@@ -876,6 +883,8 @@ class EsImpl implements AppStrings {
   @override
   String get navHistory => 'Historial';
   @override
+  String get navPrint => 'Impresión';
+  @override
   String get navDashboard => 'Dashboard';
   @override
   String get navSettings => 'Ajustes';
@@ -919,6 +928,13 @@ class EsImpl implements AppStrings {
   String get settingsManageFilaments => 'Gestiona tus filamentos';
   @override
   String get settingsManagePrinters => 'Registra tus impresoras';
+
+  // === Print settings page ===
+  @override
+  String get settingsPrintConfigTitle => 'Configuración de impresión';
+  @override
+  String get settingsPrintConfigSubtitle =>
+      'Costos, energía, descuentos y catálogos';
 
   // === Settings page section group labels (uppercase headers) ===
   @override

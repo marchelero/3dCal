@@ -18,6 +18,7 @@ import '../../features/onboarding/presentation/pages/initial_config_page.dart';
 import '../../features/onboarding/presentation/pages/language_selection_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/settings/presentation/pages/print_settings_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../l10n/es_bo.dart';
 import '../../shared/widgets/app_scaffold.dart';
@@ -77,7 +78,7 @@ final appRouter = GoRouter(
       builder: (context, state) => const OnboardingPage(),
     ),
 
-    // === Shell: 4 tabs principales ===
+    // === Shell: 5 tabs principales ===
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return AppScaffold(navigationShell: navigationShell);
@@ -93,6 +94,14 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/history',
               builder: (context, state) => const CalculationsListPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/print',
+              builder: (context, state) => const PrintSettingsPage(),
             ),
           ],
         ),

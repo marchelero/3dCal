@@ -42,6 +42,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       label: s.navHistory,
     ),
     _NavDest(
+      icon: Icons.print_outlined,
+      selectedIcon: Icons.print,
+      label: s.navPrint,
+    ),
+    _NavDest(
       icon: Icons.bar_chart_outlined,
       selectedIcon: Icons.bar_chart,
       label: s.navDashboard,

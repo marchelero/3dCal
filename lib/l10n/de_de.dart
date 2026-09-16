@@ -46,6 +46,8 @@ class DeImpl implements AppStrings {
   @override
   String get navHistory => 'Verlauf';
   @override
+  String get navPrint => 'Druck';
+  @override
   String get navDashboard => 'Übersicht';
   @override
   String get navSettings => 'Einstellungen';
@@ -90,6 +92,13 @@ class DeImpl implements AppStrings {
   String get settingsManageFilaments => 'Filamente verwalten';
   @override
   String get settingsManagePrinters => 'Drucker registrieren';
+
+  // === Print settings page ===
+  @override
+  String get settingsPrintConfigTitle => 'Druckeinstellungen';
+  @override
+  String get settingsPrintConfigSubtitle =>
+      'Kosten, Energie, Rabatte und Kataloge';
 
   // === Settings page section group labels (uppercase headers) ===
   @override

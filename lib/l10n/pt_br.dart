@@ -45,6 +45,8 @@ class PtBrImpl implements AppStrings {
   @override
   String get navHistory => 'Histórico';
   @override
+  String get navPrint => 'Impressão';
+  @override
   String get navDashboard => 'Painel';
   @override
   String get navSettings => 'Configurações';
@@ -87,6 +89,13 @@ class PtBrImpl implements AppStrings {
   String get settingsManageFilaments => 'Gerencie seus filamentos';
   @override
   String get settingsManagePrinters => 'Cadastre suas impressoras';
+
+  // === Print settings page ===
+  @override
+  String get settingsPrintConfigTitle => 'Configuração de impressão';
+  @override
+  String get settingsPrintConfigSubtitle =>
+      'Custos, energia, descontos e catálogos';
 
   // === Settings page section group labels (uppercase headers) ===
   @override

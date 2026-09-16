@@ -45,6 +45,8 @@ class EnImpl implements AppStrings {
   @override
   String get navHistory => 'History';
   @override
+  String get navPrint => 'Print';
+  @override
   String get navDashboard => 'Dashboard';
   @override
   String get navSettings => 'Settings';
@@ -86,6 +88,13 @@ class EnImpl implements AppStrings {
   String get settingsManageFilaments => 'Manage your filaments';
   @override
   String get settingsManagePrinters => 'Register your printers';
+
+  // === Print settings page ===
+  @override
+  String get settingsPrintConfigTitle => 'Print settings';
+  @override
+  String get settingsPrintConfigSubtitle =>
+      'Costs, energy, discounts and catalogs';
 
   // === Settings page section group labels (uppercase headers) ===
   @override

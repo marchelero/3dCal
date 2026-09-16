@@ -41,6 +41,8 @@ class FrImpl implements AppStrings {
   @override
   String get navHistory => 'Historique';
   @override
+  String get navPrint => 'Impression';
+  @override
   String get navDashboard => 'Tableau de bord';
   @override
   String get navSettings => 'Paramètres';
@@ -84,6 +86,13 @@ class FrImpl implements AppStrings {
   String get settingsManageFilaments => 'Gérer vos filaments';
   @override
   String get settingsManagePrinters => 'Enregistrer vos imprimantes';
+
+  // === Print settings page ===
+  @override
+  String get settingsPrintConfigTitle => "Paramètres d'impression";
+  @override
+  String get settingsPrintConfigSubtitle =>
+      "Coûts, énergie, remises et catalogues";
 
   // === Settings page section group labels (uppercase headers) ===
   @override
