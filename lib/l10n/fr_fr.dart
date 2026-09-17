@@ -92,7 +92,7 @@ class FrImpl implements AppStrings {
   String get settingsPrintConfigTitle => "Paramètres d'impression";
   @override
   String get settingsPrintConfigSubtitle =>
-      "Coûts, énergie, remises et catalogues";
+      'Coûts, énergie, remises et catalogues';
 
   // === Settings page section group labels (uppercase headers) ===
   @override

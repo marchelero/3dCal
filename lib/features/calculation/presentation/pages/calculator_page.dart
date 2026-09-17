@@ -1,4 +1,4 @@
-// ignore_for_file: public_member_api_docs
+﻿// ignore_for_file: public_member_api_docs
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -22,25 +22,26 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
-import '../../../../shared/widgets/filament_color_palette.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 import '../../../../shared/widgets/perforation.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/smart_app_bar_actions.dart';
-import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/discount_tier.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
+import '../widgets/calculator_bottom_bar.dart';
 import '../widgets/calculator_wizard.dart';
 import '../widgets/cost_help_dialog.dart';
-import '../widgets/filament_selector_dialog.dart';
-import '../widgets/printer_selector_dialog.dart';
+import '../widgets/filament_row.dart';
+import '../widgets/material_management.dart';
+import '../widgets/mode_selector.dart';
 import '../widgets/result_sheet.dart';
+import '../widgets/save_sheet.dart';
 
-/// Pantalla principal del calculator — WIZARD de 3 pasos (rediseño 2026-09).
+/// Pantalla principal del calculator â€” WIZARD de 3 pasos (rediseÃ±o 2026-09).
 ///
 /// Pasos (modo Express | modo Advanced comparten los pasos 2-3):
 /// 1. Pieza: nombre + peso + filamento (Express) | nombre + materiales
@@ -50,7 +51,7 @@ import '../widgets/result_sheet.dart';
 ///
 /// El resultado NO es un paso: la barra de total fija abajo (con lineas de
 /// lote y hint de validacion) se conserva en todos los pasos y su tap abre
-/// el desglose completo — solo que ahora debajo vive el mini-footer de
+/// el desglose completo â€” solo que ahora debajo vive el mini-footer de
 /// navegacion del wizard: dos flechas espejo (atras/adelante, la de avance
 /// disabled en el ultimo paso) con el contador "Paso X de 3" en el medio.
 ///
@@ -89,7 +90,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   late final TextEditingController _quantityCtrl;
 
   // Advanced controllers.
-  final List<_MaterialCtrls> _materialCtrls = [];
+  final List<MaterialCtrls> _materialCtrls = [];
   final _advancedListKey = GlobalKey<AnimatedListState>();
 
   /// Toggle local para la seccion OTROS (puramente visual, no persiste).
@@ -169,14 +170,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     if (initial.mode == CalculatorMode.advanced) {
       for (final m in initial.materials) {
-        _materialCtrls.add(_MaterialCtrls.fromRow(m));
+        _materialCtrls.add(MaterialCtrls.fromRow(m));
       }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       // Prefill ("Reusar"): cargar la cotizacion guardada y sincronizar los
-      // controllers. NO tocar reset/draft/defaults — el state precargado es
+      // controllers. NO tocar reset/draft/defaults â€” el state precargado es
       // la fuente de verdad. Un solo post-frame (esta pagina) evita la race
       // que antes pisaba el prefill con reset()/draft.
       if (widget.prefillCalc != null) {
@@ -276,7 +277,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     }
     _materialCtrls.clear();
     for (final m in materials) {
-      _materialCtrls.add(_MaterialCtrls.fromRow(m));
+      _materialCtrls.add(MaterialCtrls.fromRow(m));
     }
   }
 
@@ -366,7 +367,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     if (mode == CalculatorMode.advanced && _materialCtrls.isEmpty) {
       notifier.addMaterial();
-      _materialCtrls.add(_MaterialCtrls.empty());
+      _materialCtrls.add(MaterialCtrls.empty());
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _advancedListKey.currentState?.insertItem(0);
       });
@@ -376,7 +377,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
   void _addMaterial() {
     ref.read(calculatorNotifierProvider.notifier).addMaterial();
-    _materialCtrls.add(_MaterialCtrls.empty());
+    _materialCtrls.add(MaterialCtrls.empty());
     final newIndex = _materialCtrls.length - 1;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _advancedListKey.currentState?.insertItem(newIndex);
@@ -536,7 +537,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                           if (!mounted) return;
                           // BUG-FIX: sincronizar controllers con el state
                           // cargado. Sin esto, el state tiene los datos pero
-                          // los campos de texto quedan vacíos (solo se ve el
+                          // los campos de texto quedan vacÃ­os (solo se ve el
                           // total en el AppBar/bottom bar).
                           _syncControllersFromState(
                             ref.read(calculatorNotifierProvider),
@@ -580,12 +581,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         .read(calculationRepositoryProvider)
         .recentClientNames();
     if (!mounted) return;
-    final result = await showModalBottomSheet<_SaveResult>(
+    final result = await showModalBottomSheet<SaveResult>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (sheetCtx) => _SaveSheet(recentClients: recentClients),
+      builder: (sheetCtx) => SaveSheet(recentClients: recentClients),
     );
     if (result == null || !mounted) return;
     try {
@@ -607,9 +608,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         return;
       }
 
-      // 2) Opcionalmente, además, crear una plantilla reutilizable.
+      // 2) Opcionalmente, ademÃ¡s, crear una plantilla reutilizable.
       //    IMPORTANTE: hacerlo ANTES de resetear el form. Si reseteamos
-      //    primero, `state.isValid`/`state.output` dejan de ser válidos y
+      //    primero, `state.isValid`/`state.output` dejan de ser vÃ¡lidos y
       //    `saveAsTemplate` no crea nada (bug: plantilla que desaparece).
       if (result.saveAsTemplate) {
         try {
@@ -623,8 +624,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       // 3) Limpiar el formulario y el estado en memoria al guardar: sin esto
       //    los valores quedan "cacheados" en el notifier y solo desaparecen
       //    al salir y volver a entrar. El reset dispara listeners que
-      //    re-agendarían el draft; lo cancelamos para no re-persistir un
-      //    draft vacío.
+      //    re-agendarÃ­an el draft; lo cancelamos para no re-persistir un
+      //    draft vacÃ­o.
       await ref.read(draftStorageProvider).clear();
       _saveTimer?.cancel();
       _resetAll();
@@ -652,7 +653,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ..showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
     } on HistoryCapReachedException catch (_) {
       // T15: free user intento guardar la #11. SnackBar dedicado con CTA
-      // "Go Pro" (reusamos calculatorGoProAction — mismo destino /paywall
+      // "Go Pro" (reusamos calculatorGoProAction â€” mismo destino /paywall
       // que T14). No se persiste nada; los 10 items existentes intactos.
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -742,7 +743,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     final viewportHeight = MediaQuery.of(context).size.height;
 
-    // Determinar qué sección está más visible.
+    // Determinar quÃ© secciÃ³n estÃ¡ mÃ¡s visible.
     final keys = [_section1Key, _section2Key, _section3Key];
     var mostVisible = 0;
     var bestVisibility = double.infinity;
@@ -775,9 +776,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final isValid = state.isValid && state.output != null;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    // feature A (Hito 1): escalones de descuento. El stream se escucha ACÁ
-    // (no en el notifier) para no sostener una suscripción drift en unit
-    // tests; al emitir se actualiza el lote (lotTotal, líneas, hint).
+    // feature A (Hito 1): escalones de descuento. El stream se escucha ACÃ
+    // (no en el notifier) para no sostener una suscripciÃ³n drift en unit
+    // tests; al emitir se actualiza el lote (lotTotal, lÃ­neas, hint).
     ref.listen(discountTiersProvider, (_, next) {
       notifier.updateTiers(next.value ?? const <DiscountTier>[]);
     });
@@ -785,8 +786,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     return Scaffold(
       appBar: AppBar(
-        // Salida explícita: con ruta push, el leading por defecto es una
-        // flecha sutil. Un botón "cerrar" comunica mejor que vuelve al menú
+        // Salida explÃ­cita: con ruta push, el leading por defecto es una
+        // flecha sutil. Un botÃ³n "cerrar" comunica mejor que vuelve al menÃº
         // (sobre todo en web, donde no hay back del sistema).
         leading: Semantics(
           button: true,
@@ -803,7 +804,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ),
         actions: [
           // AppBar adaptativo: el chip de total es prioridad (SIEMPRE
-          // directo); el resto colapsa a un menu ⋮ en pantallas angostas.
+          // directo); el resto colapsa a un menu â‹® en pantallas angostas.
           SmartAppBarActions(
             priority: [
               // Total chip: siempre visible en el AppBar (nunca se tapa con
@@ -812,7 +813,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 Semantics(
                   button: true,
                   label: '${EsBO.calcResultBarTapHint}: $totalText',
-                  child: _TotalChip(
+                  child: TotalChip(
                     totalText: totalText,
                     hasDiscount:
                         state.output!.discountAmount > Decimal.zero ||
@@ -934,11 +935,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (state.showsBatchLine && totalText != null) ...[
-              _BatchLines(state: state, currency: currency),
+              BatchLines(state: state, currency: currency),
               const Perforation(),
             ],
             ResultBottomBar(
-              totalText: totalText ?? '—',
+              totalText: totalText ?? 'â€”',
               hasDiscount:
                   state.output != null &&
                   (state.output!.discountAmount > Decimal.zero ||
@@ -1007,7 +1008,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 
-  /// PASO 1 (Express): Pieza — nombre opcional + peso (hero) + filamento.
+  /// PASO 1 (Express): Pieza â€” nombre opcional + peso (hero) + filamento.
   /// Mantiene la regla del 95%: los 3 inputs clave van en esta primera
   /// pantalla, sin scrollear.
   Widget _buildStepPieceExpress(
@@ -1021,12 +1022,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         // Mode selector compacto (alineado a la derecha)
         Align(
           alignment: Alignment.centerRight,
-          child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
+          child: ModeSelector(mode: state.mode, onChanged: _switchMode),
         ),
         const SizedBox(height: AppSpacing.lg),
 
         // Pieza: nombre + peso + filamento
-        _RubricSection(
+        RubricSection(
           icon: Icons.category_rounded,
           title: EsBO.calcSectionPiece,
           child: Column(
@@ -1043,7 +1044,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              // Peso — campo hero (grande, clave)
+              // Peso â€” campo hero (grande, clave)
               NumericInputField(
                 label: EsBO.calcFieldWeight,
                 controller: _weightCtrl,
@@ -1056,8 +1057,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 showValidation: _showValidationErrors,
               ),
               const SizedBox(height: AppSpacing.sm),
-              // Filamento: selector inline del catálogo
-              _ExpressFilamentRow(
+              // Filamento: selector inline del catÃ¡logo
+              ExpressFilamentRow(
                 labelCtrl: _labelCtrl,
                 priceCtrl: _priceCtrl,
                 gramsCtrl: _gramsCtrl,
@@ -1075,13 +1076,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 
-  /// PASO 2 (comun): Impresion — tiempo (horas+minutos) + impresora activa.
+  /// PASO 2 (comun): Impresion â€” tiempo (horas+minutos) + impresora activa.
   Widget _buildStepPrint(CalculatorNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Tiempo de impresión ──
-        _RubricSection(
+        // â”€â”€ Tiempo de impresiÃ³n â”€â”€
+        RubricSection(
           icon: Icons.timer_rounded,
           title: EsBO.calcSectionTime,
           child: Row(
@@ -1116,29 +1117,29 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ),
         const SizedBox(height: AppSpacing.xl),
 
-        // ── Impresora ──
-        _RubricSection(
+        // â”€â”€ Impresora â”€â”€
+        RubricSection(
           icon: Icons.print_rounded,
           title: EsBO.calcSectionPrinter,
-          child: const _PrinterIndicator(),
+                    child: const PrinterIndicator(),
         ),
       ],
     );
   }
 
-  /// PASO 3 (comun): Otros — cantidad (Pro) + descuento + OTROS/costos de
+  /// PASO 3 (comun): Otros â€” cantidad (Pro) + descuento + OTROS/costos de
   /// la pieza (Pro). El descuento subio desde el result sheet al form:
   /// ahora es un campo de primer nivel del wizard.
   Widget _buildStepAdjust(CalculatorNotifier notifier, WorldCurrency currency) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Cantidad (Pro) ──
+        // â”€â”€ Cantidad (Pro) â”€â”€
         _buildQuantitySection(notifier),
         const SizedBox(height: AppSpacing.xl),
 
-        // ── Descuento ──
-        _RubricSection(
+        // â”€â”€ Descuento â”€â”€
+        RubricSection(
           icon: Icons.percent_rounded,
           title: EsBO.calcSectionDiscount,
           child: NumericInputField(
@@ -1151,7 +1152,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ),
         const SizedBox(height: AppSpacing.xl),
 
-        // ── OTROS (con peek preview) ──
+        // â”€â”€ OTROS (con peek preview) â”€â”€
         _buildOtrosSection(notifier, currency),
       ],
     );
@@ -1171,12 +1172,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         // Mode selector compacto
         Align(
           alignment: Alignment.centerRight,
-          child: _ModeSelector(mode: state.mode, onChanged: _switchMode),
+          child: ModeSelector(mode: state.mode, onChanged: _switchMode),
         ),
         const SizedBox(height: AppSpacing.lg),
 
         // Pieza: nombre opcional
-        _RubricSection(
+        RubricSection(
           icon: Icons.category_rounded,
           title: EsBO.calcSectionPiece,
           child: TextField(
@@ -1192,7 +1193,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         const SizedBox(height: AppSpacing.xl),
 
         // Materiales (multi-material, agregable)
-        _RubricSection(
+        RubricSection(
           icon: Icons.inventory_2_rounded,
           title: EsBO.calcSectionMaterials,
           child: Column(
@@ -1209,7 +1210,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   }
                   return SizeTransition(
                     sizeFactor: animation,
-                    child: _MaterialRowTile(
+                    child: MaterialRowTile(
                       index: index,
                       labelCtrl: _materialCtrls[index].label,
                       weightCtrl: _materialCtrls[index].weight,
@@ -1244,7 +1245,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 
   // ============================================================
-  // OTROS SECTION — collapsable card
+  // OTROS SECTION â€” collapsable card
   // ============================================================
 
   /// Seccion colapsable "Otros" con 4 campos F1 en grid 2x2.
@@ -1298,7 +1299,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           },
         ),
         // Peek preview: labels de los 4 campos cuando esta colapsado
-        if (!_showOtros) _OtrosPeekPreview(locked: showProBadge),
+        if (!_showOtros) OtrosPeekPreview(locked: showProBadge),
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
@@ -1369,7 +1370,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 
   // ============================================================
-  // QUANTITY SECTION — Pro-gated
+  // QUANTITY SECTION â€” Pro-gated
   // ============================================================
 
   /// Seccion de cantidad de unidades (Pro). Muestra +/- y campo de texto.
@@ -1384,7 +1385,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final showProBadge = !isPro && !isLoading;
     final quantity = ref.watch(calculatorNotifierProvider).quantity;
 
-    // Escalón aplicado (feature A): hint "X % desde N u." bajo el campo.
+    // EscalÃ³n aplicado (feature A): hint "X % desde N u." bajo el campo.
     final batchPct = ref.watch(
       calculatorNotifierProvider.select((s) => s.batchAppliedPercent),
     );
@@ -1392,7 +1393,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       calculatorNotifierProvider.select((s) => s.batchAppliedMinQty),
     );
     final showBatchHint = quantity > 1 && batchPct != null;
-    final hintPct = _pctInt(batchPct);
+    final hintPct = pctInt(batchPct);
     final hintMinQty = batchMinQty ?? 0;
 
     // Escalones configurados en Settings (para el tooltip informativo).
@@ -1493,7 +1494,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             ),
           ],
         ),
-        // Hint del escalón aplicado (feature A — Hito 1): informa el umbral
+        // Hint del escalÃ³n aplicado (feature A â€” Hito 1): informa el umbral
         // activo del descuento mayorista, p.ej. "10 % desde 10 u.".
         if (showBatchHint) ...[
           const SizedBox(height: AppSpacing.xs),
@@ -1525,7 +1526,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final buffer = StringBuffer(EsBO.calcQuantityTiersTitle);
     for (final tier in tiers) {
       buffer.writeln(
-        '${_pctInt(tier.percent)}% ${EsBO.calcQuantityFrom} ${tier.minQty} ${EsBO.calcQuantityUnits}',
+        '${pctInt(tier.percent)}% ${EsBO.calcQuantityFrom} ${tier.minQty} ${EsBO.calcQuantityUnits}',
       );
     }
     return buffer.toString().trimRight();
@@ -1601,1569 +1602,5 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 }
 
-// === Total chip en AppBar ===
 
-/// Chip animado que muestra el total calculado en el AppBar.
-/// Siempre visible (no se tapa con el teclado). Tap abre el sheet
-/// de resultado con el desglose completo y acciones.
-class _TotalChip extends StatefulWidget {
-  const _TotalChip({
-    required this.totalText,
-    required this.hasDiscount,
-    required this.onTap,
-  });
 
-  final String totalText;
-  final bool hasDiscount;
-  final VoidCallback onTap;
-
-  @override
-  State<_TotalChip> createState() => _TotalChipState();
-}
-
-class _TotalChipState extends State<_TotalChip>
-    with SingleTickerProviderStateMixin {
-  AnimationController? _pulseCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    // Pulse sutil una sola vez cuando aparece el total por primera vez.
-    _pulseCtrl =
-        AnimationController(
-            vsync: this,
-            duration: const Duration(milliseconds: 600),
-          )
-          ..forward().then((_) {
-            _pulseCtrl?.dispose();
-            _pulseCtrl = null;
-          });
-  }
-
-  @override
-  void dispose() {
-    _pulseCtrl?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final chip = Semantics(
-      button: true,
-      label: '${EsBO.calcResultBarTapHint}: ${widget.totalText}',
-      child: InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          decoration: BoxDecoration(
-            color: cs.primaryContainer,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            border: Border.all(
-              color: cs.primary.withValues(alpha: 0.4),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.receipt_long_rounded,
-                size: 16,
-                color: cs.onPrimaryContainer,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                widget.totalText,
-                style: AppTheme.num(
-                  theme.textTheme.labelLarge ?? const TextStyle(),
-                  color: cs.onPrimaryContainer,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (widget.hasDiscount) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cs.error,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '%',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: cs.onError,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 9,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(width: 2),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 16,
-                color: cs.onPrimaryContainer.withValues(alpha: 0.7),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    // Pulse sutil al primer render.
-    if (_pulseCtrl != null) {
-      return ScaleTransition(
-        scale: Tween<double>(begin: 0.92, end: 1).animate(
-          CurvedAnimation(parent: _pulseCtrl!, curve: Curves.easeOutBack),
-        ),
-        child: chip,
-      );
-    }
-    return chip;
-  }
-}
-
-// ============================================================
-
-/// Small action chip for filament catalog actions.
-class _ActionChip extends StatelessWidget {
-  const _ActionChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.maxWidth,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final double? maxWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: Icon(icon, size: 16),
-      label: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium,
-        ),
-      ),
-      onPressed: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-    );
-  }
-}
-
-// === Printer indicator ===
-
-class _PrinterIndicator extends ConsumerWidget {
-  const _PrinterIndicator();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final activePrinter = ref.watch(activePrinterProvider);
-    final printersAsync = ref.watch(printersListProvider);
-    final printers = printersAsync.value ?? <PrinterProfile>[];
-
-    return Semantics(
-      button: true,
-      label: activePrinter != null
-          ? '${EsBO.calcPrinterPrefix}${activePrinter.name}'
-          : '${EsBO.calcNoPrinter}. ${EsBO.calcPrinterEmptyCta}',
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        onTap: printers.isEmpty
-            ? () => context.push('/settings/printers/new')
-            : () => showPrinterSelectorDialog(context, ref, printers: printers),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                ),
-                child: Icon(
-                  Icons.print_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: activePrinter != null
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            activePrinter.name,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            activePrinter.brand != null &&
-                                    activePrinter.brand!.isNotEmpty
-                                ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
-                                : '${activePrinter.averageWatts} W',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            EsBO.calcNoPrinter,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            EsBO.calcPrinterEmptyHint,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            EsBO.calcPrinterEmptyCta,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// === MaterialCtrls y MaterialRowTile ===
-
-class _MaterialCtrls {
-  _MaterialCtrls({
-    required this.label,
-    required this.weight,
-    required this.price,
-    required this.grams,
-  });
-
-  factory _MaterialCtrls.empty() => _MaterialCtrls(
-    label: TextEditingController(),
-    weight: TextEditingController(),
-    price: TextEditingController(),
-    grams: TextEditingController(),
-  );
-
-  factory _MaterialCtrls.fromRow(MaterialRow r) => _MaterialCtrls(
-    label: TextEditingController(text: r.label),
-    weight: TextEditingController(text: r.weight),
-    price: TextEditingController(text: r.pricePerBobbin),
-    grams: TextEditingController(text: r.gramsPerBobbin),
-  );
-
-  final TextEditingController label;
-  final TextEditingController weight;
-  final TextEditingController price;
-  final TextEditingController grams;
-
-  void dispose() {
-    label.dispose();
-    weight.dispose();
-    price.dispose();
-    grams.dispose();
-  }
-}
-
-class _MaterialUpdate {
-  const _MaterialUpdate({
-    required this.label,
-    required this.weight,
-    required this.pricePerBobbin,
-    required this.gramsPerBobbin,
-  });
-  final String label;
-  final String weight;
-  final String pricePerBobbin;
-  final String gramsPerBobbin;
-}
-
-class _MaterialRowTile extends ConsumerStatefulWidget {
-  const _MaterialRowTile({
-    required this.index,
-    required this.labelCtrl,
-    required this.weightCtrl,
-    required this.priceCtrl,
-    required this.gramsCtrl,
-    required this.onChanged,
-    required this.deletable,
-    required this.onRemove,
-    this.showValidation = false,
-    this.isKeyWeight = false,
-  });
-
-  final int index;
-  final TextEditingController labelCtrl;
-  final TextEditingController weightCtrl;
-  final TextEditingController priceCtrl;
-  final TextEditingController gramsCtrl;
-  final ValueChanged<_MaterialUpdate> onChanged;
-  final bool deletable;
-  final VoidCallback onRemove;
-  final bool showValidation;
-  final bool isKeyWeight;
-
-  @override
-  ConsumerState<_MaterialRowTile> createState() => _MaterialRowTileState();
-}
-
-class _MaterialRowTileState extends ConsumerState<_MaterialRowTile> {
-  /// Nombre del filamento seleccionado del catálogo (solo display).
-  /// NO sobreescribe la Etiqueta del usuario.
-  String _selectedFilamentName = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final filamentsAsync = ref.watch(filamentsNotifierProvider);
-    final filaments = filamentsAsync.value ?? <Filament>[];
-    final defaultFilament = ref.watch(defaultFilamentProvider);
-    final currency = ref.watch(selectedCurrencyProvider);
-    final hasCatalog = filaments.isNotEmpty;
-
-    // Color del filamento seleccionado (derivado del catálogo por nombre).
-    final colorMatches = filaments.where(
-      (f) => f.name == _selectedFilamentName,
-    );
-    final selectedColor = colorMatches.isEmpty
-        ? null
-        : colorFromHex(colorMatches.first.color);
-
-    return Semantics(
-      container: true,
-      label: EsBO.calcMaterialTitle(widget.index + 1),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerLow,
-          border: Border(
-            top: BorderSide(color: cs.outlineVariant),
-            bottom: BorderSide(color: cs.outlineVariant),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Header: badge + título + delete ──
-            Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.primary, width: 1.5),
-                    borderRadius: BorderRadius.circular(AppRadii.sm),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${widget.index + 1}',
-                      style: AppTheme.num(
-                        theme.textTheme.labelMedium ?? const TextStyle(),
-                        color: cs.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  EsBO.calcMaterialTitle(widget.index + 1),
-                  style: theme.textTheme.titleSmall,
-                ),
-                const Spacer(),
-                if (widget.deletable)
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded),
-                    tooltip: EsBO.calcMaterialRemove(widget.index + 1),
-                    onPressed: widget.onRemove,
-                    style: IconButton.styleFrom(foregroundColor: cs.error),
-                  ),
-              ],
-            ),
-
-            // ── Row compacta: Etiqueta + Filamento ──
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                // Etiqueta (campo del usuario)
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: widget.labelCtrl,
-                    decoration: InputDecoration(
-                      labelText: EsBO.calcFieldLabel,
-                      hintText: EsBO.calcFieldLabelHelper,
-                      isDense: true,
-                      prefixIcon: const Icon(Icons.label_outline, size: 18),
-                    ),
-                    onChanged: (v) => _emit(),
-                  ),
-                ),
-                if (hasCatalog) const SizedBox(width: AppSpacing.sm),
-                // Selector de filamento
-                if (hasCatalog)
-                  Expanded(
-                    flex: 3,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppRadii.xs),
-                      onTap: () async {
-                        final filament = await showFilamentSelectorDialog(
-                          context,
-                          ref,
-                          filaments: filaments,
-                        );
-                        if (filament != null) _loadFromFilament(filament);
-                      },
-                      child: InputDecorator(
-                        isEmpty: _selectedFilamentName.isEmpty,
-                        decoration: InputDecoration(
-                          labelText: EsBO.calcFieldFilament,
-                          hintText: EsBO.calcSelectFilament,
-                          prefixIcon: const Icon(
-                            Icons.inventory_2_rounded,
-                            size: 18,
-                          ),
-                          suffixIcon: const Icon(Icons.expand_more_rounded),
-                          isDense: true,
-                        ),
-                        child: Row(
-                          children: [
-                            if (selectedColor != null) ...[
-                              _FilamentColorSwatch(color: selectedColor),
-                              const SizedBox(width: AppSpacing.sm),
-                            ],
-                            Expanded(
-                              child: Text(
-                                _selectedFilamentName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            // ── "Usar default" debajo del selector si aplica ──
-            if (hasCatalog &&
-                defaultFilament != null &&
-                _selectedFilamentName != defaultFilament.name) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Align(
-                alignment: Alignment.centerRight,
-                child: _ActionChip(
-                  icon: Icons.star_rounded,
-                  label: EsBO.calcMaterialUse(defaultFilament.name),
-                  maxWidth: 180,
-                  onTap: () => _loadFromFilament(defaultFilament),
-                ),
-              ),
-            ],
-
-            // ── Peso + (chips o campos de precio/grams) ──
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: NumericInputField(
-                    label: EsBO.calcFieldWeight,
-                    controller: widget.weightCtrl,
-                    onChanged: (v) => _emit(),
-                    suffix: 'g',
-                    isKey: widget.isKeyWeight,
-                    keyHint: EsBO.calcKeyWeightHint,
-                    showValidation: widget.showValidation,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                // Si filamento del catálogo: chip compacto
-                if (_selectedFilamentName.isNotEmpty &&
-                    widget.priceCtrl.text.isNotEmpty)
-                  _MaterialCostChip(
-                    price: widget.priceCtrl.text,
-                    grams: widget.gramsCtrl.text,
-                    currency: currency,
-                  )
-                else ...[
-                  // Sin filamento: campos manuales
-                  Expanded(
-                    child: NumericInputField(
-                      label: EsBO.calcFieldSpoolPrice,
-                      controller: widget.priceCtrl,
-                      onChanged: (v) => _emit(),
-                      suffix: currency.symbol,
-                      showValidation: widget.showValidation,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: NumericInputField(
-                      label: EsBO.calcFieldSpoolGrams,
-                      controller: widget.gramsCtrl,
-                      onChanged: (v) => _emit(),
-                      suffix: 'g',
-                      showValidation: widget.showValidation,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _emit() {
-    widget.onChanged(
-      _MaterialUpdate(
-        label: widget.labelCtrl.text,
-        weight: widget.weightCtrl.text,
-        pricePerBobbin: widget.priceCtrl.text,
-        gramsPerBobbin: widget.gramsCtrl.text,
-      ),
-    );
-  }
-
-  void _loadFromFilament(Filament f) {
-    // Solo actualiza precio/grams — NO sobreescribe la Etiqueta
-    setState(() => _selectedFilamentName = f.name);
-    widget.priceCtrl.text = f.pricePerBobbin.toStringAsFixed(2);
-    widget.gramsCtrl.text = f.gramsPerBobbin.toStringAsFixed(0);
-    _emit();
-  }
-}
-
-/// Chip compacto de costo de filamento: muestra precio y gramos inline.
-/// Se usa en Advanced cuando el filamento viene del catálogo (estilo Express).
-class _MaterialCostChip extends StatelessWidget {
-  const _MaterialCostChip({
-    required this.price,
-    required this.grams,
-    required this.currency,
-  });
-
-  final String price;
-  final String grams;
-  final WorldCurrency currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: cs.primaryContainer.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppRadii.xs),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${currency.symbol}$price',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: cs.onPrimaryContainer,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            ' / ${grams}g',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: cs.onPrimaryContainer.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// === Mode Selector ===
-
-/// Selector de modo Express / Advanced — compacto pill toggle.
-///
-/// Ocupa poco espacio horizontal: dos pills con icono + texto, alineados
-/// a la derecha del header. El modo activo tiene fondo filled; el inactivo
-/// es transparente con borde sutil.
-///
-/// **Gate visual (UX)**: cuando el user es free y el entitlement esta
-/// resuelto, el pill "Avanzado" se atenua y muestra [ProBadge]. El tap
-/// dispara el gate actual (SnackBar + Go Pro) via `onChanged`.
-class _ModeSelector extends ConsumerWidget {
-  const _ModeSelector({required this.mode, required this.onChanged});
-
-  final CalculatorMode mode;
-  final ValueChanged<CalculatorMode> onChanged;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ent = ref.watch(entitlementNotifierProvider);
-    final locked = !ent.isLoading && !ref.watch(isProProvider);
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Semantics(
-      label: EsBO.calcSemanticMode(
-        mode == CalculatorMode.express
-            ? EsBO.calcModeExpress
-            : EsBO.calcModeAdvanced,
-      ),
-      // Wrap (no Row): en pantallas angostas las pills + ProBadge pasan de
-      // 360dp y hacen overflow si no envuelven.
-      child: Wrap(
-        alignment: WrapAlignment.end,
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xs,
-        children: [
-          _ModePill(
-            icon: Icons.flash_on_rounded,
-            label: EsBO.calcModeExpress,
-            isActive: mode == CalculatorMode.express,
-            onTap: () => onChanged(CalculatorMode.express),
-            activeColor: cs.primary,
-          ),
-          _ModePill(
-            icon: Icons.layers_rounded,
-            label: EsBO.calcModeAdvanced,
-            isActive: mode == CalculatorMode.advanced,
-            locked: locked,
-            onTap: () => onChanged(CalculatorMode.advanced),
-            activeColor: cs.tertiary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Pill individual del mode selector.
-class _ModePill extends StatelessWidget {
-  const _ModePill({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-    required this.activeColor,
-    this.locked = false,
-  });
-
-  final IconData icon;
-  final String? label;
-  final bool isActive;
-  final VoidCallback onTap;
-  final Color activeColor;
-  final bool locked;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final effectiveColor = locked && !isActive
-        ? cs.onSurfaceVariant.withValues(alpha: 0.5)
-        : isActive
-        ? activeColor
-        : cs.onSurfaceVariant;
-
-    return Material(
-      color: isActive
-          ? activeColor.withValues(alpha: 0.12)
-          : Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.xl),
-        side: BorderSide(
-          color: isActive
-              ? activeColor.withValues(alpha: 0.4)
-              : cs.outlineVariant,
-          width: isActive ? 1.5 : 1,
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.xl),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: effectiveColor),
-              if (label != null) ...[
-                const SizedBox(width: 4),
-                Text(
-                  label!,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: effectiveColor,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  ),
-                ),
-              ],
-              if (locked) ...[const SizedBox(width: 4), const ProBadge()],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// === Save dialog ===
-
-class _SaveResult {
-  const _SaveResult({
-    this.clientName,
-    this.notes,
-    this.conditions,
-    this.saveAsTemplate = false,
-  });
-  final String? clientName;
-  final String? notes;
-  final String? conditions;
-
-  /// True cuando el usuario marcó "guardar también como plantilla":
-  /// se guarda en el historial Y se crea una plantilla reutilizable.
-  final bool saveAsTemplate;
-}
-
-class _SaveSheet extends StatefulWidget {
-  const _SaveSheet({this.recentClients = const []});
-
-  /// Clientes más recientes para el quick-pick (chips).
-  final List<String> recentClients;
-
-  @override
-  State<_SaveSheet> createState() => _SaveSheetState();
-}
-
-class _SaveSheetState extends State<_SaveSheet> {
-  final _clientCtrl = TextEditingController();
-  final _notesCtrl = TextEditingController();
-  final _conditionsCtrl = TextEditingController();
-  bool _saveAsTemplate = false;
-
-  @override
-  void dispose() {
-    _clientCtrl.dispose();
-    _notesCtrl.dispose();
-    _conditionsCtrl.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    Navigator.of(context).pop(
-      _SaveResult(
-        clientName: _clientCtrl.text,
-        notes: _notesCtrl.text,
-        conditions: _conditionsCtrl.text,
-        saveAsTemplate: _saveAsTemplate,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, 0),
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: bottomInset + AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Header ──
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          color.primary.withValues(alpha: 0.15),
-                          color.primaryContainer.withValues(alpha: 0.35),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(Icons.save_rounded, color: color.primary),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          EsBO.calcBtnSave,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          EsBO.calcDialogSaveSubtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: color.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ── Datos del cliente ──
-              _fieldLabel(
-                theme,
-                Icons.person_outline_rounded,
-                EsBO.calcDialogClient,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              TextField(
-                controller: _clientCtrl,
-                decoration: InputDecoration(
-                  hintText: EsBO.calcDialogClientHelper,
-                  prefixIcon: const Icon(Icons.person_outline_rounded),
-                ),
-                textInputAction: TextInputAction.next,
-              ),
-              if (widget.recentClients.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _fieldLabel(
-                  theme,
-                  Icons.history_rounded,
-                  EsBO.calcDialogRecentClients,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    for (final client in widget.recentClients)
-                      FilterChip(
-                        avatar: _clientCtrl.text == client
-                            ? const Icon(Icons.check_rounded, size: 18)
-                            : null,
-                        label: Text(client, overflow: TextOverflow.ellipsis),
-                        selected: _clientCtrl.text == client,
-                        onSelected: (_) =>
-                            setState(() => _clientCtrl.text = client),
-                      ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-
-              // ── Detalles ──
-              _fieldLabel(
-                theme,
-                Icons.article_outlined,
-                EsBO.calcDialogDetails,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: _notesCtrl,
-                decoration: InputDecoration(
-                  labelText: EsBO.calcDialogNotes,
-                  hintText: EsBO.calcDialogNotesHelper,
-                  prefixIcon: const Icon(Icons.notes_rounded),
-                  filled: true,
-                  fillColor: color.surfaceContainerLow,
-                ),
-                maxLines: 2,
-                textInputAction: TextInputAction.newline,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _conditionsCtrl,
-                decoration: InputDecoration(
-                  labelText: EsBO.calcDialogConditions,
-                  hintText: EsBO.calcDialogConditionsHelper,
-                  prefixIcon: const Icon(Icons.rule_rounded),
-                  filled: true,
-                  fillColor: color.surfaceContainerLow,
-                ),
-                maxLines: 2,
-                textInputAction: TextInputAction.newline,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ── Plantilla ──
-              Material(
-                color: _saveAsTemplate
-                    ? color.primaryContainer.withValues(alpha: 0.4)
-                    : color.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () =>
-                      setState(() => _saveAsTemplate = !_saveAsTemplate),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _saveAsTemplate
-                              ? Icons.playlist_add_check_circle_rounded
-                              : Icons.playlist_add_circle_outlined,
-                          size: 28,
-                          color: _saveAsTemplate
-                              ? color.primary
-                              : color.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                EsBO.calcDialogSaveAsTemplate,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: _saveAsTemplate ? color.primary : null,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                EsBO.calcTemplateSaveAsAction,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: color.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Switch(
-                          value: _saveAsTemplate,
-                          onChanged: (v) => setState(() => _saveAsTemplate = v),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // ── Footer ──
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(EsBO.commonCancel),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton.icon(
-                      onPressed: _submit,
-                      icon: const Icon(Icons.check_rounded),
-                      label: Text(EsBO.commonSave),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _fieldLabel(ThemeData theme, IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.4,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Filament row compacto para Express: selector de catálogo + precio/grams
-/// inline en una sola fila. Reemplaza al [_MaterialRowTile] completo en
-/// modo Express para reducir scroll.
-///
-/// Muestra: selector de filamento (tap para abrir catálogo) + chips con
-/// precio y gramos de la bobina. Si no hay filamentos en el catálogo,
-/// muestra los campos manuales (precio + gramos).
-class _ExpressFilamentRow extends ConsumerWidget {
-  const _ExpressFilamentRow({
-    required this.labelCtrl,
-    required this.priceCtrl,
-    required this.gramsCtrl,
-    required this.showValidation,
-    required this.onChanged,
-  });
-
-  final TextEditingController labelCtrl;
-  final TextEditingController priceCtrl;
-  final TextEditingController gramsCtrl;
-  final bool showValidation;
-  final ValueChanged<_MaterialUpdate> onChanged;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final filamentsAsync = ref.watch(filamentsNotifierProvider);
-    final filaments = filamentsAsync.value ?? <Filament>[];
-    final defaultFilament = ref.watch(defaultFilamentProvider);
-    final currency = ref.watch(selectedCurrencyProvider);
-    final hasFilaments = filaments.isNotEmpty;
-    final hasLabel = labelCtrl.text.isNotEmpty;
-
-    // Color del filamento seleccionado: se deriva del catalogo por nombre
-    // para que el swatch aparezca tambien tras restore/draft/prefill (el
-    // label del Express SIEMPRE es el nombre del filamento elegido).
-    final colorMatches = filaments.where((f) => f.name == labelCtrl.text);
-    final selectedColor = colorMatches.isEmpty
-        ? null
-        : colorFromHex(colorMatches.first.color);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        border: Border(
-          top: BorderSide(color: cs.outlineVariant),
-          bottom: BorderSide(color: cs.outlineVariant),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Selector de filamento o campos manuales
-          if (hasFilaments)
-            InkWell(
-              borderRadius: BorderRadius.circular(AppRadii.xs),
-              onTap: () async {
-                final filament = await showFilamentSelectorDialog(
-                  context,
-                  ref,
-                  filaments: filaments,
-                );
-                if (filament != null) {
-                  labelCtrl.text = filament.name;
-                  priceCtrl.text = filament.pricePerBobbin.toStringAsFixed(2);
-                  gramsCtrl.text = filament.gramsPerBobbin.toStringAsFixed(0);
-                  onChanged(
-                    _MaterialUpdate(
-                      label: filament.name,
-                      weight: '',
-                      pricePerBobbin: filament.pricePerBobbin.toStringAsFixed(
-                        2,
-                      ),
-                      gramsPerBobbin: filament.gramsPerBobbin.toStringAsFixed(
-                        0,
-                      ),
-                    ),
-                  );
-                }
-              },
-              child: InputDecorator(
-                isEmpty: !hasLabel,
-                decoration: InputDecoration(
-                  labelText: EsBO.calcFieldFilament,
-                  hintText: EsBO.calcSelectFilament,
-                  prefixIcon: const Icon(Icons.inventory_2_rounded, size: 18),
-                  suffixIcon: const Icon(Icons.expand_more_rounded),
-                  isDense: true,
-                ),
-                child: Row(
-                  children: [
-                    // Swatch del color solo cuando hay filamento seleccionado
-                    // con color: va inline junto al nombre, no como prefix
-                    // (evita el dot flotante del prefixIcon vacio).
-                    if (selectedColor != null) ...[
-                      _FilamentColorSwatch(color: selectedColor),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
-                    Expanded(
-                      child: Text(
-                        labelCtrl.text,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            // Sin catálogo: campos manuales de precio/grams
-            Row(
-              children: [
-                Expanded(
-                  child: NumericInputField(
-                    label: EsBO.calcFieldSpoolPrice,
-                    controller: priceCtrl,
-                    onChanged: (_) => onChanged(_emit()),
-                    suffix: currency.symbol,
-                    showValidation: showValidation,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: NumericInputField(
-                    label: EsBO.calcFieldSpoolGrams,
-                    controller: gramsCtrl,
-                    onChanged: (_) => onChanged(_emit()),
-                    suffix: 'g',
-                    showValidation: showValidation,
-                  ),
-                ),
-              ],
-            ),
-
-          // Chip "Usar default" + info de precio/grams del filamento elegido
-          if (hasLabel || defaultFilament != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                if (hasLabel) ...[
-                  // Chip con precio y gramos del filamento actual
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(AppRadii.xs),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${currency.symbol}${priceCtrl.text}',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: cs.onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          ' / ${gramsCtrl.text}g',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: cs.onPrimaryContainer.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                // "Usar default" si hay default y es diferente al actual
-                if (defaultFilament != null &&
-                    labelCtrl.text != defaultFilament.name)
-                  _ActionChip(
-                    icon: Icons.star_rounded,
-                    label: EsBO.calcMaterialUse(defaultFilament.name),
-                    maxWidth: 180,
-                    onTap: () {
-                      labelCtrl.text = defaultFilament.name;
-                      priceCtrl.text = defaultFilament.pricePerBobbin
-                          .toStringAsFixed(2);
-                      gramsCtrl.text = defaultFilament.gramsPerBobbin
-                          .toStringAsFixed(0);
-                      onChanged(
-                        _MaterialUpdate(
-                          label: defaultFilament.name,
-                          weight: '',
-                          pricePerBobbin: defaultFilament.pricePerBobbin
-                              .toStringAsFixed(2),
-                          gramsPerBobbin: defaultFilament.gramsPerBobbin
-                              .toStringAsFixed(0),
-                        ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  _MaterialUpdate _emit() => _MaterialUpdate(
-    label: labelCtrl.text,
-    weight: '',
-    pricePerBobbin: priceCtrl.text,
-    gramsPerBobbin: gramsCtrl.text,
-  );
-}
-
-/// Peek preview de la seccion "Otros" cuando esta colapsado.
-///
-/// Muestra los labels de los 4 campos en una fila compacta y atenuada.
-/// Si [locked] es true (usuario free), agrega un overlay sutil con icono
-/// de candado y un borde punteado para sugerir que hay contenido bloqueado.
-class _OtrosPeekPreview extends StatelessWidget {
-  const _OtrosPeekPreview({required this.locked});
-
-  final bool locked;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final dimColor = cs.onSurfaceVariant.withValues(alpha: 0.45);
-
-    final labels = [
-      EsBO.calcFieldLabor,
-      EsBO.calcFieldPostProcess,
-      EsBO.calcFieldFailure,
-      EsBO.calcFieldWaste,
-    ];
-
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      alignment: Alignment.topCenter,
-      child: Container(
-        margin: const EdgeInsets.only(top: AppSpacing.xs),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(AppRadii.sm),
-          border: locked
-              ? Border.all(
-                  color: cs.outlineVariant.withValues(alpha: 0.4),
-                  width: 1,
-                  strokeAlign: BorderSide.strokeAlignInside,
-                )
-              : null,
-        ),
-        child: Row(
-          children: [
-            // Labels en fila envolvente
-            Expanded(
-              child: Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: labels.map((label) {
-                  return Text(
-                    label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: dimColor,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            if (locked) ...[
-              const SizedBox(width: AppSpacing.sm),
-              Icon(
-                Icons.lock_outline,
-                size: 14,
-                color: cs.primary.withValues(alpha: 0.5),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Rubrica impresa: header de seccion + contenido, sin caja de card.
-///
-/// Dentro de la hoja de plano, cada rubrica es un titulo
-/// con su regla de cota ([SectionHeader]) seguido del contenido. Sin card
-/// anidada: la hoja ya ES el documento.
-class _RubricSection extends StatelessWidget {
-  const _RubricSection({
-    required this.icon,
-    required this.title,
-    required this.child,
-  });
-
-  final IconData icon;
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionHeader(icon: icon, title: title),
-        const SizedBox(height: AppSpacing.md),
-        child,
-      ],
-    );
-  }
-}
-
-/// Swatch circular del color del filamento seleccionado. Se coloca inline
-/// ANTES del nombre del filamento en el selector (Express y Advanced), para
-/// que el color se vea junto al texto y no como un dot flotante.
-class _FilamentColorSwatch extends StatelessWidget {
-  const _FilamentColorSwatch({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isWhite = color.toARGB32() == 0xFFFFFFFF;
-    return Container(
-      width: 16,
-      height: 16,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: isWhite ? cs.outline : cs.outlineVariant,
-          width: 1,
-        ),
-      ),
-    );
-  }
-}
-
-/// Parte entera del porcentaje para los labels l10n (p.ej. escalón 10 %
-/// → "10"). Si el valor no es entero, redondea (display only; el cálculo
-/// usa siempre el Decimal exacto).
-int _pctInt(Decimal? value) =>
-    value == null ? 0 : value.round().toBigInt().toInt();
-
-/// Líneas compactas del lote mayorista (feature A — Hito 1).
-///
-/// Se muestran arriba de la barra de total SOLO cuando aplica un escalón de
-/// descuento por cantidad (N=1 sin escalón → flujo visual idéntico a antes):
-/// - Subtotal: $X (base antes de descuentos)
-/// - Descuento por cantidad (X%) −$monto
-/// - Subtotal parcial: $Y
-/// - Descuento manual (Y%) −$monto (si hay)
-/// - Total: $Z
-class _BatchLines extends StatelessWidget {
-  const _BatchLines({required this.state, required this.currency});
-
-  final CalculatorState state;
-  final WorldCurrency currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final manualAmount = state.manualDiscountAmount;
-    // Subtotal antes de descuentos: lotTotal + batchDiscount + manualDiscount
-    final subtotalBefore = state.lotTotal +
-        state.batchDiscountAmount +
-        manualAmount;
-    // Subtotal después del descuento por cantidad
-    final subtotalAfterBatch = state.lotTotal + manualAmount;
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xs,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Subtotal antes de descuentos
-          _subtotalRow(
-            context,
-            label: EsBO.calcSubtotal,
-            amount: subtotalBefore,
-          ),
-          if (state.batchDiscountAmount > Decimal.zero) ...[
-            const SizedBox(height: AppSpacing.xs),
-            _discountRow(
-              context,
-              label: EsBO.calcDetailBatchDiscount(
-                _pctInt(state.batchAppliedPercent),
-              ),
-              amount: state.batchDiscountAmount,
-            ),
-          ],
-          if (manualAmount > Decimal.zero) ...[
-            const SizedBox(height: AppSpacing.xs),
-            _subtotalRow(
-              context,
-              label: EsBO.calcSubtotal,
-              amount: subtotalAfterBatch,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            _discountRow(
-              context,
-              label: EsBO.calcDetailManualDiscount(
-                _pctInt(state.detailDiscountPct),
-              ),
-              amount: manualAmount,
-            ),
-          ],
-          const SizedBox(height: AppSpacing.xs),
-          // Total final
-          _totalRow(
-            context,
-            label: EsBO.calcTotalFinal,
-            amount: state.lotTotal,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _subtotalRow(BuildContext context, {required String label, required Decimal amount}) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          formatCurrency(amount, currency),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _discountRow(BuildContext context, {required String label, required Decimal amount}) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          '-${formatCurrency(amount, currency)}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _totalRow(BuildContext context, {required String label, required Decimal amount}) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          formatCurrency(amount, currency),
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}

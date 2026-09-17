@@ -21,7 +21,6 @@ import '../../../../core/theme_mode_provider.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/app_snack_bar.dart';
-import '../widgets/settings_widgets.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
@@ -34,6 +33,7 @@ import '../../../catalog/printers/presentation/notifiers/printers_notifier.dart'
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../domain/settings.dart';
 import '../notifiers/settings_notifier.dart';
+import '../widgets/settings_widgets.dart';
 
 /// Pagina `/settings` — DRAMATICAMENTE rediseñada.
 ///
@@ -79,8 +79,6 @@ class _SettingsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final currency = WorldCurrency.fromCode(settings.currencyCode);
-
     // Patron de estado del gate visual (UX): "locked" solo cuando el
     // entitlement esta resuelto y el user es free. Durante el boot async
     // (loading) no se muestra badge ni dimming (evita falso "locked" en

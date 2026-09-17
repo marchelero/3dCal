@@ -13,7 +13,6 @@ import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
 import 'package:tresdcal/features/calculation/presentation/state/calculator_notifier.dart';
-import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
 import 'package:tresdcal/features/entitlement/data/entitlement_repository.dart';
 import 'package:tresdcal/features/entitlement/data/payment_service.dart';
 import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';

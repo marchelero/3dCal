@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/features/settings/domain/discount_tier.dart';
-import 'package:tresdcal/features/settings/presentation/notifiers/discount_tiers_notifier.dart';
 import 'package:tresdcal/features/settings/presentation/widgets/discount_tiers_section.dart';
 
 void main() {
