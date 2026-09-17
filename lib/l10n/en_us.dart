@@ -69,6 +69,11 @@ class EnImpl implements AppStrings {
   @override
   String get settingsKwhRateHelper => 'Residential range Bolivia: 0.10-5.00';
   @override
+  String get settingsKwhRateInfo =>
+      'This is the cost per kilowatt-hour from your electricity bill. '
+      'In Bolivia the residential range is 0.10 to 5.00 Bs./kWh. '
+      'Check your latest bill for the exact value.';
+  @override
   String get settingsCatalogos => 'Catalogs';
   @override
   String get settingsFilamentos => 'Filaments';
@@ -1311,6 +1316,13 @@ We may update, suspend, or remove application features. These terms may also cha
   String get dashboardPrintHours => 'Print hours';
   @override
   String get dashboardFilament => 'Filament';
+  @override
+  String get dashboardPrinterNoLifeData =>
+      'Set useful life to see printer status';
+  @override
+  String get dashboardPrinterRemaining => 'remaining';
+  @override
+  String get dashboardPrinterLifeEnd => 'Useful life ended';
   @override
   String get dashboardInsightsTitle => 'Insights';
   @override

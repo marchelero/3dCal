@@ -133,6 +133,7 @@ class _PrintSettingsBody extends ConsumerWidget {
                   icon: Icons.bolt_rounded,
                   title: EsBO.settingsKwhRate(currency.symbol),
                   helper: EsBO.settingsKwhRateHelper,
+                  infoTooltip: EsBO.settingsKwhRateInfo,
                   accent: color.tertiary,
                   initialValue: settings.kwhRate == Decimal.zero
                       ? ''

@@ -343,13 +343,15 @@ class _StatParamTileState extends State<StatParamTile> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  // Helper
-                  Text(
-                    widget.helper,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onSurfaceVariant,
+                  // Helper — solo se muestra si NO hay infoTooltip
+                  // (cuando hay tooltip, la info detallada vive ahi).
+                  if (widget.infoTooltip == null)
+                    Text(
+                      widget.helper,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: color.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: AppSpacing.md),
                   // Slider con iconos de tendencia
                   Row(

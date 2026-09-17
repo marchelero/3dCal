@@ -996,7 +996,7 @@ class _CurrencyDropdown extends ConsumerWidget {
 }
 
 /// Card con barra de acento lateral para parametros globales.
-/// Agrupa titulo, helper, slider y campo de entrada en un diseño visual limpio.
+/// Agrupa titulo, helper (en tooltip), slider y campo de entrada.
 class _ParameterCard extends StatelessWidget {
   const _ParameterCard({
     required this.accentColor,
@@ -1039,7 +1039,7 @@ class _ParameterCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header: icon chip + titulo
+                  // Header: icon chip + titulo + tooltip
                   Row(
                     children: [
                       Container(
@@ -1060,15 +1060,16 @@ class _ParameterCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      Tooltip(
+                        message: helper,
+                        triggerMode: TooltipTriggerMode.tap,
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          size: 18,
+                          color: color.onSurfaceVariant,
+                        ),
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  // Helper text
-                  Text(
-                    helper,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onSurfaceVariant,
-                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   // Child content (slider + input)

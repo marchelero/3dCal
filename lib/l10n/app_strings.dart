@@ -48,6 +48,7 @@ abstract class AppStrings {
   String get settingsProfitBaseInfo;
   String settingsKwhRate(String symbol);
   String get settingsKwhRateHelper;
+  String get settingsKwhRateInfo;
   String get settingsCatalogos;
   String get settingsFilamentos;
   String get settingsImpresoras;
@@ -1006,6 +1007,15 @@ abstract class AppStrings {
 
   /// "Filamento" / "Filament".
   String get dashboardFilament;
+
+  /// "Configura la vida util para ver el estado de la impresora".
+  String get dashboardPrinterNoLifeData;
+
+  /// "restantes" / "remaining".
+  String get dashboardPrinterRemaining;
+
+  /// "Vida util agotada" / "Useful life ended".
+  String get dashboardPrinterLifeEnd;
 
   /// "Insights" / "Insights" (card Pro).
   String get dashboardInsightsTitle;

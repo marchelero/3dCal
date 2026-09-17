@@ -3,10 +3,12 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
@@ -346,6 +348,9 @@ class _DashboardBody extends StatelessWidget {
                         ),
                       ),
 
+                      // ── Salud de impresora ──
+                      const _PrinterHealthCard(),
+
                       if (stats.topClients.isNotEmpty)
                         Card(
                           child: Padding(
@@ -440,6 +445,9 @@ class _DashboardBody extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  // ── Salud de impresora (Free + Pro) ──
+                  const _PrinterHealthCard(),
                   const SizedBox(height: AppSpacing.md),
                   const _ProAnalyticsTeaser(),
                 ],
@@ -809,6 +817,136 @@ class _ResponsiveGrid extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Card de salud de la impresora activa: horas acumuladas vs vida util.
+///
+/// Muestra un LinearProgressIndicator con las horas impresas / vida util.
+/// Solo visible si la impresora tiene `usefulLifeHours` configurado.
+/// Si no, muestra un CTA para configurarlo (link a settings/printers).
+class _PrinterHealthCard extends ConsumerWidget {
+  const _PrinterHealthCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final printer = ref.watch(activePrinterProvider);
+    if (printer == null) return const SizedBox.shrink();
+
+    final usefulLife = printer.usefulLifeHours;
+    final currentHours = printer.currentHours ?? 0;
+    final hasLifeData = usefulLife != null && usefulLife > 0;
+
+    if (!hasLifeData) {
+      // Sin vida util configurada: CTA sutil para que el usuario la defina.
+      final theme = Theme.of(context);
+      return Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => context.push('/settings/printers/${printer.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.build_circle_outlined,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        printer.name,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        EsBO.dashboardPrinterNoLifeData,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Con vida util: barra de progreso + metricas.
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final pct = currentHours / usefulLife;
+    final pctClamped = pct.clamp(0.0, 1.0);
+    final remaining = usefulLife - currentHours;
+    final isNearEnd = pctClamped > 0.8;
+    final isEnd = pctClamped >= 1.0;
+    final statusColor = isEnd
+        ? cs.error
+        : isNearEnd
+            ? Colors.orange
+            : cs.primary;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              icon: Icons.build_circle_rounded,
+              title: printer.name,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            // Barra de progreso
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: pctClamped,
+                minHeight: 8,
+                backgroundColor: cs.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            // Metricas
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${NumberFormat.decimalPattern("es_BO").format(currentHours)}h '
+                  '/ ${NumberFormat.decimalPattern("es_BO").format(usefulLife)}h',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  remaining > 0
+                      ? '${NumberFormat.decimalPattern("es_BO").format(remaining)}h ${EsBO.dashboardPrinterRemaining}'
+                      : EsBO.dashboardPrinterLifeEnd,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

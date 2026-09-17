@@ -73,6 +73,11 @@ class DeImpl implements AppStrings {
   String get settingsKwhRateHelper =>
       'Typischer Haushaltsbereich in Bolivien: 0,10-5,00';
   @override
+  String get settingsKwhRateInfo =>
+      'Dies ist der Kosten pro Kilowattstunde auf deiner Stromrechnung. '
+      'In Bolivien liegt der Haushaltsbereich bei 0,10 bis 5,00 Bs./kWh. '
+      'Prüfe deine letzte Rechnung für den genauen Wert.';
+  @override
   String get settingsCatalogos => 'Kataloge';
   @override
   String get settingsFilamentos => 'Filamente';
@@ -1328,6 +1333,13 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   String get dashboardPrintHours => 'Druckstunden';
   @override
   String get dashboardFilament => 'Filament';
+  @override
+  String get dashboardPrinterNoLifeData =>
+      'Nutzungsdauer einrichten, um den Druckerstatus zu sehen';
+  @override
+  String get dashboardPrinterRemaining => 'verbleibend';
+  @override
+  String get dashboardPrinterLifeEnd => 'Nutzungsdauer abgelaufen';
   @override
   String get dashboardInsightsTitle => 'Insights';
   @override

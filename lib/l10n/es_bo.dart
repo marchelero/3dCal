@@ -55,6 +55,7 @@ class EsBO {
   static String get settingsProfitBaseInfo => _impl.settingsProfitBaseInfo;
   static String settingsKwhRate(String symbol) => _impl.settingsKwhRate(symbol);
   static String get settingsKwhRateHelper => _impl.settingsKwhRateHelper;
+  static String get settingsKwhRateInfo => _impl.settingsKwhRateInfo;
   static String get settingsCatalogos => _impl.settingsCatalogos;
   static String get settingsFilamentos => _impl.settingsFilamentos;
   static String get settingsImpresoras => _impl.settingsImpresoras;
@@ -733,6 +734,11 @@ class EsBO {
       _impl.dashboardOperationalTitle;
   static String get dashboardPrintHours => _impl.dashboardPrintHours;
   static String get dashboardFilament => _impl.dashboardFilament;
+  static String get dashboardPrinterNoLifeData =>
+      _impl.dashboardPrinterNoLifeData;
+  static String get dashboardPrinterRemaining =>
+      _impl.dashboardPrinterRemaining;
+  static String get dashboardPrinterLifeEnd => _impl.dashboardPrinterLifeEnd;
   static String get dashboardInsightsTitle => _impl.dashboardInsightsTitle;
   static String get dashboardRange7d => _impl.dashboardRange7d;
   static String get dashboardRange30d => _impl.dashboardRange30d;
@@ -908,6 +914,11 @@ class EsImpl implements AppStrings {
   String settingsKwhRate(String symbol) => 'Tarifa electrica ($symbol/kWh)';
   @override
   String get settingsKwhRateHelper => 'Rango residencial Bolivia: 0.10-5.00';
+  @override
+  String get settingsKwhRateInfo =>
+      'Es el costo de un kilovatio-hora segun tu factura de luz. '
+      'En Bolivia el rango residencial va de 0.10 a 5.00 Bs./kWh. '
+      'Revisa tu ultima factura para el valor exacto.';
   @override
   String get settingsCatalogos => 'Catálogos';
   @override
@@ -2160,6 +2171,13 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String get dashboardPrintHours => 'Horas de impresión';
   @override
   String get dashboardFilament => 'Filamento';
+  @override
+  String get dashboardPrinterNoLifeData =>
+      'Configura la vida util para ver el estado de la impresora';
+  @override
+  String get dashboardPrinterRemaining => 'restantes';
+  @override
+  String get dashboardPrinterLifeEnd => 'Vida util agotada';
   @override
   String get dashboardInsightsTitle => 'Insights';
   @override

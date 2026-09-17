@@ -67,6 +67,11 @@ class FrImpl implements AppStrings {
   String get settingsKwhRateHelper =>
       'Fourchette résidentielle en Bolivie : 0,10-5,00';
   @override
+  String get settingsKwhRateInfo =>
+      'C\'est le coût par kilowatt-heure sur votre facture d\'électricité. '
+      'En Bolivie, la fourchette résidentielle est de 0,10 à 5,00 Bs./kWh. '
+      'Consultez votre dernière facture pour la valeur exacte.';
+  @override
   String get settingsCatalogos => 'Catalogues';
   @override
   String get settingsFilamentos => 'Filaments';
@@ -1272,6 +1277,13 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get dashboardPrintHours => 'Heures d\'impression';
   @override
   String get dashboardFilament => 'Filament';
+  @override
+  String get dashboardPrinterNoLifeData =>
+      'Définissez la durée de vie pour voir l\'état de l\'imprimante';
+  @override
+  String get dashboardPrinterRemaining => 'restant';
+  @override
+  String get dashboardPrinterLifeEnd => 'Durée de vie épuisée';
   @override
   String get dashboardInsightsTitle => 'Insights';
   @override

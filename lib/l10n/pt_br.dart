@@ -70,6 +70,11 @@ class PtBrImpl implements AppStrings {
   @override
   String get settingsKwhRateHelper => 'Faixa residencial na Bolívia: 0.10-5.00';
   @override
+  String get settingsKwhRateInfo =>
+      'Este é o custo por quilowatt-hora da sua conta de luz. '
+      'Na Bolívia, a faixa residencial vai de 0,10 a 5,00 Bs./kWh. '
+      'Confira sua última conta para o valor exato.';
+  @override
   String get settingsCatalogos => 'Catálogos';
   @override
   String get settingsFilamentos => 'Filamentos';
@@ -1279,6 +1284,13 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String get dashboardPrintHours => 'Horas de impressão';
   @override
   String get dashboardFilament => 'Filamento';
+  @override
+  String get dashboardPrinterNoLifeData =>
+      'Configure a vida útil para ver o status da impressora';
+  @override
+  String get dashboardPrinterRemaining => 'restantes';
+  @override
+  String get dashboardPrinterLifeEnd => 'Vida útil encerrada';
   @override
   String get dashboardInsightsTitle => 'Insights';
   @override
