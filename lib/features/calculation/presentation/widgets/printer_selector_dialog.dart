@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -50,7 +51,7 @@ Future<bool> showPrinterSelectorDialog(
       final isActive = p.id == activeId;
       return ListTile(
         leading: AvatarIcon(
-          icon: Icons.print_rounded,
+          icon: MdiIcons.printer3d,
           background: theme.colorScheme.tertiaryContainer,
           foreground: theme.colorScheme.onTertiaryContainer,
         ),

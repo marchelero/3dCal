@@ -9,15 +9,7 @@ import '../../../../shared/widgets/pro_badge.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../state/calculator_state.dart';
 
-/// Selector de modo Express / Advanced — compacto pill toggle.
-///
-/// Ocupa poco espacio horizontal: dos pills con icono + texto, alineados
-/// a la derecha del header. El modo activo tiene fondo filled; el inactivo
-/// es transparente con borde sutil.
-///
-/// **Gate visual (UX)**: cuando el user es free y el entitlement esta
-/// resuelto, el pill "Avanzado" se atenua y muestra [ProBadge]. El tap
-/// dispara el gate actual (SnackBar + Go Pro) via `onChanged`.
+/// Selector Express/Advanced.
 class ModeSelector extends ConsumerWidget {
   const ModeSelector({super.key, required this.mode, required this.onChanged});
 
@@ -28,8 +20,7 @@ class ModeSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ent = ref.watch(entitlementNotifierProvider);
     final locked = !ent.isLoading && !ref.watch(isProProvider);
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final cs = Theme.of(context).colorScheme;
 
     return Semantics(
       label: EsBO.calcSemanticMode(
@@ -37,21 +28,19 @@ class ModeSelector extends ConsumerWidget {
             ? EsBO.calcModeExpress
             : EsBO.calcModeAdvanced,
       ),
-      // Wrap (no Row): en pantallas angostas las pills + ProBadge pasan de
-      // 360dp y hacen overflow si no envuelven.
       child: Wrap(
         alignment: WrapAlignment.end,
         spacing: AppSpacing.xs,
         runSpacing: AppSpacing.xs,
         children: [
-          ModePill(
+          _ModePill(
             icon: Icons.flash_on_rounded,
             label: EsBO.calcModeExpress,
             isActive: mode == CalculatorMode.express,
             onTap: () => onChanged(CalculatorMode.express),
             activeColor: cs.primary,
           ),
-          ModePill(
+          _ModePill(
             icon: Icons.layers_rounded,
             label: EsBO.calcModeAdvanced,
             isActive: mode == CalculatorMode.advanced,
@@ -65,10 +54,8 @@ class ModeSelector extends ConsumerWidget {
   }
 }
 
-/// Pill individual del mode selector.
-class ModePill extends StatelessWidget {
-  const ModePill({
-    super.key,
+class _ModePill extends StatelessWidget {
+  const _ModePill({
     required this.icon,
     required this.label,
     required this.isActive,

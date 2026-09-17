@@ -2,6 +2,7 @@
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -407,7 +408,7 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
         // ── Impresora ──
         _DeviceSetupCard(
           accentColor: color.primary,
-          icon: Icons.print_rounded,
+          icon: MdiIcons.printer3d,
           title: EsBO.configPrinterRequired,
           helper: EsBO.configPrinterSectionHelper,
           isSaved: _printerSaved,
@@ -1428,7 +1429,7 @@ class _ConfigSummaryCard extends ConsumerWidget {
                   value: '${currency.code} (${currency.symbol})',
                 ),
                 _SummaryRow(
-                  icon: Icons.print_rounded,
+                  icon: MdiIcons.printer3d,
                   label: EsBO.configPrinterRequired,
                   value: printerName ?? '—',
                 ),

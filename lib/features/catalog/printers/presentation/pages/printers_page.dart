@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -118,7 +119,7 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
                           message: EsBO.printerNoResults(_searchQuery),
                         )
                       : EmptyView(
-                          icon: Icons.print_outlined,
+                          icon: MdiIcons.printer3d,
                           message: EsBO.printerEmptyList,
                         );
                 }
@@ -195,7 +196,7 @@ class _PrinterTile extends ConsumerWidget {
               if (printer.isDefault)
                 const DefaultBadge()
               else
-                Icon(Icons.print, color: color.onSurfaceVariant, size: 24),
+                Icon(MdiIcons.printer3d, color: color.onSurfaceVariant, size: 24),
               const SizedBox(width: AppSpacing.md),
               // Name + details
               Expanded(

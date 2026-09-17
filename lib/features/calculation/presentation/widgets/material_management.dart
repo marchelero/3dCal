@@ -17,9 +17,7 @@ import '../state/calculator_state.dart';
 import 'filament_row.dart';
 import 'filament_selector_dialog.dart';
 
-/// Controladores de texto para una fila de material (Advanced mode).
-///
-/// Cada material tiene 4 campos: etiqueta, peso, precio/bobina, gramos/bobina.
+/// Controladores de texto para una fila de material.
 class MaterialCtrls {
   MaterialCtrls({
     required this.label,
@@ -27,26 +25,22 @@ class MaterialCtrls {
     required this.price,
     required this.grams,
   });
-
   factory MaterialCtrls.empty() => MaterialCtrls(
     label: TextEditingController(),
     weight: TextEditingController(),
     price: TextEditingController(),
     grams: TextEditingController(),
   );
-
   factory MaterialCtrls.fromRow(MaterialRow r) => MaterialCtrls(
     label: TextEditingController(text: r.label),
     weight: TextEditingController(text: r.weight),
     price: TextEditingController(text: r.pricePerBobbin),
     grams: TextEditingController(text: r.gramsPerBobbin),
   );
-
   final TextEditingController label;
   final TextEditingController weight;
   final TextEditingController price;
   final TextEditingController grams;
-
   void dispose() {
     label.dispose();
     weight.dispose();
@@ -55,7 +49,7 @@ class MaterialCtrls {
   }
 }
 
-/// DTO inmutable para notificar cambios en un material.
+/// DTO inmutable para cambios de material.
 class MaterialUpdate {
   const MaterialUpdate({
     required this.label,
@@ -69,8 +63,7 @@ class MaterialUpdate {
   final String gramsPerBobbin;
 }
 
-/// Fila completa de material para modo Advanced: header badge, etiqueta,
-/// selector de filamento del catálogo, campos de peso/precio/grams.
+/// Fila de material para modo Advanced.
 class MaterialRowTile extends ConsumerStatefulWidget {
   const MaterialRowTile({
     super.key,
@@ -85,7 +78,6 @@ class MaterialRowTile extends ConsumerStatefulWidget {
     this.showValidation = false,
     this.isKeyWeight = false,
   });
-
   final int index;
   final TextEditingController labelCtrl;
   final TextEditingController weightCtrl;
@@ -102,8 +94,6 @@ class MaterialRowTile extends ConsumerStatefulWidget {
 }
 
 class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
-  /// Nombre del filamento seleccionado del catálogo (solo display).
-  /// NO sobreescribe la Etiqueta del usuario.
   String _selectedFilamentName = '';
 
   @override
@@ -115,11 +105,7 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
     final defaultFilament = ref.watch(defaultFilamentProvider);
     final currency = ref.watch(selectedCurrencyProvider);
     final hasCatalog = filaments.isNotEmpty;
-
-    // Color del filamento seleccionado (derivado del catálogo por nombre).
-    final colorMatches = filaments.where(
-      (f) => f.name == _selectedFilamentName,
-    );
+    final colorMatches = filaments.where((f) => f.name == _selectedFilamentName);
     final selectedColor = colorMatches.isEmpty
         ? null
         : colorFromHex(colorMatches.first.color);
@@ -140,7 +126,6 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Header: badge + título + delete ──
             Row(
               children: [
                 Container(
@@ -176,12 +161,9 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                   ),
               ],
             ),
-
-            // ── Row compacta: Etiqueta + Filamento ──
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                // Etiqueta (campo del usuario)
                 Expanded(
                   flex: 2,
                   child: TextField(
@@ -196,57 +178,52 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                   ),
                 ),
                 if (hasCatalog) const SizedBox(width: AppSpacing.sm),
-                // Selector de filamento
                 if (hasCatalog)
                   Expanded(
                     flex: 3,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppRadii.xs),
-                      onTap: () async {
-                        final filament = await showFilamentSelectorDialog(
-                          context,
-                          ref,
-                          filaments: filaments,
-                        );
-                        if (filament != null) _loadFromFilament(filament);
-                      },
-                      child: InputDecorator(
-                        isEmpty: _selectedFilamentName.isEmpty,
-                        decoration: InputDecoration(
-                          labelText: EsBO.calcFieldFilament,
-                          hintText: EsBO.calcSelectFilament,
-                          prefixIcon: const Icon(
-                            Icons.inventory_2_rounded,
-                            size: 18,
+                    child: Semantics(
+                      button: true,
+                      label: EsBO.calcSelectFilament,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppRadii.xs),
+                        onTap: () async {
+                          final filament = await showFilamentSelectorDialog(
+                            context, ref, filaments: filaments,
+                          );
+                          if (filament != null) _loadFromFilament(filament);
+                        },
+                        child: InputDecorator(
+                          isEmpty: _selectedFilamentName.isEmpty,
+                          decoration: InputDecoration(
+                            labelText: EsBO.calcFieldFilament,
+                            hintText: EsBO.calcSelectFilament,
+                            prefixIcon: const Icon(Icons.inventory_2_rounded, size: 18),
+                            suffixIcon: const Icon(Icons.expand_more_rounded),
+                            isDense: true,
                           ),
-                          suffixIcon: const Icon(Icons.expand_more_rounded),
-                          isDense: true,
-                        ),
-                        child: Row(
-                          children: [
-                            if (selectedColor != null) ...[
-                              FilamentColorSwatch(color: selectedColor),
-                              const SizedBox(width: AppSpacing.sm),
-                            ],
-                            Expanded(
-                              child: Text(
-                                _selectedFilamentName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium,
+                          child: Row(
+                            children: [
+                              if (selectedColor != null) ...[
+                                FilamentColorSwatch(color: selectedColor),
+                                const SizedBox(width: AppSpacing.sm),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  _selectedFilamentName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
               ],
             ),
-
-            // ── "Usar default" debajo del selector si aplica ──
-            if (hasCatalog &&
-                defaultFilament != null &&
+            if (hasCatalog && defaultFilament != null &&
                 _selectedFilamentName != defaultFilament.name) ...[
               const SizedBox(height: AppSpacing.xs),
               Align(
@@ -259,8 +236,6 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                 ),
               ),
             ],
-
-            // ── Peso + (chips o campos de precio/grams) ──
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
@@ -276,16 +251,13 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                // Si filamento del catálogo: chip compacto
-                if (_selectedFilamentName.isNotEmpty &&
-                    widget.priceCtrl.text.isNotEmpty)
+                if (_selectedFilamentName.isNotEmpty && widget.priceCtrl.text.isNotEmpty)
                   MaterialCostChip(
                     price: widget.priceCtrl.text,
                     grams: widget.gramsCtrl.text,
                     currency: currency,
                   )
                 else ...[
-                  // Sin filamento: campos manuales
                   Expanded(
                     child: NumericInputField(
                       label: EsBO.calcFieldSpoolPrice,
@@ -315,18 +287,15 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
   }
 
   void _emit() {
-    widget.onChanged(
-      MaterialUpdate(
-        label: widget.labelCtrl.text,
-        weight: widget.weightCtrl.text,
-        pricePerBobbin: widget.priceCtrl.text,
-        gramsPerBobbin: widget.gramsCtrl.text,
-      ),
-    );
+    widget.onChanged(MaterialUpdate(
+      label: widget.labelCtrl.text,
+      weight: widget.weightCtrl.text,
+      pricePerBobbin: widget.priceCtrl.text,
+      gramsPerBobbin: widget.gramsCtrl.text,
+    ));
   }
 
   void _loadFromFilament(Filament f) {
-    // Solo actualiza precio/grams — NO sobreescribe la Etiqueta
     setState(() => _selectedFilamentName = f.name);
     widget.priceCtrl.text = f.pricePerBobbin.toStringAsFixed(2);
     widget.gramsCtrl.text = f.gramsPerBobbin.toStringAsFixed(0);
@@ -334,8 +303,7 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
   }
 }
 
-/// Chip compacto de costo de filamento: muestra precio y gramos inline.
-/// Se usa en Advanced cuando el filamento viene del catálogo (estilo Express).
+/// Chip compacto de costo de filamento.
 class MaterialCostChip extends StatelessWidget {
   const MaterialCostChip({
     super.key,
@@ -343,7 +311,6 @@ class MaterialCostChip extends StatelessWidget {
     required this.grams,
     required this.currency,
   });
-
   final String price;
   final String grams;
   final WorldCurrency currency;
@@ -353,10 +320,7 @@ class MaterialCostChip extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: cs.primaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AppRadii.xs),
@@ -367,8 +331,7 @@ class MaterialCostChip extends StatelessWidget {
           Text(
             '${currency.symbol}$price',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: cs.onPrimaryContainer,
-              fontWeight: FontWeight.w600,
+              color: cs.onPrimaryContainer, fontWeight: FontWeight.w600,
             ),
           ),
           Text(

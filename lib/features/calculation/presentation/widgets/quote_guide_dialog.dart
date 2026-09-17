@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -49,7 +50,7 @@ class _QuoteGuideDialogState extends State<QuoteGuideDialog> {
       body: EsBO.quoteGuideStep2Body,
     ),
     _GuideStep(
-      icon: Icons.print_rounded,
+      icon: MdiIcons.printer3d,
       title: EsBO.quoteGuideStep3Title,
       body: EsBO.quoteGuideStep3Body,
     ),

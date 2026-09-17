@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -41,7 +42,7 @@ import '../widgets/mode_selector.dart';
 import '../widgets/result_sheet.dart';
 import '../widgets/save_sheet.dart';
 
-/// Pantalla principal del calculator â€” WIZARD de 3 pasos (rediseÃ±o 2026-09).
+/// Pantalla principal del calculator â€” WIZARD de 3 pasos (rediseño 2026-09).
 ///
 /// Pasos (modo Express | modo Advanced comparten los pasos 2-3):
 /// 1. Pieza: nombre + peso + filamento (Express) | nombre + materiales
@@ -537,7 +538,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                           if (!mounted) return;
                           // BUG-FIX: sincronizar controllers con el state
                           // cargado. Sin esto, el state tiene los datos pero
-                          // los campos de texto quedan vacÃ­os (solo se ve el
+                          // los campos de texto quedan vacíos (solo se ve el
                           // total en el AppBar/bottom bar).
                           _syncControllersFromState(
                             ref.read(calculatorNotifierProvider),
@@ -608,9 +609,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         return;
       }
 
-      // 2) Opcionalmente, ademÃ¡s, crear una plantilla reutilizable.
+      // 2) Opcionalmente, además, crear una plantilla reutilizable.
       //    IMPORTANTE: hacerlo ANTES de resetear el form. Si reseteamos
-      //    primero, `state.isValid`/`state.output` dejan de ser vÃ¡lidos y
+      //    primero, `state.isValid`/`state.output` dejan de ser válidos y
       //    `saveAsTemplate` no crea nada (bug: plantilla que desaparece).
       if (result.saveAsTemplate) {
         try {
@@ -624,8 +625,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       // 3) Limpiar el formulario y el estado en memoria al guardar: sin esto
       //    los valores quedan "cacheados" en el notifier y solo desaparecen
       //    al salir y volver a entrar. El reset dispara listeners que
-      //    re-agendarÃ­an el draft; lo cancelamos para no re-persistir un
-      //    draft vacÃ­o.
+      //    re-agendarían el draft; lo cancelamos para no re-persistir un
+      //    draft vacío.
       await ref.read(draftStorageProvider).clear();
       _saveTimer?.cancel();
       _resetAll();
@@ -743,7 +744,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     final viewportHeight = MediaQuery.of(context).size.height;
 
-    // Determinar quÃ© secciÃ³n estÃ¡ mÃ¡s visible.
+    // Determinar qué sección está más visible.
     final keys = [_section1Key, _section2Key, _section3Key];
     var mostVisible = 0;
     var bestVisibility = double.infinity;
@@ -776,9 +777,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final isValid = state.isValid && state.output != null;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    // feature A (Hito 1): escalones de descuento. El stream se escucha ACÃ
-    // (no en el notifier) para no sostener una suscripciÃ³n drift en unit
-    // tests; al emitir se actualiza el lote (lotTotal, lÃ­neas, hint).
+    // feature A (Hito 1): escalones de descuento. El stream se escucha AC
+
+    // (no en el notifier) para no sostener una suscripción drift en unit
+    // tests; al emitir se actualiza el lote (lotTotal, líneas, hint).
     ref.listen(discountTiersProvider, (_, next) {
       notifier.updateTiers(next.value ?? const <DiscountTier>[]);
     });
@@ -786,8 +788,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     return Scaffold(
       appBar: AppBar(
-        // Salida explÃ­cita: con ruta push, el leading por defecto es una
-        // flecha sutil. Un botÃ³n "cerrar" comunica mejor que vuelve al menÃº
+        // Salida explícita: con ruta push, el leading por defecto es una
+        // flecha sutil. Un botón "cerrar" comunica mejor que vuelve al menú
         // (sobre todo en web, donde no hay back del sistema).
         leading: Semantics(
           button: true,
@@ -1057,7 +1059,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 showValidation: _showValidationErrors,
               ),
               const SizedBox(height: AppSpacing.sm),
-              // Filamento: selector inline del catÃ¡logo
+              // Filamento: selector inline del catálogo
               ExpressFilamentRow(
                 labelCtrl: _labelCtrl,
                 priceCtrl: _priceCtrl,
@@ -1081,7 +1083,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // â”€â”€ Tiempo de impresiÃ³n â”€â”€
+        // â”€â”€ Tiempo de impresión â”€â”€
         RubricSection(
           icon: Icons.timer_rounded,
           title: EsBO.calcSectionTime,
@@ -1119,7 +1121,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
         // â”€â”€ Impresora â”€â”€
         RubricSection(
-          icon: Icons.print_rounded,
+          icon: MdiIcons.printer3d,
           title: EsBO.calcSectionPrinter,
                     child: const PrinterIndicator(),
         ),
@@ -1385,7 +1387,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final showProBadge = !isPro && !isLoading;
     final quantity = ref.watch(calculatorNotifierProvider).quantity;
 
-    // EscalÃ³n aplicado (feature A): hint "X % desde N u." bajo el campo.
+    // Escalón aplicado (feature A): hint "X % desde N u." bajo el campo.
     final batchPct = ref.watch(
       calculatorNotifierProvider.select((s) => s.batchAppliedPercent),
     );
@@ -1494,7 +1496,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             ),
           ],
         ),
-        // Hint del escalÃ³n aplicado (feature A â€” Hito 1): informa el umbral
+        // Hint del escalón aplicado (feature A â€” Hito 1): informa el umbral
         // activo del descuento mayorista, p.ej. "10 % desde 10 u.".
         if (showBatchHint) ...[
           const SizedBox(height: AppSpacing.xs),
@@ -1601,6 +1603,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 }
+
+
 
 
 

@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/es_bo.dart';
 
-/// Resultado del bottom sheet de guardado: datos del cliente, notas,
-/// condiciones y flag de "guardar como plantilla".
+/// Resultado del bottom sheet de guardado.
 class SaveResult {
   const SaveResult({
     this.clientName,
@@ -16,18 +15,12 @@ class SaveResult {
   final String? clientName;
   final String? notes;
   final String? conditions;
-
-  /// True cuando el usuario marcó "guardar también como plantilla":
-  /// se guarda en el historial Y se crea una plantilla reutilizable.
   final bool saveAsTemplate;
 }
 
-/// Bottom sheet para guardar una cotización: nombre del cliente, clientes
-/// recientes (quick-pick), notas, condiciones y toggle de plantilla.
+/// Bottom sheet para guardar una cotizacion.
 class SaveSheet extends StatefulWidget {
   const SaveSheet({super.key, this.recentClients = const []});
-
-  /// Clientes más recientes para el quick-pick (chips).
   final List<String> recentClients;
 
   @override
@@ -75,7 +68,6 @@ class SaveSheetState extends State<SaveSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Header ──
               Row(
                 children: [
                   Container(
@@ -116,16 +108,9 @@ class SaveSheetState extends State<SaveSheet> {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Datos del cliente ──
-              _fieldLabel(
-                theme,
-                Icons.person_outline_rounded,
-                EsBO.calcDialogClient,
-              ),
-              const SizedBox(height: AppSpacing.xs),
               TextField(
                 controller: _clientCtrl,
+                autofocus: true,
                 decoration: InputDecoration(
                   hintText: EsBO.calcDialogClientHelper,
                   prefixIcon: const Icon(Icons.person_outline_rounded),
@@ -134,12 +119,6 @@ class SaveSheetState extends State<SaveSheet> {
               ),
               if (widget.recentClients.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _fieldLabel(
-                  theme,
-                  Icons.history_rounded,
-                  EsBO.calcDialogRecentClients,
-                ),
-                const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
@@ -158,14 +137,6 @@ class SaveSheetState extends State<SaveSheet> {
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Detalles ──
-              _fieldLabel(
-                theme,
-                Icons.article_outlined,
-                EsBO.calcDialogDetails,
-              ),
-              const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: _notesCtrl,
                 decoration: InputDecoration(
@@ -192,8 +163,6 @@ class SaveSheetState extends State<SaveSheet> {
                 textInputAction: TextInputAction.newline,
               ),
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Plantilla ──
               Material(
                 color: _saveAsTemplate
                     ? color.primaryContainer.withValues(alpha: 0.4)
@@ -251,8 +220,6 @@ class SaveSheetState extends State<SaveSheet> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Footer ──
               Row(
                 children: [
                   Expanded(
@@ -276,22 +243,6 @@ class SaveSheetState extends State<SaveSheet> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _fieldLabel(ThemeData theme, IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.4,
-          ),
-        ),
-      ],
     );
   }
 }

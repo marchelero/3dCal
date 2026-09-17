@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -590,7 +591,7 @@ class HomePage extends ConsumerWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _CatalogCard(
-                icon: Icons.print_rounded,
+                icon: MdiIcons.printer3d,
                 label: EsBO.settingsImpresoras,
                 onTap: () => context.push('/settings/printers'),
               ),

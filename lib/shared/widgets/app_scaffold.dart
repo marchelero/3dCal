@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -42,8 +43,8 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       label: s.navHistory,
     ),
     _NavDest(
-      icon: Icons.print_outlined,
-      selectedIcon: Icons.print,
+      icon: MdiIcons.printer3d,
+      selectedIcon: MdiIcons.printer3d,
       label: s.navPrint,
     ),
     _NavDest(

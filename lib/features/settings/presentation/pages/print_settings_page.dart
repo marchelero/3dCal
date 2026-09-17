@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -215,7 +216,7 @@ class _PrintSettingsBody extends ConsumerWidget {
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: IconBadge(
-                            icon: Icons.print_rounded,
+                            icon: MdiIcons.printer3d,
                             background: color.tertiaryContainer,
                             foreground: color.onTertiaryContainer,
                           ),
@@ -330,7 +331,7 @@ class _PrintSettingsHeader extends StatelessWidget {
                       ],
                     ),
                     child: Icon(
-                      Icons.print_rounded,
+                      MdiIcons.printer3d,
                       color: color.onTertiary,
                       size: 28,
                     ),

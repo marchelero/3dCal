@@ -249,6 +249,7 @@ class _TierRow extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit_rounded, size: 18),
+                  tooltip: EsBO.discountTierEdit,
                   onPressed: onEdit,
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
@@ -259,6 +260,7 @@ class _TierRow extends StatelessWidget {
                     size: 18,
                     color: Theme.of(context).colorScheme.error,
                   ),
+                  tooltip: EsBO.commonDelete,
                   onPressed: onDelete,
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
@@ -352,8 +354,8 @@ class _TierEditSheetState extends State<_TierEditSheet> {
             TextFormField(
               controller: _percentController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Descuento',
+              decoration: InputDecoration(
+                labelText: EsBO.discountTierPercent,
                 suffixText: '%',
               ),
               validator: (v) {
