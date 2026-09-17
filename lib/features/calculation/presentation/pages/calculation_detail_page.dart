@@ -3,7 +3,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,6 +30,7 @@ import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/settings.dart';
 import '../../../settings/presentation/notifiers/settings_notifier.dart';
+import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_output.dart';
 import '../notifiers/calculations_notifier.dart';
 import '../state/calculator_state.dart' show MaterialCostBreakdown;
@@ -895,7 +895,7 @@ class _DetailState extends ConsumerState<_Detail> {
                     onPressed: _isBusy ? null : _handleSharePdf,
                   ),
                   _DetailActionIcon(
-                    icon: MdiIcons.printer3d,
+                    icon: Icons.print_rounded,
                     tooltip: EsBO.commonPrint,
                     color: AppTheme.blueSuccess,
                     isBusy: _isBusy,
@@ -945,13 +945,12 @@ class _DetailState extends ConsumerState<_Detail> {
 /// Reconstruye [CalculationOutput] + valores detallados desde datos
 /// guardados en DB + settings actuales.
 ///
-/// Usa current settings para electricidad/ganancia — mismo approach que
-/// [CalculatorNotifier._recompute] y el prefill de CalculatorPage.
+/// **Single source of truth**: delega a [CalculationEngine.computeFromSnapshot]
+/// para la formula. Si cambia la formula del engine, esta funcion se
+/// actualiza automaticamente (ya no duplica la logica).
 ///
 /// [quantity]: multiplica todos los montos y las metricas (gramos/tiempo)
-/// para reportar valores EFECTIVOS del lote (default 1 = unitario). La ruta
-/// de preview-imagen llama con 1 porque QuoteImageTemplate ya escala por su
-/// quantity editable.
+/// para reportar valores EFECTIVOS del lote (default 1 = unitario).
 ///
 /// Retorna null si materials aun no cargaron.
 ({
@@ -980,17 +979,10 @@ _recomputeOutput(
   final qty = quantity < 1 ? 1 : quantity;
   final qtyD = Decimal.fromInt(qty);
 
-  final materialCost = Decimal.parse(
-    calc.materialCostSnapshot.toStringAsFixed(2),
-  );
-  final hours = Decimal.parse(calc.totalHours.toStringAsFixed(2));
-  final discountPct = calc.discountPercentage > 0
-      ? Decimal.parse(calc.discountPercentage.toStringAsFixed(2))
-      : Decimal.zero;
-
-  // Per-material breakdown
-  final breakdown = <MaterialCostBreakdown>[];
+  // Per-material breakdown + MaterialSnapshot list for engine
+  final snapshots = <MaterialSnapshot>[];
   var totalGrams = Decimal.zero;
+  final breakdown = <MaterialCostBreakdown>[];
   for (final m in materials) {
     final weight = Decimal.parse(m.weightGrams.toStringAsFixed(2));
     final price = Decimal.parse(m.pricePerBobbinSnapshot.toStringAsFixed(2));
@@ -1000,94 +992,40 @@ _recomputeOutput(
         : Decimal.zero;
     breakdown.add(MaterialCostBreakdown(label: m.label, cost: cost * qtyD));
     totalGrams += weight * qtyD;
+    snapshots.add(MaterialSnapshot(
+      weightGrams: m.weightGrams,
+      pricePerBobbinSnapshot: m.pricePerBobbinSnapshot,
+      gramsPerBobbinSnapshot: m.gramsPerBobbinSnapshot,
+    ));
   }
 
-  // F1 formula with historical SNAPSHOTS, fallback a settings/impresora
-  // actual SOLO si el snapshot es 0/legacy (antes la impresora/settings
-  // pudieron editarse; el snapshot persistido es la fuente de verdad).
-  final kwhRate = calc.kwhRateSnapshot > 0
-      ? Decimal.parse(calc.kwhRateSnapshot.toStringAsFixed(2))
-      : settings.kwhRate;
-  final watts = calc.printerWattsSnapshot > 0
-      ? calc.printerWattsSnapshot.toInt()
-      : (printer?.averageWatts ?? 0);
-  final laborRate = calc.laborRateSnapshot > 0
-      ? Decimal.parse(calc.laborRateSnapshot.toStringAsFixed(2))
-      : settings.laborRate;
-  final postProcessRate = calc.postProcessRateSnapshot > 0
-      ? Decimal.parse(calc.postProcessRateSnapshot.toStringAsFixed(2))
-      : settings.postProcessRate;
-  final failureRate = calc.failureRateSnapshot > 0
-      ? Decimal.parse(calc.failureRateSnapshot.toStringAsFixed(2))
-      : settings.failureRate;
-  final markupOnMaterials = calc.markupOnMaterialsSnapshot > 0
-      ? Decimal.parse(calc.markupOnMaterialsSnapshot.toStringAsFixed(2))
-      : settings.markupOnMaterials;
-  final profitBase = calc.profitBaseSnapshot > 0
-      ? Decimal.parse(calc.profitBaseSnapshot.toStringAsFixed(2))
-      : settings.profitBase;
-
-  final electricCost = hours > Decimal.zero && watts > 0
-      ? (Decimal.fromInt(watts) *
-                hours *
-                kwhRate /
-                Decimal.fromInt(1000))
-            .toDecimal()
-      : Decimal.zero;
-  // F5: amortizacion desde el snapshot persistido (la impresora original
-  // pudo editarse/borrarse; el snapshot es la fuente de verdad historica).
-  final amortizationCost = calc.amortizationCostSnapshot > 0
-      ? Decimal.parse(calc.amortizationCostSnapshot.toStringAsFixed(2))
-      : Decimal.zero;
-  final laborCost = hours * laborRate;
-  final postProcessCost = postProcessRate > Decimal.zero
-      ? (materialCost * postProcessRate / Decimal.fromInt(100))
-            .toDecimal()
-      : Decimal.zero;
-  final baseCost =
-      materialCost +
-      electricCost +
-      amortizationCost +
-      laborCost +
-      postProcessCost;
-  final failureCost = failureRate > Decimal.zero
-      ? (baseCost * failureRate / Decimal.fromInt(100)).toDecimal()
-      : Decimal.zero;
-  final costWithFailure = baseCost + failureCost;
-  final markupCost = markupOnMaterials > Decimal.zero
-      ? (materialCost * markupOnMaterials / Decimal.fromInt(100)).toDecimal()
-      : Decimal.zero;
-  final totalBeforeProfit = costWithFailure + markupCost;
-  final profitAmount = profitBase > Decimal.zero
-      ? (totalBeforeProfit * profitBase / Decimal.fromInt(100)).toDecimal()
-      : Decimal.zero;
-  final totalFinal = totalBeforeProfit + profitAmount;
-
-  // Discount on totalFinal
-  final discountOnTotalFinal = discountPct > Decimal.zero
-      ? (totalFinal * discountPct / Decimal.fromInt(100)).toDecimal()
-      : Decimal.zero;
-  final totalPrice = totalFinal - discountOnTotalFinal;
-
-  final output = CalculationOutput(
-    materialCost: materialCost * qtyD,
-    electricCost: electricCost * qtyD,
-    amortizationCost: amortizationCost * qtyD,
-    laborCost: laborCost * qtyD,
-    postProcessCost: postProcessCost * qtyD,
-    baseCost: baseCost * qtyD,
-    failureCost: failureCost * qtyD,
-    costWithFailure: costWithFailure * qtyD,
-    markupCost: markupCost * qtyD,
-    totalBeforeProfit: totalBeforeProfit * qtyD,
-    profitAmount: profitAmount * qtyD,
-    totalFinal: totalFinal * qtyD,
-    discountAmount: discountOnTotalFinal * qtyD,
-    totalPrice: totalPrice * qtyD,
-    totalOriginal: totalFinal * qtyD,
+  // Delegar la formula al engine centralizado
+  final output = CalculationEngine.computeFromSnapshot(
+    materials: snapshots,
+    materialCostSnapshot: calc.materialCostSnapshot,
+    totalHours: calc.totalHours,
+    printerWattsSnapshot: calc.printerWattsSnapshot,
+    kwhRateSnapshot: calc.kwhRateSnapshot,
+    laborRateSnapshot: calc.laborRateSnapshot,
+    postProcessRateSnapshot: calc.postProcessRateSnapshot,
+    failureRateSnapshot: calc.failureRateSnapshot,
+    markupOnMaterialsSnapshot: calc.markupOnMaterialsSnapshot,
+    profitBaseSnapshot: calc.profitBaseSnapshot,
+    discountPercentage: calc.discountPercentage,
+    amortizationCostSnapshot: calc.amortizationCostSnapshot,
+    fallbackKwhRate: settings.kwhRate,
+    fallbackLaborRate: settings.laborRate,
+    fallbackPostProcessRate: settings.postProcessRate,
+    fallbackFailureRate: settings.failureRate,
+    fallbackMarkupOnMaterials: settings.markupOnMaterials,
+    fallbackProfitBase: settings.profitBase,
+    fallbackPrinterWatts: printer?.averageWatts ?? 0,
+    quantity: qty,
   );
+  if (output == null) return null;
 
   // Meta
+  final hours = Decimal.parse(calc.totalHours.toStringAsFixed(2));
   final totalMinutes = (hours * qtyD * Decimal.fromInt(60)).toBigInt();
   String? timeStr;
   if (totalMinutes > BigInt.zero) {
@@ -1102,15 +1040,15 @@ _recomputeOutput(
   return (
     output: output,
     breakdown: breakdown,
-    electricCost: electricCost * qtyD,
-    amortizationCost: amortizationCost * qtyD,
-    laborCost: laborCost * qtyD,
-    postProcessCost: postProcessCost * qtyD,
-    baseCost: baseCost * qtyD,
-    failureCost: failureCost * qtyD,
-    markupCost: markupCost * qtyD,
-    profitAmount: profitAmount * qtyD,
-    totalFinal: totalFinal * qtyD,
+    electricCost: output.electricCost,
+    amortizationCost: output.amortizationCost,
+    laborCost: output.laborCost,
+    postProcessCost: output.postProcessCost,
+    baseCost: output.baseCost,
+    failureCost: output.failureCost,
+    markupCost: output.markupCost,
+    profitAmount: output.profitAmount,
+    totalFinal: output.totalFinal,
     metaGrams: gramsStr,
     metaTime: timeStr,
   );

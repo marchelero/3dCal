@@ -24,7 +24,8 @@ import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../../shared/widgets/smart_app_bar_actions.dart';
-import '../../../entitlement/presentation/providers/entitlement_providers.dart';
+import '../../../entitlement/presentation/providers/entitlement_providers.dart'
+    show isProProvider;
 import '../../data/calculation_repository.dart';
 import '../notifiers/calculations_notifier.dart';
 import '../notifiers/history_sort.dart';
@@ -65,12 +66,9 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     final dateRange = notifier.dateRange;
     final clientFilter = notifier.clientFilter;
 
-    // Patron de estado del gate visual (UX): "locked" solo cuando el
-    // entitlement esta resuelto y el user es free. Durante el boot async
-    // (loading) el boton se ve normal (evita falso "locked" en cold start).
-    final ent = ref.watch(entitlementNotifierProvider);
+    // Patron de estado del gate visual (UX): ya no se bloquea CSV —
+    // los datos son del usuario y exportar es un derecho basico.
     final isPro = ref.watch(isProProvider);
-    final csvLocked = !ent.isLoading && !isPro;
     final usedCount = async.value?.length ?? 0;
 
     // Barra de resumen: visible SOLO con >=1 filtro activo (search, venta,
@@ -84,7 +82,7 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     // Contador "x/$kFreeHistoryCap": solo free, y solo cuando la lista
     // muestra el set completo (sin filtros activos — con filtros el count
     // del state no representa el historial total).
-    final showHistoryCounter = csvLocked && async.hasValue && !hasActiveFilter;
+    final showHistoryCounter = !isPro && async.hasValue && !hasActiveFilter;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -96,18 +94,11 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
             // colapsa al menu ⋮ en angosto.
             priority: [
               Tooltip(
-                message: csvLocked
-                    ? EsBO.csvExportTooltipLocked
-                    : EsBO.historyExportCsv,
+                message: EsBO.historyExportCsv,
                 child: IconButton(
-                  icon: Opacity(
-                    opacity: csvLocked ? kLockedOpacity : 1.0,
-                    child: Icon(
-                      csvLocked
-                          ? Icons.lock_rounded
-                          : Icons.file_download_outlined,
-                      size: 20,
-                    ),
+                  icon: const Icon(
+                    Icons.file_download_outlined,
+                    size: 20,
                   ),
                   onPressed: () => _exportCsv(notifier),
                 ),
@@ -488,33 +479,8 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
       DateTime(d.year, d.month, d.day, 23, 59, 59, 999, 999);
 
   Future<void> _exportCsv(CalculationsNotifier notifier) async {
-    // T16 (plan de monetizacion): CSV export es Pro. En Free, gate con
-    // SnackBar que ofrece "Go Pro" y navega a /paywall. En Pro, se
-    // procede con el export normal.
-    //
-    // Mismo patron que `_switchMode` (calculator_page.dart): el gate
-    // lee el estado real del entitlement (no `isProProvider` solo).
-    // Durante el boot async el notifier esta loading e isPro=false, lo
-    // que daria un falso "locked" a un Pro real en cold start. Si sigue
-    // loading, swallow (no gatear); solo gateamos resuelto.
-    final ent = ref.read(entitlementNotifierProvider);
-    if (ent.isLoading) return;
-    final isPro = ref.read(isProProvider);
-    if (!isPro) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        AppSnackBar.info(
-          context,
-          EsBO.csvExportLockedBody,
-          actionLabel: EsBO.csvGoProAction,
-          onAction: () {
-            if (!mounted) return;
-            context.push('/paywall');
-          },
-        ),
-      );
-      return;
-    }
+    // CSV export es gratuito — los datos son del usuario.
+    // Solo se verifica que no este loading (evita double-tap).
 
     // PRD criterio #10: el CSV exporta el historial COMPLETO (`notifier.all`),
     // no el set filtrado que se muestra en pantalla.
@@ -893,19 +859,30 @@ class _CardThumb extends ConsumerWidget {
   }
 }
 
-class _PopupMenu extends StatelessWidget {
+class _PopupMenu extends ConsumerWidget {
   const _PopupMenu({required this.calc, required this.notifier});
 
   final CalculationListItem calc;
   final CalculationsNotifier notifier;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<_TileAction>(
-      onSelected: (a) => _handle(context, a),
+      onSelected: (a) => _handle(context, ref, a),
       padding: EdgeInsets.zero,
       iconSize: 18,
       itemBuilder: (_) => [
+        PopupMenuItem<_TileAction>(
+          value: _TileAction.repeat,
+          child: ListTile(
+            leading: const Icon(Icons.replay_rounded, size: 20),
+            title: Text(
+              EsBO.calcDetailReuse,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            dense: true,
+          ),
+        ),
         PopupMenuItem<_TileAction>(
           value: _TileAction.duplicate,
           child: ListTile(
@@ -950,8 +927,16 @@ class _PopupMenu extends StatelessWidget {
     );
   }
 
-  Future<void> _handle(BuildContext context, _TileAction a) async {
+  Future<void> _handle(BuildContext context, WidgetRef ref, _TileAction a) async {
     switch (a) {
+      case _TileAction.repeat:
+        // "Cotizar igual": cargar la cotizacion completa y navegar al
+        // calculator con prefill (misma UX que el FAB del detalle).
+        final repo = ref.read(calculationRepositoryProvider);
+        final full = await repo.getById(calc.id);
+        if (full != null && context.mounted) {
+          await context.push('/calculator/prefill', extra: full);
+        }
       case _TileAction.duplicate:
         try {
           await notifier.duplicate(
@@ -998,7 +983,7 @@ class _PopupMenu extends StatelessWidget {
   }
 }
 
-enum _TileAction { duplicate, toggleSold, delete }
+enum _TileAction { repeat, duplicate, toggleSold, delete }
 
 /// Staggered entrance animation para items de lista.
 ///

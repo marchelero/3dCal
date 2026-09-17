@@ -4,6 +4,22 @@ import 'entities/calculation_input.dart';
 import 'entities/calculation_output.dart';
 import 'entities/material_input.dart';
 
+/// Datos de un material guardado en DB (snapshot).
+///
+/// Usado por [CalculationEngine.computeFromSnapshot] para reconstruir el
+/// costo por material desde los datos persistidos.
+class MaterialSnapshot {
+  const MaterialSnapshot({
+    required this.weightGrams,
+    required this.pricePerBobbinSnapshot,
+    required this.gramsPerBobbinSnapshot,
+  });
+
+  final double weightGrams;
+  final double pricePerBobbinSnapshot;
+  final double gramsPerBobbinSnapshot;
+}
+
 /// Motor de calculo de cotizaciones. **Pure Dart, sin dependencias de Flutter**.
 ///
 /// Formula completa (sin amortizacion en costo):
@@ -136,6 +152,146 @@ class CalculationEngine {
       discountAmount: discountAmount,
       totalPrice: totalPrice,
       totalOriginal: totalFinal,
+    );
+  }
+
+  /// Reconstruye [CalculationOutput] desde datos guardados en DB (snapshots)
+  /// + settings actuales como fallback.
+  ///
+  /// ** single source of truth **: reemplaza la logica duplicada que existia
+  /// en `calculation_detail_page.dart._recomputeOutput()`. Si cambia la
+  /// formula, se cambia aca y ambas rutas (live + historial) se actualizan.
+  ///
+  /// [materials]: lista de materiales guardados (con snapshots de precio/gramos).
+  /// [materialCostSnapshot]: costo material guardado en la fila de la calculo.
+  /// [totalHours]: horas de impresion guardadas.
+  /// [printerWattsSnapshot], [kwhRateSnapshot], etc.: snapshots de la calculo.
+  /// [fallbackKwhRate], [fallbackLaborRate], etc.: settings actuales (fallback
+  ///   cuando el snapshot es 0/legacy).
+  /// [fallbackPrinterWatts]: watts de la impresora activa actual.
+  /// [quantity]: multiplica todos los montos (default 1 = unitario).
+  ///
+  /// Retorna null si no hay datos suficientes para computar.
+  static CalculationOutput? computeFromSnapshot({
+    required List<MaterialSnapshot> materials,
+    required double materialCostSnapshot,
+    required double totalHours,
+    required double printerWattsSnapshot,
+    required double kwhRateSnapshot,
+    required double laborRateSnapshot,
+    required double postProcessRateSnapshot,
+    required double failureRateSnapshot,
+    required double markupOnMaterialsSnapshot,
+    required double profitBaseSnapshot,
+    required double discountPercentage,
+    double amortizationCostSnapshot = 0,
+    required Decimal fallbackKwhRate,
+    required Decimal fallbackLaborRate,
+    required Decimal fallbackPostProcessRate,
+    required Decimal fallbackFailureRate,
+    required Decimal fallbackMarkupOnMaterials,
+    required Decimal fallbackProfitBase,
+    required int fallbackPrinterWatts,
+    int quantity = 1,
+  }) {
+    if (materials.isEmpty && materialCostSnapshot <= 0) return null;
+    final qty = quantity < 1 ? 1 : quantity;
+    final qtyD = Decimal.fromInt(qty);
+    final pctDivisor = Decimal.fromInt(100);
+    final kWhDivisor = Decimal.fromInt(1000);
+
+    // Material cost desde snapshots
+    final materialCost = Decimal.parse(materialCostSnapshot.toStringAsFixed(2));
+    final hours = Decimal.parse(totalHours.toStringAsFixed(2));
+
+    // Resolver snapshots con fallback a settings actuales
+    final kwhRate = kwhRateSnapshot > 0
+        ? Decimal.parse(kwhRateSnapshot.toStringAsFixed(2))
+        : fallbackKwhRate;
+    final watts = printerWattsSnapshot > 0
+        ? printerWattsSnapshot.toInt()
+        : fallbackPrinterWatts;
+    final laborRate = laborRateSnapshot > 0
+        ? Decimal.parse(laborRateSnapshot.toStringAsFixed(2))
+        : fallbackLaborRate;
+    final postProcessRate = postProcessRateSnapshot > 0
+        ? Decimal.parse(postProcessRateSnapshot.toStringAsFixed(2))
+        : fallbackPostProcessRate;
+    final failureRate = failureRateSnapshot > 0
+        ? Decimal.parse(failureRateSnapshot.toStringAsFixed(2))
+        : fallbackFailureRate;
+    final markupOnMaterials = markupOnMaterialsSnapshot > 0
+        ? Decimal.parse(markupOnMaterialsSnapshot.toStringAsFixed(2))
+        : fallbackMarkupOnMaterials;
+    final profitBase = profitBaseSnapshot > 0
+        ? Decimal.parse(profitBaseSnapshot.toStringAsFixed(2))
+        : fallbackProfitBase;
+
+    // Electricidad
+    final electricCost = hours > Decimal.zero && watts > 0
+        ? (Decimal.fromInt(watts) * hours * kwhRate / kWhDivisor).toDecimal()
+        : Decimal.zero;
+
+    // Amortizacion desde snapshot
+    final amortCost = amortizationCostSnapshot > 0
+        ? Decimal.parse(amortizationCostSnapshot.toStringAsFixed(2))
+        : Decimal.zero;
+
+    // Mano de obra
+    final laborCost = hours * laborRate;
+
+    // Post-procesado
+    final postProcessCost = postProcessRate > Decimal.zero
+        ? (materialCost * postProcessRate / pctDivisor).toDecimal()
+        : Decimal.zero;
+
+    // Base
+    final baseCost =
+        materialCost + electricCost + amortCost + laborCost + postProcessCost;
+
+    // Tasa de falla
+    final failureCost = failureRate > Decimal.zero
+        ? (baseCost * failureRate / pctDivisor).toDecimal()
+        : Decimal.zero;
+    final costWithFailure = baseCost + failureCost;
+
+    // Markup
+    final markupCost = markupOnMaterials > Decimal.zero
+        ? (materialCost * markupOnMaterials / pctDivisor).toDecimal()
+        : Decimal.zero;
+    final totalBeforeProfit = costWithFailure + markupCost;
+
+    // Ganancia
+    final profitAmount = profitBase > Decimal.zero
+        ? (totalBeforeProfit * profitBase / pctDivisor).toDecimal()
+        : Decimal.zero;
+    final totalFinal = totalBeforeProfit + profitAmount;
+
+    // Descuento
+    final discountPct = discountPercentage > 0
+        ? Decimal.parse(discountPercentage.toStringAsFixed(2))
+        : Decimal.zero;
+    final discountOnTotalFinal = discountPct > Decimal.zero
+        ? (totalFinal * discountPct / pctDivisor).toDecimal()
+        : Decimal.zero;
+    final totalPrice = totalFinal - discountOnTotalFinal;
+
+    return CalculationOutput(
+      materialCost: materialCost * qtyD,
+      electricCost: electricCost * qtyD,
+      amortizationCost: amortCost * qtyD,
+      laborCost: laborCost * qtyD,
+      postProcessCost: postProcessCost * qtyD,
+      baseCost: baseCost * qtyD,
+      failureCost: failureCost * qtyD,
+      costWithFailure: costWithFailure * qtyD,
+      markupCost: markupCost * qtyD,
+      totalBeforeProfit: totalBeforeProfit * qtyD,
+      profitAmount: profitAmount * qtyD,
+      totalFinal: totalFinal * qtyD,
+      discountAmount: discountOnTotalFinal * qtyD,
+      totalPrice: totalPrice * qtyD,
+      totalOriginal: totalFinal * qtyD,
     );
   }
 

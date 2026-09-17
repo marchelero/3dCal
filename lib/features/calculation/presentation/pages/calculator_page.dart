@@ -995,8 +995,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   // ============================================================
 
   /// Seccion del scroll continuo: hoja de plano sin header duplicado.
-  /// El step bar ya muestra el nombre de la seccion. Esta wrapper solo
-  /// provee el paper sheet.
+  /// El step bar ya muestra el nombre de la seccion. Esta wrapper provee
+  /// el paper sheet con un borde animado que indica la seccion activa.
   Widget _buildScrollSection({
     Key? key,
     required int sectionIndex,
@@ -1004,9 +1004,27 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     required ColorScheme cs,
     required Widget child,
   }) {
-    return _paperSheet(
-      key: key,
-      child: child,
+    final isActive = sectionIndex == _step;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isActive ? cs.primary.withValues(alpha: 0.4) : cs.outlineVariant,
+          width: isActive ? 1.5 : 1,
+        ),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        boxShadow: [
+          BoxShadow(
+            color: isActive
+                ? cs.primary.withValues(alpha: 0.08)
+                : cs.onSurface.withValues(alpha: 0.08),
+            blurRadius: isActive ? 16 : 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: _paperSheet(key: key, child: child),
     );
   }
 
@@ -1535,6 +1553,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 
   /// Hoja de plano: superficie que sostiene las rubric.
+  /// La decoracion (borde, sombra) se maneja en [_buildScrollSection] via
+  /// AnimatedContainer para permitir la animacion de seccion activa.
   Widget _paperSheet({Key? key, required Widget child}) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
@@ -1547,14 +1567,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: cs.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: cs.onSurface.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
       child: child,
     );

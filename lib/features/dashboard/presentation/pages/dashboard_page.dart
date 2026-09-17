@@ -410,8 +410,39 @@ class _DashboardBody extends StatelessWidget {
                         ),
                     ],
                   ),
-                ] else
+                ] else ...[
+                  // ── Free: metricas operativas basicas ──
+                  // Muestra horas de impresion y filamento usado (datos
+                  // que el usuario ya tiene — no son analytics avanzados).
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(
+                            icon: Icons.timer_outlined,
+                            title: EsBO.dashboardOperationalTitle,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          MoneyRow(
+                            label: EsBO.dashboardPrintHours,
+                            value: '${stats.printHours.toStringAsFixed(1)}h',
+                            valueColor: color.onSurface,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          MoneyRow(
+                            label: EsBO.dashboardFilament,
+                            value: _formatGrams(stats.filamentGrams),
+                            valueColor: color.secondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   const _ProAnalyticsTeaser(),
+                ],
 
                 const SizedBox(height: AppSpacing.xxl),
               ],

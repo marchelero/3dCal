@@ -729,41 +729,58 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                 ),
               ),
 
-              // ── Foto de pieza: control (FUERA del RepaintBoundary, no sale
-              // en el PNG). Agregar/Cambiar/Quitar — reversible, no bloquea.
+              // ── Controles de preview: imagen + detalle (fuera del
+              // RepaintBoundary, no salen en el PNG). Fila compacta horizontal.
               const SizedBox(height: AppSpacing.sm),
-              Align(
-                child: _pieceImageBytes == null
-                    ? TextButton.icon(
-                        icon: const Icon(Icons.add_a_photo_rounded, size: 18),
-                        label: Text(EsBO.quoteImageAdd),
-                        onPressed: _isBusy ? null : _handlePickFromDialog,
-                      )
-                    : Wrap(
-                        spacing: AppSpacing.sm,
-                        alignment: WrapAlignment.center,
-                        children: [
-                          TextButton.icon(
-                            icon: const Icon(
-                              Icons.swap_horiz_rounded,
-                              size: 18,
-                            ),
-                            label: Text(EsBO.quoteImageChange),
-                            onPressed: _isBusy ? null : _handlePickFromDialog,
-                          ),
-                          TextButton.icon(
-                            icon: const Icon(
-                              Icons.delete_outline_rounded,
-                              size: 18,
-                            ),
-                            label: Text(EsBO.quoteImageRemove),
-                            style: TextButton.styleFrom(
-                              foregroundColor: theme.colorScheme.error,
-                            ),
-                            onPressed: _isBusy ? null : _handleRemoveImage,
-                          ),
-                        ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Foto de pieza: Agregar/Cambiar/Quitar
+                  if (_pieceImageBytes == null)
+                    TextButton.icon(
+                      icon: const Icon(Icons.add_a_photo_rounded, size: 18),
+                      label: const Text('+ imagen'),
+                      onPressed: _isBusy ? null : _handlePickFromDialog,
+                    )
+                  else ...[
+                    TextButton.icon(
+                      icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                      label: Text(EsBO.quoteImageChange),
+                      onPressed: _isBusy ? null : _handlePickFromDialog,
+                    ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      label: Text(EsBO.quoteImageRemove),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
                       ),
+                      onPressed: _isBusy ? null : _handleRemoveImage,
+                    ),
+                  ],
+                  // Separador vertical
+                  if (_pieceImageBytes == null)
+                    Container(
+                      width: 1,
+                      height: 20,
+                      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                      color: theme.colorScheme.outlineVariant,
+                    ),
+                  // Toggle detalle
+                  TextButton.icon(
+                    icon: Icon(
+                      state.showDetail
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
+                      size: 18,
+                    ),
+                    label: Text(
+                      state.showDetail
+                          ? EsBO.calcToggleHideDetail
+                          : EsBO.calcToggleShowDetail,
+                    ),
+                    onPressed: widget.onToggleDetail,
+                  ),
+                ],
               ),
 
               // ── Selector PRO de Cantidad (fuera del RepaintBoundary) ──
@@ -889,24 +906,6 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                     },
                   );
                 },
-              ),
-
-              const SizedBox(height: AppSpacing.sm),
-              Align(
-                child: TextButton.icon(
-                  icon: Icon(
-                    state.showDetail
-                        ? Icons.visibility_rounded
-                        : Icons.visibility_off_rounded,
-                    size: 18,
-                  ),
-                  label: Text(
-                    state.showDetail
-                        ? EsBO.calcToggleHideDetail
-                        : EsBO.calcToggleShowDetail,
-                  ),
-                  onPressed: widget.onToggleDetail,
-                ),
               ),
 
               // ── Tarjeta unificada: Descuentos + Total ──
