@@ -5,6 +5,7 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -14,6 +15,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/pro_active_badge.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../../catalog/printers/presentation/notifiers/printers_notifier.dart';
 import '../../domain/settings.dart';
@@ -133,7 +135,7 @@ class _PrintSettingsBody extends ConsumerWidget {
                   icon: Icons.bolt_rounded,
                   title: EsBO.settingsKwhRate(currency.symbol),
                   helper: EsBO.settingsKwhRateHelper,
-                  infoTooltip: EsBO.settingsKwhRateInfo,
+                  infoTooltip: EsBO.settingsKwhRateInfo(currency.symbol),
                   accent: color.tertiary,
                   initialValue: settings.kwhRate == Decimal.zero
                       ? ''
@@ -358,9 +360,37 @@ class _PrintSettingsHeader extends StatelessWidget {
                             color: color.onSurfaceVariant,
                           ),
                         ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${EsBO.appName} · v$kAppVersion',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: color.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.lock_outline_rounded,
+                              size: 14,
+                              color: color.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                EsBO.settingsPrivacy,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: color.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: AppSpacing.sm),
+                  const ProActiveBadge(),
                 ],
               ),
             ),

@@ -25,6 +25,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/partial_save_badge.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
@@ -372,6 +373,54 @@ class _DetailState extends ConsumerState<_Detail> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         shrinkWrap: true,
         children: [
+          // === Partial quote banner (T6) ===
+          if (calc.isPartial) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: color.tertiaryContainer,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const PartialSaveBadge(),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          EsBO.calcPartialAutoSaved,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: color.onTertiaryContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    EsBO.calcPartialCompleteHint,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.onTertiaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  FilledButton.tonalIcon(
+                    icon: const Icon(Icons.edit_rounded, size: 18),
+                    label: Text(EsBO.calcDetailReuse),
+                    onPressed: () {
+                      context.push('/calculator/prefill', extra: calc);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+
           // === Header card (hero) ===
           // Sin Hero: el vuelo desde el icono 44x44 de la lista hacia este
           // card grande encajaba el contenido en el frame inicial del flight

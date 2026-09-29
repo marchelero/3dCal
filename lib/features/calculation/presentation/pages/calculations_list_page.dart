@@ -22,6 +22,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/partial_save_badge.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart'
@@ -674,6 +675,10 @@ class _CalculationCard extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (calc.isPartial) ...[
+                          const SizedBox(height: AppSpacing.xxs),
+                          const PartialSaveBadge(),
+                        ],
                         const SizedBox(height: AppSpacing.xs),
                         Row(
                           children: [

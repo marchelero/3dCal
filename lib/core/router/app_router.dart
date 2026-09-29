@@ -130,6 +130,10 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _slideRight(const CalculatorPage()),
     ),
     GoRoute(
+      path: '/calculator/new',
+      pageBuilder: (_, __) => _slideRight(const CalculatorPage(newMode: true)),
+    ),
+    GoRoute(
       path: '/paywall',
       redirect: (context, state) => kIsWeb ? '/settings' : null,
       pageBuilder: (context, state) => _slideRight(const PaywallPage()),

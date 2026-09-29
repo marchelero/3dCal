@@ -308,7 +308,7 @@ class HomePage extends ConsumerWidget {
         subtitle: EsBO.homeActionNewCalcSub,
         color: color.primary,
         bgColor: color.primaryContainer,
-        onTap: () => context.push('/calculator'),
+        onTap: () => context.push('/calculator/new'),
       ),
       _QuickAction(
         icon: Icons.history_rounded,
@@ -697,7 +697,7 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
-              onPressed: () => context.push('/calculator'),
+              onPressed: () => context.push('/calculator/new'),
               icon: const Icon(Icons.add_circle_rounded),
               label: Text(EsBO.homeEmptyCta),
             ),

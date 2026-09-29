@@ -1051,14 +1051,14 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     }
 
     // First, preview what's in the backup
-    final result = await FilePicker.platform.pickFiles(
+    final files = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: [kBackupExtension, 'json'],
     );
-    if (result == null || result.files.isEmpty) return;
+    if (files.isEmpty) return;
 
-    // En web `path` es null: leer desde `bytes`. En movil/desktop por path.
-    final file = result.files.single;
+    // En web no hay `path` (se lee con readAsBytes); en movil/desktop por path.
+    final file = files.single;
 
     // Limite de tamaño ANTES de cargar a memoria (helper compartido con
     // BackupService.import para no duplicar la regla).
@@ -1073,13 +1073,11 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
 
     final String content;
     try {
-      final bytes = file.bytes;
-      if (bytes != null) {
-        content = utf8.decode(bytes);
-      } else if (file.path != null) {
-        content = await File(file.path!).readAsString();
+      final path = file.path;
+      if (path != null) {
+        content = await File(path).readAsString();
       } else {
-        throw const FormatException('sin contenido');
+        content = utf8.decode(await file.readAsBytes());
       }
     } catch (_) {
       if (!mounted) return;

@@ -55,7 +55,7 @@ class EsBO {
   static String get settingsProfitBaseInfo => _impl.settingsProfitBaseInfo;
   static String settingsKwhRate(String symbol) => _impl.settingsKwhRate(symbol);
   static String get settingsKwhRateHelper => _impl.settingsKwhRateHelper;
-  static String get settingsKwhRateInfo => _impl.settingsKwhRateInfo;
+  static String settingsKwhRateInfo(String symbol) => _impl.settingsKwhRateInfo(symbol);
   static String get settingsCatalogos => _impl.settingsCatalogos;
   static String get settingsFilamentos => _impl.settingsFilamentos;
   static String get settingsImpresoras => _impl.settingsImpresoras;
@@ -847,6 +847,18 @@ class EsBO {
   static String get printerEmptyList => _impl.printerEmptyList;
   static String printerDeleteConfirm(String name) =>
       _impl.printerDeleteConfirm(name);
+
+  // === Hito: mejoras cotizador 2026-09-28 (T2) ===
+  static String get calcActionPrintSettings => _impl.calcActionPrintSettings;
+  static String get calcResetConfirmTitle => _impl.calcResetConfirmTitle;
+  static String get calcResetConfirmBody => _impl.calcResetConfirmBody;
+  static String get calcResetConfirmCancel => _impl.calcResetConfirmCancel;
+  static String get calcResetConfirmOk => _impl.calcResetConfirmOk;
+  static String get calcPartialBadge => _impl.calcPartialBadge;
+  static String get calcPartialAutoSaved => _impl.calcPartialAutoSaved;
+  static String get calcPartialCompleteHint => _impl.calcPartialCompleteHint;
+  static String get printSettingsVersionSuffix =>
+      _impl.printSettingsVersionSuffix;
 }
 
 // ─── Implementacion espanol ─────────────────────
@@ -915,9 +927,9 @@ class EsImpl implements AppStrings {
   @override
   String get settingsKwhRateHelper => 'Rango residencial Bolivia: 0.10-5.00';
   @override
-  String get settingsKwhRateInfo =>
+  String settingsKwhRateInfo(String symbol) =>
       'Es el costo de un kilovatio-hora segun tu factura de luz. '
-      'En Bolivia el rango residencial va de 0.10 a 5.00 Bs./kWh. '
+      'En Bolivia el rango residencial va de 0.10 a 5.00 $symbol/kWh. '
       'Revisa tu ultima factura para el valor exacto.';
   @override
   String get settingsCatalogos => 'Catálogos';
@@ -2427,4 +2439,25 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String quoteGuidePageCounter(int page, int total) => 'Paso $page de $total';
   @override
   String get commonMoreActions => 'Más acciones';
+
+  // === Hito: mejoras cotizador 2026-09-28 (T2) ===
+  @override
+  String get calcActionPrintSettings => 'Config. impresión';
+  @override
+  String get calcResetConfirmTitle => '¿Restablecer?';
+  @override
+  String get calcResetConfirmBody => 'Se perderán los datos no guardados';
+  @override
+  String get calcResetConfirmCancel => 'Cancelar';
+  @override
+  String get calcResetConfirmOk => 'Restablecer';
+  @override
+  String get calcPartialBadge => 'Borrador';
+  @override
+  String get calcPartialAutoSaved => 'Cotización rápida guardada';
+  @override
+  String get calcPartialCompleteHint =>
+      'Completa los datos para guardar como cotización';
+  @override
+  String get printSettingsVersionSuffix => ' · v{0}';
 }

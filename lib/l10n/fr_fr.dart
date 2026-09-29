@@ -67,9 +67,9 @@ class FrImpl implements AppStrings {
   String get settingsKwhRateHelper =>
       'Fourchette résidentielle en Bolivie : 0,10-5,00';
   @override
-  String get settingsKwhRateInfo =>
+  String settingsKwhRateInfo(String symbol) =>
       'C\'est le coût par kilowatt-heure sur votre facture d\'électricité. '
-      'En Bolivie, la fourchette résidentielle est de 0,10 à 5,00 Bs./kWh. '
+      'En Bolivie, la fourchette résidentielle est de 0,10 à 5,00 $symbol/kWh. '
       'Consultez votre dernière facture pour la valeur exacte.';
   @override
   String get settingsCatalogos => 'Catalogues';
@@ -1528,4 +1528,26 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String quoteGuidePageCounter(int page, int total) => 'Étape $page sur $total';
   @override
   String get commonMoreActions => 'Plus d\'actions';
+
+  // === Hito: mejoras cotizador 2026-09-28 (T2) ===
+  @override
+  String get calcActionPrintSettings => 'Réglages d\'impression';
+  @override
+  String get calcResetConfirmTitle => 'Réinitialiser ?';
+  @override
+  String get calcResetConfirmBody =>
+      'Les données non sauvegardées seront perdues';
+  @override
+  String get calcResetConfirmCancel => 'Annuler';
+  @override
+  String get calcResetConfirmOk => 'Réinitialiser';
+  @override
+  String get calcPartialBadge => 'Brouillon';
+  @override
+  String get calcPartialAutoSaved => 'Devis rapide enregistré';
+  @override
+  String get calcPartialCompleteHint =>
+      'Compléter les données pour enregistrer comme devis';
+  @override
+  String get printSettingsVersionSuffix => ' · v{0}';
 }

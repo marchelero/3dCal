@@ -129,22 +129,16 @@ class BackupService {
   /// backup, ANTES de cargarlo a memoria.
   ///
   /// Retorna null si es valido, o un mensaje de error si el archivo es
-  /// demasiado grande. Revisa el tamaño reportado por el picker y, cuando el
-  /// contenido ya viene en memoria ([PlatformFile.bytes]) o hay path,
-  /// el tamaño real.
+  /// demasiado grande. Revisa el tamaño reportado por el picker y, cuando
+  /// hay path, el tamaño real en disco.
   static String? validateFileSize(PlatformFile file) {
-    final size = file.size;
-    if (size > kBackupMaxFileBytes) {
-      return 'El archivo de backup supera el tamaño permitido '
-          '(${_formatBytes(kBackupMaxFileBytes)}).';
-    }
-    final bytes = file.bytes;
-    if (bytes != null && bytes.lengthInBytes > kBackupMaxFileBytes) {
+    final size = file.lengthSync();
+    if (size != null && size > kBackupMaxFileBytes) {
       return 'El archivo de backup supera el tamaño permitido '
           '(${_formatBytes(kBackupMaxFileBytes)}).';
     }
     final path = file.path;
-    if (bytes == null && path != null) {
+    if (path != null) {
       try {
         if (File(path).lengthSync() > kBackupMaxFileBytes) {
           return 'El archivo de backup supera el tamaño permitido '
@@ -164,19 +158,18 @@ class BackupService {
   /// Retorna string vacio si fue exitoso.
   Future<String?> import() async {
     try {
-      // Seleccionar archivo
-      final result = await FilePicker.platform.pickFiles(
+      // Seleccionar archivo (lista vacia = usuario cancelo)
+      final files = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: [kBackupExtension, 'json'],
       );
-      if (result == null || result.files.isEmpty) {
+      if (files.isEmpty) {
         return null; // Usuario cancelo
       }
 
-      // En web `path` es null: el contenido viene en `bytes`.
-      // En movil/desktop `bytes` suele ser null y se lee por path.
-      final file = result.files.single;
-      final bytes = file.bytes;
+      // En web no hay `path` (se lee con readAsBytes); en movil/desktop se
+      // lee por path sin cargar el archivo entero a memoria.
+      final file = files.single;
 
       // Limite de tamaño ANTES de cargar a memoria (archivos gigantes o
       // corruptos no deben agotar la RAM del dispositivo).
@@ -186,22 +179,22 @@ class BackupService {
       }
 
       final String content;
-      if (bytes != null) {
-        if (bytes.lengthInBytes > kBackupMaxFileBytes) {
-          return 'El archivo de backup supera el tamaño permitido.';
-        }
-        content = utf8.decode(bytes);
-      } else if (file.path != null) {
-        final f = File(file.path!);
+      final path = file.path;
+      if (path != null) {
+        final f = File(path);
         if (f.lengthSync() > kBackupMaxFileBytes) {
           return 'El archivo de backup supera el tamaño permitido.';
         }
         content = await f.readAsString();
       } else {
-        return 'No se pudo leer el archivo seleccionado';
+        final bytes = await file.readAsBytes();
+        if (bytes.lengthInBytes > kBackupMaxFileBytes) {
+          return 'El archivo de backup supera el tamaño permitido.';
+        }
+        content = utf8.decode(bytes);
       }
 
-      return restoreFromJson(content);
+      return await restoreFromJson(content);
     } on FormatException {
       return 'El archivo seleccionado no es un backup valido.';
     } catch (e) {

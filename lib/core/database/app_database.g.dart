@@ -1330,6 +1330,21 @@ class $CalculationsTable extends Calculations
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isPartialMeta = const VerificationMeta(
+    'isPartial',
+  );
+  @override
+  late final GeneratedColumn<bool> isPartial = GeneratedColumn<bool>(
+    'is_partial',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_partial" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _materialCostSnapshotMeta =
       const VerificationMeta('materialCostSnapshot');
   @override
@@ -1573,6 +1588,7 @@ class $CalculationsTable extends Calculations
     quantity,
     isSold,
     isTemplate,
+    isPartial,
     materialCostSnapshot,
     electricCostSnapshot,
     amortizationCostSnapshot,
@@ -1731,6 +1747,12 @@ class $CalculationsTable extends Calculations
       context.handle(
         _isTemplateMeta,
         isTemplate.isAcceptableOrUnknown(data['is_template']!, _isTemplateMeta),
+      );
+    }
+    if (data.containsKey('is_partial')) {
+      context.handle(
+        _isPartialMeta,
+        isPartial.isAcceptableOrUnknown(data['is_partial']!, _isPartialMeta),
       );
     }
     if (data.containsKey('material_cost_snapshot')) {
@@ -2022,6 +2044,10 @@ class $CalculationsTable extends Calculations
         DriftSqlType.bool,
         data['${effectivePrefix}is_template'],
       )!,
+      isPartial: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_partial'],
+      )!,
       materialCostSnapshot: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}material_cost_snapshot'],
@@ -2180,6 +2206,10 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// son configuraciones guardadas para re-aplicarse ("Cargar plantilla").
   final bool isTemplate;
 
+  /// Marca como cotizacion parcial (F2 del PRD — parcial = cotizacion
+  /// persistida con flag, guardado rapido sin completar todos los campos).
+  final bool isPartial;
+
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   final double materialCostSnapshot;
   final double electricCostSnapshot;
@@ -2235,6 +2265,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.quantity,
     required this.isSold,
     required this.isTemplate,
+    required this.isPartial,
     required this.materialCostSnapshot,
     required this.electricCostSnapshot,
     required this.amortizationCostSnapshot,
@@ -2288,6 +2319,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     map['quantity'] = Variable<int>(quantity);
     map['is_sold'] = Variable<bool>(isSold);
     map['is_template'] = Variable<bool>(isTemplate);
+    map['is_partial'] = Variable<bool>(isPartial);
     map['material_cost_snapshot'] = Variable<double>(materialCostSnapshot);
     map['electric_cost_snapshot'] = Variable<double>(electricCostSnapshot);
     map['amortization_cost_snapshot'] = Variable<double>(
@@ -2358,6 +2390,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       quantity: Value(quantity),
       isSold: Value(isSold),
       isTemplate: Value(isTemplate),
+      isPartial: Value(isPartial),
       materialCostSnapshot: Value(materialCostSnapshot),
       electricCostSnapshot: Value(electricCostSnapshot),
       amortizationCostSnapshot: Value(amortizationCostSnapshot),
@@ -2418,6 +2451,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       quantity: serializer.fromJson<int>(json['quantity']),
       isSold: serializer.fromJson<bool>(json['isSold']),
       isTemplate: serializer.fromJson<bool>(json['isTemplate']),
+      isPartial: serializer.fromJson<bool>(json['isPartial']),
       materialCostSnapshot: serializer.fromJson<double>(
         json['materialCostSnapshot'],
       ),
@@ -2493,6 +2527,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'quantity': serializer.toJson<int>(quantity),
       'isSold': serializer.toJson<bool>(isSold),
       'isTemplate': serializer.toJson<bool>(isTemplate),
+      'isPartial': serializer.toJson<bool>(isPartial),
       'materialCostSnapshot': serializer.toJson<double>(materialCostSnapshot),
       'electricCostSnapshot': serializer.toJson<double>(electricCostSnapshot),
       'amortizationCostSnapshot': serializer.toJson<double>(
@@ -2546,6 +2581,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     int? quantity,
     bool? isSold,
     bool? isTemplate,
+    bool? isPartial,
     double? materialCostSnapshot,
     double? electricCostSnapshot,
     double? amortizationCostSnapshot,
@@ -2586,6 +2622,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     quantity: quantity ?? this.quantity,
     isSold: isSold ?? this.isSold,
     isTemplate: isTemplate ?? this.isTemplate,
+    isPartial: isPartial ?? this.isPartial,
     materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
     electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
     amortizationCostSnapshot:
@@ -2658,6 +2695,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       isTemplate: data.isTemplate.present
           ? data.isTemplate.value
           : this.isTemplate,
+      isPartial: data.isPartial.present ? data.isPartial.value : this.isPartial,
       materialCostSnapshot: data.materialCostSnapshot.present
           ? data.materialCostSnapshot.value
           : this.materialCostSnapshot,
@@ -2741,6 +2779,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('quantity: $quantity, ')
           ..write('isSold: $isSold, ')
           ..write('isTemplate: $isTemplate, ')
+          ..write('isPartial: $isPartial, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
           ..write('amortizationCostSnapshot: $amortizationCostSnapshot, ')
@@ -2786,6 +2825,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     quantity,
     isSold,
     isTemplate,
+    isPartial,
     materialCostSnapshot,
     electricCostSnapshot,
     amortizationCostSnapshot,
@@ -2828,6 +2868,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.quantity == this.quantity &&
           other.isSold == this.isSold &&
           other.isTemplate == this.isTemplate &&
+          other.isPartial == this.isPartial &&
           other.materialCostSnapshot == this.materialCostSnapshot &&
           other.electricCostSnapshot == this.electricCostSnapshot &&
           other.amortizationCostSnapshot == this.amortizationCostSnapshot &&
@@ -2872,6 +2913,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<int> quantity;
   final Value<bool> isSold;
   final Value<bool> isTemplate;
+  final Value<bool> isPartial;
   final Value<double> materialCostSnapshot;
   final Value<double> electricCostSnapshot;
   final Value<double> amortizationCostSnapshot;
@@ -2910,6 +2952,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.quantity = const Value.absent(),
     this.isSold = const Value.absent(),
     this.isTemplate = const Value.absent(),
+    this.isPartial = const Value.absent(),
     this.materialCostSnapshot = const Value.absent(),
     this.electricCostSnapshot = const Value.absent(),
     this.amortizationCostSnapshot = const Value.absent(),
@@ -2949,6 +2992,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.quantity = const Value.absent(),
     this.isSold = const Value.absent(),
     this.isTemplate = const Value.absent(),
+    this.isPartial = const Value.absent(),
     required double materialCostSnapshot,
     required double electricCostSnapshot,
     this.amortizationCostSnapshot = const Value.absent(),
@@ -3008,6 +3052,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<int>? quantity,
     Expression<bool>? isSold,
     Expression<bool>? isTemplate,
+    Expression<bool>? isPartial,
     Expression<double>? materialCostSnapshot,
     Expression<double>? electricCostSnapshot,
     Expression<double>? amortizationCostSnapshot,
@@ -3050,6 +3095,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       if (quantity != null) 'quantity': quantity,
       if (isSold != null) 'is_sold': isSold,
       if (isTemplate != null) 'is_template': isTemplate,
+      if (isPartial != null) 'is_partial': isPartial,
       if (materialCostSnapshot != null)
         'material_cost_snapshot': materialCostSnapshot,
       if (electricCostSnapshot != null)
@@ -3107,6 +3153,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<int>? quantity,
     Value<bool>? isSold,
     Value<bool>? isTemplate,
+    Value<bool>? isPartial,
     Value<double>? materialCostSnapshot,
     Value<double>? electricCostSnapshot,
     Value<double>? amortizationCostSnapshot,
@@ -3146,6 +3193,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       quantity: quantity ?? this.quantity,
       isSold: isSold ?? this.isSold,
       isTemplate: isTemplate ?? this.isTemplate,
+      isPartial: isPartial ?? this.isPartial,
       materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
       electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
       amortizationCostSnapshot:
@@ -3233,6 +3281,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     }
     if (isTemplate.present) {
       map['is_template'] = Variable<bool>(isTemplate.value);
+    }
+    if (isPartial.present) {
+      map['is_partial'] = Variable<bool>(isPartial.value);
     }
     if (materialCostSnapshot.present) {
       map['material_cost_snapshot'] = Variable<double>(
@@ -3345,6 +3396,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('quantity: $quantity, ')
           ..write('isSold: $isSold, ')
           ..write('isTemplate: $isTemplate, ')
+          ..write('isPartial: $isPartial, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
           ..write('amortizationCostSnapshot: $amortizationCostSnapshot, ')
@@ -5591,6 +5643,7 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       Value<int> quantity,
       Value<bool> isSold,
       Value<bool> isTemplate,
+      Value<bool> isPartial,
       required double materialCostSnapshot,
       required double electricCostSnapshot,
       Value<double> amortizationCostSnapshot,
@@ -5631,6 +5684,7 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<int> quantity,
       Value<bool> isSold,
       Value<bool> isTemplate,
+      Value<bool> isPartial,
       Value<double> materialCostSnapshot,
       Value<double> electricCostSnapshot,
       Value<double> amortizationCostSnapshot,
@@ -5774,6 +5828,11 @@ class $$CalculationsTableFilterComposer
 
   ColumnFilters<bool> get isTemplate => $composableBuilder(
     column: $table.isTemplate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPartial => $composableBuilder(
+    column: $table.isPartial,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5997,6 +6056,11 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isPartial => $composableBuilder(
+    column: $table.isPartial,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get materialCostSnapshot => $composableBuilder(
     column: $table.materialCostSnapshot,
     builder: (column) => ColumnOrderings(column),
@@ -6179,6 +6243,9 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isPartial =>
+      $composableBuilder(column: $table.isPartial, builder: (column) => column);
+
   GeneratedColumn<double> get materialCostSnapshot => $composableBuilder(
     column: $table.materialCostSnapshot,
     builder: (column) => column,
@@ -6352,6 +6419,7 @@ class $$CalculationsTableTableManager
                 Value<int> quantity = const Value.absent(),
                 Value<bool> isSold = const Value.absent(),
                 Value<bool> isTemplate = const Value.absent(),
+                Value<bool> isPartial = const Value.absent(),
                 Value<double> materialCostSnapshot = const Value.absent(),
                 Value<double> electricCostSnapshot = const Value.absent(),
                 Value<double> amortizationCostSnapshot = const Value.absent(),
@@ -6391,6 +6459,7 @@ class $$CalculationsTableTableManager
                 quantity: quantity,
                 isSold: isSold,
                 isTemplate: isTemplate,
+                isPartial: isPartial,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
                 amortizationCostSnapshot: amortizationCostSnapshot,
@@ -6431,6 +6500,7 @@ class $$CalculationsTableTableManager
                 Value<int> quantity = const Value.absent(),
                 Value<bool> isSold = const Value.absent(),
                 Value<bool> isTemplate = const Value.absent(),
+                Value<bool> isPartial = const Value.absent(),
                 required double materialCostSnapshot,
                 required double electricCostSnapshot,
                 Value<double> amortizationCostSnapshot = const Value.absent(),
@@ -6469,6 +6539,7 @@ class $$CalculationsTableTableManager
                 quantity: quantity,
                 isSold: isSold,
                 isTemplate: isTemplate,
+                isPartial: isPartial,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
                 amortizationCostSnapshot: amortizationCostSnapshot,

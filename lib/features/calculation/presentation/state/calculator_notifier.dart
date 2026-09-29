@@ -3,6 +3,8 @@
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -546,8 +548,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         computeVersion: version,
       );
     }
-    final input = _buildInput(next);
-    final output = CalculationEngine.compute(input);
+    try {
+      final input = _buildInput(next);
+      final output = CalculationEngine.compute(input);
 
     // Desglose de costo por material (unitario, sin cantidad).
     final breakdown = input.materials
@@ -589,6 +592,15 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       showsBatchLine: batch.appliedTier != null,
       computeVersion: version,
     );
+    } catch (e, st) {
+      debugPrint('[Recompute] ERROR: $e\n$st');
+      return next.copyWith(
+        clearOutput: true,
+        clearDetail: true,
+        clearBatch: true,
+        computeVersion: version,
+      );
+    }
   }
 
   /// Resuelve el escalón aplicado (mayor `min_qty <= quantity`) y compone el
@@ -691,10 +703,67 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     );
   }
 
+  /// Convierte el state actual a un `CalculationsCompanion` parcial para upsert.
+  ///
+  /// Solo incluye campos que [CalculatorState] tiene valores para. Los campos
+  /// de nombre/cliente quedan vacios (el usuario los completa al guardar).
+  static CalculationsCompanion stateToPartialDto(CalculatorState state) {
+    final o = state.output;
+    return CalculationsCompanion(
+      createdAt: Value(DateTime.now()),
+      pieceName: const Value(''),
+      clientName: const Value(''),
+      notes: const Value.absent(),
+      conditions: const Value.absent(),
+      printerId: const Value.absent(),
+      printerNameSnapshot: const Value.absent(),
+      printerWattsSnapshot: Value(state.output != null ? 0 : 0),
+      totalHours: Value(state.totalHoursDecimal?.toDouble() ?? 0),
+      printMinutes: Value(
+        CalculatorState.parseDecimal(state.printMinutes)?.toBigInt().toInt() ??
+            0,
+      ),
+      discountPercentage: Value(
+        CalculatorState.parseDecimal(state.discountPct)?.toDouble() ?? 0,
+      ),
+      kwhRateSnapshot: const Value(0),
+      profitBaseSnapshot: const Value(0),
+      quantity: Value(state.quantity),
+      isSold: const Value(false),
+      isTemplate: const Value(false),
+      isPartial: const Value(true),
+      materialCostSnapshot: Value(o?.materialCost.toDouble() ?? 0),
+      electricCostSnapshot: Value(o?.electricCost.toDouble() ?? 0),
+      amortizationCostSnapshot: Value(o?.amortizationCost.toDouble() ?? 0),
+      laborCostSnapshot: Value(o?.laborCost.toDouble() ?? 0),
+      postProcessCostSnapshot: Value(o?.postProcessCost.toDouble() ?? 0),
+      baseCostSnapshot: Value(o?.baseCost.toDouble() ?? 0),
+      failureCostSnapshot: Value(o?.failureCost.toDouble() ?? 0),
+      markupCostSnapshot: Value(o?.markupCost.toDouble() ?? 0),
+      profitAmountSnapshot: Value(o?.profitAmount.toDouble() ?? 0),
+      minimumChargeAppliedSnapshot: const Value(0),
+      effectiveTotalSnapshot: Value(o?.totalFinal.toDouble() ?? 0),
+      totalPriceSnapshot: Value(o?.totalPrice.toDouble() ?? 0),
+      laborRateSnapshot: const Value(0),
+      postProcessRateSnapshot: const Value(0),
+      failureRateSnapshot: const Value(0),
+      minimumChargeSnapshot: const Value(0),
+      markupOnMaterialsSnapshot: const Value(0),
+      pieceImageBlob: const Value.absent(),
+      batchDiscountPercent: const Value.absent(),
+      batchDiscountAmount: const Value.absent(),
+    );
+  }
+
   /// Convierte el `double?` de drift (REAL) al `Decimal?` del dominio.
   static Decimal? _toDecimal(double? v) =>
       v == null ? null : Decimal.parse(v.toString());
 }
+
+/// True cuando el form tiene output calculado (form valido).
+final isValidProvider = Provider<bool>((ref) {
+  return ref.watch(calculatorNotifierProvider.select((s) => s.output != null));
+});
 
 /// Provider del [CalculatorNotifier]. Standalone (no depende de DB).
 final calculatorNotifierProvider =

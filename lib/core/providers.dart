@@ -127,7 +127,7 @@ final activePrinterIdProvider = StateProvider<int?>((ref) {
 /// Resolucion en cascada: id activo (elegido/persistido) → si ya no existe
 /// (borrada) → default → si no hay default → primera de la lista. Asi el
 /// cotizador nunca muestra "Sin impresora" cuando ya hay impresoras, y el
-/// calculo de watts usa SIEMPRE la misma impresora que muestra la UI.
+/// calculo de watts usa SIEMPRE la impresora que muestra la UI.
 final activePrinterProvider = Provider<PrinterProfile?>((ref) {
   final id = ref.watch(activePrinterIdProvider);
   final list = ref.watch(printersNotifierProvider).value;
@@ -142,3 +142,7 @@ final activePrinterProvider = Provider<PrinterProfile?>((ref) {
   }
   return list.first;
 });
+
+/// ID de la cotizacion parcial actualmente activa en el calculator.
+/// null cuando no hay parcial guardado.
+final currentPartialIdProvider = StateProvider<int?>((ref) => null);

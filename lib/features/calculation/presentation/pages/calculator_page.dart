@@ -60,11 +60,14 @@ import '../widgets/save_sheet.dart';
 /// Non-Negotiables). El negocio vive en [CalculatorNotifier]; el chip de
 /// total del AppBar conserva el feedback live en cualquier paso.
 class CalculatorPage extends ConsumerStatefulWidget {
-  const CalculatorPage({super.key, this.prefillCalc});
+  const CalculatorPage({super.key, this.prefillCalc, this.newMode = false});
 
   /// Cotizacion guardada para precargar ("Reusar"). Si es null, la pagina
   /// restaura el draft de la sesion anterior (comportamiento normal).
   final Calculation? prefillCalc;
+
+  /// Cuando true, abre con formulario vacío y descarta el draft local.
+  final bool newMode;
 
   @override
   ConsumerState<CalculatorPage> createState() => _CalculatorPageState();
@@ -177,8 +180,30 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // Bug fix: "Nueva cotización" debe abrir vacío, no continuar draft.
+      if (widget.newMode) {
+        await ref.read(draftStorageProvider).clear();
+        if (!mounted) return;
+        ref.read(calculatorNotifierProvider.notifier).reset();
+        // Limpiar controllers — se inicializaron con valores del draft
+        // antes de este callback (initState los crea con initial.*).
+        _weightCtrl.text = '';
+        _hoursCtrl.text = '';
+        _minutesCtrl.text = '';
+        _priceCtrl.text = '';
+        _gramsCtrl.text = '';
+        _discountCtrl.text = '0';
+        _labelCtrl.text = '';
+        _pieceLabelCtrl.text = '';
+        _extraLaborRateCtrl.text = '';
+        _extraPostProcessRateCtrl.text = '';
+        _extraFailureRateCtrl.text = '';
+        _extraMarkupOnMaterialsCtrl.text = '';
+        _quantityCtrl.text = '1';
+        return;
+      }
       // Prefill ("Reusar"): cargar la cotizacion guardada y sincronizar los
-      // controllers. NO tocar reset/draft/defaults â€” el state precargado es
+      // controllers. NO tocar reset/draft/defaults — el state precargado es
       // la fuente de verdad. Un solo post-frame (esta pagina) evita la race
       // que antes pisaba el prefill con reset()/draft.
       if (widget.prefillCalc != null) {
@@ -247,6 +272,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 
   Timer? _saveTimer;
+  Timer? _partialSaveTimer;
 
   /// Sincroniza los 11 controllers desde el state restaurado.
   /// Fuente unica de verdad: el CalculatorState del notifier (evita
@@ -315,9 +341,87 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     await ref.read(draftStorageProvider).save(draft);
   }
 
+  /// Guardado síncrono del draft para dispose(). Solo guarda si el form
+  /// tiene contenido (evita que dispose re-guarde un draft que "Nueva
+  /// cotización" acaba de borrar — el dispose del widget viejo se ejecuta
+  /// DESPUÉS del clear del widget nuevo).
+  void _saveDraftSync() {
+    try {
+      // No guardar si el form está vacío (nueva cotización o reset).
+      if (_weightCtrl.text.isEmpty &&
+          _hoursCtrl.text.isEmpty &&
+          _minutesCtrl.text.isEmpty &&
+          _priceCtrl.text.isEmpty &&
+          _gramsCtrl.text.isEmpty) {
+        return;
+      }
+      final draft = CalculationDraft(
+        weight: _weightCtrl.text,
+        printHours: _hoursCtrl.text,
+        printMinutes: _minutesCtrl.text,
+        discountPct: _discountCtrl.text,
+        filamentPrice: _priceCtrl.text,
+        filamentGrams: _gramsCtrl.text,
+        label: _pieceLabelCtrl.text,
+        filamentLabel: _labelCtrl.text,
+        extraLaborRate: _extraLaborRateCtrl.text,
+        extraPostProcessRate: _extraPostProcessRateCtrl.text,
+        extraFailureRate: _extraFailureRateCtrl.text,
+        extraMarkupOnMaterials: _extraMarkupOnMaterialsCtrl.text,
+      );
+      ref.read(sharedPreferencesProvider).setString(
+        'form_draft',
+        draft.encode(),
+      );
+    } catch (_) {
+      // Silenciar: si falla, el debounce async cubrirá el caso normal.
+    }
+  }
+
+  void _schedulePartialSave() {
+    _partialSaveTimer?.cancel();
+    _partialSaveTimer = Timer(
+      const Duration(milliseconds: 1500),
+      _persistPartial,
+    );
+  }
+
+  Future<void> _persistPartial() async {
+    if (!mounted) return;
+    final state = ref.read(calculatorNotifierProvider);
+    if (state.output == null) {
+      debugPrint('[PartialSave] skip: output=null (form inválido o recompute falló)');
+      return;
+    }
+    try {
+      final repo = ref.read(calculationRepositoryProvider);
+      final companion = CalculatorNotifier.stateToPartialDto(state);
+      final id = await repo.savePartial(companion);
+      ref.read(currentPartialIdProvider.notifier).state = id;
+      debugPrint('[PartialSave] guardado id=$id');
+    } catch (e, st) {
+      debugPrint('[PartialSave] ERROR: $e\n$st');
+    }
+  }
+
   @override
   void dispose() {
+    // Guardar draft de forma síncrona ANTES de dispose. Si el usuario sale
+    // rápido, el debounce de 500ms no tuvo tiempo de disparar y el banner
+    // "Continuar" no aparecería. SharedPreferences.write es suficientemente
+    // rápido para dispose (microseconds en web, <1ms en mobile).
+    _saveDraftSync();
     _saveTimer?.cancel();
+    _partialSaveTimer?.cancel();
+    // Limpieza de parcial al salir. ref.read puede fallar en dispose si
+    // el widget ya fue desmontado por un route pop concurrente (Riverpod
+    // 2.x bloquea escrituras en lifecycle). try-catch previene el crash;
+    // el provider se limpia solo al reabrir la calculator.
+    try {
+      ref.read(currentPartialIdProvider.notifier).state = null;
+    } catch (_) {
+      // Widget ya desmontado — state queda stale pero harmless.
+    }
     _scrollCtrl.dispose();
     _weightCtrl.dispose();
     _hoursCtrl.dispose();
@@ -421,6 +525,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       c.dispose();
     }
     _materialCtrls.clear();
+    // Borrar parcial existente (T6).
+    final partialId = ref.read(currentPartialIdProvider);
+    if (partialId != null) {
+      ref.read(calculationRepositoryProvider).deletePartial(partialId);
+      ref.read(currentPartialIdProvider.notifier).state = null;
+    }
     // Tras un reset el usuario vuelve al inicio del wizard (el paso
     // resultado ya no tiene contenido util sin form valido).
     if (mounted) setState(() => _step = 0);
@@ -609,6 +719,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         return;
       }
 
+      // Borrar parcial existente tras save exitoso (T6).
+      final partialId = ref.read(currentPartialIdProvider);
+      if (partialId != null) {
+        await ref.read(calculationRepositoryProvider).deletePartial(partialId);
+        ref.read(currentPartialIdProvider.notifier).state = null;
+      }
+
       // 2) Opcionalmente, además, crear una plantilla reutilizable.
       //    IMPORTANTE: hacerlo ANTES de resetear el form. Si reseteamos
       //    primero, `state.isValid`/`state.output` dejan de ser válidos y
@@ -693,6 +810,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ref.read(calculatorNotifierProvider.notifier).setDiscountPct(value);
           if (_discountCtrl.text != value) {
             _discountCtrl.text = value;
+          }
+        },
+        onImageAttached: () {
+          if (ref.read(isValidProvider)) {
+            _schedulePartialSave();
           }
         },
       );
@@ -783,6 +905,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     // tests; al emitir se actualiza el lote (lotTotal, líneas, hint).
     ref.listen(discountTiersProvider, (_, next) {
       notifier.updateTiers(next.value ?? const <DiscountTier>[]);
+    });
+    ref.listen<bool>(isValidProvider, (prev, next) {
+      if (next) {
+        // Dispara auto-save cuando el form ES válido (transición o ya válido
+        // al montar). Antes solo cubría false→true, perdiendo el caso de
+        // draft restaurado que ya es válido.
+        _schedulePartialSave();
+      }
     });
     final totalText = isValid ? formatCurrency(state.lotTotal, currency) : null;
 
@@ -1615,8 +1745,3 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 }
-
-
-
-
-

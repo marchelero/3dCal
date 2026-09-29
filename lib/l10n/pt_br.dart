@@ -70,9 +70,9 @@ class PtBrImpl implements AppStrings {
   @override
   String get settingsKwhRateHelper => 'Faixa residencial na Bolívia: 0.10-5.00';
   @override
-  String get settingsKwhRateInfo =>
+  String settingsKwhRateInfo(String symbol) =>
       'Este é o custo por quilowatt-hora da sua conta de luz. '
-      'Na Bolívia, a faixa residencial vai de 0,10 a 5,00 Bs./kWh. '
+      'Na Bolívia, a faixa residencial vai de 0,10 a 5,00 $symbol/kWh. '
       'Confira sua última conta para o valor exato.';
   @override
   String get settingsCatalogos => 'Catálogos';
@@ -1586,4 +1586,25 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String quoteGuidePageCounter(int page, int total) => 'Etapa $page de $total';
   @override
   String get commonMoreActions => 'Mais ações';
+
+  // === Hito: mejoras cotizador 2026-09-28 (T2) ===
+  @override
+  String get calcActionPrintSettings => 'Config. impressão';
+  @override
+  String get calcResetConfirmTitle => 'Redefinir?';
+  @override
+  String get calcResetConfirmBody => 'Os dados não salvos serão perdidos';
+  @override
+  String get calcResetConfirmCancel => 'Cancelar';
+  @override
+  String get calcResetConfirmOk => 'Redefinir';
+  @override
+  String get calcPartialBadge => 'Rascunho';
+  @override
+  String get calcPartialAutoSaved => 'Cotização rápida salva';
+  @override
+  String get calcPartialCompleteHint =>
+      'Preencha os dados para salvar como cotação';
+  @override
+  String get printSettingsVersionSuffix => ' · v{0}';
 }

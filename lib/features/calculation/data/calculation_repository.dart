@@ -24,6 +24,7 @@ class CalculationListItem {
     required this.totalHours,
     required this.discountPercentage,
     required this.isSold,
+    required this.isPartial,
     required this.materialCostSnapshot,
     required this.electricCostSnapshot,
     required this.profitAmountSnapshot,
@@ -41,6 +42,7 @@ class CalculationListItem {
   final double totalHours;
   final double discountPercentage;
   final bool isSold;
+  final bool isPartial;
   final double materialCostSnapshot;
   final double electricCostSnapshot;
   final double profitAmountSnapshot;
@@ -398,6 +400,7 @@ class CalculationRepository {
                 t.totalHours,
                 t.discountPercentage,
                 t.isSold,
+                t.isPartial,
                 t.materialCostSnapshot,
                 t.electricCostSnapshot,
                 t.profitAmountSnapshot,
@@ -420,6 +423,7 @@ class CalculationRepository {
           totalHours: r.read(t.totalHours)!,
           discountPercentage: r.read(t.discountPercentage)!,
           isSold: r.read(t.isSold)!,
+          isPartial: r.read(t.isPartial) ?? false,
           materialCostSnapshot: r.read(t.materialCostSnapshot)!,
           electricCostSnapshot: r.read(t.electricCostSnapshot)!,
           profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
@@ -791,5 +795,67 @@ class CalculationRepository {
       return int.tryParse(idStr);
     }
     return null;
+  }
+
+  // === Partial save (T6) ===
+
+  /// Inserta o actualiza una cotizacion parcial (upsert por minuto).
+  ///
+  /// Si ya existe un parcial en el mismo minuto, lo actualiza (misma fila).
+  /// Si no, inserta una nueva fila. Devuelve el id de la fila.
+  Future<int> savePartial(CalculationsCompanion companion) async {
+    final now = companion.createdAt.value;
+    final bucket = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    final existing = await findLatestPartialForMinute(bucket);
+    if (existing != null) {
+      await updatePartial(existing.id, companion);
+      return existing.id;
+    }
+    return _db.into(_db.calculations).insert(companion);
+  }
+
+  /// Actualiza un parcial existente con los campos del patch.
+  Future<void> updatePartial(int id, CalculationsCompanion patch) async {
+    final companion = CalculationsCompanion(
+      pieceName: patch.pieceName,
+      clientName: patch.clientName,
+      printerWattsSnapshot: patch.printerWattsSnapshot,
+      totalHours: patch.totalHours,
+      printMinutes: patch.printMinutes,
+      discountPercentage: patch.discountPercentage,
+      quantity: patch.quantity,
+      materialCostSnapshot: patch.materialCostSnapshot,
+      electricCostSnapshot: patch.electricCostSnapshot,
+      amortizationCostSnapshot: patch.amortizationCostSnapshot,
+      laborCostSnapshot: patch.laborCostSnapshot,
+      postProcessCostSnapshot: patch.postProcessCostSnapshot,
+      baseCostSnapshot: patch.baseCostSnapshot,
+      failureCostSnapshot: patch.failureCostSnapshot,
+      markupCostSnapshot: patch.markupCostSnapshot,
+      profitAmountSnapshot: patch.profitAmountSnapshot,
+      minimumChargeAppliedSnapshot: patch.minimumChargeAppliedSnapshot,
+      effectiveTotalSnapshot: patch.effectiveTotalSnapshot,
+      totalPriceSnapshot: patch.totalPriceSnapshot,
+      pieceImageBlob: patch.pieceImageBlob,
+    );
+    await (_db.update(_db.calculations)..where((t) => t.id.equals(id)))
+        .write(companion);
+  }
+
+  /// Elimina un parcial por id.
+  Future<void> deletePartial(int id) async {
+    await (_db.delete(_db.calculations)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Busca el parcial mas reciente dentro de un minuto dado.
+  Future<Calculation?> findLatestPartialForMinute(DateTime bucket) async {
+    final start = bucket;
+    final end = bucket.add(const Duration(minutes: 1));
+    return (_db.select(_db.calculations)
+          ..where((t) => t.isPartial.equals(true))
+          ..where((t) => t.createdAt.isBetweenValues(start, end))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
   }
 }

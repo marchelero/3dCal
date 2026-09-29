@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -144,6 +144,12 @@ class AppDatabase extends _$AppDatabase {
         // Aditiva: impresoras viejas quedan current_hours NULL (0 horas
         // usadas, comportamiento actual intacto).
         await m.addColumn(printers, printers.currentHours);
+      }
+      if (from < 14) {
+        // v13→v14: flag de cotizacion parcial (F2 del PRD — guardado rapido
+        // sin completar todos los campos). Aditiva: registros viejos quedan
+        // is_partial = false (comportamiento identico al actual).
+        await m.addColumn(calculations, calculations.isPartial);
       }
     },
   );

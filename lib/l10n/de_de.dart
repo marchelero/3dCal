@@ -73,9 +73,9 @@ class DeImpl implements AppStrings {
   String get settingsKwhRateHelper =>
       'Typischer Haushaltsbereich in Bolivien: 0,10-5,00';
   @override
-  String get settingsKwhRateInfo =>
+  String settingsKwhRateInfo(String symbol) =>
       'Dies ist der Kosten pro Kilowattstunde auf deiner Stromrechnung. '
-      'In Bolivien liegt der Haushaltsbereich bei 0,10 bis 5,00 Bs./kWh. '
+      'In Bolivien liegt der Haushaltsbereich bei 0,10 bis 5,00 $symbol/kWh. '
       'Prüfe deine letzte Rechnung für den genauen Wert.';
   @override
   String get settingsCatalogos => 'Kataloge';
@@ -1593,4 +1593,26 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
       'Schritt $page von $total';
   @override
   String get commonMoreActions => 'Weitere Aktionen';
+
+  // === Hito: mejoras cotizador 2026-09-28 (T2) ===
+  @override
+  String get calcActionPrintSettings => 'Druckeinstellungen';
+  @override
+  String get calcResetConfirmTitle => 'Zurücksetzen?';
+  @override
+  String get calcResetConfirmBody =>
+      'Nicht gespeicherte Daten gehen verloren';
+  @override
+  String get calcResetConfirmCancel => 'Abbrechen';
+  @override
+  String get calcResetConfirmOk => 'Zurücksetzen';
+  @override
+  String get calcPartialBadge => 'Entwurf';
+  @override
+  String get calcPartialAutoSaved => 'Schnelles Angebot gespeichert';
+  @override
+  String get calcPartialCompleteHint =>
+      'Daten ausfüllen, um als Angebot zu speichern';
+  @override
+  String get printSettingsVersionSuffix => ' · v{0}';
 }

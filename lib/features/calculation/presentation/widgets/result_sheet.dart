@@ -247,6 +247,7 @@ Future<void> showResultSheet({
   required VoidCallback onReset,
   required VoidCallback onToggleDetail,
   required ValueChanged<String> onDiscountChanged,
+  VoidCallback? onImageAttached,
   Future<Uint8List?> Function(Uint8List sourceBytes)? pieceImageCropper,
   GallerySaver gallerySaver = const GallerySaver(),
 }) {
@@ -288,6 +289,7 @@ Future<void> showResultSheet({
               onReset: onReset,
               onToggleDetail: onToggleDetail,
               onDiscountChanged: onDiscountChanged,
+              onImageAttached: onImageAttached,
               pieceImageCropper: pieceImageCropper,
               gallerySaver: gallerySaver,
               rootMessenger: rootMessenger,
@@ -317,6 +319,7 @@ class ResultSheetContent extends StatefulWidget {
     required this.onReset,
     required this.onToggleDetail,
     required this.onDiscountChanged,
+    this.onImageAttached,
     this.pieceImageCropper,
     this.gallerySaver = const GallerySaver(),
     this.rootMessenger,
@@ -338,6 +341,10 @@ class ResultSheetContent extends StatefulWidget {
   /// Escribe el descuento (%) en el notifier (fuente unica de verdad:
   /// state.discountPct → engine → output.discountAmount/output.totalPrice).
   final ValueChanged<String> onDiscountChanged;
+
+  /// Callback invocado cuando se adjunta una imagen al resultado.
+  /// Usado por T6 para trigger partial save.
+  final VoidCallback? onImageAttached;
 
   /// Seam (F3): editor de recorte/rotacion de la foto de pieza. Default usa
   /// [cropPieceImage] real (image_cropper). Injectable en tests para evitar
@@ -428,6 +435,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
           : await cropPieceImage(sourceBytes: bytes);
       if (cropped == null) return;
       setState(() => _pieceImageBytes = cropped);
+      widget.onImageAttached?.call();
     } on PieceImageException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(AppSnackBar.error(e.message));

@@ -78,13 +78,14 @@ final isProProvider = Provider<bool>((ref) {
 /// operación se cuelgue; el provider efectivo conserva overrides como el Pro
 /// web y, por defecto, mantiene el fallback Free fail-safe de móvil.
 Future<bool> resolveIsPro(Ref ref) async {
+  bool isPro;
   try {
     await ref
         .read(entitlementNotifierProvider.future)
         .timeout(const Duration(seconds: 1));
     // Lee el provider efectivo para respetar overrides de plataforma, como
     // el entitlement Pro declarado para web en main.dart.
-    return ref.read(isProProvider);
+    isPro = ref.read(isProProvider);
   } on TimeoutException {
     // BUG-D: caso esperado — DB lenta / plataforma offline. Se degrada a la
     // cache local sin ruido en logs.
@@ -92,8 +93,8 @@ Future<bool> resolveIsPro(Ref ref) async {
     return ref.read(isProProvider);
   } catch (e, st) {
     // BUG-D: fallo inesperado (ej: error de DB). Misma degradacion funcional
-    // (fail-safe Free), pero con log visible para diagnosticar.
-    debugPrint('[Entitlement] resolveIsPro fallo inesperado: $e\n$st');
+    debugPrint('[Entitlement] resolveIsPro inesperado: $e\n$st');
     return ref.read(isProProvider);
   }
+return isPro;
 }

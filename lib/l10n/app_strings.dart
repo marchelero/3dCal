@@ -48,7 +48,7 @@ abstract class AppStrings {
   String get settingsProfitBaseInfo;
   String settingsKwhRate(String symbol);
   String get settingsKwhRateHelper;
-  String get settingsKwhRateInfo;
+  String settingsKwhRateInfo(String symbol);
   String get settingsCatalogos;
   String get settingsFilamentos;
   String get settingsImpresoras;
@@ -1331,4 +1331,43 @@ abstract class AppStrings {
 
   /// "Descuento por cantidad: $pct%" — linea en el PDF.
   String pdfBatchDiscountPct(int pct);
+
+  // === Hito: mejoras cotizador 2026-09-28 (T2) ===
+  /// "Config. impresión" / "Print settings" — accion del menu overflow
+  /// del cotizador para abrir la configuracion de impresion.
+  String get calcActionPrintSettings;
+
+  /// "¿Restablecer?" / "Reset?" — titulo del dialogo de confirmacion
+  /// del boton Restablecer.
+  String get calcResetConfirmTitle;
+
+  /// "Se perderán los datos no guardados" / "Unsaved data will be lost" —
+  /// cuerpo del dialogo de confirmacion del boton Restablecer.
+  String get calcResetConfirmBody;
+
+  /// "Cancelar" / "Cancel" — accion negativa del dialogo de confirmacion
+  /// del boton Restablecer.
+  String get calcResetConfirmCancel;
+
+  /// "Restablecer" / "Reset" — accion positiva del dialogo de confirmacion
+  /// del boton Restablecer.
+  String get calcResetConfirmOk;
+
+  /// "Borrador" / "Draft" — badge que marca una cotizacion parcial
+  /// (autoguardada, todavia no completa).
+  String get calcPartialBadge;
+
+  /// "Cotización rápida guardada" / "Quick quote saved" — snackbar al
+  /// autoguardar una cotizacion parcial.
+  String get calcPartialAutoSaved;
+
+  /// "Completa los datos para guardar como cotización" /
+  /// "Fill in the data to save as a quote" — hint que reemplaza al boton
+  /// de guardar mientras la cotizacion esta incompleta.
+  String get calcPartialCompleteHint;
+
+  /// " · v{0}" — sufijo con placeholder para mostrar la version de la
+  /// configuracion de impresion (ej: "v1.2.3"). Se concatena al final del
+  /// titulo. El placeholder se sustituye en runtime con [kAppVersion].
+  String get printSettingsVersionSuffix;
 }

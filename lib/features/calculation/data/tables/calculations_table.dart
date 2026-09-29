@@ -81,6 +81,10 @@ class Calculations extends Table {
   /// son configuraciones guardadas para re-aplicarse ("Cargar plantilla").
   BoolColumn get isTemplate => boolean().withDefault(const Constant(false))();
 
+  /// Marca como cotizacion parcial (F2 del PRD — parcial = cotizacion
+  /// persistida con flag, guardado rapido sin completar todos los campos).
+  BoolColumn get isPartial => boolean().withDefault(const Constant(false))();
+
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   RealColumn get materialCostSnapshot => real()();
   RealColumn get electricCostSnapshot => real()();

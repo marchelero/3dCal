@@ -69,9 +69,9 @@ class EnImpl implements AppStrings {
   @override
   String get settingsKwhRateHelper => 'Residential range Bolivia: 0.10-5.00';
   @override
-  String get settingsKwhRateInfo =>
+  String settingsKwhRateInfo(String symbol) =>
       'This is the cost per kilowatt-hour from your electricity bill. '
-      'In Bolivia the residential range is 0.10 to 5.00 Bs./kWh. '
+      'In Bolivia the residential range is 0.10 to 5.00 $symbol/kWh. '
       'Check your latest bill for the exact value.';
   @override
   String get settingsCatalogos => 'Catalogs';
@@ -1567,4 +1567,25 @@ We may update, suspend, or remove application features. These terms may also cha
   String quoteGuidePageCounter(int page, int total) => 'Step $page of $total';
   @override
   String get commonMoreActions => 'More actions';
+
+  // === Hito: mejoras cotizador 2026-09-28 (T2) ===
+  @override
+  String get calcActionPrintSettings => 'Print settings';
+  @override
+  String get calcResetConfirmTitle => 'Reset?';
+  @override
+  String get calcResetConfirmBody => 'Unsaved data will be lost';
+  @override
+  String get calcResetConfirmCancel => 'Cancel';
+  @override
+  String get calcResetConfirmOk => 'Reset';
+  @override
+  String get calcPartialBadge => 'Draft';
+  @override
+  String get calcPartialAutoSaved => 'Quick quote saved';
+  @override
+  String get calcPartialCompleteHint =>
+      'Fill in the data to save as a quote';
+  @override
+  String get printSettingsVersionSuffix => ' · v{0}';
 }

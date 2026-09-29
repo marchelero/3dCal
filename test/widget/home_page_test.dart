@@ -48,6 +48,7 @@ CalculationListItem _item({
       totalHours: 2,
       discountPercentage: 0,
       isSold: isSold,
+      isPartial: false,
       materialCostSnapshot: 50,
       electricCostSnapshot: 10,
       profitAmountSnapshot: 40,
@@ -61,6 +62,10 @@ GoRouter _router() => GoRouter(
     GoRoute(path: '/', builder: (_, _) => const HomePage()),
     GoRoute(
       path: '/calculator',
+      builder: (_, _) => const Scaffold(body: Text('CALC_PAGE')),
+    ),
+    GoRoute(
+      path: '/calculator/new',
       builder: (_, _) => const Scaffold(body: Text('CALC_PAGE')),
     ),
     GoRoute(
