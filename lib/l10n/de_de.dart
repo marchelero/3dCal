@@ -445,7 +445,7 @@ class DeImpl implements AppStrings {
   @override
   String get calcDetailEnergy => 'Energiekosten';
   @override
-  String get calcDetailLabor => 'Arbeitszeit';
+  String get calcDetailModeling => 'Modellierung und Design';
   @override
   String get calcDetailPostProcess => 'Nachbearbeitung';
   @override
@@ -1316,6 +1316,78 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   String get pdfMaterialsSection => 'Materialien';
 
   @override
+  @override
+  String get reportVariantClient => 'Kunde';
+  @override
+  @override
+  String get reportVariantInternal => 'Detail';
+  @override
+  String get reportVariantSelectorTitle => 'Berichtsvariante';
+  @override
+  String get reportVariantInternalWarning =>
+      'Nur für den internen Gebrauch: enthält Kosten. Nicht an den Kunden senden.';
+
+  @override
+  String get pdfSummarySection => 'Angebotsübersicht';
+  @override
+  String get pdfSummaryTotalWeight => 'Gesamtgewicht';
+  @override
+  String get pdfSummaryTotalTime => 'Gesamtzeit';
+  @override
+  String get pdfSummaryQuantity => 'Menge';
+  @override
+  String get pdfSummaryUnitPrice => 'Stückpreis';
+  @override
+  String get pdfNoDiscount => 'Ohne Rabatt';
+
+  @override
+  String get pdfColumnMaterial => 'Material';
+  @override
+  String get pdfColumnWeight => 'Gewicht';
+  @override
+  String get pdfColumnTime => 'Zeit';
+  @override
+  String get pdfColumnCost => 'Kosten';
+  @override
+  String get pdfColumnUnitCost => 'Stückkosten';
+  @override
+  String get pdfColumnLotCost => 'Loskosten';
+  @override
+  String get pdfGlobalTime => 'global';
+
+  @override
+  String get pdfCostSubtotalClosing =>
+      'Zwischensumme (Basis + Ausfall + Aufschlag)';
+  @override
+  String get pdfTotalBeforeDiscounts => 'Summe vor Rabatten';
+
+  @override
+  String get pdfRateAuditSection => 'Berechnungsparameter';
+  @override
+  String get pdfRatePrinter => 'Drucker';
+  @override
+  String get pdfRateKwh => 'Stromtarif';
+  @override
+  String get pdfRateBillableHours => 'Berechnete Stunden';
+  @override
+  String get pdfRateLabor => 'Arbeitskosten';
+  @override
+  String get pdfRateAmortization => 'Abschreibung';
+  @override
+  String get pdfRatePerKwh => '/kWh';
+  @override
+  String get pdfRatePerHour => '/h';
+  @override
+  String get pdfRateMargin => 'Marge';
+  @override
+  String get pdfRateMarkupOverCost => 'Aufschlag auf Kosten';
+
+  @override
+  String pdfPageOf(int page, int total) => 'Seite $page von $total';
+  @override
+  String get pdfStatusPending => 'AUSSTEHEND';
+
+  @override
   String get dashboardEmptySubtitle =>
       'Erstellen Sie Ihr erstes Angebot von Grund auf.';
   @override
@@ -1626,4 +1698,24 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
       'Daten ausfüllen, um als Angebot zu speichern';
   @override
   String get printSettingsVersionSuffix => ' · v{0}';
+  @override
+  String get extraSectionTitle => 'Zusaetzliche Kosten';
+  @override
+  String get calcExtraModeling => 'Modellierung und Design';
+  @override
+  String get calcExtraPostprocess => 'Nachbearbeitung';
+  @override
+  String get calcExtraExtras => 'Extras';
+  @override
+  String get extraInfo => 'Ringe, Kleber und alle weiteren Extras, die ein 3D-gedrucktes Teil benoetigen kann';
+  @override
+  String get extraDescriptionHint => 'Ringe, Kleber usw.';
+  @override
+  String get modePercent => '%';
+  @override
+  String get modeFixed => 'Fest';
+  @override
+  String get modeAuto => 'Auto';
+  @override
+  String get modeOff => 'Aus';
 }

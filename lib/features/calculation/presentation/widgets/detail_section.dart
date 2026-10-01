@@ -92,7 +92,7 @@ class DetailSection extends StatelessWidget {
           ),
         if (laborCost > Decimal.zero)
           _dr(
-            EsBO.calcDetailLabor,
+            EsBO.calcDetailModeling,
             formatCurrency(laborCost, currency),
             s,
             tc: tc,

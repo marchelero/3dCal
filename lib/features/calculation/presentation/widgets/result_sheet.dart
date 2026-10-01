@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/export/pdf_export.dart';
+import '../../../../core/export/quote_report_variant.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
@@ -31,6 +32,7 @@ import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import 'calc_meta.dart';
 import 'quote_image_template.dart';
+import 'report_variant_selector.dart';
 
 /// Sticky bar que aparece en la parte inferior de CalculatorPage.
 ///
@@ -245,7 +247,7 @@ Future<void> showResultSheet({
   required CalculatorState state,
   required ValueChanged<Uint8List?> onSave,
   required VoidCallback onReset,
-  required VoidCallback onToggleDetail,
+  required ValueChanged<QuoteReportVariant> onVariantChanged,
   required ValueChanged<String> onDiscountChanged,
   VoidCallback? onImageAttached,
   Future<Uint8List?> Function(Uint8List sourceBytes)? pieceImageCropper,
@@ -273,7 +275,7 @@ Future<void> showResultSheet({
         body: Consumer(
           builder: (ctx, ref, _) {
             // Usamos el state vivo del provider para que el toggle detail
-            // (showDetail) funcione dentro del sheet.
+            // la variante del reporte funcione dentro del sheet.
             final liveState = ref.watch(calculatorNotifierProvider);
             final asyncSettings = ref.watch(settingsNotifierProvider);
             final settings = asyncSettings.value;
@@ -287,7 +289,7 @@ Future<void> showResultSheet({
               currency: currency,
               onSave: onSave,
               onReset: onReset,
-              onToggleDetail: onToggleDetail,
+              onVariantChanged: onVariantChanged,
               onDiscountChanged: onDiscountChanged,
               onImageAttached: onImageAttached,
               pieceImageCropper: pieceImageCropper,
@@ -317,7 +319,7 @@ class ResultSheetContent extends StatefulWidget {
     required this.currency,
     required this.onSave,
     required this.onReset,
-    required this.onToggleDetail,
+    required this.onVariantChanged,
     required this.onDiscountChanged,
     this.onImageAttached,
     this.pieceImageCropper,
@@ -336,7 +338,9 @@ class ResultSheetContent extends StatefulWidget {
   /// para que el parent la persista (F2): efimera aca, persistida alla.
   final ValueChanged<Uint8List?> onSave;
   final VoidCallback onReset;
-  final VoidCallback onToggleDetail;
+
+  /// Cambia la variante del reporte exportado (PDF / PNG / impresion).
+  final ValueChanged<QuoteReportVariant> onVariantChanged;
 
   /// Escribe el descuento (%) en el notifier (fuente unica de verdad:
   /// state.discountPct → engine → output.discountAmount/output.totalPrice).
@@ -491,7 +495,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         discountPct:
             CalculatorState.parseDecimal(state.discountPct) ?? Decimal.zero,
         currency: widget.currency,
-        showDetail: state.showDetail,
+        variant: state.reportVariant,
         companyName: widget.companyName,
         companyLogoBase64: widget.companyLogoBase64,
         pieceName: state.label.isNotEmpty ? state.label : null,
@@ -499,19 +503,15 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         quantity: _quantity,
         totalGrams: totalGrams,
         metaTime: metaTime,
-        materialMetaBreakdown: meta.materialBreakdown
-            .map(
-              (m) => PdfMaterialMetaItem(
-                label: m.label,
-                weightGrams: m.weightGrams,
-                timeStr: m.timeStr,
-              ),
-            )
-            .toList(),
+        materialMetaBreakdown: toPdfMaterialMeta(
+          meta,
+          state.detailMaterialBreakdown,
+        ),
         batchDiscountPct: state.batchAppliedPercent,
         batchDiscountAmount: state.batchDiscountAmount,
         lotTotal: state.lotTotal,
         manualDiscountAmount: state.manualDiscountAmount,
+        rateAudit: state.rateAudit,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -718,7 +718,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   discountPct:
                       state.detailDiscountPct?.toStringAsFixed(0) ??
                       state.discountPct,
-                  showDetail: state.showDetail,
+                  variant: state.reportVariant,
                   detailMaterialBreakdown: state.detailMaterialBreakdown,
                   detailElectricCost: state.detailElectricCost,
                   detailAmortizationCost: state.detailAmortizationCost,
@@ -731,7 +731,11 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   detailTotalFinal: state.detailTotalFinal,
                   metaGrams: meta.grams,
                   metaTime: meta.time,
-                  materialMetaBreakdown: meta.materialBreakdown,
+                  materialMetaBreakdown: toPdfMaterialMeta(
+                    meta,
+                    state.detailMaterialBreakdown,
+                  ),
+                  rateAudit: state.rateAudit,
                   companyName: widget.companyName,
                   companyLogoBase64: widget.companyLogoBase64,
                   currency: widget.currency,
@@ -782,22 +786,18 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                       ),
                       color: theme.colorScheme.outlineVariant,
                     ),
-                  // Toggle detalle
-                  TextButton.icon(
-                    icon: Icon(
-                      state.showDetail
-                          ? Icons.visibility_rounded
-                          : Icons.visibility_off_rounded,
-                      size: 18,
-                    ),
-                    label: Text(
-                      state.showDetail
-                          ? EsBO.calcToggleHideDetail
-                          : EsBO.calcToggleShowDetail,
-                    ),
-                    onPressed: widget.onToggleDetail,
-                  ),
                 ],
+              ),
+
+              // ── Variante del reporte ──
+              // Reemplaza al toggle "ver detalle": una sola decision gobierna
+              // tanto lo que se ve en pantalla como lo que se exporta, asi no
+              // puede quedar desincronizado.
+              const SizedBox(height: AppSpacing.xs),
+              ReportVariantSelector(
+                selected: state.reportVariant,
+                isAdvanced: state.mode == CalculatorMode.advanced,
+                onChanged: widget.onVariantChanged,
               ),
 
               // ── Selector PRO de Cantidad (fuera del RepaintBoundary) ──
@@ -940,7 +940,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // ── Desglose de descuentos (solo si showDetail) ──
-                      if (state.showDetail && state.showsBatchLine) ...[
+                      if (state.reportVariant.showCostDetail &&
+                          state.showsBatchLine) ...[
                         // Subtotal antes de descuentos
                         _DetailRow(
                           label: EsBO.calcSubtotal,
@@ -994,7 +995,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: Text(
-                              state.showDetail &&
+                              state.reportVariant.showCostDetail &&
                                       state.showsBatchLine &&
                                       (int.tryParse(widget.state.discountPct) ??
                                               0) >

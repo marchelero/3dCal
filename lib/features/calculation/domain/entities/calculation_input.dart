@@ -3,6 +3,58 @@ import 'package:decimal/decimal.dart';
 
 import 'material_input.dart';
 
+/// Modo de cobro de un campo de servicio (v17).
+///
+/// - [serviceCostAuto] (solo modelado / postprocesado): replica la formula
+///   legacy pre-v17 (`hours * rate` para modelado,
+///   `materialCost * rate / 100` para postprocesado).
+/// - [serviceCostOff] (solo extras): no se cobra nada.
+/// - [serviceCostPct]: el campo se calcula como porcentaje sobre `coreBase`
+///   (material + electric + amort).
+/// - [serviceCostFixed]: el campo se cobra como monto fijo en moneda local.
+class ServiceCostMode {
+  const ServiceCostMode._(this.value);
+
+  final String value;
+
+  static const ServiceCostMode auto = ServiceCostMode._('auto');
+  static const ServiceCostMode off = ServiceCostMode._('off');
+  static const ServiceCostMode pct = ServiceCostMode._('pct');
+  static const ServiceCostMode fixed = ServiceCostMode._('fixed');
+
+  bool get isPct => this == pct;
+  bool get isFixed => this == fixed;
+  bool get isAuto => this == auto;
+  bool get isOff => this == off;
+  bool get isActive => isPct || isFixed;
+
+  static ServiceCostMode parse(String? raw) {
+    switch (raw) {
+      case 'pct':
+        return pct;
+      case 'fixed':
+        return fixed;
+      case 'off':
+        return off;
+      default:
+        return auto;
+    }
+  }
+
+  /// Comparacion por `value` (string). La igualdad por referencia sigue
+  /// funcionando para los singletons de arriba (auto/off/pct/fixed son
+  /// la misma instancia siempre).
+  @override
+  bool operator ==(Object other) =>
+      other is ServiceCostMode && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => value;
+}
+
 /// Inputs para el motor de calculo. Inmutable.
 ///
 /// Reglas de validacion:
@@ -12,17 +64,17 @@ import 'material_input.dart';
 /// - Los parametros de settings (laborRate, postProcessRate, etc.) se pasan
 ///   desde el notifier y tienen defaults a 0 (sin efecto).
 ///
-/// Formula completa:
-///   materialCost = Σ(weightGrams * pricePerBobbin / gramsPerBobbin)
-///   electricCost = printerWatts * totalHours * kwhRate / 1000
-///   amortizationCost = amortizationPerHour * totalHours
-///   laborCost = totalHours * laborRate
-///   postProcessCost = materialCost * postProcessRate / 100
-///   baseCost = materialCost + electricCost + amortizationCost + laborCost + postProcessCost
+/// Formula completa (v17):
+///   coreBase = material + electric + amort
+///   modelado = resolveService(modelingMode, coreBase, modelingRate,
+///               modelingFixedAmount, hours, laborRate)
+///   postProc = resolveService(postprocMode, coreBase, postprocRate,
+///               postprocFixedAmount, materialCost, postProcessRate)
+///   extras   = resolveExtras(extraCostMode, coreBase, extraCostAmount)
+///   baseCost = coreBase + modelado + postProc + extras
 ///   failureCost = baseCost * failureRate / 100
-///   costWithFailure = baseCost + failureCost
-///   markupCost = materialCost * markupOnMaterials / 100
-///   totalBeforeProfit = costWithFailure + markupCost
+///   markupCost  = materialCost * markupOnMaterials / 100
+///   totalBeforeProfit = baseCost + failureCost + markupCost
 ///   profitAmount = totalBeforeProfit * profitBase / 100
 ///   totalFinal = totalBeforeProfit + profitAmount
 ///   discountAmount = totalFinal * discountPercentage / 100
@@ -41,7 +93,27 @@ class CalculationInput {
     required this.markupOnMaterials,
     this.amortizationPerHour,
     Decimal? minimumCharge,
-  }) : minimumCharge = minimumCharge ?? Decimal.zero;
+    // === v17: overrides per-cotizacion de los 3 campos de servicio ===
+    // Default `auto` para modelado y postprocesado replica la formula
+    // legacy; `off` para extras significa "no se cobra nada". Tests
+    // existentes que no pasan estos parametros siguen produciendo el mismo
+    // calculo (los campos en `pct`/`fixed` con valor 0 no aportan).
+    this.modelingMode = ServiceCostMode.auto,
+    Decimal? modelingPct,
+    Decimal? modelingFixed,
+    this.postprocMode = ServiceCostMode.auto,
+    Decimal? postprocPct,
+    Decimal? postprocFixed,
+    this.extraCostMode = ServiceCostMode.off,
+    Decimal? extraCostPct,
+    Decimal? extraCostFixed,
+  }) : minimumCharge = minimumCharge ?? Decimal.zero,
+       modelingPct = modelingPct ?? Decimal.zero,
+       modelingFixed = modelingFixed ?? Decimal.zero,
+       postprocPct = postprocPct ?? Decimal.zero,
+       postprocFixed = postprocFixed ?? Decimal.zero,
+       extraCostPct = extraCostPct ?? Decimal.zero,
+       extraCostFixed = extraCostFixed ?? Decimal.zero;
 
   /// Lista de materiales (puede ser vacia).
   final List<MaterialInput> materials;
@@ -81,4 +153,36 @@ class CalculationInput {
   /// `totalFinal - discountAmount` queda por debajo, sube a [minimumCharge].
   /// `Decimal.zero` (default) = sin efecto.
   final Decimal minimumCharge;
+
+  // === v17: 3 campos de servicio con modo % / fijo ===
+
+  /// Modo del campo "Modelado y diseño". Default [ServiceCostMode.auto]
+  /// reproduce la formula legacy (`hours * laborRate`).
+  final ServiceCostMode modelingMode;
+
+  /// Porcentaje (sobre `coreBase`) cuando [modelingMode] es `pct`.
+  final Decimal modelingPct;
+
+  /// Monto fijo cuando [modelingMode] es `fixed`.
+  final Decimal modelingFixed;
+
+  /// Modo del campo "Postprocesado". Default [ServiceCostMode.auto]
+  /// reproduce la formula legacy (`materialCost * postProcessRate / 100`).
+  final ServiceCostMode postprocMode;
+
+  /// Porcentaje (sobre `coreBase`) cuando [postprocMode] es `pct`.
+  final Decimal postprocPct;
+
+  /// Monto fijo cuando [postprocMode] es `fixed`.
+  final Decimal postprocFixed;
+
+  /// Modo del campo "Extras" (argollas, pegamento, etc.). Default
+  /// [ServiceCostMode.off] = no se cobra nada.
+  final ServiceCostMode extraCostMode;
+
+  /// Porcentaje (sobre `coreBase`) cuando [extraCostMode] es `pct`.
+  final Decimal extraCostPct;
+
+  /// Monto fijo cuando [extraCostMode] es `fixed`.
+  final Decimal extraCostFixed;
 }

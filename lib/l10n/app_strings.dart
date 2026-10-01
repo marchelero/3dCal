@@ -271,7 +271,7 @@ abstract class AppStrings {
   String get calcTotalFinal;
   String get calcDetailMaterial;
   String get calcDetailEnergy;
-  String get calcDetailLabor;
+  String get calcDetailModeling;
   String get calcDetailPostProcess;
   String get calcDetailBase;
   String get calcDetailFailure;
@@ -279,6 +279,40 @@ abstract class AppStrings {
   String get calcDetailProfit;
   String get calcDetailMinimumCharge;
   String get calcDetailTotal;
+
+  // === v17: Costos adicionales (3 campos con modo % / fijo) ===
+
+  /// Titulo del panel colapsable "Costos adicionales".
+  String get extraSectionTitle;
+
+  /// Label de la variante del reporte para el campo "Modelado y diseño".
+  String get calcExtraModeling;
+
+  /// Label del campo "Postprocesado" (reuso del existente, alias para el nuevo
+  /// panel colapsable). Mantiene [calcDetailPostProcess] como fuente unica.
+  String get calcExtraPostprocess;
+
+  /// Label del campo "Extras" (argollas, pegamento, etc.).
+  String get calcExtraExtras;
+
+  /// Tooltip informativo de los extras: "argollas, pegamento y cualquier
+  /// otro extra que una pieza en impresión 3D pueda requerir".
+  String get extraInfo;
+
+  /// Placeholder del campo de descripcion libre de los extras.
+  String get extraDescriptionHint;
+
+  /// Etiqueta del switch en modo porcentaje.
+  String get modePercent;
+
+  /// Etiqueta del switch en modo precio fijo.
+  String get modeFixed;
+
+  /// Etiqueta del modo "auto" (replica la formula legacy).
+  String get modeAuto;
+
+  /// Etiqueta del modo "off" (sin cobro, solo para extras).
+  String get modeOff;
 
   // === Cantidad / lotes ===
   String get detailQuantityLabel;
@@ -969,6 +1003,113 @@ abstract class AppStrings {
 
   /// "Materiales" / "Materials" — titulo de seccion de materiales en PDF.
   String get pdfMaterialsSection;
+
+  // === Variantes de reporte ===
+  // El selector muestra 2 (Cliente / Detalle). Cual de las 2 depende del modo
+  // de calculo (express o advanced); el nivel de detalle, por detras.
+
+  /// Label de la variante para el cliente (no mostrar costos).
+  String get reportVariantClient;
+
+  /// Label de la variante de trabajo interno (con costos y tasas).
+  String get reportVariantInternal;
+
+  /// Titulo del selector de variantes.
+  String get reportVariantSelectorTitle;
+
+  /// Aviso de que la variante elegida no se puede compartir con el cliente.
+  String get reportVariantInternalWarning;
+
+  // === Bloque "Resumen de la cotizacion" (variantes de cliente) ===
+
+  /// "Resumen de la cotizacion" — titulo del bloque de sumas.
+  String get pdfSummarySection;
+
+  /// "Peso total" — fila del resumen.
+  String get pdfSummaryTotalWeight;
+
+  /// "Tiempo total" — fila del resumen.
+  String get pdfSummaryTotalTime;
+
+  /// "Cantidad" — fila del resumen.
+  String get pdfSummaryQuantity;
+
+  /// "Precio unitario" — fila del resumen.
+  String get pdfSummaryUnitPrice;
+
+  /// "Sin descuento" — monto antes de aplicar descuentos.
+  String get pdfNoDiscount;
+
+  // === Columnas de la tabla de materiales ===
+
+  /// "Material" — encabezado de columna.
+  String get pdfColumnMaterial;
+
+  /// "Peso" — encabezado de columna.
+  String get pdfColumnWeight;
+
+  /// "Tiempo" — encabezado de columna.
+  String get pdfColumnTime;
+
+  /// "Costo" — encabezado de columna.
+  String get pdfColumnCost;
+
+  /// "Costo unitario" — encabezado de columna.
+  String get pdfColumnUnitCost;
+
+  /// "Costo lote" — encabezado de columna.
+  String get pdfColumnLotCost;
+
+  /// "global" — marca de que el tiempo no es propio del material.
+  String get pdfGlobalTime;
+
+  // === Cierre del desglose de costos (variantes internas) ===
+
+  /// "Subtotal (base + falla + markup)" — cierre aritmetico del desglose.
+  String get pdfCostSubtotalClosing;
+
+  /// "Total antes de descuentos" — cierre del desglose.
+  String get pdfTotalBeforeDiscounts;
+
+  // === Tabla de parametros / auditoria (variantes internas) ===
+
+  /// "Parametros de calculo" — titulo de la seccion de tasas.
+  String get pdfRateAuditSection;
+
+  /// "Impresora" — fila de la tabla de parametros.
+  String get pdfRatePrinter;
+
+  /// "Tarifa electrica" — fila de la tabla de parametros.
+  String get pdfRateKwh;
+
+  /// "Horas facturadas" — fila de la tabla de parametros.
+  String get pdfRateBillableHours;
+
+  /// "Mano de obra" → fila de la tabla de parametros.
+  String get pdfRateLabor;
+
+  /// "Amortización" → fila de la tabla de parametros.
+  String get pdfRateAmortization;
+
+  /// "/kWh" — sufijo de unidad de la tarifa electrica.
+  String get pdfRatePerKwh;
+
+  /// "/h" — sufijo de unidad de las tarifas por hora.
+  String get pdfRatePerHour;
+
+  /// "Margen" — fila de porcentajes.
+  String get pdfRateMargin;
+
+  /// "Markup sobre costo" — fila de porcentajes.
+  String get pdfRateMarkupOverCost;
+
+  // === Paginacion y estado ===
+
+  /// "Pagina [page] de [total]" — pie del PDF.
+  String pdfPageOf(int page, int total);
+
+  /// "PENDIENTE" — estado de una cotizacion no vendida.
+  String get pdfStatusPending;
 
   /// Empty state del dashboard (subtitulo).
   String get dashboardEmptySubtitle;

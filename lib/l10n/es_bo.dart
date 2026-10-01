@@ -274,7 +274,7 @@ class EsBO {
   static String get calcTotalFinal => _impl.calcTotalFinal;
   static String get calcDetailMaterial => _impl.calcDetailMaterial;
   static String get calcDetailEnergy => _impl.calcDetailEnergy;
-  static String get calcDetailLabor => _impl.calcDetailLabor;
+  static String get calcDetailModeling => _impl.calcDetailModeling;
   static String get calcDetailPostProcess => _impl.calcDetailPostProcess;
   static String get calcDetailBase => _impl.calcDetailBase;
   static String get calcDetailFailure => _impl.calcDetailFailure;
@@ -722,6 +722,51 @@ class EsBO {
   static String get pdfTechnicalData => _impl.pdfTechnicalData;
   static String get pdfMaterialsSection => _impl.pdfMaterialsSection;
 
+  // === Variantes de reporte (4) ===
+  static String get reportVariantClient => _impl.reportVariantClient;
+  static String get reportVariantInternal => _impl.reportVariantInternal;
+  static String get reportVariantSelectorTitle =>
+      _impl.reportVariantSelectorTitle;
+  static String get reportVariantInternalWarning =>
+      _impl.reportVariantInternalWarning;
+
+  // === Bloque "Resumen de la cotizacion" ===
+  static String get pdfSummarySection => _impl.pdfSummarySection;
+  static String get pdfSummaryTotalWeight => _impl.pdfSummaryTotalWeight;
+  static String get pdfSummaryTotalTime => _impl.pdfSummaryTotalTime;
+  static String get pdfSummaryQuantity => _impl.pdfSummaryQuantity;
+  static String get pdfSummaryUnitPrice => _impl.pdfSummaryUnitPrice;
+  static String get pdfNoDiscount => _impl.pdfNoDiscount;
+
+  // === Columnas de la tabla de materiales ===
+  static String get pdfColumnMaterial => _impl.pdfColumnMaterial;
+  static String get pdfColumnWeight => _impl.pdfColumnWeight;
+  static String get pdfColumnTime => _impl.pdfColumnTime;
+  static String get pdfColumnCost => _impl.pdfColumnCost;
+  static String get pdfColumnUnitCost => _impl.pdfColumnUnitCost;
+  static String get pdfColumnLotCost => _impl.pdfColumnLotCost;
+  static String get pdfGlobalTime => _impl.pdfGlobalTime;
+
+  // === Cierre del desglose de costos ===
+  static String get pdfCostSubtotalClosing => _impl.pdfCostSubtotalClosing;
+  static String get pdfTotalBeforeDiscounts => _impl.pdfTotalBeforeDiscounts;
+
+  // === Tabla de parametros / auditoria ===
+  static String get pdfRateAuditSection => _impl.pdfRateAuditSection;
+  static String get pdfRatePrinter => _impl.pdfRatePrinter;
+  static String get pdfRateKwh => _impl.pdfRateKwh;
+  static String get pdfRateBillableHours => _impl.pdfRateBillableHours;
+  static String get pdfRateLabor => _impl.pdfRateLabor;
+  static String get pdfRateAmortization => _impl.pdfRateAmortization;
+  static String get pdfRatePerKwh => _impl.pdfRatePerKwh;
+  static String get pdfRatePerHour => _impl.pdfRatePerHour;
+  static String get pdfRateMargin => _impl.pdfRateMargin;
+  static String get pdfRateMarkupOverCost => _impl.pdfRateMarkupOverCost;
+
+  // === Paginacion y estado ===
+  static String pdfPageOf(int page, int total) => _impl.pdfPageOf(page, total);
+  static String get pdfStatusPending => _impl.pdfStatusPending;
+
   static String get dashboardEmptySubtitle => _impl.dashboardEmptySubtitle;
   static String get dashboardMonthlyTrend => _impl.dashboardMonthlyTrend;
   static String get dashboardTopMaterials => _impl.dashboardTopMaterials;
@@ -864,6 +909,16 @@ class EsBO {
   static String get calcPartialCompleteHint => _impl.calcPartialCompleteHint;
   static String get printSettingsVersionSuffix =>
       _impl.printSettingsVersionSuffix;
+  static String get extraSectionTitle => _impl.extraSectionTitle;
+  static String get calcExtraModeling => _impl.calcExtraModeling;
+  static String get calcExtraPostprocess => _impl.calcExtraPostprocess;
+  static String get calcExtraExtras => _impl.calcExtraExtras;
+  static String get extraInfo => _impl.extraInfo;
+  static String get extraDescriptionHint => _impl.extraDescriptionHint;
+  static String get modePercent => _impl.modePercent;
+  static String get modeFixed => _impl.modeFixed;
+  static String get modeAuto => _impl.modeAuto;
+  static String get modeOff => _impl.modeOff;
 }
 
 // ─── Implementacion espanol ─────────────────────
@@ -1302,7 +1357,7 @@ class EsImpl implements AppStrings {
   @override
   String get calcDetailEnergy => 'Costo energia';
   @override
-  String get calcDetailLabor => 'Mano de obra';
+  String get calcDetailModeling => 'Modelado y diseño';
   @override
   String get calcDetailPostProcess => 'Post-procesado';
   @override
@@ -2172,6 +2227,77 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   String get pdfMaterialsSection => 'Materiales';
 
   @override
+  @override
+  String get reportVariantClient => 'Cliente';
+  @override
+  @override
+  String get reportVariantInternal => 'Detalle';
+  @override
+  String get reportVariantSelectorTitle => 'Variante del reporte';
+  @override
+  String get reportVariantInternalWarning =>
+      'Uso interno: contiene costos. No enviar al cliente.';
+
+  @override
+  String get pdfSummarySection => 'Resumen de la cotización';
+  @override
+  String get pdfSummaryTotalWeight => 'Peso total';
+  @override
+  String get pdfSummaryTotalTime => 'Tiempo total';
+  @override
+  String get pdfSummaryQuantity => 'Cantidad';
+  @override
+  String get pdfSummaryUnitPrice => 'Precio unitario';
+  @override
+  String get pdfNoDiscount => 'Sin descuento';
+
+  @override
+  String get pdfColumnMaterial => 'Material';
+  @override
+  String get pdfColumnWeight => 'Peso';
+  @override
+  String get pdfColumnTime => 'Tiempo';
+  @override
+  String get pdfColumnCost => 'Costo';
+  @override
+  String get pdfColumnUnitCost => 'Costo unitario';
+  @override
+  String get pdfColumnLotCost => 'Costo lote';
+  @override
+  String get pdfGlobalTime => 'global';
+
+  @override
+  String get pdfCostSubtotalClosing => 'Subtotal (base + falla + markup)';
+  @override
+  String get pdfTotalBeforeDiscounts => 'Total antes de descuentos';
+
+  @override
+  String get pdfRateAuditSection => 'Parámetros de cálculo';
+  @override
+  String get pdfRatePrinter => 'Impresora';
+  @override
+  String get pdfRateKwh => 'Tarifa eléctrica';
+  @override
+  String get pdfRateBillableHours => 'Horas facturadas';
+  @override
+  String get pdfRateLabor => 'Mano de obra';
+  @override
+  String get pdfRateAmortization => 'Amortización';
+  @override
+  String get pdfRatePerKwh => '/kWh';
+  @override
+  String get pdfRatePerHour => '/h';
+  @override
+  String get pdfRateMargin => 'Margen';
+  @override
+  String get pdfRateMarkupOverCost => 'Markup sobre costo';
+
+  @override
+  String pdfPageOf(int page, int total) => 'Página $page de $total';
+  @override
+  String get pdfStatusPending => 'PENDIENTE';
+
+  @override
   String get dashboardEmptySubtitle =>
       'Crea tu primera cotización desde el inicio.';
   @override
@@ -2476,4 +2602,24 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
       'Completa los datos para guardar como cotización';
   @override
   String get printSettingsVersionSuffix => ' · v{0}';
+  @override
+  String get extraSectionTitle => 'Costos adicionales';
+  @override
+  String get calcExtraModeling => 'Modelado y diseno';
+  @override
+  String get calcExtraPostprocess => 'Postprocesado';
+  @override
+  String get calcExtraExtras => 'Extras';
+  @override
+  String get extraInfo => 'argollas, pegamento y cualquier otro extra que una pieza en impresion 3D pueda requerir';
+  @override
+  String get extraDescriptionHint => 'argollas, pegamento, etc.';
+  @override
+  String get modePercent => '%';
+  @override
+  String get modeFixed => 'Fijo';
+  @override
+  String get modeAuto => 'Auto';
+  @override
+  String get modeOff => 'No';
 }

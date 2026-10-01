@@ -1584,6 +1584,90 @@ class $CalculationsTable extends Calculations
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _modelingModeMeta = const VerificationMeta(
+    'modelingMode',
+  );
+  @override
+  late final GeneratedColumn<String> modelingMode = GeneratedColumn<String>(
+    'modeling_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('auto'),
+  );
+  static const VerificationMeta _modelingValueMeta = const VerificationMeta(
+    'modelingValue',
+  );
+  @override
+  late final GeneratedColumn<double> modelingValue = GeneratedColumn<double>(
+    'modeling_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _postprocModeMeta = const VerificationMeta(
+    'postprocMode',
+  );
+  @override
+  late final GeneratedColumn<String> postprocMode = GeneratedColumn<String>(
+    'postproc_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('auto'),
+  );
+  static const VerificationMeta _postprocValueMeta = const VerificationMeta(
+    'postprocValue',
+  );
+  @override
+  late final GeneratedColumn<double> postprocValue = GeneratedColumn<double>(
+    'postproc_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _extraModeMeta = const VerificationMeta(
+    'extraMode',
+  );
+  @override
+  late final GeneratedColumn<String> extraMode = GeneratedColumn<String>(
+    'extra_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('off'),
+  );
+  static const VerificationMeta _extraValueMeta = const VerificationMeta(
+    'extraValue',
+  );
+  @override
+  late final GeneratedColumn<double> extraValue = GeneratedColumn<double>(
+    'extra_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _extraLabelMeta = const VerificationMeta(
+    'extraLabel',
+  );
+  @override
+  late final GeneratedColumn<String> extraLabel = GeneratedColumn<String>(
+    'extra_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1625,6 +1709,13 @@ class $CalculationsTable extends Calculations
     pieceImageBlob,
     batchDiscountPercent,
     batchDiscountAmount,
+    modelingMode,
+    modelingValue,
+    postprocMode,
+    postprocValue,
+    extraMode,
+    extraValue,
+    extraLabel,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1989,6 +2080,60 @@ class $CalculationsTable extends Calculations
         ),
       );
     }
+    if (data.containsKey('modeling_mode')) {
+      context.handle(
+        _modelingModeMeta,
+        modelingMode.isAcceptableOrUnknown(
+          data['modeling_mode']!,
+          _modelingModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('modeling_value')) {
+      context.handle(
+        _modelingValueMeta,
+        modelingValue.isAcceptableOrUnknown(
+          data['modeling_value']!,
+          _modelingValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('postproc_mode')) {
+      context.handle(
+        _postprocModeMeta,
+        postprocMode.isAcceptableOrUnknown(
+          data['postproc_mode']!,
+          _postprocModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('postproc_value')) {
+      context.handle(
+        _postprocValueMeta,
+        postprocValue.isAcceptableOrUnknown(
+          data['postproc_value']!,
+          _postprocValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('extra_mode')) {
+      context.handle(
+        _extraModeMeta,
+        extraMode.isAcceptableOrUnknown(data['extra_mode']!, _extraModeMeta),
+      );
+    }
+    if (data.containsKey('extra_value')) {
+      context.handle(
+        _extraValueMeta,
+        extraValue.isAcceptableOrUnknown(data['extra_value']!, _extraValueMeta),
+      );
+    }
+    if (data.containsKey('extra_label')) {
+      context.handle(
+        _extraLabelMeta,
+        extraLabel.isAcceptableOrUnknown(data['extra_label']!, _extraLabelMeta),
+      );
+    }
     return context;
   }
 
@@ -2154,6 +2299,34 @@ class $CalculationsTable extends Calculations
         DriftSqlType.string,
         data['${effectivePrefix}batch_discount_amount'],
       ),
+      modelingMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modeling_mode'],
+      )!,
+      modelingValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}modeling_value'],
+      )!,
+      postprocMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}postproc_mode'],
+      )!,
+      postprocValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}postproc_value'],
+      )!,
+      extraMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}extra_mode'],
+      )!,
+      extraValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}extra_value'],
+      )!,
+      extraLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}extra_label'],
+      )!,
     );
   }
 
@@ -2279,6 +2452,38 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// aplicó escalón. Defaults NULL preservan el comportamiento actual
   /// (regla del 95 % en N=1 o sin escalones).
   final String? batchDiscountAmount;
+
+  /// Modo del campo "Modelado y diseño" (v17).
+  ///
+  /// - `auto`  : replica la formula legacy (`hours * laborRate`). Default
+  ///             para registros pre-v17: la migracion aplica este valor y
+  ///             los calculos existentes dan los mismos numeros.
+  /// - `pct`   : el campo se cobra como porcentaje sobre `coreBase`.
+  /// - `fixed` : el campo se cobra como monto fijo en moneda local.
+  final String modelingMode;
+
+  /// Valor numerico del modelado. Si `mode = pct` es el porcentaje (0..∞);
+  /// si `mode = fixed` es el monto fijo. `0` cuando `mode = auto`.
+  final double modelingValue;
+
+  /// Modo del campo "Postprocesado" (v17). Misma semantica que [modelingMode].
+  final String postprocMode;
+
+  /// Valor numerico del postprocesado. Misma semantica que [modelingValue].
+  final double postprocValue;
+
+  /// Modo del campo "Extras" (v17). Igual semantica que [modelingMode] pero
+  /// con default `off` en lugar de `auto` (no hay formula legacy para
+  /// extras; "off" significa que no se cobra nada).
+  final String extraMode;
+
+  /// Valor numerico de los extras.
+  final double extraValue;
+
+  /// Texto libre que describe los extras (ej: "2 argollas M3", "pegamento
+  /// cianoacrilato 5g"). Aparece en el reporte si no esta vacio. Default
+  /// vacio para registros pre-v17 y para extras desactivados.
+  final String extraLabel;
   const Calculation({
     required this.id,
     required this.createdAt,
@@ -2319,6 +2524,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     this.pieceImageBlob,
     this.batchDiscountPercent,
     this.batchDiscountAmount,
+    required this.modelingMode,
+    required this.modelingValue,
+    required this.postprocMode,
+    required this.postprocValue,
+    required this.extraMode,
+    required this.extraValue,
+    required this.extraLabel,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2390,6 +2602,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     if (!nullToAbsent || batchDiscountAmount != null) {
       map['batch_discount_amount'] = Variable<String>(batchDiscountAmount);
     }
+    map['modeling_mode'] = Variable<String>(modelingMode);
+    map['modeling_value'] = Variable<double>(modelingValue);
+    map['postproc_mode'] = Variable<String>(postprocMode);
+    map['postproc_value'] = Variable<double>(postprocValue);
+    map['extra_mode'] = Variable<String>(extraMode);
+    map['extra_value'] = Variable<double>(extraValue);
+    map['extra_label'] = Variable<String>(extraLabel);
     return map;
   }
 
@@ -2452,6 +2671,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       batchDiscountAmount: batchDiscountAmount == null && nullToAbsent
           ? const Value.absent()
           : Value(batchDiscountAmount),
+      modelingMode: Value(modelingMode),
+      modelingValue: Value(modelingValue),
+      postprocMode: Value(postprocMode),
+      postprocValue: Value(postprocValue),
+      extraMode: Value(extraMode),
+      extraValue: Value(extraValue),
+      extraLabel: Value(extraLabel),
     );
   }
 
@@ -2540,6 +2766,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       batchDiscountAmount: serializer.fromJson<String?>(
         json['batchDiscountAmount'],
       ),
+      modelingMode: serializer.fromJson<String>(json['modelingMode']),
+      modelingValue: serializer.fromJson<double>(json['modelingValue']),
+      postprocMode: serializer.fromJson<String>(json['postprocMode']),
+      postprocValue: serializer.fromJson<double>(json['postprocValue']),
+      extraMode: serializer.fromJson<String>(json['extraMode']),
+      extraValue: serializer.fromJson<double>(json['extraValue']),
+      extraLabel: serializer.fromJson<String>(json['extraLabel']),
     );
   }
   @override
@@ -2597,6 +2830,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'pieceImageBlob': serializer.toJson<Uint8List?>(pieceImageBlob),
       'batchDiscountPercent': serializer.toJson<String?>(batchDiscountPercent),
       'batchDiscountAmount': serializer.toJson<String?>(batchDiscountAmount),
+      'modelingMode': serializer.toJson<String>(modelingMode),
+      'modelingValue': serializer.toJson<double>(modelingValue),
+      'postprocMode': serializer.toJson<String>(postprocMode),
+      'postprocValue': serializer.toJson<double>(postprocValue),
+      'extraMode': serializer.toJson<String>(extraMode),
+      'extraValue': serializer.toJson<double>(extraValue),
+      'extraLabel': serializer.toJson<String>(extraLabel),
     };
   }
 
@@ -2640,6 +2880,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     Value<Uint8List?> pieceImageBlob = const Value.absent(),
     Value<String?> batchDiscountPercent = const Value.absent(),
     Value<String?> batchDiscountAmount = const Value.absent(),
+    String? modelingMode,
+    double? modelingValue,
+    String? postprocMode,
+    double? postprocValue,
+    String? extraMode,
+    double? extraValue,
+    String? extraLabel,
   }) => Calculation(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -2694,6 +2941,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     batchDiscountAmount: batchDiscountAmount.present
         ? batchDiscountAmount.value
         : this.batchDiscountAmount,
+    modelingMode: modelingMode ?? this.modelingMode,
+    modelingValue: modelingValue ?? this.modelingValue,
+    postprocMode: postprocMode ?? this.postprocMode,
+    postprocValue: postprocValue ?? this.postprocValue,
+    extraMode: extraMode ?? this.extraMode,
+    extraValue: extraValue ?? this.extraValue,
+    extraLabel: extraLabel ?? this.extraLabel,
   );
   Calculation copyWithCompanion(CalculationsCompanion data) {
     return Calculation(
@@ -2798,6 +3052,25 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       batchDiscountAmount: data.batchDiscountAmount.present
           ? data.batchDiscountAmount.value
           : this.batchDiscountAmount,
+      modelingMode: data.modelingMode.present
+          ? data.modelingMode.value
+          : this.modelingMode,
+      modelingValue: data.modelingValue.present
+          ? data.modelingValue.value
+          : this.modelingValue,
+      postprocMode: data.postprocMode.present
+          ? data.postprocMode.value
+          : this.postprocMode,
+      postprocValue: data.postprocValue.present
+          ? data.postprocValue.value
+          : this.postprocValue,
+      extraMode: data.extraMode.present ? data.extraMode.value : this.extraMode,
+      extraValue: data.extraValue.present
+          ? data.extraValue.value
+          : this.extraValue,
+      extraLabel: data.extraLabel.present
+          ? data.extraLabel.value
+          : this.extraLabel,
     );
   }
 
@@ -2844,7 +3117,14 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot, ')
           ..write('pieceImageBlob: $pieceImageBlob, ')
           ..write('batchDiscountPercent: $batchDiscountPercent, ')
-          ..write('batchDiscountAmount: $batchDiscountAmount')
+          ..write('batchDiscountAmount: $batchDiscountAmount, ')
+          ..write('modelingMode: $modelingMode, ')
+          ..write('modelingValue: $modelingValue, ')
+          ..write('postprocMode: $postprocMode, ')
+          ..write('postprocValue: $postprocValue, ')
+          ..write('extraMode: $extraMode, ')
+          ..write('extraValue: $extraValue, ')
+          ..write('extraLabel: $extraLabel')
           ..write(')'))
         .toString();
   }
@@ -2890,6 +3170,13 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     $driftBlobEquality.hash(pieceImageBlob),
     batchDiscountPercent,
     batchDiscountAmount,
+    modelingMode,
+    modelingValue,
+    postprocMode,
+    postprocValue,
+    extraMode,
+    extraValue,
+    extraLabel,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2937,7 +3224,14 @@ class Calculation extends DataClass implements Insertable<Calculation> {
             this.pieceImageBlob,
           ) &&
           other.batchDiscountPercent == this.batchDiscountPercent &&
-          other.batchDiscountAmount == this.batchDiscountAmount);
+          other.batchDiscountAmount == this.batchDiscountAmount &&
+          other.modelingMode == this.modelingMode &&
+          other.modelingValue == this.modelingValue &&
+          other.postprocMode == this.postprocMode &&
+          other.postprocValue == this.postprocValue &&
+          other.extraMode == this.extraMode &&
+          other.extraValue == this.extraValue &&
+          other.extraLabel == this.extraLabel);
 }
 
 class CalculationsCompanion extends UpdateCompanion<Calculation> {
@@ -2980,6 +3274,13 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<Uint8List?> pieceImageBlob;
   final Value<String?> batchDiscountPercent;
   final Value<String?> batchDiscountAmount;
+  final Value<String> modelingMode;
+  final Value<double> modelingValue;
+  final Value<String> postprocMode;
+  final Value<double> postprocValue;
+  final Value<String> extraMode;
+  final Value<double> extraValue;
+  final Value<String> extraLabel;
   const CalculationsCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3020,6 +3321,13 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.pieceImageBlob = const Value.absent(),
     this.batchDiscountPercent = const Value.absent(),
     this.batchDiscountAmount = const Value.absent(),
+    this.modelingMode = const Value.absent(),
+    this.modelingValue = const Value.absent(),
+    this.postprocMode = const Value.absent(),
+    this.postprocValue = const Value.absent(),
+    this.extraMode = const Value.absent(),
+    this.extraValue = const Value.absent(),
+    this.extraLabel = const Value.absent(),
   });
   CalculationsCompanion.insert({
     this.id = const Value.absent(),
@@ -3061,6 +3369,13 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.pieceImageBlob = const Value.absent(),
     this.batchDiscountPercent = const Value.absent(),
     this.batchDiscountAmount = const Value.absent(),
+    this.modelingMode = const Value.absent(),
+    this.modelingValue = const Value.absent(),
+    this.postprocMode = const Value.absent(),
+    this.postprocValue = const Value.absent(),
+    this.extraMode = const Value.absent(),
+    this.extraValue = const Value.absent(),
+    this.extraLabel = const Value.absent(),
   }) : createdAt = Value(createdAt),
        totalHours = Value(totalHours),
        discountPercentage = Value(discountPercentage),
@@ -3122,6 +3437,13 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<Uint8List>? pieceImageBlob,
     Expression<String>? batchDiscountPercent,
     Expression<String>? batchDiscountAmount,
+    Expression<String>? modelingMode,
+    Expression<double>? modelingValue,
+    Expression<String>? postprocMode,
+    Expression<double>? postprocValue,
+    Expression<String>? extraMode,
+    Expression<double>? extraValue,
+    Expression<String>? extraLabel,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3182,6 +3504,13 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         'batch_discount_percent': batchDiscountPercent,
       if (batchDiscountAmount != null)
         'batch_discount_amount': batchDiscountAmount,
+      if (modelingMode != null) 'modeling_mode': modelingMode,
+      if (modelingValue != null) 'modeling_value': modelingValue,
+      if (postprocMode != null) 'postproc_mode': postprocMode,
+      if (postprocValue != null) 'postproc_value': postprocValue,
+      if (extraMode != null) 'extra_mode': extraMode,
+      if (extraValue != null) 'extra_value': extraValue,
+      if (extraLabel != null) 'extra_label': extraLabel,
     });
   }
 
@@ -3225,6 +3554,13 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<Uint8List?>? pieceImageBlob,
     Value<String?>? batchDiscountPercent,
     Value<String?>? batchDiscountAmount,
+    Value<String>? modelingMode,
+    Value<double>? modelingValue,
+    Value<String>? postprocMode,
+    Value<double>? postprocValue,
+    Value<String>? extraMode,
+    Value<double>? extraValue,
+    Value<String>? extraLabel,
   }) {
     return CalculationsCompanion(
       id: id ?? this.id,
@@ -3273,6 +3609,13 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       pieceImageBlob: pieceImageBlob ?? this.pieceImageBlob,
       batchDiscountPercent: batchDiscountPercent ?? this.batchDiscountPercent,
       batchDiscountAmount: batchDiscountAmount ?? this.batchDiscountAmount,
+      modelingMode: modelingMode ?? this.modelingMode,
+      modelingValue: modelingValue ?? this.modelingValue,
+      postprocMode: postprocMode ?? this.postprocMode,
+      postprocValue: postprocValue ?? this.postprocValue,
+      extraMode: extraMode ?? this.extraMode,
+      extraValue: extraValue ?? this.extraValue,
+      extraLabel: extraLabel ?? this.extraLabel,
     );
   }
 
@@ -3428,6 +3771,27 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
         batchDiscountAmount.value,
       );
     }
+    if (modelingMode.present) {
+      map['modeling_mode'] = Variable<String>(modelingMode.value);
+    }
+    if (modelingValue.present) {
+      map['modeling_value'] = Variable<double>(modelingValue.value);
+    }
+    if (postprocMode.present) {
+      map['postproc_mode'] = Variable<String>(postprocMode.value);
+    }
+    if (postprocValue.present) {
+      map['postproc_value'] = Variable<double>(postprocValue.value);
+    }
+    if (extraMode.present) {
+      map['extra_mode'] = Variable<String>(extraMode.value);
+    }
+    if (extraValue.present) {
+      map['extra_value'] = Variable<double>(extraValue.value);
+    }
+    if (extraLabel.present) {
+      map['extra_label'] = Variable<String>(extraLabel.value);
+    }
     return map;
   }
 
@@ -3474,7 +3838,14 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('markupOnMaterialsSnapshot: $markupOnMaterialsSnapshot, ')
           ..write('pieceImageBlob: $pieceImageBlob, ')
           ..write('batchDiscountPercent: $batchDiscountPercent, ')
-          ..write('batchDiscountAmount: $batchDiscountAmount')
+          ..write('batchDiscountAmount: $batchDiscountAmount, ')
+          ..write('modelingMode: $modelingMode, ')
+          ..write('modelingValue: $modelingValue, ')
+          ..write('postprocMode: $postprocMode, ')
+          ..write('postprocValue: $postprocValue, ')
+          ..write('extraMode: $extraMode, ')
+          ..write('extraValue: $extraValue, ')
+          ..write('extraLabel: $extraLabel')
           ..write(')'))
         .toString();
   }
@@ -5900,6 +6271,13 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       Value<Uint8List?> pieceImageBlob,
       Value<String?> batchDiscountPercent,
       Value<String?> batchDiscountAmount,
+      Value<String> modelingMode,
+      Value<double> modelingValue,
+      Value<String> postprocMode,
+      Value<double> postprocValue,
+      Value<String> extraMode,
+      Value<double> extraValue,
+      Value<String> extraLabel,
     });
 typedef $$CalculationsTableUpdateCompanionBuilder =
     CalculationsCompanion Function({
@@ -5942,6 +6320,13 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<Uint8List?> pieceImageBlob,
       Value<String?> batchDiscountPercent,
       Value<String?> batchDiscountAmount,
+      Value<String> modelingMode,
+      Value<double> modelingValue,
+      Value<String> postprocMode,
+      Value<double> postprocValue,
+      Value<String> extraMode,
+      Value<double> extraValue,
+      Value<String> extraLabel,
     });
 
 final class $$CalculationsTableReferences
@@ -6178,6 +6563,41 @@ class $$CalculationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get modelingMode => $composableBuilder(
+    column: $table.modelingMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get modelingValue => $composableBuilder(
+    column: $table.modelingValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get postprocMode => $composableBuilder(
+    column: $table.postprocMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get postprocValue => $composableBuilder(
+    column: $table.postprocValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get extraMode => $composableBuilder(
+    column: $table.extraMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get extraLabel => $composableBuilder(
+    column: $table.extraLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> calculationMaterialsRefs(
     Expression<bool> Function($$CalculationMaterialsTableFilterComposer f) f,
   ) {
@@ -6408,6 +6828,41 @@ class $$CalculationsTableOrderingComposer
     column: $table.batchDiscountAmount,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get modelingMode => $composableBuilder(
+    column: $table.modelingMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get modelingValue => $composableBuilder(
+    column: $table.modelingValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get postprocMode => $composableBuilder(
+    column: $table.postprocMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get postprocValue => $composableBuilder(
+    column: $table.postprocValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get extraMode => $composableBuilder(
+    column: $table.extraMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get extraLabel => $composableBuilder(
+    column: $table.extraLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CalculationsTableAnnotationComposer
@@ -6599,6 +7054,39 @@ class $$CalculationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get modelingMode => $composableBuilder(
+    column: $table.modelingMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get modelingValue => $composableBuilder(
+    column: $table.modelingValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get postprocMode => $composableBuilder(
+    column: $table.postprocMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get postprocValue => $composableBuilder(
+    column: $table.postprocValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get extraMode =>
+      $composableBuilder(column: $table.extraMode, builder: (column) => column);
+
+  GeneratedColumn<double> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get extraLabel => $composableBuilder(
+    column: $table.extraLabel,
+    builder: (column) => column,
+  );
+
   Expression<T> calculationMaterialsRefs<T extends Object>(
     Expression<T> Function($$CalculationMaterialsTableAnnotationComposer a) f,
   ) {
@@ -6694,6 +7182,13 @@ class $$CalculationsTableTableManager
                 Value<Uint8List?> pieceImageBlob = const Value.absent(),
                 Value<String?> batchDiscountPercent = const Value.absent(),
                 Value<String?> batchDiscountAmount = const Value.absent(),
+                Value<String> modelingMode = const Value.absent(),
+                Value<double> modelingValue = const Value.absent(),
+                Value<String> postprocMode = const Value.absent(),
+                Value<double> postprocValue = const Value.absent(),
+                Value<String> extraMode = const Value.absent(),
+                Value<double> extraValue = const Value.absent(),
+                Value<String> extraLabel = const Value.absent(),
               }) => CalculationsCompanion(
                 id: id,
                 createdAt: createdAt,
@@ -6734,6 +7229,13 @@ class $$CalculationsTableTableManager
                 pieceImageBlob: pieceImageBlob,
                 batchDiscountPercent: batchDiscountPercent,
                 batchDiscountAmount: batchDiscountAmount,
+                modelingMode: modelingMode,
+                modelingValue: modelingValue,
+                postprocMode: postprocMode,
+                postprocValue: postprocValue,
+                extraMode: extraMode,
+                extraValue: extraValue,
+                extraLabel: extraLabel,
               ),
           createCompanionCallback:
               ({
@@ -6776,6 +7278,13 @@ class $$CalculationsTableTableManager
                 Value<Uint8List?> pieceImageBlob = const Value.absent(),
                 Value<String?> batchDiscountPercent = const Value.absent(),
                 Value<String?> batchDiscountAmount = const Value.absent(),
+                Value<String> modelingMode = const Value.absent(),
+                Value<double> modelingValue = const Value.absent(),
+                Value<String> postprocMode = const Value.absent(),
+                Value<double> postprocValue = const Value.absent(),
+                Value<String> extraMode = const Value.absent(),
+                Value<double> extraValue = const Value.absent(),
+                Value<String> extraLabel = const Value.absent(),
               }) => CalculationsCompanion.insert(
                 id: id,
                 createdAt: createdAt,
@@ -6816,6 +7325,13 @@ class $$CalculationsTableTableManager
                 pieceImageBlob: pieceImageBlob,
                 batchDiscountPercent: batchDiscountPercent,
                 batchDiscountAmount: batchDiscountAmount,
+                modelingMode: modelingMode,
+                modelingValue: modelingValue,
+                postprocMode: postprocMode,
+                postprocValue: postprocValue,
+                extraMode: extraMode,
+                extraValue: extraValue,
+                extraLabel: extraLabel,
               ),
           withReferenceMapper: (p0) => p0
               .map(

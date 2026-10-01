@@ -35,7 +35,9 @@ class CalculationOutput {
     required this.totalPrice,
     this.totalOriginal,
     Decimal? amortizationCost,
-  }) : amortizationCost = amortizationCost ?? Decimal.zero;
+    Decimal? extrasCost,
+  }) : amortizationCost = amortizationCost ?? Decimal.zero,
+       extrasCost = extrasCost ?? Decimal.zero;
 
   /// Crea un output simplificado cuando no hay parametros de settings
   /// (todos los extras en 0). Equivalente a la formula MVP.
@@ -58,6 +60,7 @@ class CalculationOutput {
       totalFinal: materialCost,
       discountAmount: discountAmount,
       totalPrice: totalPrice,
+      extrasCost: Decimal.zero,
     );
   }
 
@@ -109,6 +112,13 @@ class CalculationOutput {
   /// para mostrar "Sin descuento: $X" correcto con cantidad > 1.
   final Decimal? totalOriginal;
 
+  /// v17: costo de "Extras" (argollas, pegamento, etc.).
+  ///
+  /// Modo `off` (default) → 0. Modo `pct` → `coreBase * pct / 100`. Modo
+  /// `fixed` → monto literal. Aparece como linea propia en el desglose del
+  /// reporte interno. En el resumen client-facing solo se muestra si > 0.
+  final Decimal extrasCost;
+
   @override
   bool operator ==(Object other) =>
       other is CalculationOutput &&
@@ -126,7 +136,8 @@ class CalculationOutput {
       totalFinal == other.totalFinal &&
       discountAmount == other.discountAmount &&
       totalPrice == other.totalPrice &&
-      totalOriginal == other.totalOriginal;
+      totalOriginal == other.totalOriginal &&
+      extrasCost == other.extrasCost;
 
   @override
   int get hashCode => Object.hash(
@@ -145,6 +156,7 @@ class CalculationOutput {
     discountAmount,
     totalPrice,
     totalOriginal,
+    extrasCost,
   );
 
   @override
@@ -155,6 +167,7 @@ class CalculationOutput {
       'amortizationCost: $amortizationCost, '
       'laborCost: $laborCost, '
       'postProcessCost: $postProcessCost, '
+      'extrasCost: $extrasCost, '
       'baseCost: $baseCost, '
       'failureCost: $failureCost, '
       'costWithFailure: $costWithFailure, '

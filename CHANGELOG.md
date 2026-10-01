@@ -6,6 +6,29 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-01
+
+### Added
+- **Editar cotización**: reabrir una cotización y actualizarla in-place desde
+  el historial o el detalle (`/calculator/edit`). El guardado conserva
+  `createdAt`/vendido y no vuelve a cobrar el cap Free ni re-suma horas.
+- Guardado parcial incremental y recuperación de borrador en la calculadora.
+- Export a PDF/imagen con plantilla de cotización renovada.
+
+### Changed
+- **Export CSV sin gate Pro**: los datos son del usuario, exportar es gratis
+  (se eliminan los strings del gate y los avisos de paywall asociados).
+- Backup/restore al formato v1 con campos opcionales (compatible con backups
+  previos).
+- Esquema de base de datos migrado a **v16**.
+
+### Fixed
+- Teardown de widget tests que abren la calculadora ya no cuelga 10 min:
+  se dispone el `ProviderContainer` antes de cerrar la base de datos.
+- Tests de migración intermedia actualizados para esperar el schema v16.
+- E2E `full_flow` / `full_purchase_flow` alineados al wizard de scroll
+  continuo y a la navegación de 5 destinos.
+
 ### 0.3.4 (2026-09-09)
 
 #### Changed

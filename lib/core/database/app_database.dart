@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -171,6 +171,27 @@ class AppDatabase extends _$AppDatabase {
           calculationMaterials,
           calculationMaterials.materialMinutes,
         );
+      }
+      if (from < 17) {
+        // v16→v17: Costos adicionales con modo % / fijo.
+        //
+        // Renombra logicamente "mano de obra" a "Modelado y diseño" y agrega
+        // un campo nuevo "Extras" (argollas, pegamento, etc.). Los 3 servicios
+        // (modelado, postprocesado, extras) admiten modo `pct` (sobre
+        // coreBase) o `fixed` (monto literal). Los primeros 2 arrancan en
+        // `auto` = replica la formula legacy; extras en `off` (no se cobra).
+        //
+        // Aditiva: registros viejos quedan con los defaults que reproducen
+        // el calculo pre-v17 (modeling_mode='auto' delega a `hours*laborRate`,
+        // postproc_mode='auto' delega a `materialCost*postProcessRate/100`,
+        // extra_mode='off' no aporta).
+        await m.addColumn(calculations, calculations.modelingMode);
+        await m.addColumn(calculations, calculations.modelingValue);
+        await m.addColumn(calculations, calculations.postprocMode);
+        await m.addColumn(calculations, calculations.postprocValue);
+        await m.addColumn(calculations, calculations.extraMode);
+        await m.addColumn(calculations, calculations.extraValue);
+        await m.addColumn(calculations, calculations.extraLabel);
       }
     },
   );

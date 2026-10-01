@@ -3,7 +3,9 @@
 import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 
-import '../state/calculator_state.dart' show CalculatorMode, CalculatorState;
+import '../../../../core/export/pdf_export.dart';
+import '../state/calculator_state.dart'
+    show CalculatorMode, CalculatorState, MaterialCostBreakdown;
 
 /// Resultado de computeMeta con desglose por material.
 class MetaResult {
@@ -67,7 +69,7 @@ MetaResult computeMeta(CalculatorState state) {
       if (m.useOwnTime) {
         final mh = parseOrZero(m.materialHours);
         final mm = parseOrZero(m.materialMinutes);
-        final matMinutes = (mh * Decimal.fromInt(60) + mm).toBigInt();
+        final matMinutes = (mh * Decimal.fromInt(60) + mm).round().toBigInt();
         totalMinutesAcc += matMinutes;
         if (matMinutes > BigInt.zero) {
           final hh = matMinutes ~/ BigInt.from(60);
@@ -89,7 +91,7 @@ MetaResult computeMeta(CalculatorState state) {
     // Tiempo global.
     final h = parseOrZero(state.printHours);
     final m = parseOrZero(state.printMinutes);
-    totalMinutesAcc = (h * Decimal.fromInt(60) + m).toBigInt();
+    totalMinutesAcc = (h * Decimal.fromInt(60) + m).round().toBigInt();
     for (final mat in state.materials) {
       final w = parseOrZero(mat.weight);
       breakdown.add(
@@ -120,4 +122,26 @@ MetaResult computeMeta(CalculatorState state) {
     time: timeStr,
     materialBreakdown: breakdown,
   );
+}
+
+/// Empareja el desglose de meta (peso + tiempo) con los costos unitarios para
+/// alimentar la tabla de materiales del reporte.
+///
+/// [computeMeta] y [CalculationEngine] recorren la MISMA lista de materiales en
+/// el mismo orden, asi que el pareo es por indice. Si las listas no alinean
+/// (materiales borrados a mitad de un recompute), el material queda sin costo y
+/// el reporte omite la columna de costo en vez de imprimir un 0 inventado.
+List<PdfMaterialMetaItem> toPdfMaterialMeta(
+  MetaResult meta,
+  List<MaterialCostBreakdown> unitCosts,
+) {
+  return [
+    for (var i = 0; i < meta.materialBreakdown.length; i++)
+      PdfMaterialMetaItem(
+        label: meta.materialBreakdown[i].label,
+        weightGrams: meta.materialBreakdown[i].weightGrams,
+        timeStr: meta.materialBreakdown[i].timeStr,
+        unitCost: i < unitCosts.length ? unitCosts[i].cost : null,
+      ),
+  ];
 }

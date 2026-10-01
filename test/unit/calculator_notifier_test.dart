@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:tresdcal/core/database/app_database.dart';
+import 'package:tresdcal/core/export/quote_report_variant.dart';
 import 'package:tresdcal/core/providers.dart';
 import 'package:tresdcal/core/utils/image_downscale.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
@@ -436,15 +437,17 @@ void main() {
       await db.close();
     });
 
-    test('form invalido: save() lanza FormIncompleteException y no inserta nada',
-        () async {
-      await expectLater(
-        container.read(calculatorNotifierProvider.notifier).save(),
-        throwsA(isA<FormIncompleteException>()),
-      );
-      final all = await db.select(db.calculations).get();
-      expect(all, isEmpty);
-    });
+    test(
+      'form invalido: save() lanza FormIncompleteException y no inserta nada',
+      () async {
+        await expectLater(
+          container.read(calculatorNotifierProvider.notifier).save(),
+          throwsA(isA<FormIncompleteException>()),
+        );
+        final all = await db.select(db.calculations).get();
+        expect(all, isEmpty);
+      },
+    );
 
     test('form valido: save() inserta y retorna id > 0', () async {
       final n = container.read(calculatorNotifierProvider.notifier);
@@ -597,6 +600,43 @@ void main() {
     });
 
     test(
+      'loadFromCalculation recomputa el output (regression: editar sin total)',
+      () async {
+        // Guarda una cotizacion valida (express) y la recarga como hacen
+        // "Editar"/"Reusar". El prefill debe dejar `isValid` + `output` listos
+        // para que la barra inferior muestre el total SIN tocar un campo.
+        final n = container.read(calculatorNotifierProvider.notifier);
+        n.setWeight('100');
+        n.setPrintHours('1');
+        n.setPrintMinutes('33');
+        n.setFilamentPrice('120');
+        n.setFilamentGrams('1000');
+        await n.save(pieceName: 'Total al editar');
+
+        n.reset();
+
+        final repo = container.read(calculationRepositoryProvider);
+        final calc = await repo.getById(1);
+        await container
+            .read(calculatorNotifierProvider.notifier)
+            .loadFromCalculation(calc!);
+
+        final state = container.read(calculatorNotifierProvider);
+        expect(
+          state.isValid,
+          isTrue,
+          reason: 'peso + precio + tiempo deben quedar validos al precargar',
+        );
+        expect(
+          state.output,
+          isNotNull,
+          reason: 'El prefill debe recomputar el total, no dejarlo en null',
+        );
+        expect(state.lotTotal, greaterThan(Decimal.zero));
+      },
+    );
+
+    test(
       'loadFromCalculation backfill: row v3 sin printMinutes (0) deriva split del decimal',
       () async {
         // Simula una row v3 (legacy) construida directamente con printMinutes=0.
@@ -686,49 +726,51 @@ void main() {
         expect(state.materials.single.label, 'PLA Negro');
       });
 
-      test('restaura el desglose de tiempo propio por material (v15)',
-          () async {
-        final n = container.read(calculatorNotifierProvider.notifier);
-        n.setMode(CalculatorMode.advanced);
-        n.addMaterial();
-        n.updateMaterial(
-          0,
-          label: 'PLA',
-          weight: '120',
-          pricePerBobbin: '150',
-          gramsPerBobbin: '1000',
-          useOwnTime: true,
-          materialHours: '2',
-          materialMinutes: '30',
-        );
-        n.addMaterial();
-        n.updateMaterial(
-          1,
-          label: 'ABS',
-          weight: '80',
-          pricePerBobbin: '160',
-          gramsPerBobbin: '1000',
-          useOwnTime: true,
-          materialHours: '1',
-          materialMinutes: '15',
-        );
+      test(
+        'restaura el desglose de tiempo propio por material (v15)',
+        () async {
+          final n = container.read(calculatorNotifierProvider.notifier);
+          n.setMode(CalculatorMode.advanced);
+          n.addMaterial();
+          n.updateMaterial(
+            0,
+            label: 'PLA',
+            weight: '120',
+            pricePerBobbin: '150',
+            gramsPerBobbin: '1000',
+            useOwnTime: true,
+            materialHours: '2',
+            materialMinutes: '30',
+          );
+          n.addMaterial();
+          n.updateMaterial(
+            1,
+            label: 'ABS',
+            weight: '80',
+            pricePerBobbin: '160',
+            gramsPerBobbin: '1000',
+            useOwnTime: true,
+            materialHours: '1',
+            materialMinutes: '15',
+          );
 
-        final state = await saveAndReuse();
+          final state = await saveAndReuse();
 
-        expect(state.materials, hasLength(2));
-        final pla = state.materials.firstWhere((m) => m.label == 'PLA');
-        expect(pla.useOwnTime, isTrue);
-        expect(pla.materialHours, '2');
-        expect(pla.materialMinutes, '30');
+          expect(state.materials, hasLength(2));
+          final pla = state.materials.firstWhere((m) => m.label == 'PLA');
+          expect(pla.useOwnTime, isTrue);
+          expect(pla.materialHours, '2');
+          expect(pla.materialMinutes, '30');
 
-        final abs = state.materials.firstWhere((m) => m.label == 'ABS');
-        expect(abs.useOwnTime, isTrue);
-        expect(abs.materialHours, '1');
-        expect(abs.materialMinutes, '15');
+          final abs = state.materials.firstWhere((m) => m.label == 'ABS');
+          expect(abs.useOwnTime, isTrue);
+          expect(abs.materialHours, '1');
+          expect(abs.materialMinutes, '15');
 
-        // El total debe seguir siendo la suma de los dos tiempos propios.
-        expect(state.totalHoursDecimal, Decimal.parse('3.75'));
-      });
+          // El total debe seguir siendo la suma de los dos tiempos propios.
+          expect(state.totalHoursDecimal, Decimal.parse('3.75'));
+        },
+      );
 
       test('un material SIN tiempo propio queda en el tiempo global', () async {
         final n = container.read(calculatorNotifierProvider.notifier);
@@ -749,6 +791,172 @@ void main() {
         expect(state.materials.single.materialHours, isEmpty);
         expect(state.printHours, '5', reason: 'El global se preserva');
       });
+    });
+  });
+
+  group('variante del reporte — selector de 2 opciones', () {
+    // El notifier tiene que mantener la invariante que el selector asume:
+    // `reportVariant` SIEMPRE pertenece al eje del modo actual. Si se rompe,
+    // el chip seleccionado desaparece de la UI y el usuario creeria ver una
+    // variante que el control ya no ofrece.
+    late ProviderContainer container;
+    late AppDatabase db;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+    });
+
+    tearDown(() async {
+      await db.close();
+      container.dispose();
+    });
+
+    CalculatorNotifier notifier() =>
+        container.read(calculatorNotifierProvider.notifier);
+
+    test('express: solo acepta clientSimple | internalDetail', () {
+      final n = notifier();
+      expect(n.state.mode, CalculatorMode.express);
+
+      n.setReportVariant(QuoteReportVariant.internalDetail);
+      expect(n.state.reportVariant, QuoteReportVariant.internalDetail);
+
+      // Las del eje advanced no son visibles en express: se ignoran.
+      n.setReportVariant(QuoteReportVariant.clientAdvanced);
+      expect(n.state.reportVariant, QuoteReportVariant.internalDetail);
+
+      n.setReportVariant(QuoteReportVariant.internalAdvanced);
+      expect(n.state.reportVariant, QuoteReportVariant.internalDetail);
+    });
+
+    test('advanced: solo acepta clientAdvanced | internalAdvanced', () {
+      final n = notifier();
+      n.setMode(CalculatorMode.advanced);
+
+      n.setReportVariant(QuoteReportVariant.internalAdvanced);
+      expect(n.state.reportVariant, QuoteReportVariant.internalAdvanced);
+
+      n.setReportVariant(QuoteReportVariant.clientSimple);
+      expect(n.state.reportVariant, QuoteReportVariant.internalAdvanced);
+
+      n.setReportVariant(QuoteReportVariant.internalDetail);
+      expect(n.state.reportVariant, QuoteReportVariant.internalAdvanced);
+    });
+
+    test(
+      'setMode arrastra la variante al eje nuevo, conservando audiencia',
+      () {
+        final n = notifier();
+
+        // Express -> Detalle, luego cambio a advanced: debe quedar Detalle Av.
+        n.setReportVariant(QuoteReportVariant.internalDetail);
+        n.setMode(CalculatorMode.advanced);
+        expect(
+          n.state.reportVariant,
+          QuoteReportVariant.internalAdvanced,
+          reason: 'Cambiar de modo no puede convertir Detalle en Cliente.',
+        );
+
+        // Y de vuelta.
+        n.setMode(CalculatorMode.express);
+        expect(n.state.reportVariant, QuoteReportVariant.internalDetail);
+      },
+    );
+
+    test('setMode con el mismo modo no toca la variante', () {
+      final n = notifier();
+      n.setReportVariant(QuoteReportVariant.internalDetail);
+      n.setMode(CalculatorMode.express);
+      expect(n.state.reportVariant, QuoteReportVariant.internalDetail);
+    });
+
+    test('la invariante se sostiene para toda combinacion modo x variante', () {
+      final n = notifier();
+      for (final mode in CalculatorMode.values) {
+        n.setMode(mode);
+        final isAdvanced = mode == CalculatorMode.advanced;
+        for (final variant in QuoteReportVariant.values) {
+          n.setReportVariant(variant);
+          expect(
+            QuoteReportVariant.optionsForMode(isAdvanced: isAdvanced),
+            contains(n.state.reportVariant),
+            reason: 'modo=$mode variant=$variant dejo un valor invisible.',
+          );
+        }
+      }
+    });
+
+    test('cycleReportVariant alterna Cliente <-> Detalle dentro del eje', () {
+      final n = notifier();
+      final seen = <QuoteReportVariant>[];
+      for (var i = 0; i < 4; i++) {
+        seen.add(n.state.reportVariant);
+        n.cycleReportVariant();
+      }
+      expect(seen, [
+        QuoteReportVariant.clientSimple,
+        QuoteReportVariant.internalDetail,
+        QuoteReportVariant.clientSimple,
+        QuoteReportVariant.internalDetail,
+      ]);
+      // Y el ciclo de advanced NO toca las variantes de express.
+      n.setMode(CalculatorMode.advanced);
+      final seenAdv = <QuoteReportVariant>[];
+      for (var i = 0; i < 4; i++) {
+        seenAdv.add(n.state.reportVariant);
+        n.cycleReportVariant();
+      }
+      expect(seenAdv, [
+        QuoteReportVariant.clientAdvanced,
+        QuoteReportVariant.internalAdvanced,
+        QuoteReportVariant.clientAdvanced,
+        QuoteReportVariant.internalAdvanced,
+      ]);
+    });
+  });
+
+  group('tiempo propio: minutos exactos (regresion off-by-one)', () {
+    test('3h04m + 3h06m == 370 min (6h10m), no 369 (6h09m)', () {
+      final s = CalculatorState.initial().copyWith(
+        mode: CalculatorMode.advanced,
+        materials: const [
+          MaterialRow(
+            label: 'A',
+            weight: '100',
+            pricePerBobbin: '100',
+            gramsPerBobbin: '1000',
+            useOwnTime: true,
+            materialHours: '3',
+            materialMinutes: '4',
+          ),
+          MaterialRow(
+            label: 'B',
+            weight: '100',
+            pricePerBobbin: '100',
+            gramsPerBobbin: '1000',
+            useOwnTime: true,
+            materialHours: '3',
+            materialMinutes: '6',
+          ),
+        ],
+      );
+
+      expect(s.materialsOwnTimeMinutes, 370);
+      expect(s.totalMinutes, 370);
+      // El decimal del motor sigue existiendo, pero al convertirlo a minutos
+      // se redondea (antes `*60).toBigInt()` truncaba a 369).
+      expect(CalculatorState.decimalHoursToMinutes(s.totalHoursDecimal!), 370);
+    });
+
+    test('totalMinutes cae al tiempo global cuando no hay tiempo propio', () {
+      final s = CalculatorState.initial().copyWith(
+        printHours: '2',
+        printMinutes: '30',
+      );
+      expect(s.totalMinutes, 150);
     });
   });
 }

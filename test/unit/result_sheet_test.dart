@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:tresdcal/core/export/quote_report_variant.dart';
 import 'package:tresdcal/core/money/currency.dart';
 import 'package:tresdcal/core/share/quote_share.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
@@ -13,6 +14,7 @@ import 'package:tresdcal/features/calculation/presentation/state/calculator_noti
 import 'package:tresdcal/features/calculation/presentation/state/calculator_state.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/calc_meta.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
+import 'package:tresdcal/features/calculation/presentation/widgets/report_variant_selector.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/result_sheet.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
 
@@ -71,7 +73,6 @@ CalculatorState _validState() {
     label: 'Pieza de prueba',
     materials: const [],
     output: out,
-    showDetail: false,
     detailDiscountPct: null,
     detailElectricCost: Decimal.fromInt(2),
     detailBaseCost: Decimal.fromInt(14),
@@ -147,6 +148,85 @@ void main() {
     });
   });
 
+  group('ResultSheetContent — selector de variante', () {
+    // El toggle binario "ver detalle" se elimino: era un tercer control para
+    // la misma decision que ya toma el selector de variante, y permitia
+    // combinar "estoy mirando el desglose" con "exporto la version simple",
+    // que es exactamente la confusion que hacia_EXPORTar costos por error.
+    // Ahora hay UN control y una sola verdad.
+    Future<void> pumpSheet(WidgetTester tester, CalculatorState state) async {
+      await tester.pumpWidget(
+        _wrap(
+          ResultSheetContent(
+            state: state,
+            isPro: false,
+            onSave: (_) {},
+            onReset: () {},
+            onVariantChanged: (_) {},
+            onDiscountChanged: (_) {},
+            currency: WorldCurrency.usd,
+          ),
+        ),
+      );
+    }
+
+    testWidgets('NO existe el toggle binario ver/ocultar detalle', (
+      tester,
+    ) async {
+      await pumpSheet(tester, _validState());
+
+      // "Ocultar detalle" solo existia como contraparte del toggle. Si
+      // reaparece, volvio el control duplicado.
+      expect(find.text('Ocultar detalle'), findsNothing);
+      // Y el selector de variante si esta.
+      expect(find.byType(ReportVariantSelector), findsOneWidget);
+    });
+
+    testWidgets('el selector ofrece 2 opciones en express', (tester) async {
+      await pumpSheet(tester, _validState());
+
+      expect(find.text('Cliente'), findsOneWidget);
+      expect(find.text('Detalle'), findsOneWidget);
+    });
+
+    testWidgets('el selector ofrece 2 opciones en advanced', (tester) async {
+      await pumpSheet(
+        tester,
+        _validState().copyWith(mode: CalculatorMode.advanced),
+      );
+
+      expect(find.text('Cliente'), findsOneWidget);
+      expect(find.text('Detalle'), findsOneWidget);
+    });
+
+    testWidgets('la variante interna muestra el desglose en pantalla', (
+      tester,
+    ) async {
+      await pumpSheet(
+        tester,
+        _validState().copyWith(
+          reportVariant: QuoteReportVariant.internalDetail,
+        ),
+      );
+
+      // El desglose electrico/profit era lo que el ojito controlaba.
+      expect(find.text('DETALLE'), findsOneWidget);
+      expect(find.text('Ganancia'), findsOneWidget);
+    });
+
+    testWidgets('la variante de cliente NO muestra el desglose en pantalla', (
+      tester,
+    ) async {
+      await pumpSheet(
+        tester,
+        _validState().copyWith(reportVariant: QuoteReportVariant.clientSimple),
+      );
+
+      expect(find.text('DETALLE'), findsNothing);
+      expect(find.text('Ganancia'), findsNothing);
+    });
+  });
+
   group('ResultSheetContent', () {
     testWidgets('renderiza QuoteImageTemplate con output del state', (
       tester,
@@ -159,7 +239,7 @@ void main() {
             isPro: false,
             onSave: (_) {},
             onReset: () {},
-            onToggleDetail: () {},
+            onVariantChanged: (_) {},
             onDiscountChanged: (_) {},
             currency: WorldCurrency.usd,
           ),
@@ -185,7 +265,7 @@ void main() {
             isPro: false,
             onSave: (_) {},
             onReset: () {},
-            onToggleDetail: () {},
+            onVariantChanged: (_) {},
             onDiscountChanged: (_) {},
             currency: WorldCurrency.usd,
           ),
@@ -220,7 +300,7 @@ void main() {
                     state: state,
                     onSave: (_) => saved++,
                     onReset: () {},
-                    onToggleDetail: () {},
+                    onVariantChanged: (_) {},
                     onDiscountChanged: (_) {},
                   ),
                   child: const Text('open'),
@@ -257,7 +337,7 @@ void main() {
             isPro: false,
             onSave: (_) {},
             onReset: () {},
-            onToggleDetail: () {},
+            onVariantChanged: (_) {},
             onDiscountChanged: (_) {},
             currency: WorldCurrency.usd,
           ),
@@ -288,7 +368,7 @@ void main() {
             isPro: false,
             onSave: (_) {},
             onReset: () {},
-            onToggleDetail: () {},
+            onVariantChanged: (_) {},
             onDiscountChanged: (_) {},
             currency: WorldCurrency.usd,
           ),
@@ -331,7 +411,7 @@ void main() {
             isPro: false,
             onSave: (_) {},
             onReset: () {},
-            onToggleDetail: () {},
+            onVariantChanged: (_) {},
             onDiscountChanged: (_) {},
             currency: WorldCurrency.usd,
             // F3: seam del cropper — en tests no hay plugin nativo. Default:
@@ -542,7 +622,7 @@ void main() {
           label: state.label,
           discountPct:
               state.detailDiscountPct?.toStringAsFixed(0) ?? state.discountPct,
-          showDetail: state.showDetail,
+          variant: state.reportVariant,
           detailMaterialBreakdown: state.detailMaterialBreakdown,
           detailElectricCost: state.detailElectricCost,
           detailLaborCost: state.detailLaborCost,
@@ -592,7 +672,6 @@ void main() {
         label: '',
         materials: const [],
         output: null,
-        showDetail: false,
         detailDiscountPct: null,
         detailElectricCost: null,
         detailBaseCost: null,
@@ -632,7 +711,6 @@ void main() {
           ),
         ],
         output: null,
-        showDetail: false,
         detailDiscountPct: null,
         detailElectricCost: null,
         detailBaseCost: null,
@@ -658,7 +736,6 @@ void main() {
         label: '',
         materials: const [],
         output: null,
-        showDetail: false,
         detailDiscountPct: null,
         detailElectricCost: null,
         detailBaseCost: null,

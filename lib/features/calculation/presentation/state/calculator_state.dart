@@ -3,6 +3,8 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../core/export/pdf_rate_audit.dart';
+import '../../../../core/export/quote_report_variant.dart';
 import '../../../../core/money/decimal_extensions.dart';
 import '../../domain/entities/calculation_output.dart';
 
@@ -102,6 +104,20 @@ class MaterialRow {
         (m / Decimal.fromInt(60)).toDecimal(scaleOnInfinitePrecision: 12);
   }
 
+  /// Tiempo propio de ESTE material en MINUTOS enteros, o null si no aplica.
+  ///
+  /// Se calcula como `hours*60 + minutes` en aritmetica entera en vez de
+  /// derivarlo de [ownTimeDecimal]: `m/60` trunca a 12 decimales y al volver
+  /// a minutos (`x*60`) el resultado queda 369.999... → `toBigInt()` perdia
+  /// 1 minuto (bug: 3h04m + 3h06m mostraba 6h09m en vez de 6h10m).
+  int? get ownTimeMinutes {
+    if (!useOwnTime) return null;
+    final h = CalculatorState.parseDecimal(materialHours) ?? Decimal.zero;
+    final m = CalculatorState.parseDecimal(materialMinutes) ?? Decimal.zero;
+    final mins = (h * Decimal.fromInt(60) + m).round().toBigInt().toInt();
+    return mins > 0 ? mins : null;
+  }
+
   /// El switch de tiempo propio esta ON pero sin horas/minutos informadas.
   /// La UI lo marca como incompleto para que el usuario no olvide llenarlo.
   bool get ownTimeMissing => useOwnTime && ownTimeDecimal == null;
@@ -176,7 +192,8 @@ class CalculatorState {
     required this.materials,
     required this.output,
     this.detailMaterialBreakdown = const <MaterialCostBreakdown>[],
-    this.showDetail = false,
+    this.reportVariant = QuoteReportVariant.clientSimple,
+    this.rateAudit,
     this.detailElectricCost,
     this.detailAmortizationCost,
     this.detailLaborCost,
@@ -200,6 +217,17 @@ class CalculatorState {
     Decimal? subtotalImpression,
     Decimal? lotTotal,
     this.showsBatchLine = false,
+    // === Costos adicionales (v17) — overrides por cotizacion ===
+    // 'auto'/'off' = sin override (usa el calculo legacy o no cobra).
+    // 'pct' = el valor es un porcentaje sobre coreBase.
+    // 'fixed' = el valor es un monto fijo en moneda local.
+    this.modelingMode = 'auto',
+    this.modelingValue = '',
+    this.postprocMode = 'auto',
+    this.postprocValue = '',
+    this.extraCostMode = 'off',
+    this.extraCostValue = '',
+    this.extraCostLabel = '',
   }) : assert(quantity >= 1, 'La cantidad minima es 1.'),
        batchDiscountAmount = batchDiscountAmount ?? Decimal.zero,
        manualDiscountAmount = manualDiscountAmount ?? Decimal.zero,
@@ -254,8 +282,19 @@ class CalculatorState {
   /// Computado en _recompute(). Vacio en modo express.
   final List<MaterialCostBreakdown> detailMaterialBreakdown;
 
-  // === Detail (ojito toggle) ===
-  final bool showDetail;
+  // === Detalle del reporte ===
+
+  /// Variante del reporte (pantalla, PDF, PNG e impresion).
+  ///
+  /// Fuente UNICA de verdad: lo que se ve en pantalla y lo que se exporta
+  /// se deciden juntos, asi no puede quedar desincronizado. Elegir una
+  /// variante interna muestra ademas el desglose en pantalla.
+  final QuoteReportVariant reportVariant;
+
+  /// Parametros de calculo ya resueltos, para la tabla de auditoria del
+  /// reporte interno. Computado en _recompute() desde el mismo input que
+  /// alimenta el engine.
+  final PdfRateAudit? rateAudit;
   final Decimal? detailElectricCost;
   final Decimal? detailAmortizationCost;
   final Decimal? detailLaborCost;
@@ -317,6 +356,27 @@ class CalculatorState {
   /// True cuando hay línea de "Descuento por cantidad (X %)" para mostrar.
   final bool showsBatchLine;
 
+  // === Costos adicionales (v17) ===
+  //
+  // Cada uno de los 3 campos de servicio tiene un modo (`auto`/`off` | `pct`
+  // | `fixed`) y un valor texto libre. `auto` para modelado y postprocesado
+  // significa "usa la formula legacy" (replica el calculo anterior a v17
+  // exactamente); `off` para extras significa "no se cobra nada". `pct`
+  // significa "valor es un porcentaje sobre coreBase"; `fixed` significa
+  // "valor es un monto fijo en moneda local". El estado inicial (`auto` /
+  // `off`, valor vacio) es seguro: cotizaciones nuevas arrancan identicas
+  // a como se calculaban antes de v17.
+  final String modelingMode;
+  final String modelingValue;
+  final String postprocMode;
+  final String postprocValue;
+  final String extraCostMode;
+  final String extraCostValue;
+
+  /// Texto libre que describe los extras ("2 argollas M3", etc.). Aparece
+  /// en el reporte si no esta vacio. No afecta el calculo.
+  final String extraCostLabel;
+
   CalculatorState copyWith({
     CalculatorMode? mode,
     String? printHours,
@@ -331,7 +391,8 @@ class CalculatorState {
     CalculationOutput? output,
     List<MaterialCostBreakdown>? detailMaterialBreakdown,
     bool clearOutput = false,
-    bool? showDetail,
+    QuoteReportVariant? reportVariant,
+    PdfRateAudit? rateAudit,
     Decimal? batchAppliedPercent,
     int? batchAppliedMinQty,
     Decimal? batchDiscountAmount,
@@ -357,6 +418,13 @@ class CalculatorState {
     String? extraMarkupOnMaterials,
     int? quantity,
     int? computeVersion,
+    String? modelingMode,
+    String? modelingValue,
+    String? postprocMode,
+    String? postprocValue,
+    String? extraCostMode,
+    String? extraCostValue,
+    String? extraCostLabel,
   }) => CalculatorState(
     mode: mode ?? this.mode,
     printHours: printHours ?? this.printHours,
@@ -371,7 +439,8 @@ class CalculatorState {
     output: clearOutput ? null : (output ?? this.output),
     detailMaterialBreakdown:
         detailMaterialBreakdown ?? this.detailMaterialBreakdown,
-    showDetail: showDetail ?? this.showDetail,
+    reportVariant: reportVariant ?? this.reportVariant,
+    rateAudit: rateAudit ?? this.rateAudit,
     batchAppliedPercent: clearBatch
         ? null
         : (batchAppliedPercent ?? this.batchAppliedPercent),
@@ -428,6 +497,16 @@ class CalculatorState {
         extraMarkupOnMaterials ?? this.extraMarkupOnMaterials,
     quantity: quantity ?? this.quantity,
     computeVersion: computeVersion ?? this.computeVersion,
+    // v17: override per-cotizacion de los 3 campos de servicio. Pasar null
+    // conserva el valor actual (pattern copyWith de Dart). Si el caller
+    // quiere "borrar" el valor, debe pasar explicitamente `''`.
+    modelingMode: modelingMode ?? this.modelingMode,
+    modelingValue: modelingValue ?? this.modelingValue,
+    postprocMode: postprocMode ?? this.postprocMode,
+    postprocValue: postprocValue ?? this.postprocValue,
+    extraCostMode: extraCostMode ?? this.extraCostMode,
+    extraCostValue: extraCostValue ?? this.extraCostValue,
+    extraCostLabel: extraCostLabel ?? this.extraCostLabel,
   );
 
   /// True si algun material tiene su propio switch de tiempo activado.
@@ -451,8 +530,37 @@ class CalculatorState {
   /// tiempos propios de materiales (exclusion mutua: si hay tiempo propio,
   /// el global se ignora).
   bool get hasTimeInput {
-    if (anyMaterialOwnTime) return materialsOwnTimeDecimal != null;
+    if (anyMaterialOwnTime) return materialsOwnTimeMinutes > 0;
     return _parsePos(printHours) != null || _parsePos(printMinutes) != null;
+  }
+
+  /// Suma de los tiempos propios en MINUTOS enteros. 0 si ninguno aporta.
+  ///
+  /// Aritmetica entera (`h*60 + m`) para no arrastrar el error de
+  /// [materialsOwnTimeDecimal] (ver [MaterialRow.ownTimeMinutes]).
+  int get materialsOwnTimeMinutes {
+    var acc = 0;
+    for (final m in materials) {
+      acc += m.ownTimeMinutes ?? 0;
+    }
+    return acc;
+  }
+
+  /// Tiempo total del form en MINUTOS enteros, con la misma precedencia que
+  /// [totalHoursDecimal]: si algun material tiene tiempo propio, la suma de
+  /// esos; si no, el tiempo global (`printHours*60 + printMinutes`).
+  ///
+  /// Null cuando no hay tiempo (> 0). Es la fuente para mostrar el total en
+  /// h/min sin perder 1 minuto por truncamiento decimal.
+  int? get totalMinutes {
+    if (anyMaterialOwnTime) {
+      final mins = materialsOwnTimeMinutes;
+      return mins > 0 ? mins : null;
+    }
+    final h = CalculatorState.parseDecimal(printHours) ?? Decimal.zero;
+    final m = CalculatorState.parseDecimal(printMinutes) ?? Decimal.zero;
+    final mins = (h * Decimal.fromInt(60) + m).round().toBigInt().toInt();
+    return mins > 0 ? mins : null;
   }
 
   /// True si el form completo es valido y se puede calcular output.
@@ -544,6 +652,16 @@ class CalculatorState {
     }
   }
 
+  /// Convierte horas decimales a MINUTOS enteros redondeando al minuto mas
+  /// cercano (half-up).
+  ///
+  /// Usar esto en vez de `(horas * 60).toBigInt()`: `toBigInt()` trunca y
+  /// convierte 6.166666666666 h en 369 min (6h09m) cuando el valor real es
+  /// 6h10m. El redondeo recupera el minuto perdido por la representacion
+  /// decimal de `m/60`.
+  static int decimalHoursToMinutes(Decimal hours) =>
+      (hours * Decimal.fromInt(60)).round().toBigInt().toInt();
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -560,7 +678,8 @@ class CalculatorState {
         _listEq(materials, other.materials) &&
         output == other.output &&
         _listEqBD(detailMaterialBreakdown, other.detailMaterialBreakdown) &&
-        showDetail == other.showDetail &&
+        reportVariant == other.reportVariant &&
+        rateAudit == other.rateAudit &&
         detailElectricCost == other.detailElectricCost &&
         detailAmortizationCost == other.detailAmortizationCost &&
         detailLaborCost == other.detailLaborCost &&
@@ -583,6 +702,13 @@ class CalculatorState {
         manualDiscountAmount == other.manualDiscountAmount &&
         subtotalImpression == other.subtotalImpression &&
         lotTotal == other.lotTotal &&
+        modelingMode == other.modelingMode &&
+        modelingValue == other.modelingValue &&
+        postprocMode == other.postprocMode &&
+        postprocValue == other.postprocValue &&
+        extraCostMode == other.extraCostMode &&
+        extraCostValue == other.extraCostValue &&
+        extraCostLabel == other.extraCostLabel &&
         showsBatchLine == other.showsBatchLine;
   }
 
@@ -619,7 +745,8 @@ class CalculatorState {
     Object.hashAll(materials),
     output,
     Object.hashAll(detailMaterialBreakdown),
-    showDetail,
+    reportVariant,
+    rateAudit,
     detailElectricCost,
     detailAmortizationCost,
     detailLaborCost,
@@ -643,5 +770,12 @@ class CalculatorState {
     subtotalImpression,
     lotTotal,
     showsBatchLine,
+    modelingMode,
+    modelingValue,
+    postprocMode,
+    postprocValue,
+    extraCostMode,
+    extraCostValue,
+    extraCostLabel,
   ]);
 }

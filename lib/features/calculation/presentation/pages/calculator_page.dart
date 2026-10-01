@@ -228,6 +228,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         final notifier = ref.read(calculatorNotifierProvider.notifier);
         await notifier.loadFromCalculation(widget.prefillCalc!);
         if (!mounted) return;
+        // Garantiza el total calculado ni bien se entra (Editar/Reusar), sin
+        // esperar a que el usuario toque un campo.
+        notifier.recompute();
+        if (!mounted) return;
         _syncControllersFromState(ref.read(calculatorNotifierProvider));
         _rebuildAdvancedRows();
         _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
@@ -609,12 +613,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   void _syncGlobalTimeFields(CalculatorState s) {
     String h;
     String m;
-    final own = s.anyMaterialOwnTime ? s.materialsOwnTimeDecimal : null;
-    if (own != null) {
-      final totalMinutes = (own * Decimal.fromInt(60)).toBigInt();
-      final hh = totalMinutes ~/ BigInt.from(60);
-      final mm = totalMinutes.remainder(BigInt.from(60)).toInt();
-      h = hh.toString();
+    // Minutos enteros (no `materialsOwnTimeDecimal * 60`): evita perder 1 min
+    // por truncamiento decimal (3h04m + 3h06m = 370 min, no 369).
+    final mins = s.totalMinutes;
+    if (s.anyMaterialOwnTime && mins != null) {
+      h = (mins ~/ 60).toString();
+      final mm = mins % 60;
       m = mm == 0 ? '' : mm.toString();
     } else {
       h = s.printHours;
@@ -1005,8 +1009,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         state: state,
         onSave: _showSaveDialog,
         onReset: _resetAll,
-        onToggleDetail: () =>
-            ref.read(calculatorNotifierProvider.notifier).toggleDetail(),
+        onVariantChanged: (variant) => ref
+            .read(calculatorNotifierProvider.notifier)
+            .setReportVariant(variant),
         onDiscountChanged: (value) {
           ref.read(calculatorNotifierProvider.notifier).setDiscountPct(value);
           if (_discountCtrl.text != value) {

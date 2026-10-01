@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 
+import '../../../core/export/pdf_rate_audit.dart';
 import 'entities/calculation_input.dart';
 import 'entities/calculation_output.dart';
 import 'entities/material_input.dart';
@@ -22,21 +23,52 @@ class MaterialSnapshot {
 
 /// Motor de calculo de cotizaciones. **Pure Dart, sin dependencias de Flutter**.
 ///
-/// Formula completa (sin amortizacion en costo):
+/// Formula completa (v17 — incluye los 3 campos de servicio con modo % / fijo):
 ///
-///   materialCost       = Σ(weightGrams[i] * pricePerBobbin[i] / gramsPerBobbin[i])
-///   electricCost       = printerWatts * totalHours * kwhRate / 1000
-///   laborCost          = totalHours * laborRate
-///   postProcessCost    = materialCost * postProcessRate / 100
-///   baseCost           = materialCost + electricCost + laborCost + postProcessCost
-///   failureCost        = baseCost * failureRate / 100
-///   costWithFailure    = baseCost + failureCost
-///   markupCost         = materialCost * markupOnMaterials / 100
-///   totalBeforeProfit  = costWithFailure + markupCost
-///   profitAmount       = totalBeforeProfit * profitBase / 100
-///   totalFinal         = totalBeforeProfit + profitAmount
-///   discountAmount     = totalFinal * discountPercentage / 100
-///   totalPrice         = max(totalFinal - discountAmount, minimumCharge)
+/// ```
+/// materialCost   = Σ(weightGrams[i] * pricePerBobbin[i] / gramsPerBobbin[i])
+/// electricCost   = printerWatts * totalHours * kwhRate / 1000
+/// amortCost      = amortizationPerHour * totalHours
+/// coreBase       = materialCost + electricCost + amortCost
+/// modelingCost   = resolveService(modelingMode, coreBase, modelingPct,
+///                   modelingFixed, hours, laborRate)
+/// postProcCost   = resolveService(postprocMode, coreBase, postprocPct,
+///                   postprocFixed, materialCost, postProcessRate)
+/// extrasCost     = resolveExtras(extraCostMode, coreBase, extraCostPct,
+///                   extraCostFixed)
+/// baseCost       = coreBase + modelingCost + postProcCost + extrasCost
+/// failureCost    = baseCost * failureRate / 100
+/// markupCost     = materialCost * markupOnMaterials / 100
+/// totalBeforeProfit = baseCost + failureCost + markupCost
+/// profitAmount   = totalBeforeProfit * profitBase / 100
+/// totalFinal     = totalBeforeProfit + profitAmount
+/// discountAmount = totalFinal * discountPercentage / 100
+/// totalPrice     = max(totalFinal - discountAmount, minimumCharge)
+/// ```
+///
+/// `resolveService` por campo:
+/// - `auto` (modelado / postprocesado): replica la formula legacy.
+///     - modelado: `hours * laborRate`.
+///     - postprocesado: `materialCost * postProcessRate / 100`.
+/// - `pct`: `coreBase * pct / 100`.
+/// - `fixed`: monto literal del campo.
+/// - cualquier otro (incluido `off`): 0.
+///
+/// **Equivalencia legacy**: con `modelingMode=auto`, `postprocMode=auto`,
+/// `extraCostMode=off`, y los campos pct/fixed en 0, el calculo produce
+/// los MISMOS numeros que la formula pre-v17 (con la excepcion de
+/// `amortCost` que ahora SI esta en `baseCost` para alinear con
+/// `computeFromSnapshot` — fix incidental del bug live vs snapshot).
+///
+/// **Reglas de borde**:
+/// - Si no hay materiales, `materialCost = 0`.
+/// - Si `discountPercentage = 0`, `discountAmount = 0`.
+/// - Si descuento > 100%, `totalPrice` quedaria negativo (caso borde, se
+///   preserva para que la UI lo maneje).
+/// - Todos los parametros con default 0 no afectan el calculo.
+/// - `minimumCharge > 0`: piso del precio final (despues del descuento).
+///
+/// **Precision**: todo en `Decimal`. Prohibido `double` en este archivo.
 ///
 /// **Reglas de borde**:
 /// - Si no hay materiales, `materialCost = 0`.
@@ -58,12 +90,16 @@ class CalculationEngine {
   /// Divisor para pasar de % a fraccion.
   static final Decimal _pct = Decimal.fromInt(100);
 
-  /// Amortizacion fija por hora de la impresora (para estadisticas).
-  ///
-  /// `costo / vida_util_horas`, escala interna 6. Retorna `null` si la vida
-  /// util es <= 0 o el costo no es positivo. NO se incluye en el costo
-  /// de la cotizacion, solo se usa para metricas de depreciacion.
-  static Decimal? amortizationPerHour({
+  /// Amortizacion fija por hora de la impresora.
+///
+/// `costo / vida_util_horas`, escala interna 6. Retorna `null` si la vida
+/// util es <= 0 o el costo no es positivo.
+///
+/// v17: ahora SI entra en `coreBase` y por lo tanto en el costo de la
+/// cotizacion (antes solo se usaba para metricas). El cambio alinea el
+/// calculo live con `computeFromSnapshot` (que ya lo incluia en
+/// `baseCost`) y evita la inconsistencia entre live y historial.
+static Decimal? amortizationPerHour({
     required Decimal purchaseCost,
     required int usefulLifeHours,
   }) {
@@ -87,16 +123,59 @@ class CalculationEngine {
               .toDecimal()
         : Decimal.zero;
 
-    // Mano de obra
-    final laborCost = input.totalHours * input.laborRate;
-
-    // Post-procesado (% del costo de materiales)
-    final postProcessCost = input.postProcessRate > Decimal.zero
-        ? (materialCost * input.postProcessRate / _pct).toDecimal()
+    // Amortizacion de impresora (costo por hora * horas). v17: ahora SI
+    // entra en `coreBase` para alinear con `computeFromSnapshot`. Antes el
+    // live ignoraba este termino en `baseCost` (mostraba 0 en la UI aunque
+    // `computeFromSnapshot` lo incluia), lo que producia dos totales
+    // distintos entre live e historial para la misma cotizacion.
+    final amortCost =
+        input.amortizationPerHour != null && input.totalHours > Decimal.zero
+        ? (input.amortizationPerHour! * input.totalHours)
         : Decimal.zero;
 
-    // Base (sin amortizacion — la amortizacion es solo para estadisticas)
-    final baseCost = materialCost + electricCost + laborCost + postProcessCost;
+    // coreBase = costo automatico (no decision del usuario). Es la base
+    // sobre la que se calculan los 3 servicios en modo `pct`.
+    final coreBase = materialCost + electricCost + amortCost;
+
+    // === 3 campos de servicio con modo % / fijo ===
+    //
+    // Modelo (legacy equivalence): cada uno de los 2 que existian
+    // pre-v17 (modelado, postprocesado) tiene un modo `auto` que reproduce
+    // la formula legacy exactamente cuando `pct`/`fixed` estan en 0. El
+    // campo nuevo (extras) arranca en `off` y no aporta nada. Asi, las
+    // cotizaciones nuevas arrancan identicas a como se calculaban antes
+    // de v17.
+    final modelingCost = _resolveService(
+      mode: input.modelingMode,
+      coreBase: coreBase,
+      pct: input.modelingPct,
+      fixed: input.modelingFixed,
+      legacyAmount: input.totalHours * input.laborRate,
+    );
+    final postProcCost = _resolveService(
+      mode: input.postprocMode,
+      coreBase: coreBase,
+      pct: input.postprocPct,
+      fixed: input.postprocFixed,
+      // Legacy: postProcess era `materialCost * postProcessRate / 100`
+      // SOLO si `postProcessRate > 0`. Replicamos para equivalencia exacta.
+      legacyAmount: input.postProcessRate > Decimal.zero
+          ? (materialCost * input.postProcessRate / _pct).toDecimal()
+          : Decimal.zero,
+    );
+    final extrasCost = _resolveService(
+      mode: input.extraCostMode,
+      coreBase: coreBase,
+      pct: input.extraCostPct,
+      fixed: input.extraCostFixed,
+      // No hay legacy para extras: el caller debe pasar `off` (o un
+      // legacyAmount en 0, que es lo que hace este default).
+      legacyAmount: Decimal.zero,
+    );
+
+    // Base: coreBase + los 3 servicios. Falla / markup / profit / descuento
+    // se aplican sobre este total, IGUAL que antes.
+    final baseCost = coreBase + modelingCost + postProcCost + extrasCost;
 
     // Tasa de falla (% del base)
     final failureCost = input.failureRate > Decimal.zero
@@ -135,9 +214,9 @@ class CalculationEngine {
     return CalculationOutput(
       materialCost: materialCost,
       electricCost: electricCost,
-      amortizationCost: Decimal.zero, // Solo para estadisticas, no en costo
-      laborCost: laborCost,
-      postProcessCost: postProcessCost,
+      amortizationCost: amortCost,
+      laborCost: modelingCost,
+      postProcessCost: postProcCost,
       baseCost: baseCost,
       failureCost: failureCost,
       costWithFailure: costWithFailure,
@@ -148,7 +227,41 @@ class CalculationEngine {
       discountAmount: discountAmount,
       totalPrice: totalPrice,
       totalOriginal: totalFinal,
+      // v17: extras en su propio slot (no se reusan campos existentes para
+      // evitar acoplamiento con UI/reportes legacy). El reporte interno
+      // lee directo este campo.
+      extrasCost: extrasCost,
     );
+  }
+
+  /// Resuelve el monto de un campo de servicio segun su modo.
+  ///
+  /// - `pct`: `coreBase * pct / 100`.
+  /// - `fixed`: monto literal.
+  /// - `auto`: replica la formula legacy (pasada por el caller en
+  ///   [legacyAmount]). Si el caller no conoce el legacy, pasa 0.
+  /// - cualquier otro modo (incluido `off`): 0.
+  ///
+  /// Privado: la politica vive en [CalculationInput.modelingMode] etc.
+  static Decimal _resolveService({
+    required ServiceCostMode mode,
+    required Decimal coreBase,
+    required Decimal pct,
+    required Decimal fixed,
+    required Decimal legacyAmount,
+  }) {
+    if (mode.isPct) {
+      if (pct <= Decimal.zero) return Decimal.zero;
+      return (coreBase * pct / Decimal.fromInt(100)).toDecimal();
+    }
+    if (mode.isFixed) {
+      return fixed < Decimal.zero ? Decimal.zero : fixed;
+    }
+    if (mode.isAuto) {
+      return legacyAmount < Decimal.zero ? Decimal.zero : legacyAmount;
+    }
+    // off o cualquier modo desconocido: no se cobra.
+    return Decimal.zero;
   }
 
   /// Reconstruye [CalculationOutput] desde datos guardados en DB (snapshots)
@@ -200,28 +313,33 @@ class CalculationEngine {
     final materialCost = Decimal.parse(materialCostSnapshot.toStringAsFixed(2));
     final hours = Decimal.parse(totalHours.toStringAsFixed(2));
 
-    // Resolver snapshots con fallback a settings actuales
-    final kwhRate = kwhRateSnapshot > 0
-        ? Decimal.parse(kwhRateSnapshot.toStringAsFixed(2))
-        : fallbackKwhRate;
-    final watts = printerWattsSnapshot > 0
-        ? printerWattsSnapshot.toInt()
-        : fallbackPrinterWatts;
-    final laborRate = laborRateSnapshot > 0
-        ? Decimal.parse(laborRateSnapshot.toStringAsFixed(2))
-        : fallbackLaborRate;
-    final postProcessRate = postProcessRateSnapshot > 0
-        ? Decimal.parse(postProcessRateSnapshot.toStringAsFixed(2))
-        : fallbackPostProcessRate;
-    final failureRate = failureRateSnapshot > 0
-        ? Decimal.parse(failureRateSnapshot.toStringAsFixed(2))
-        : fallbackFailureRate;
-    final markupOnMaterials = markupOnMaterialsSnapshot > 0
-        ? Decimal.parse(markupOnMaterialsSnapshot.toStringAsFixed(2))
-        : fallbackMarkupOnMaterials;
-    final profitBase = profitBaseSnapshot > 0
-        ? Decimal.parse(profitBaseSnapshot.toStringAsFixed(2))
-        : fallbackProfitBase;
+    // Resolver snapshots con fallback a settings actuales. Delegado a
+    // [resolveRates] para que el reporte PDF pueda imprimir las MISMAS tasas
+    // que uso este calculo (sin duplicar la politica snapshot -> fallback).
+    final rates = resolveRates(
+      kwhRateSnapshot: kwhRateSnapshot,
+      laborRateSnapshot: laborRateSnapshot,
+      postProcessRateSnapshot: postProcessRateSnapshot,
+      failureRateSnapshot: failureRateSnapshot,
+      markupOnMaterialsSnapshot: markupOnMaterialsSnapshot,
+      profitBaseSnapshot: profitBaseSnapshot,
+      fallbackKwhRate: fallbackKwhRate,
+      fallbackLaborRate: fallbackLaborRate,
+      fallbackPostProcessRate: fallbackPostProcessRate,
+      fallbackFailureRate: fallbackFailureRate,
+      fallbackMarkupOnMaterials: fallbackMarkupOnMaterials,
+      fallbackProfitBase: fallbackProfitBase,
+      fallbackPrinterWatts: fallbackPrinterWatts,
+      printerWattsSnapshot: printerWattsSnapshot,
+      amortizationCostSnapshot: amortizationCostSnapshot,
+    );
+    final kwhRate = rates.kwhRate;
+    final watts = rates.printerWatts;
+    final laborRate = rates.laborRate;
+    final postProcessRate = rates.postProcessRate;
+    final failureRate = rates.failureRate;
+    final markupOnMaterials = rates.markupOnMaterials;
+    final profitBase = rates.profitBase;
 
     // Electricidad
     final electricCost = hours > Decimal.zero && watts > 0
@@ -229,9 +347,7 @@ class CalculationEngine {
         : Decimal.zero;
 
     // Amortizacion desde snapshot
-    final amortCost = amortizationCostSnapshot > 0
-        ? Decimal.parse(amortizationCostSnapshot.toStringAsFixed(2))
-        : Decimal.zero;
+    final amortCost = rates.amortizationCost;
 
     // Mano de obra
     final laborCost = hours * laborRate;
@@ -288,6 +404,66 @@ class CalculationEngine {
       discountAmount: discountOnTotalFinal * qtyD,
       totalPrice: totalPrice * qtyD,
       totalOriginal: totalFinal * qtyD,
+    );
+  }
+
+  /// Resuelve las tasas de una cotizacion aplicando la politica
+  /// **snapshot -> fallback a Settings**.
+  ///
+  /// Politica (identica a la que aplicaba inline en [computeFromSnapshot] antes
+  /// de este refactor):
+  /// - snapshot > 0 gana (hay valor guardado con la cotizacion);
+  /// - snapshot == 0 (dato legacy o no configurado) cae al valor actual de
+  ///   Settings.
+  ///
+  /// Se expone publicamente para que el reporte PDF imprima la tabla de
+  /// parametros con las **mismas** tasas que uso el calculo. Si el PDF
+  /// resolviera sus propias tasas, la tabla podria contradecir al desglose.
+  ///
+  /// **No escala por [quantity]**: los montos que dependen de la cantidad se
+  /// escalan en [computeFromSnapshot].
+  static ResolvedRates resolveRates({
+    required double kwhRateSnapshot,
+    required double laborRateSnapshot,
+    required double postProcessRateSnapshot,
+    required double failureRateSnapshot,
+    required double markupOnMaterialsSnapshot,
+    required double profitBaseSnapshot,
+    required Decimal fallbackKwhRate,
+    required Decimal fallbackLaborRate,
+    required Decimal fallbackPostProcessRate,
+    required Decimal fallbackFailureRate,
+    required Decimal fallbackMarkupOnMaterials,
+    required Decimal fallbackProfitBase,
+    required int fallbackPrinterWatts,
+    double amortizationCostSnapshot = 0,
+    double printerWattsSnapshot = 0,
+  }) {
+    return ResolvedRates(
+      kwhRate: kwhRateSnapshot > 0
+          ? Decimal.parse(kwhRateSnapshot.toStringAsFixed(2))
+          : fallbackKwhRate,
+      printerWatts: printerWattsSnapshot > 0
+          ? printerWattsSnapshot.toInt()
+          : fallbackPrinterWatts,
+      laborRate: laborRateSnapshot > 0
+          ? Decimal.parse(laborRateSnapshot.toStringAsFixed(2))
+          : fallbackLaborRate,
+      postProcessRate: postProcessRateSnapshot > 0
+          ? Decimal.parse(postProcessRateSnapshot.toStringAsFixed(2))
+          : fallbackPostProcessRate,
+      failureRate: failureRateSnapshot > 0
+          ? Decimal.parse(failureRateSnapshot.toStringAsFixed(2))
+          : fallbackFailureRate,
+      markupOnMaterials: markupOnMaterialsSnapshot > 0
+          ? Decimal.parse(markupOnMaterialsSnapshot.toStringAsFixed(2))
+          : fallbackMarkupOnMaterials,
+      profitBase: profitBaseSnapshot > 0
+          ? Decimal.parse(profitBaseSnapshot.toStringAsFixed(2))
+          : fallbackProfitBase,
+      amortizationCost: amortizationCostSnapshot > 0
+          ? Decimal.parse(amortizationCostSnapshot.toStringAsFixed(2))
+          : Decimal.zero,
     );
   }
 

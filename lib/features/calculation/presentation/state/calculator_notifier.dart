@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/export/pdf_rate_audit.dart';
+import '../../../../core/export/quote_report_variant.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart' as storage;
 import '../../../../features/settings/domain/settings.dart';
@@ -94,10 +96,33 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     }
   }
 
+  /// Fuerza un recalculo del form actual si es valido. Idempotente.
+  ///
+  /// La pagina lo llama **despues del prefill** ("Editar"/"Reusar") para
+  /// garantizar que el total quede calculado ni bien se entra, sin esperar a
+  /// que el usuario toque un campo.
+  void recompute() {
+    if (state.isValid) {
+      state = _recompute(state);
+    }
+  }
+
   // === Mode ===
 
   void setMode(CalculatorMode mode) {
-    state = _recompute(state.copyWith(mode: mode));
+    if (state.mode == mode) return;
+    // El selector solo ofrece 2 variantes por modo. Al cambiar de express a
+    // avanzado (o al reves) hay que arrastrar la eleccion al eje nuevo: si no,
+    // quedaria seleccionada una variante que la UI ya no muestra y el usuario
+    // creeria estar viendo otra cosa.
+    state = _recompute(
+      state.copyWith(
+        mode: mode,
+        reportVariant: state.reportVariant.forMode(
+          isAdvanced: mode == CalculatorMode.advanced,
+        ),
+      ),
+    );
   }
 
   // === Setters express ===
@@ -160,6 +185,58 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
   void setExtraMarkupOnMaterials(String value) {
     state = _recompute(state.copyWith(extraMarkupOnMaterials: value));
+  }
+
+  // === v17: setters de los 3 campos de servicio con modo % / fijo ===
+
+  /// Cambia el modo del campo "Modelado y diseño" (`auto` | `pct` | `fixed`).
+  void setModelingMode(String mode) {
+    final next = switch (mode) {
+      'pct' => 'pct',
+      'fixed' => 'fixed',
+      _ => 'auto',
+    };
+    state = _recompute(state.copyWith(modelingMode: next));
+  }
+
+  /// Cambia el valor del modelado. Se interpreta segun el modo activo.
+  void setModelingValue(String value) {
+    state = _recompute(state.copyWith(modelingValue: value));
+  }
+
+  /// Cambia el modo del campo "Postprocesado" (`auto` | `pct` | `fixed`).
+  void setPostprocMode(String mode) {
+    final next = switch (mode) {
+      'pct' => 'pct',
+      'fixed' => 'fixed',
+      _ => 'auto',
+    };
+    state = _recompute(state.copyWith(postprocMode: next));
+  }
+
+  /// Cambia el valor del postprocesado.
+  void setPostprocValue(String value) {
+    state = _recompute(state.copyWith(postprocValue: value));
+  }
+
+  /// Cambia el modo del campo "Extras" (`off` | `pct` | `fixed`).
+  void setExtraCostMode(String mode) {
+    final next = switch (mode) {
+      'pct' => 'pct',
+      'fixed' => 'fixed',
+      _ => 'off',
+    };
+    state = _recompute(state.copyWith(extraCostMode: next));
+  }
+
+  /// Cambia el valor de los extras.
+  void setExtraCostValue(String value) {
+    state = _recompute(state.copyWith(extraCostValue: value));
+  }
+
+  /// Cambia la descripcion libre de los extras (argollas, pegamento, etc.).
+  void setExtraCostLabel(String label) {
+    state = state.copyWith(extraCostLabel: label);
   }
 
   /// Actualiza la cantidad de unidades del lote (>= 1).
@@ -292,10 +369,27 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     );
   }
 
-  /// Alterna el detalle secreto (ojito) con desglose electrico/profit.
-  /// Los valores detallados ya estan computados en _recompute().
-  void toggleDetail() {
-    state = state.copyWith(showDetail: !state.showDetail);
+  /// Fija la variante del reporte (pantalla, PDF, PNG e impresion).
+  ///
+  /// Rechaza una variante que no pertenece al modo actual: el selector solo
+  /// ofrece 2, y aceptar la otra dejaria el estado en un valor invisible para
+  /// el usuario.
+  void setReportVariant(QuoteReportVariant variant) {
+    final allowed = QuoteReportVariant.optionsForMode(
+      isAdvanced: state.mode == CalculatorMode.advanced,
+    );
+    if (!allowed.contains(variant) || state.reportVariant == variant) return;
+    state = state.copyWith(reportVariant: variant);
+  }
+
+  /// Avanza a la siguiente variante del eje actual (cliente <-> detalle).
+  void cycleReportVariant() {
+    final allowed = QuoteReportVariant.optionsForMode(
+      isAdvanced: state.mode == CalculatorMode.advanced,
+    );
+    setReportVariant(
+      allowed[(allowed.indexOf(state.reportVariant) + 1) % allowed.length],
+    );
   }
 
   /// Carga el state desde una cotizacion guardada (para "Reusar").
@@ -318,7 +412,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     //   derivamos (best-effort: 1.55h -> 1h 33min).
     //
     // Estrategia: convertir total a minutos totales, separar.
-    final totalMinutesInt = (total * Decimal.fromInt(60)).toBigInt().toInt();
+    final totalMinutesInt = CalculatorState.decimalHoursToMinutes(total);
     int minutes;
     Decimal hours;
     if (calc.printMinutes > 0) {
@@ -358,6 +452,16 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           materials: const <MaterialRow>[],
           output: null,
           quantity: calc.quantity < 1 ? 1 : calc.quantity,
+          // v17: restaurar overrides per-cotizacion (modelado/postproc/extras).
+          // Filas pre-v17 quedan con los defaults 'auto'/'off' = replica
+          // exactamente el calculo legacy.
+          modelingMode: calc.modelingMode,
+          modelingValue: _hoursText(calc.modelingValue),
+          postprocMode: calc.postprocMode,
+          postprocValue: _hoursText(calc.postprocValue),
+          extraCostMode: calc.extraMode,
+          extraCostValue: _hoursText(calc.extraValue),
+          extraCostLabel: calc.extraLabel,
         ),
       );
       return;
@@ -394,6 +498,13 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         materials: rows,
         output: null,
         quantity: calc.quantity < 1 ? 1 : calc.quantity,
+        modelingMode: calc.modelingMode,
+        modelingValue: _hoursText(calc.modelingValue),
+        postprocMode: calc.postprocMode,
+        postprocValue: _hoursText(calc.postprocValue),
+        extraCostMode: calc.extraMode,
+        extraCostValue: _hoursText(calc.extraValue),
+        extraCostLabel: calc.extraLabel,
       ),
     );
   }
@@ -624,6 +735,21 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         minimumCharge: input.minimumCharge,
       );
 
+      // Parametros de calculo para el reporte interno. Se derivan del input YA
+      // resuelto (snapshot -> fallback), que es la misma fuente que usa el
+      // engine: asi la tabla de auditoria no puede desincronizarse del
+      // desglose que imprime al lado.
+      final rates = ResolvedRates(
+        kwhRate: input.kwhRate,
+        printerWatts: input.printerWatts,
+        laborRate: input.laborRate,
+        postProcessRate: input.postProcessRate,
+        failureRate: input.failureRate,
+        markupOnMaterials: input.markupOnMaterials,
+        profitBase: input.profitBase,
+        amortizationCost: input.amortizationPerHour ?? Decimal.zero,
+      );
+
       return next.copyWith(
         output: output,
         detailMaterialBreakdown: breakdown,
@@ -643,6 +769,14 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         manualDiscountAmount: batch.manualDiscountAmount,
         subtotalImpression: batch.subtotalImpression,
         lotTotal: batch.lotTotal,
+        rateAudit: PdfRateAudit.fromRates(
+          rates: rates,
+          profitAmount: output.profitAmount,
+          totalBeforeProfit: output.totalBeforeProfit,
+          baseCost: output.baseCost,
+          totalFinal: output.totalFinal,
+          totalHours: input.totalHours,
+        ),
         showsBatchLine: batch.appliedTier != null,
         computeVersion: version,
       );
@@ -759,6 +893,24 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           Decimal.zero,
       minimumCharge: settings.minimumCharge,
       amortizationPerHour: amortizationPerHour,
+      // === v17: 3 campos de servicio con modo % / fijo ===
+      // Default `auto` replica la formula legacy; `off` no cobra. El valor
+      // en `modelingValue` se interpreta segun el modo (pct o monto fijo).
+      modelingMode: ServiceCostMode.parse(s.modelingMode),
+      modelingPct:
+          CalculatorState.parseDecimal(s.modelingValue) ?? Decimal.zero,
+      modelingFixed:
+          CalculatorState.parseDecimal(s.modelingValue) ?? Decimal.zero,
+      postprocMode: ServiceCostMode.parse(s.postprocMode),
+      postprocPct:
+          CalculatorState.parseDecimal(s.postprocValue) ?? Decimal.zero,
+      postprocFixed:
+          CalculatorState.parseDecimal(s.postprocValue) ?? Decimal.zero,
+      extraCostMode: ServiceCostMode.parse(s.extraCostMode),
+      extraCostPct:
+          CalculatorState.parseDecimal(s.extraCostValue) ?? Decimal.zero,
+      extraCostFixed:
+          CalculatorState.parseDecimal(s.extraCostValue) ?? Decimal.zero,
     );
   }
 
@@ -812,6 +964,20 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       pieceImageBlob: const Value.absent(),
       batchDiscountPercent: const Value.absent(),
       batchDiscountAmount: const Value.absent(),
+      // === v17: persistir los 3 overrides per-cotizacion ===
+      modelingMode: Value(state.modelingMode),
+      modelingValue: Value(
+        CalculatorState.parseDecimal(state.modelingValue)?.toDouble() ?? 0,
+      ),
+      postprocMode: Value(state.postprocMode),
+      postprocValue: Value(
+        CalculatorState.parseDecimal(state.postprocValue)?.toDouble() ?? 0,
+      ),
+      extraMode: Value(state.extraCostMode),
+      extraValue: Value(
+        CalculatorState.parseDecimal(state.extraCostValue)?.toDouble() ?? 0,
+      ),
+      extraLabel: Value(state.extraCostLabel),
     );
   }
 

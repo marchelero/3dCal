@@ -16,6 +16,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:tresdcal/core/export/pdf_export.dart';
+import 'package:tresdcal/core/export/quote_report_variant.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 
 CalculationOutput _output() => CalculationOutput.simple(
@@ -289,9 +290,9 @@ void main() {
     );
   });
 
-  group('buildQuotePdfBytes — showDetail mode (visibilidad de desglose)', () {
+  group('buildQuotePdfBytes - modo variante (visibilidad de desglose)', () {
     test(
-      'showDetail=false genera PDF basico (mas ligero por omitir desglose)',
+      'internalDetail pesa mas que clientSimple (incluye desglose de costos)',
       () async {
         final fullBytes = await buildQuotePdfBytes(
           isPro: true,
@@ -299,7 +300,7 @@ void main() {
           materials: const [],
           totalHours: Decimal.zero,
           discountPct: Decimal.zero,
-          showDetail: true,
+          variant: QuoteReportVariant.internalDetail,
           regularFont: helv,
           boldFont: helvBold,
         );
@@ -310,7 +311,7 @@ void main() {
           materials: const [],
           totalHours: Decimal.zero,
           discountPct: Decimal.zero,
-          showDetail: false,
+          variant: QuoteReportVariant.clientSimple,
           regularFont: helv,
           boldFont: helvBold,
         );
@@ -319,7 +320,7 @@ void main() {
         expect(
           basicBytes.length,
           lessThan(fullBytes.length),
-          reason: 'PDF sin desglose (showDetail=false) debe ser mas ligero',
+          reason: 'PDF de cliente (sin desglose) debe ser mas ligero',
         );
       },
     );

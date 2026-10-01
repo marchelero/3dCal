@@ -130,6 +130,42 @@ class Calculations extends Table {
   /// (regla del 95 % en N=1 o sin escalones).
   TextColumn get batchDiscountAmount => text().nullable()();
 
+  // === v17 — Costos adicionales con modo % / fijo ===
+
+  /// Modo del campo "Modelado y diseño" (v17).
+  ///
+  /// - `auto`  : replica la formula legacy (`hours * laborRate`). Default
+  ///             para registros pre-v17: la migracion aplica este valor y
+  ///             los calculos existentes dan los mismos numeros.
+  /// - `pct`   : el campo se cobra como porcentaje sobre `coreBase`.
+  /// - `fixed` : el campo se cobra como monto fijo en moneda local.
+  TextColumn get modelingMode =>
+      text().withDefault(const Constant('auto'))();
+
+  /// Valor numerico del modelado. Si `mode = pct` es el porcentaje (0..∞);
+  /// si `mode = fixed` es el monto fijo. `0` cuando `mode = auto`.
+  RealColumn get modelingValue => real().withDefault(const Constant(0))();
+
+  /// Modo del campo "Postprocesado" (v17). Misma semantica que [modelingMode].
+  TextColumn get postprocMode =>
+      text().withDefault(const Constant('auto'))();
+
+  /// Valor numerico del postprocesado. Misma semantica que [modelingValue].
+  RealColumn get postprocValue => real().withDefault(const Constant(0))();
+
+  /// Modo del campo "Extras" (v17). Igual semantica que [modelingMode] pero
+  /// con default `off` en lugar de `auto` (no hay formula legacy para
+  /// extras; "off" significa que no se cobra nada).
+  TextColumn get extraMode => text().withDefault(const Constant('off'))();
+
+  /// Valor numerico de los extras.
+  RealColumn get extraValue => real().withDefault(const Constant(0))();
+
+  /// Texto libre que describe los extras (ej: "2 argollas M3", "pegamento
+  /// cianoacrilato 5g"). Aparece en el reporte si no esta vacio. Default
+  /// vacio para registros pre-v17 y para extras desactivados.
+  TextColumn get extraLabel => text().withDefault(const Constant(''))();
+
   @override
   List<Set<Column>> get uniqueKeys => [];
 }

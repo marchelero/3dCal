@@ -7,6 +7,9 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/export/pdf_export.dart';
+import '../../../../core/export/pdf_rate_audit.dart';
+import '../../../../core/export/quote_report_variant.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/theme/app_radii.dart';
@@ -15,7 +18,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../domain/entities/calculation_output.dart';
 import '../state/calculator_state.dart' show MaterialCostBreakdown;
-import 'calc_meta.dart' show MaterialMetaItem;
 import 'detail_section.dart';
 
 /// Template visual para la imagen compartida de la cotizacion.
@@ -32,7 +34,7 @@ class QuoteImageTemplate extends StatelessWidget {
     required this.output,
     required this.label,
     required this.discountPct,
-    required this.showDetail,
+    this.variant = QuoteReportVariant.clientSimple,
     required this.detailMaterialBreakdown,
     required this.detailElectricCost,
     this.detailAmortizationCost,
@@ -54,6 +56,8 @@ class QuoteImageTemplate extends StatelessWidget {
     this.batchDiscountAmount,
     this.lotTotal,
     this.manualDiscountAmount,
+    this.rateAudit,
+    this.isSold,
     this.materialMetaBreakdown = const [],
     super.key,
   });
@@ -63,7 +67,11 @@ class QuoteImageTemplate extends StatelessWidget {
   final CalculationOutput output;
   final String label;
   final String discountPct;
-  final bool showDetail;
+
+  /// Variante del reporte. Mismo enum que el PDF: la imagen y el PDF tienen
+  /// que contar la misma historia, o el usuario comparte una cosa y pretendia
+  /// compartir otra.
+  final QuoteReportVariant variant;
   final List<MaterialCostBreakdown> detailMaterialBreakdown;
   final Decimal? detailElectricCost;
   final Decimal? detailAmortizationCost;
@@ -77,8 +85,16 @@ class QuoteImageTemplate extends StatelessWidget {
   final String? metaGrams;
   final String? metaTime;
 
-  /// Desglose por material para mostrar mini-detalle en la imagen.
-  final List<MaterialMetaItem> materialMetaBreakdown;
+  /// Desglose por material (peso + tiempo + costo unitario) para la tabla del
+  /// reporte. Mismo tipo que consume el PDF, asi ambos canales parten de la
+  /// misma fuente y no pueden divergir.
+  final List<PdfMaterialMetaItem> materialMetaBreakdown;
+
+  /// Parametros de calculo (solo variantes internas). Mismo modelo que el PDF.
+  final PdfRateAudit? rateAudit;
+
+  /// Estado de la cotizacion (solo variantes internas).
+  final bool? isSold;
 
   /// Nombre de la empresa. Si es null, usa "3dCalc".
   final String? companyName;
@@ -253,50 +269,21 @@ class QuoteImageTemplate extends StatelessWidget {
             ),
           ],
 
-          // ── Mini detalle por material (solo si hay más de 1 material) ──
-          if (materialMetaBreakdown.length > 1) ...[
-            const SizedBox(height: AppSpacing.sm),
-            ...materialMetaBreakdown.map(
-              (m) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      m.label,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: color.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      m.weightGrams,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: color.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (m.timeStr != null) ...[
-                      const SizedBox(width: AppSpacing.sm),
-                      Text(
-                        m.timeStr!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: color.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+          // ── Tabla de materiales ──
+          // Paridad con el PDF: presente en todas las variantes (el cliente
+          // tiene derecho a saber que se imprime), cambian las columnas.
+          if (materialMetaBreakdown.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _buildMaterialTable(theme, color),
           ],
 
           // ── Discount breakdown: correccion de recibo ──
-          // Orden claro: Subtotal → Descuento por cantidad → Subtotal parcial
-          // → Descuento manual (solo si > 0%) → Total con descuento.
-          if (hasDiscount ||
-              (batchDiscountPct != null &&
-                  batchDiscountPct! > Decimal.zero)) ...[
+          // Solo en las variantes internas: la cadena de descuentos con
+          // subtotales intermedios es informacion de trabajo interna.
+          if (variant.showCostDetail &&
+              (hasDiscount ||
+                  (batchDiscountPct != null &&
+                      batchDiscountPct! > Decimal.zero))) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -379,8 +366,14 @@ class QuoteImageTemplate extends StatelessWidget {
             ),
           ],
 
+          // ── Resumen de la cotizacion (variantes de cliente) ──
+          if (variant.showsSummaryBlock) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _buildSummaryBlock(theme, color),
+          ],
+
           // ── Detail section (optional) ──
-          if (showDetail) ...[
+          if (variant.showCostDetail) ...[
             const SizedBox(height: AppSpacing.lg),
             _divider(color),
             const SizedBox(height: AppSpacing.sm),
@@ -420,6 +413,9 @@ class QuoteImageTemplate extends StatelessWidget {
               textColor: color.onSurface,
             ),
           ],
+
+          // ── Parametros de calculo (variantes internas) ──
+          _buildRateAudit(theme, color),
 
           // ── Footer ──
           const SizedBox(height: AppSpacing.xxl),
@@ -547,6 +543,328 @@ class QuoteImageTemplate extends StatelessWidget {
     return Divider(
       height: 1,
       color: color.outlineVariant.withValues(alpha: 0.5),
+    );
+  }
+
+  /// Tabla de materiales. Mismas columnas que el PDF para la variante dada.
+  Widget _buildMaterialTable(ThemeData theme, ColorScheme color) {
+    final qty = Decimal.fromInt(quantity < 1 ? 1 : quantity);
+    final showTime = variant.showsMaterialTime;
+    final showCost = variant.showsMaterialCost;
+    final showLot = variant == QuoteReportVariant.internalAdvanced;
+    final anyCost = materialMetaBreakdown.any((m) => m.unitCost != null);
+
+    TextStyle cell(TextStyle? base) =>
+        (base ?? theme.textTheme.bodySmall ?? const TextStyle()).copyWith(
+          color: color.onSurfaceVariant,
+          fontSize: 10,
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Text(
+            EsBO.pdfMaterialsSection.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color.onSurfaceVariant,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        for (var i = 0; i < materialMetaBreakdown.length; i++)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+            decoration: BoxDecoration(
+              color: i.isOdd
+                  ? color.surfaceContainerHighest.withValues(alpha: 0.4)
+                  : null,
+              borderRadius: BorderRadius.circular(AppRadii.xs),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    materialMetaBreakdown[i].label,
+                    style: cell(theme.textTheme.bodySmall),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(
+                  width: 52,
+                  child: Text(
+                    materialMetaBreakdown[i].weightGrams,
+                    textAlign: TextAlign.right,
+                    style: cell(theme.textTheme.bodySmall),
+                  ),
+                ),
+                if (showTime)
+                  SizedBox(
+                    width: 52,
+                    child: Text(
+                      materialMetaBreakdown[i].timeStr ?? EsBO.pdfGlobalTime,
+                      textAlign: TextAlign.right,
+                      // El tiempo global va atenuado: es un dato real pero
+                      // no pertenece a este material.
+                      style: cell(theme.textTheme.bodySmall).copyWith(
+                        color: materialMetaBreakdown[i].timeStr == null
+                            ? color.onSurfaceVariant.withValues(alpha: 0.6)
+                            : color.primary,
+                      ),
+                    ),
+                  ),
+                if (showCost && anyCost)
+                  SizedBox(
+                    width: 62,
+                    child: Text(
+                      materialMetaBreakdown[i].unitCost == null
+                          ? '—'
+                          : formatCurrency(
+                              materialMetaBreakdown[i].unitCost!,
+                              currency,
+                            ),
+                      textAlign: TextAlign.right,
+                      style: cell(theme.textTheme.bodySmall),
+                    ),
+                  ),
+                if (showLot && anyCost)
+                  SizedBox(
+                    width: 62,
+                    child: Text(
+                      materialMetaBreakdown[i].unitCost == null
+                          ? '—'
+                          : formatCurrency(
+                              materialMetaBreakdown[i].unitCost! * qty,
+                              currency,
+                            ),
+                      textAlign: TextAlign.right,
+                      style: cell(theme.textTheme.bodySmall).copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: color.onSurface,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Bloque "Resumen de la cotizacion" — solo variantes de cliente.
+  ///
+  /// Junta peso, tiempo, cantidad, unitario, subtotal, descuentos y total en
+  /// una sola caja. Las variantes internas ya muestran el desglose completo, y
+  /// duplicar el resumen ahi solo agrega ruido.
+  Widget _buildSummaryBlock(ThemeData theme, ColorScheme color) {
+    final qtyD = Decimal.fromInt(quantity < 1 ? 1 : quantity);
+    final hasDiscount = output.discountAmount > Decimal.zero;
+    final unitPrice = output.totalPrice;
+    final effTotal = lotTotal != null && lotTotal! > Decimal.zero
+        ? lotTotal!
+        : unitPrice * qtyD;
+    final effManual =
+        manualDiscountAmount ??
+        (hasDiscount ? output.discountAmount * qtyD : Decimal.zero);
+    final effBatch = batchDiscountAmount ?? Decimal.zero;
+    final subtotal = effTotal + effBatch + effManual;
+    final hasBatch =
+        batchDiscountPct != null &&
+        batchDiscountPct! > Decimal.zero &&
+        effBatch > Decimal.zero;
+    final pctInt = int.tryParse(discountPct) ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: color.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Text(
+              EsBO.pdfSummarySection.toUpperCase(),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: color.onSurfaceVariant,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          if (metaGrams != null)
+            _discountRow(
+              EsBO.pdfSummaryTotalWeight,
+              metaGrams!,
+              theme,
+              color.onSurface,
+            ),
+          if (metaTime != null)
+            _discountRow(
+              EsBO.pdfSummaryTotalTime,
+              metaTime!,
+              theme,
+              color.onSurface,
+            ),
+          _discountRow(
+            EsBO.pdfSummaryQuantity,
+            '$quantity u.',
+            theme,
+            color.onSurface,
+          ),
+          if (quantity > 1)
+            _discountRow(
+              EsBO.pdfSummaryUnitPrice,
+              formatCurrency(unitPrice, currency),
+              theme,
+              color.onSurface,
+            ),
+          _discountRow(
+            EsBO.pdfNoDiscount,
+            formatCurrency(subtotal, currency),
+            theme,
+            color.onSurface,
+            bold: true,
+          ),
+          if (hasBatch)
+            _discountRow(
+              EsBO.calcDetailBatchDiscount(
+                batchDiscountPct!.toDouble().round(),
+              ),
+              '-${formatCurrency(effBatch, currency)}',
+              theme,
+              color.error,
+            ),
+          if (hasDiscount)
+            _discountRow(
+              EsBO.calcDetailManualDiscount(pctInt),
+              '-${formatCurrency(effManual, currency)}',
+              theme,
+              color.error,
+            ),
+          Divider(height: AppSpacing.md, color: color.outlineVariant),
+          _discountRow(
+            EsBO.calcTotalFinal,
+            formatCurrency(effTotal, currency),
+            theme,
+            color.onSurface,
+            bold: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Seccion "Parametros de calculo" — solo variantes internas.
+  Widget _buildRateAudit(ThemeData theme, ColorScheme color) {
+    final audit = rateAudit;
+    if (audit == null || audit.isEmpty || !variant.showRateAudit) {
+      return const SizedBox.shrink();
+    }
+
+    String perHour(Decimal? v) => v == null || v <= Decimal.zero
+        ? '—'
+        : '${formatCurrencyNumber(v)} ${EsBO.pdfRatePerHour}';
+
+    final rows = <(String, String)>[
+      if (audit.printerName != null && audit.printerName!.isNotEmpty)
+        (
+          EsBO.pdfRatePrinter,
+          audit.printerWatts != null && audit.printerWatts! > 0
+              ? '${audit.printerName} (${audit.printerWatts} W)'
+              : audit.printerName!,
+        ),
+      (
+        EsBO.pdfRateKwh,
+        audit.kwhRate != null && audit.kwhRate! > Decimal.zero
+            ? '${formatCurrencyNumber(audit.kwhRate!)} ${EsBO.pdfRatePerKwh}'
+            : '—',
+      ),
+      (EsBO.pdfRateLabor, perHour(audit.laborRate)),
+      (EsBO.pdfRateAmortization, perHour(audit.amortizationPerHour)),
+      (
+        EsBO.calcDetailPostProcess,
+        audit.postProcessRate == null
+            ? '—'
+            : formatPercentage(audit.postProcessRate!),
+      ),
+      (
+        EsBO.calcDetailFailure,
+        audit.failureRate == null ? '—' : formatPercentage(audit.failureRate!),
+      ),
+      (
+        EsBO.calcFieldWaste,
+        audit.markupOnMaterials == null
+            ? '—'
+            : formatPercentage(audit.markupOnMaterials!),
+      ),
+      (
+        EsBO.calcDetailProfit,
+        audit.profitBase == null ? '—' : formatPercentage(audit.profitBase!),
+      ),
+      (
+        EsBO.pdfRateMargin,
+        audit.profitMarginPct == null
+            ? '—'
+            : formatPercentage(audit.profitMarginPct!),
+      ),
+      (
+        EsBO.pdfRateMarkupOverCost,
+        audit.markupOverCostPct == null
+            ? '—'
+            : formatPercentage(audit.markupOverCostPct!),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.lg),
+        _divider(color),
+        const SizedBox(height: AppSpacing.sm),
+        Center(
+          child: Text(
+            EsBO.pdfRateAuditSection.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color.onSurfaceVariant,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        for (final r in rows)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 1.5),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  r.$1,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color.onSurfaceVariant,
+                    fontSize: 10,
+                  ),
+                ),
+                Text(
+                  r.$2,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color.onSurface,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

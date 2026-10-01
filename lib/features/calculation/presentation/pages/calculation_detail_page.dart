@@ -12,6 +12,8 @@ import 'package:printing/printing.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/export/pdf_export.dart';
+import '../../../../core/export/pdf_rate_audit.dart';
+import '../../../../core/export/quote_report_variant.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/providers.dart';
@@ -34,8 +36,9 @@ import '../../../settings/presentation/notifiers/settings_notifier.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_output.dart';
 import '../notifiers/calculations_notifier.dart';
-import '../state/calculator_state.dart' show MaterialCostBreakdown;
+import '../state/calculator_state.dart';
 import '../widgets/quote_image_template.dart';
+import '../widgets/report_variant_selector.dart';
 
 /// Detalle de una cotizacion guardada. Readonly — version mejorada.
 class CalculationDetailPage extends ConsumerWidget {
@@ -56,17 +59,9 @@ class CalculationDetailPage extends ConsumerWidget {
           // AppBar adaptativo: 2 acciones (duplicar + eliminar) que
           // colapsan al menu ⋮ en pantallas angostas.
           SmartAppBarActions(
-            priority: [
-              // "Editar" es prioridad (siempre visible): es la accion que el
-              // usuario busca al detectar un error de calculo.
-              if (calc != null)
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: EsBO.calcEditAction,
-                  onPressed: () =>
-                      context.push('/calculator/edit', extra: calc),
-                ),
-            ],
+            // "Editar" ya no vive aca: se movio junto a "Reusar" en el FAB
+            // inferior, donde es mas visible.
+            priority: const <Widget>[],
             menuActions: [
               if (calc != null)
                 (
@@ -142,12 +137,30 @@ class CalculationDetailPage extends ConsumerWidget {
       ),
       floatingActionButton: calc == null
           ? null
-          : FloatingActionButton.extended(
-              icon: const Icon(Icons.replay_rounded),
-              label: Text(EsBO.calcDetailReuse),
-              onPressed: () {
-                context.push('/calculator/prefill', extra: calc);
-              },
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // "Editar" junto a "Reusar" (misma fila de acciones
+                // principales) para que sea facil corregir un calculo sin
+                // volver al historial.
+                FloatingActionButton.extended(
+                  heroTag: 'calc-detail-edit',
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(EsBO.calcEditAction),
+                  onPressed: () {
+                    context.push('/calculator/edit', extra: calc);
+                  },
+                ),
+                const SizedBox(width: AppSpacing.md),
+                FloatingActionButton.extended(
+                  heroTag: 'calc-detail-reuse',
+                  icon: const Icon(Icons.replay_rounded),
+                  label: Text(EsBO.calcDetailReuse),
+                  onPressed: () {
+                    context.push('/calculator/prefill', extra: calc);
+                  },
+                ),
+              ],
             ),
     );
   }
@@ -165,7 +178,18 @@ class _Detail extends ConsumerStatefulWidget {
 class _DetailState extends ConsumerState<_Detail> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
-  bool _showDetail = false;
+
+  /// Variante del reporte (pantalla, PDF, PNG e impresion) elegida para esta
+  /// cotizacion.
+  ///
+  /// Se deriva del modo guardado: el selector solo ofrece las 2 variantes del
+  /// eje correspondiente, asi que arrancar en [QuoteReportVariant.clientSimple]
+  /// dejaria sin marcar el chip en toda cotizacion advanced. La variante simple
+  /// sigue siendo el default cuando el modo es express, que es el caso mas
+  /// comun y el unico seguro para mandar a un tercero.
+  late QuoteReportVariant _reportVariant = (widget.calc.isAdvanced
+      ? QuoteReportVariant.clientAdvanced
+      : QuoteReportVariant.clientSimple);
 
   /// Cantidad mostrada/editable. Arranca con la cantidad guardada de la
   /// cotizacion (lotes, v8) para que preview/export coincidan con lo saved.
@@ -223,23 +247,27 @@ class _DetailState extends ConsumerState<_Detail> {
   /// tiene, el PDF muestra unicamente el tiempo global.
   List<PdfMaterialMetaItem> _pdfMaterialBreakdown(
     List<CalculationMaterial> materials,
+    List<MaterialCostBreakdown> unitCosts,
   ) {
-    final timed = materials
-        .where((m) => (m.useOwnTime ?? false) && m.materialHours != null)
-        .toList();
-    if (timed.isEmpty) return const [];
-    return timed
-        .map(
-          (m) => PdfMaterialMetaItem(
-            label: m.label,
-            weightGrams:
-                '${NumberFormat.decimalPattern('es_BO').format(m.weightGrams)} g',
-            timeStr: _timeTextFromMinutes(
-              (m.materialHours ?? 0) * 60 + (m.materialMinutes ?? 0),
-            ),
-          ),
-        )
-        .toList();
+    // TODOS los materiales, no solo los que tienen tiempo propio: la tabla del
+    // reporte necesita el peso de cada uno, y el tiempo propio es una columna
+    // opcional. Filtrar aca dejaba la tabla sin peso cuando nadie usa tiempo
+    // por material (el caso mas comun).
+    return [
+      for (var i = 0; i < materials.length; i++)
+        PdfMaterialMetaItem(
+          label: materials[i].label,
+          weightGrams:
+              '${NumberFormat.decimalPattern('es_BO').format(materials[i].weightGrams)} g',
+          timeStr: (materials[i].useOwnTime ?? false)
+              ? _timeTextFromMinutes(
+                  (materials[i].materialHours ?? 0) * 60 +
+                      (materials[i].materialMinutes ?? 0),
+                )
+              : null,
+          unitCost: i < unitCosts.length ? unitCosts[i].cost : null,
+        ),
+    ];
   }
 
   /// Formatea minutos como "Xh Ym". Null si no hay minutos.
@@ -274,7 +302,7 @@ class _DetailState extends ConsumerState<_Detail> {
         (Decimal sum, m) =>
             sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
       );
-      final timedMaterials = _pdfMaterialBreakdown(materials);
+      final timedMaterials = _pdfMaterialBreakdown(materials, result.breakdown);
 
       await shareQuotePdf(
         isPro: ref.read(isProProvider),
@@ -283,7 +311,7 @@ class _DetailState extends ConsumerState<_Detail> {
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
         discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
         currency: ref.read(selectedCurrencyProvider),
-        showDetail: _showDetail,
+        variant: _reportVariant,
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
         pieceName: calc.pieceName,
@@ -314,6 +342,7 @@ class _DetailState extends ConsumerState<_Detail> {
                 : Decimal.zero),
         manualDiscountAmount:
             result.output.discountAmount * Decimal.fromInt(_quantity),
+        rateAudit: result.rateAudit,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -357,7 +386,7 @@ class _DetailState extends ConsumerState<_Detail> {
         totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
         discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
         currency: ref.read(selectedCurrencyProvider),
-        showDetail: _showDetail,
+        variant: _reportVariant,
         companyName: settings.companyName,
         companyLogoBase64: settings.companyLogoBase64,
         pieceName: calc.pieceName,
@@ -372,7 +401,10 @@ class _DetailState extends ConsumerState<_Detail> {
         pieceImageBytes: calc.pieceImageBlob,
         metaGrams: result.metaGrams,
         metaTime: result.metaTime,
-        materialMetaBreakdown: _pdfMaterialBreakdown(materials),
+        materialMetaBreakdown: _pdfMaterialBreakdown(
+          materials,
+          result.breakdown,
+        ),
         quantity: _quantity,
         totalGrams: totalGrams,
         batchDiscountPct: calc.batchDiscountPercent != null
@@ -388,6 +420,7 @@ class _DetailState extends ConsumerState<_Detail> {
                 : Decimal.zero),
         manualDiscountAmount:
             result.output.discountAmount * Decimal.fromInt(_quantity),
+        rateAudit: result.rateAudit,
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
     } catch (e) {
@@ -917,8 +950,13 @@ class _DetailState extends ConsumerState<_Detail> {
                   output: result.output,
                   label: calc.pieceName ?? '',
                   discountPct: calc.discountPercentage.toStringAsFixed(0),
-                  showDetail: _showDetail,
+                  variant: _reportVariant,
                   detailMaterialBreakdown: result.breakdown,
+                  materialMetaBreakdown: _pdfMaterialBreakdown(
+                    materials,
+                    result.breakdown,
+                  ),
+                  rateAudit: result.rateAudit,
                   detailElectricCost: result.electricCost,
                   detailAmortizationCost: result.amortizationCost,
                   detailLaborCost: result.laborCost,
@@ -946,22 +984,16 @@ class _DetailState extends ConsumerState<_Detail> {
             ),
             const SizedBox(height: AppSpacing.sm),
 
-            // Toggle detail (outside RepaintBoundary)
-            Align(
-              child: TextButton.icon(
-                icon: Icon(
-                  _showDetail
-                      ? Icons.visibility_rounded
-                      : Icons.visibility_off_rounded,
-                  size: 18,
-                ),
-                label: Text(
-                  _showDetail
-                      ? EsBO.calcToggleHideDetail
-                      : EsBO.calcToggleShowDetail,
-                ),
-                onPressed: () => setState(() => _showDetail = !_showDetail),
-              ),
+            // Selector de variante del reporte (2 opciones: Cliente / Detalle).
+            // Reemplaza al toggle binario de detalle, que no permitia
+            // distinguir "cliente avanzado" de "cliente simple" ni avisar del
+            // riesgo de compartir la variante interna. El modo de la
+            // cotizacion decide el eje, asi que el selector ofrece solo las 2
+            // variantes validas para el.
+            ReportVariantSelector(
+              selected: _reportVariant,
+              isAdvanced: calc.isAdvanced,
+              onChanged: (v) => setState(() => _reportVariant = v),
             ),
             const SizedBox(height: AppSpacing.sm),
 
@@ -1066,6 +1098,7 @@ class _DetailState extends ConsumerState<_Detail> {
   Decimal totalFinal,
   String? metaGrams,
   String? metaTime,
+  PdfRateAudit rateAudit,
 })?
 _recomputeOutput(
   Calculation calc,
@@ -1127,7 +1160,9 @@ _recomputeOutput(
 
   // Meta
   final hours = Decimal.parse(calc.totalHours.toStringAsFixed(2));
-  final totalMinutes = (hours * qtyD * Decimal.fromInt(60)).toBigInt();
+  final totalMinutes = BigInt.from(
+    CalculatorState.decimalHoursToMinutes(hours) * qty,
+  );
   String? timeStr;
   if (totalMinutes > BigInt.zero) {
     final hh = totalMinutes ~/ BigInt.from(60);
@@ -1152,6 +1187,33 @@ _recomputeOutput(
     totalFinal: output.totalFinal,
     metaGrams: gramsStr,
     metaTime: timeStr,
+    rateAudit: PdfRateAudit.fromRates(
+      // Misma politica snapshot -> fallback que aplico el engine, para que
+      // la tabla de auditoria muestre las tasas que realmente se usaron.
+      rates: CalculationEngine.resolveRates(
+        kwhRateSnapshot: calc.kwhRateSnapshot,
+        laborRateSnapshot: calc.laborRateSnapshot,
+        postProcessRateSnapshot: calc.postProcessRateSnapshot,
+        failureRateSnapshot: calc.failureRateSnapshot,
+        markupOnMaterialsSnapshot: calc.markupOnMaterialsSnapshot,
+        profitBaseSnapshot: calc.profitBaseSnapshot,
+        fallbackKwhRate: settings.kwhRate,
+        fallbackLaborRate: settings.laborRate,
+        fallbackPostProcessRate: settings.postProcessRate,
+        fallbackFailureRate: settings.failureRate,
+        fallbackMarkupOnMaterials: settings.markupOnMaterials,
+        fallbackProfitBase: settings.profitBase,
+        fallbackPrinterWatts: printer?.averageWatts ?? 0,
+        amortizationCostSnapshot: calc.amortizationCostSnapshot,
+        printerWattsSnapshot: calc.printerWattsSnapshot,
+      ),
+      printerName: calc.printerNameSnapshot ?? printer?.name,
+      profitAmount: output.profitAmount,
+      totalBeforeProfit: output.totalBeforeProfit,
+      baseCost: output.baseCost,
+      totalFinal: output.totalFinal,
+      totalHours: hours,
+    ),
   );
 }
 

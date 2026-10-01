@@ -443,7 +443,7 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcDetailEnergy => 'Custo de energia';
   @override
-  String get calcDetailLabor => 'Mão de obra';
+  String get calcDetailModeling => 'Modelagem e design';
   @override
   String get calcDetailPostProcess => 'Pós-processamento';
   @override
@@ -1270,6 +1270,77 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   String get pdfMaterialsSection => 'Materiais';
 
   @override
+  @override
+  String get reportVariantClient => 'Cliente';
+  @override
+  @override
+  String get reportVariantInternal => 'Detalhe';
+  @override
+  String get reportVariantSelectorTitle => 'Variante do relatório';
+  @override
+  String get reportVariantInternalWarning =>
+      'Uso interno: contém custos. Não enviar ao cliente.';
+
+  @override
+  String get pdfSummarySection => 'Resumo da cotação';
+  @override
+  String get pdfSummaryTotalWeight => 'Peso total';
+  @override
+  String get pdfSummaryTotalTime => 'Tempo total';
+  @override
+  String get pdfSummaryQuantity => 'Quantidade';
+  @override
+  String get pdfSummaryUnitPrice => 'Preço unitário';
+  @override
+  String get pdfNoDiscount => 'Sem desconto';
+
+  @override
+  String get pdfColumnMaterial => 'Material';
+  @override
+  String get pdfColumnWeight => 'Peso';
+  @override
+  String get pdfColumnTime => 'Tempo';
+  @override
+  String get pdfColumnCost => 'Custo';
+  @override
+  String get pdfColumnUnitCost => 'Custo unitário';
+  @override
+  String get pdfColumnLotCost => 'Custo do lote';
+  @override
+  String get pdfGlobalTime => 'global';
+
+  @override
+  String get pdfCostSubtotalClosing => 'Subtotal (base + falha + markup)';
+  @override
+  String get pdfTotalBeforeDiscounts => 'Total antes dos descontos';
+
+  @override
+  String get pdfRateAuditSection => 'Parâmetros de cálculo';
+  @override
+  String get pdfRatePrinter => 'Impressora';
+  @override
+  String get pdfRateKwh => 'Tarifa elétrica';
+  @override
+  String get pdfRateBillableHours => 'Horas faturadas';
+  @override
+  String get pdfRateLabor => 'Mão de obra';
+  @override
+  String get pdfRateAmortization => 'Amortização';
+  @override
+  String get pdfRatePerKwh => '/kWh';
+  @override
+  String get pdfRatePerHour => '/h';
+  @override
+  String get pdfRateMargin => 'Margem';
+  @override
+  String get pdfRateMarkupOverCost => 'Markup sobre custo';
+
+  @override
+  String pdfPageOf(int page, int total) => 'Página $page de $total';
+  @override
+  String get pdfStatusPending => 'PENDENTE';
+
+  @override
   String get dashboardEmptySubtitle => 'Crie seu primeiro orçamento do zero.';
   @override
   String get dashboardMonthlyTrend => 'Tendência mensal';
@@ -1619,4 +1690,24 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
       'Preencha os dados para salvar como cotação';
   @override
   String get printSettingsVersionSuffix => ' · v{0}';
+  @override
+  String get extraSectionTitle => 'Custos adicionais';
+  @override
+  String get calcExtraModeling => 'Modelagem e design';
+  @override
+  String get calcExtraPostprocess => 'Pos-processamento';
+  @override
+  String get calcExtraExtras => 'Extras';
+  @override
+  String get extraInfo => 'argolas, cola e qualquer outro extra que uma peca impressa em 3D possa exigir';
+  @override
+  String get extraDescriptionHint => 'argolas, cola, etc.';
+  @override
+  String get modePercent => '%';
+  @override
+  String get modeFixed => 'Fixo';
+  @override
+  String get modeAuto => 'Auto';
+  @override
+  String get modeOff => 'Desligado';
 }

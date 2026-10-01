@@ -3,6 +3,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tresdcal/core/export/quote_report_variant.dart';
 import 'package:tresdcal/core/money/currency.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
@@ -22,7 +23,7 @@ Widget _template({int quantity = 1}) {
           output: output,
           label: 'Pieza de prueba',
           discountPct: '15',
-          showDetail: false,
+          variant: QuoteReportVariant.clientSimple,
           detailMaterialBreakdown: const [],
           detailElectricCost: Decimal.zero,
           detailLaborCost: Decimal.zero,

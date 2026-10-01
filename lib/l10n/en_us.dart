@@ -438,7 +438,7 @@ class EnImpl implements AppStrings {
   @override
   String get calcDetailEnergy => 'Energy cost';
   @override
-  String get calcDetailLabor => 'Labor';
+  String get calcDetailModeling => 'Modeling & design';
   @override
   String get calcDetailPostProcess => 'Post-process';
   @override
@@ -1301,6 +1301,77 @@ We may update, suspend, or remove application features. These terms may also cha
   String get pdfMaterialsSection => 'Materials';
 
   @override
+  @override
+  String get reportVariantClient => 'Client';
+  @override
+  @override
+  String get reportVariantInternal => 'Detail';
+  @override
+  String get reportVariantSelectorTitle => 'Report variant';
+  @override
+  String get reportVariantInternalWarning =>
+      'Internal use: contains costs. Do not send to the client.';
+
+  @override
+  String get pdfSummarySection => 'Quote summary';
+  @override
+  String get pdfSummaryTotalWeight => 'Total weight';
+  @override
+  String get pdfSummaryTotalTime => 'Total time';
+  @override
+  String get pdfSummaryQuantity => 'Quantity';
+  @override
+  String get pdfSummaryUnitPrice => 'Unit price';
+  @override
+  String get pdfNoDiscount => 'Without discount';
+
+  @override
+  String get pdfColumnMaterial => 'Material';
+  @override
+  String get pdfColumnWeight => 'Weight';
+  @override
+  String get pdfColumnTime => 'Time';
+  @override
+  String get pdfColumnCost => 'Cost';
+  @override
+  String get pdfColumnUnitCost => 'Unit cost';
+  @override
+  String get pdfColumnLotCost => 'Lot cost';
+  @override
+  String get pdfGlobalTime => 'global';
+
+  @override
+  String get pdfCostSubtotalClosing => 'Subtotal (base + failure + markup)';
+  @override
+  String get pdfTotalBeforeDiscounts => 'Total before discounts';
+
+  @override
+  String get pdfRateAuditSection => 'Calculation parameters';
+  @override
+  String get pdfRatePrinter => 'Printer';
+  @override
+  String get pdfRateKwh => 'Electricity rate';
+  @override
+  String get pdfRateBillableHours => 'Billable hours';
+  @override
+  String get pdfRateLabor => 'Labor';
+  @override
+  String get pdfRateAmortization => 'Amortization';
+  @override
+  String get pdfRatePerKwh => '/kWh';
+  @override
+  String get pdfRatePerHour => '/h';
+  @override
+  String get pdfRateMargin => 'Margin';
+  @override
+  String get pdfRateMarkupOverCost => 'Markup over cost';
+
+  @override
+  String pdfPageOf(int page, int total) => 'Page $page of $total';
+  @override
+  String get pdfStatusPending => 'PENDING';
+
+  @override
   String get dashboardEmptySubtitle =>
       'Create your first quotation from scratch.';
   @override
@@ -1599,4 +1670,24 @@ We may update, suspend, or remove application features. These terms may also cha
   String get calcPartialCompleteHint => 'Fill in the data to save as a quote';
   @override
   String get printSettingsVersionSuffix => ' · v{0}';
+  @override
+  String get extraSectionTitle => 'Additional costs';
+  @override
+  String get calcExtraModeling => 'Modeling and design';
+  @override
+  String get calcExtraPostprocess => 'Post-processing';
+  @override
+  String get calcExtraExtras => 'Extras';
+  @override
+  String get extraInfo => 'rings, glue and any other extra a 3D-printed part may require';
+  @override
+  String get extraDescriptionHint => 'rings, glue, etc.';
+  @override
+  String get modePercent => '%';
+  @override
+  String get modeFixed => 'Fixed';
+  @override
+  String get modeAuto => 'Auto';
+  @override
+  String get modeOff => 'Off';
 }
