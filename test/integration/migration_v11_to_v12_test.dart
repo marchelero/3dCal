@@ -162,19 +162,19 @@ void main() {
       'onUpgrade(11, 12) crea discount_tiers, agrega batch_* en calculations '
       'y bumpea a 12',
       () async {
-        final db = AppDatabase.forTesting(
-          NativeDatabase.opened(rawDb),
-        );
+        final db = AppDatabase.forTesting(NativeDatabase.opened(rawDb));
         addTearDown(() async => db.close());
         await db.customSelect('SELECT 1').get();
 
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          12,
-          reason: 'AppDatabase debe setear user_version=12 tras onUpgrade.',
+          16,
+          reason:
+              'AppDatabase debe setear user_version=<schema actual> tras '
+              'onUpgrade (11→12 y las siguientes hasta v16).',
         );
-        expect(db.schemaVersion, 12);
+        expect(db.schemaVersion, 16);
 
         // discount_tiers: nueva tabla con el schema correcto.
         final tierCols = await db
@@ -187,7 +187,12 @@ void main() {
         for (final r in tierCols) {
           tByName[r.read<String>('name')] = r;
         }
-        expect(tByName.keys.toSet(), {'id', 'min_qty', 'percent', 'sort_order'});
+        expect(tByName.keys.toSet(), {
+          'id',
+          'min_qty',
+          'percent',
+          'sort_order',
+        });
         final idCol = tByName['id']!;
         expect(idCol.read<int>('isPrimaryKey'), 1, reason: 'id debe ser PK.');
         expect(idCol.read<String>('type'), 'TEXT');
@@ -210,11 +215,19 @@ void main() {
           cByName[r.read<String>('name')] = r;
         }
         final pct = cByName['batch_discount_percent'];
-        expect(pct, isNotNull, reason: 'v12 debe crear batch_discount_percent.');
+        expect(
+          pct,
+          isNotNull,
+          reason: 'v12 debe crear batch_discount_percent.',
+        );
         expect(pct!.read<String>('type'), 'TEXT');
         expect(pct.read<int>('isNotNull'), 0, reason: 'debe ser nullable.');
         final amount = cByName['batch_discount_amount'];
-        expect(amount, isNotNull, reason: 'v12 debe crear batch_discount_amount.');
+        expect(
+          amount,
+          isNotNull,
+          reason: 'v12 debe crear batch_discount_amount.',
+        );
         expect(amount!.read<String>('type'), 'TEXT');
         expect(amount.read<int>('isNotNull'), 0, reason: 'debe ser nullable.');
       },
@@ -223,9 +236,7 @@ void main() {
     test(
       'migracion es no-destructiva: la fila v11 sobrevive con batch_* NULL',
       () async {
-        final db = AppDatabase.forTesting(
-          NativeDatabase.opened(rawDb),
-        );
+        final db = AppDatabase.forTesting(NativeDatabase.opened(rawDb));
         addTearDown(() async => db.close());
         await db.customSelect('SELECT 1').get();
 
@@ -250,8 +261,9 @@ void main() {
         );
 
         // El filamento con color sobrevive intacto.
-        final filaments =
-            await db.customSelect('SELECT * FROM filaments').get();
+        final filaments = await db
+            .customSelect('SELECT * FROM filaments')
+            .get();
         expect(filaments, hasLength(1));
         expect(filaments.first.read<String>('name'), 'PLA Negro');
         expect(filaments.first.read<String>('color'), '#000000');
@@ -261,9 +273,7 @@ void main() {
     test(
       'post-migration: discount_tiers es usable (insert + read redondo)',
       () async {
-        final db = AppDatabase.forTesting(
-          NativeDatabase.opened(rawDb),
-        );
+        final db = AppDatabase.forTesting(NativeDatabase.opened(rawDb));
         addTearDown(() async => db.close());
         await db.customSelect('SELECT 1').get();
 
@@ -272,39 +282,48 @@ void main() {
           "VALUES ('a1b2c3d4-e5f6-4701-9d2c-abcdef123456', 10, '10', 0)",
         );
 
-        final tiers = await db.customSelect('SELECT * FROM discount_tiers').get();
+        final tiers = await db
+            .customSelect('SELECT * FROM discount_tiers')
+            .get();
         expect(tiers, hasLength(1));
-        expect(tiers.first.read<String>('id'), 'a1b2c3d4-e5f6-4701-9d2c-abcdef123456');
+        expect(
+          tiers.first.read<String>('id'),
+          'a1b2c3d4-e5f6-4701-9d2c-abcdef123456',
+        );
         expect(tiers.first.read<int>('min_qty'), 10);
         expect(tiers.first.read<String>('percent'), '10');
         expect(tiers.first.read<int>('sort_order'), 0);
       },
     );
 
-    test('re-open idempotente: segunda apertura no re-migra y sigue en v12',
-        () async {
-      final db1 = AppDatabase.forTesting(
-        NativeDatabase.opened(rawDb, closeUnderlyingOnClose: false),
-      );
-      await db1.customSelect('SELECT 1').get();
-      final v1 = await db1.customSelect('PRAGMA user_version').get();
-      expect(v1.first.read<int>('user_version'), 12);
-      await db1.close();
+    test(
+      're-open idempotente: segunda apertura no re-migra y sigue en v12',
+      () async {
+        final db1 = AppDatabase.forTesting(
+          NativeDatabase.opened(rawDb, closeUnderlyingOnClose: false),
+        );
+        await db1.customSelect('SELECT 1').get();
+        final v1 = await db1.customSelect('PRAGMA user_version').get();
+        expect(v1.first.read<int>('user_version'), 16);
+        await db1.close();
 
-      // Reabrir sobre la misma DB: user_version sigue 12, schema usable.
-      final db2 = AppDatabase.forTesting(
-        NativeDatabase.opened(rawDb, closeUnderlyingOnClose: false),
-      );
-      addTearDown(() async => db2.close());
-      await db2.customSelect('SELECT 1').get();
-      final v2 = await db2.customSelect('PRAGMA user_version').get();
-      expect(
-        v2.first.read<int>('user_version'),
-        12,
-        reason: 'La segunda apertura no debe re-ejecutar la migracion.',
-      );
-      final calcs = await db2.customSelect('SELECT * FROM calculations').get();
-      expect(calcs, hasLength(1));
-    });
+        // Reabrir sobre la misma DB: user_version sigue en 16, schema usable.
+        final db2 = AppDatabase.forTesting(
+          NativeDatabase.opened(rawDb, closeUnderlyingOnClose: false),
+        );
+        addTearDown(() async => db2.close());
+        await db2.customSelect('SELECT 1').get();
+        final v2 = await db2.customSelect('PRAGMA user_version').get();
+        expect(
+          v2.first.read<int>('user_version'),
+          16,
+          reason: 'La segunda apertura no debe re-ejecutar la migracion.',
+        );
+        final calcs = await db2
+            .customSelect('SELECT * FROM calculations')
+            .get();
+        expect(calcs, hasLength(1));
+      },
+    );
   });
 }

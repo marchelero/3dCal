@@ -1,5 +1,6 @@
 /// Deutsche Zeichenketten (de_DE).
 library;
+
 // ignore_for_file: public_member_api_docs
 
 import 'package:flutter/material.dart' show DateTimeRange;
@@ -422,7 +423,7 @@ class DeImpl implements AppStrings {
   @override
   String get calcWizardStepPrint => 'Druck';
   @override
-@override
+  @override
   String get calcWizardStepAdjust => 'Sonstiges';
   @override
   @override
@@ -506,7 +507,18 @@ class DeImpl implements AppStrings {
   @override
   String get calcFieldFilament => 'Filament';
   @override
+  @override
   String get calcFieldWeight => 'Gewicht';
+  @override
+  String get calcFieldHours => 'Stunden';
+  @override
+  String get calcFieldMinutes => 'Minuten';
+  @override
+  String get calcOwnTime => 'Eigene Zeit';
+  @override
+  String get calcTimeSumOfMaterials =>
+      'Zeigt die Summe der Materialzeiten. Eine Änderung dieses Werts '
+      'deaktiviert die eigene Zeit aller Materialien.';
   @override
   String get calcFieldSpoolPrice => 'Spulenpreis';
   @override
@@ -873,16 +885,18 @@ class DeImpl implements AppStrings {
   String get calcDuplicateError => 'Angebot konnte nicht dupliziert werden';
 
   @override
+  String get calcEditAction => 'Bearbeiten';
+  @override
+  String get calcEditTitle => 'Angebot bearbeiten';
+  @override
+  String calcEditSavedWithId(int id) => 'Angebot #$id aktualisiert.';
+
+  @override
   String get historyTitle => 'Angebote';
   @override
   String get historyErrorLoad => 'Fehler beim Laden der Angebote';
   @override
   String get historyEmpty => 'Keine gespeicherten Angebote';
-
-  @override
-  String get csvExportLockedBody => 'CSV-Export ist eine Pro-Funktion';
-  @override
-  String get csvGoProAction => 'PRO freischalten';
 
   @override
   List<String> get csvExportHeader => const [
@@ -1073,8 +1087,6 @@ class DeImpl implements AppStrings {
   String get proBadgeLabel => 'PRO';
   @override
   String get proLockedTooltip => 'Pro-Funktion';
-  @override
-  String get csvExportTooltipLocked => 'CSV exportieren (Pro)';
   @override
   String historyUsageCounter(int used, int cap) =>
       used == 1 ? '1/$cap Angebot' : '$used/$cap Angebote';
@@ -1600,8 +1612,7 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   @override
   String get calcResetConfirmTitle => 'Zurücksetzen?';
   @override
-  String get calcResetConfirmBody =>
-      'Nicht gespeicherte Daten gehen verloren';
+  String get calcResetConfirmBody => 'Nicht gespeicherte Daten gehen verloren';
   @override
   String get calcResetConfirmCancel => 'Abbrechen';
   @override

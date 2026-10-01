@@ -202,17 +202,19 @@ void main() {
     });
 
     test(
-      'onUpgrade(9, 11) agrega columnas F5 y bumpea user_version a 11',
+      'onUpgrade(9, ->16) agrega columnas F5 y bumpea user_version a 16',
       () async {
         await db.customSelect('SELECT 1').get();
 
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          11,
-          reason: 'AppDatabase debe setear user_version=11 tras onUpgrade.',
+          16,
+          reason:
+              'AppDatabase debe setear user_version=16 tras onUpgrade '
+              '(v9→v10 y pasos siguientes).',
         );
-        expect(db.schemaVersion, 11);
+        expect(db.schemaVersion, 16);
 
         // printers: purchase_cost REAL nullable + useful_life_hours INTEGER.
         final printerCols = await db

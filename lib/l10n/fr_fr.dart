@@ -403,7 +403,7 @@ class FrImpl implements AppStrings {
   @override
   String get calcWizardStepPrint => 'Impression';
   @override
-@override
+  @override
   String get calcWizardStepAdjust => 'Autres';
   @override
   @override
@@ -484,7 +484,18 @@ class FrImpl implements AppStrings {
   @override
   String get calcFieldFilament => 'Filament';
   @override
+  @override
   String get calcFieldWeight => 'Poids';
+  @override
+  String get calcFieldHours => 'Heures';
+  @override
+  String get calcFieldMinutes => 'Minutes';
+  @override
+  String get calcOwnTime => 'Temps propre';
+  @override
+  String get calcTimeSumOfMaterials =>
+      'Affiche la somme des temps par matériau. Modifier cette valeur '
+      'désactive le temps propre de tous les matériaux.';
   @override
   String get calcFieldSpoolPrice => 'Prix de la bobine';
   @override
@@ -840,17 +851,20 @@ class FrImpl implements AppStrings {
   String get calcDuplicateSuccess => 'Devis dupliqué';
   @override
   String get calcDuplicateError => 'Impossible de dupliquer le devis';
+
+  @override
+  String get calcEditAction => 'Modifier';
+  @override
+  String get calcEditTitle => 'Modification du devis';
+  @override
+  String calcEditSavedWithId(int id) => 'Devis #$id mis à jour.';
+
   @override
   String get historyTitle => 'Devis';
   @override
   String get historyErrorLoad => 'Erreur lors du chargement des devis';
   @override
   String get historyEmpty => 'Aucun devis enregistré';
-  @override
-  String get csvExportLockedBody =>
-      'L’exportation au format CSV est une fonction de la version Pro';
-  @override
-  String get csvGoProAction => 'Débloquer PRO';
 
   @override
   List<String> get csvExportHeader => const [
@@ -1036,8 +1050,6 @@ class FrImpl implements AppStrings {
   String get proBadgeLabel => 'PRO';
   @override
   String get proLockedTooltip => 'Fonctionnalité de la version Pro';
-  @override
-  String get csvExportTooltipLocked => 'Exporter au format CSV (version Pro)';
   @override
   String historyUsageCounter(int used, int cap) =>
       used == 1 ? '1/$cap devis' : '$used/$cap devis';

@@ -19,7 +19,7 @@ import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:share_plus/share_plus.dart';
 
 import '../../l10n/es_bo.dart';
@@ -81,6 +81,9 @@ class BackupService {
     final calculations = await _db.select(_db.calculations).get();
     final materials = await _db.select(_db.calculationMaterials).get();
     final settings = await _db.select(_db.settingsTable).get();
+    // v12: escalones de descuento por cantidad (los crea el usuario en
+    // Ajustes). Sin esto se perderian en cada restore.
+    final tiers = await _db.select(_db.discountTiersTable).get();
 
     return BackupData(
       version: kBackupFormatVersion,
@@ -94,8 +97,17 @@ class BackupService {
           .map<Map<String, dynamic>>(_rowToMap)
           .toList(),
       settings: settings.map<Map<String, dynamic>>(_rowToMap).toList(),
+      discountTiers: tiers.map<Map<String, dynamic>>(_rowToMap).toList(),
     );
   }
+
+  /// Reolecta toda la data sin compartirla (para tests).
+  ///
+  /// [export] usa [_collectAllData] + share; este wrapper expone el mismo
+  /// snapshot como [BackupData] para poder verificar el contenido del
+  /// archivo exportado sin pasar por el share sheet del sistema.
+  @visibleForTesting
+  Future<BackupData> collectAllDataForTest() async => _collectAllData();
 
   /// Convierte una fila de drift a Map.
   ///
@@ -252,6 +264,7 @@ class BackupService {
         await _insertPrinters(backup.printers);
         await _insertCalculations(backup.calculations);
         await _insertCalculationMaterials(backup.calculationMaterials);
+        await _insertDiscountTiers(backup.discountTiers);
         await _insertSettings(backup.settings);
       });
 
@@ -279,6 +292,7 @@ class BackupService {
     await _db.delete(_db.filaments).go();
     await _db.delete(_db.printers).go();
     await _db.delete(_db.settingsTable).go();
+    await _db.delete(_db.discountTiersTable).go();
   }
 
   /// Inserta filamentos desde el backup.
@@ -315,6 +329,8 @@ class BackupService {
               purchaseCost: Value((row['purchaseCost'] as num?)?.toDouble()),
               usefulLifeHours: Value(row['usefulLifeHours'] as int?),
               isDefault: Value(row['isDefault'] as bool),
+              // v13 (currentHours).
+              currentHours: Value(row['currentHours'] as int?),
               createdAt: Value(_parseDateTime(row['createdAt'])),
             ),
           );
@@ -352,6 +368,11 @@ class BackupService {
               ),
               isSold: Value(row['isSold'] as bool),
               isTemplate: Value(row['isTemplate'] as bool? ?? false),
+              // v14 (isPartial) y v16 (isAdvanced). Backups anteriores a esas
+              // versiones no traen las keys: los defaults conservan el
+              // comportamiento viejo (no-parcial, modo inferido).
+              isPartial: Value(row['isPartial'] as bool? ?? false),
+              isAdvanced: Value(row['isAdvanced'] as bool? ?? false),
               quantity: Value((row['quantity'] as num?)?.toInt() ?? 1),
               materialCostSnapshot: Value(
                 (row['materialCostSnapshot'] as num?)?.toDouble() ?? 0,
@@ -404,6 +425,11 @@ class BackupService {
               markupOnMaterialsSnapshot: Value(
                 (row['markupOnMaterialsSnapshot'] as num?)?.toDouble() ?? 0,
               ),
+              // v12 (descuento mayorista).
+              batchDiscountPercent: Value(
+                row['batchDiscountPercent'] as String?,
+              ),
+              batchDiscountAmount: Value(row['batchDiscountAmount'] as String?),
               pieceImageBlob: Value(_decodePieceImage(row)),
             ),
           );
@@ -451,6 +477,34 @@ class BackupService {
               gramsPerBobbinSnapshot: Value(
                 (row['gramsPerBobbinSnapshot'] as num).toDouble(),
               ),
+              // v15 (tiempo propio por material). Backups anteriores no
+              // traen las keys → NULL = usa el tiempo global.
+              useOwnTime: Value(row['useOwnTime'] as bool?),
+              materialHours: Value((row['materialHours'] as num?)?.toDouble()),
+              materialMinutes: Value(
+                (row['materialMinutes'] as num?)?.toDouble(),
+              ),
+            ),
+          );
+    }
+  }
+
+  /// Inserta escalones de descuento por cantidad desde el backup (v12).
+  ///
+  /// Coleccion vacia en backups previos a v12 → no inserta nada y la app
+  /// queda sin escalones, que es el estado previo a esa feature.
+  Future<void> _insertDiscountTiers(List<Map<String, dynamic>> rows) async {
+    for (final row in rows) {
+      await _db
+          .into(_db.discountTiersTable)
+          .insert(
+            DiscountTiersTableCompanion.insert(
+              id: row['id'] as String,
+              minQty: row['minQty'] as int,
+              // `percent` se conserva como TEXT decimal (no se castea a
+              // double: perderia precision en el round-trip JSON).
+              percent: row['percent'] as String,
+              sortOrder: row['sortOrder'] as int,
             ),
           );
     }

@@ -46,7 +46,10 @@ class ExpressFilamentRow extends ConsumerWidget {
         : colorFromHex(colorMatches.first.color);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         border: Border(
@@ -64,16 +67,27 @@ class ExpressFilamentRow extends ConsumerWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(AppRadii.xs),
                 onTap: () async {
-                  final filament = await showFilamentSelectorDialog(context, ref, filaments: filaments);
+                  final filament = await showFilamentSelectorDialog(
+                    context,
+                    ref,
+                    filaments: filaments,
+                  );
                   if (filament != null) {
                     labelCtrl.text = filament.name;
                     priceCtrl.text = filament.pricePerBobbin.toStringAsFixed(2);
                     gramsCtrl.text = filament.gramsPerBobbin.toStringAsFixed(0);
-                    onChanged(MaterialUpdate(
-                      label: filament.name, weight: '',
-                      pricePerBobbin: filament.pricePerBobbin.toStringAsFixed(2),
-                      gramsPerBobbin: filament.gramsPerBobbin.toStringAsFixed(0),
-                    ));
+                    onChanged(
+                      MaterialUpdate(
+                        label: filament.name,
+                        weight: '',
+                        pricePerBobbin: filament.pricePerBobbin.toStringAsFixed(
+                          2,
+                        ),
+                        gramsPerBobbin: filament.gramsPerBobbin.toStringAsFixed(
+                          0,
+                        ),
+                      ),
+                    );
                   }
                 },
                 child: InputDecorator(
@@ -92,7 +106,12 @@ class ExpressFilamentRow extends ConsumerWidget {
                         const SizedBox(width: AppSpacing.sm),
                       ],
                       Expanded(
-                        child: Text(labelCtrl.text, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyMedium),
+                        child: Text(
+                          labelCtrl.text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium,
+                        ),
                       ),
                     ],
                   ),
@@ -102,9 +121,25 @@ class ExpressFilamentRow extends ConsumerWidget {
           else
             Row(
               children: [
-                Expanded(child: NumericInputField(label: EsBO.calcFieldSpoolPrice, controller: priceCtrl, onChanged: (_) => onChanged(_emit()), suffix: currency.symbol, showValidation: showValidation)),
+                Expanded(
+                  child: NumericInputField(
+                    label: EsBO.calcFieldSpoolPrice,
+                    controller: priceCtrl,
+                    onChanged: (_) => onChanged(_emit()),
+                    suffix: currency.symbol,
+                    showValidation: showValidation,
+                  ),
+                ),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: NumericInputField(label: EsBO.calcFieldSpoolGrams, controller: gramsCtrl, onChanged: (_) => onChanged(_emit()), suffix: 'g', showValidation: showValidation)),
+                Expanded(
+                  child: NumericInputField(
+                    label: EsBO.calcFieldSpoolGrams,
+                    controller: gramsCtrl,
+                    onChanged: (_) => onChanged(_emit()),
+                    suffix: 'g',
+                    showValidation: showValidation,
+                  ),
+                ),
               ],
             ),
           if (hasLabel || defaultFilament != null) ...[
@@ -113,24 +148,56 @@ class ExpressFilamentRow extends ConsumerWidget {
               children: [
                 if (hasLabel)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-                    decoration: BoxDecoration(color: cs.primaryContainer.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(AppRadii.xs)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text('${currency.symbol}${priceCtrl.text}', style: theme.textTheme.labelSmall?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600)),
-                      Text(' / ${gramsCtrl.text}g', style: theme.textTheme.labelSmall?.copyWith(color: cs.onPrimaryContainer.withValues(alpha: 0.7))),
-                    ]),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(AppRadii.xs),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${currency.symbol}${priceCtrl.text}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: cs.onPrimaryContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          ' / ${gramsCtrl.text}g',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: cs.onPrimaryContainer.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 const Spacer(),
-                if (defaultFilament != null && labelCtrl.text != defaultFilament.name)
+                if (defaultFilament != null &&
+                    labelCtrl.text != defaultFilament.name)
                   CatalogActionChip(
                     icon: Icons.star_rounded,
                     label: EsBO.calcMaterialUse(defaultFilament.name),
                     maxWidth: 180,
                     onTap: () {
                       labelCtrl.text = defaultFilament.name;
-                      priceCtrl.text = defaultFilament.pricePerBobbin.toStringAsFixed(2);
-                      gramsCtrl.text = defaultFilament.gramsPerBobbin.toStringAsFixed(0);
-                      onChanged(MaterialUpdate(label: defaultFilament.name, weight: '', pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(2), gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(0)));
+                      priceCtrl.text = defaultFilament.pricePerBobbin
+                          .toStringAsFixed(2);
+                      gramsCtrl.text = defaultFilament.gramsPerBobbin
+                          .toStringAsFixed(0);
+                      onChanged(
+                        MaterialUpdate(
+                          label: defaultFilament.name,
+                          weight: '',
+                          pricePerBobbin: defaultFilament.pricePerBobbin
+                              .toStringAsFixed(2),
+                          gramsPerBobbin: defaultFilament.gramsPerBobbin
+                              .toStringAsFixed(0),
+                        ),
+                      );
                     },
                   ),
               ],
@@ -141,12 +208,23 @@ class ExpressFilamentRow extends ConsumerWidget {
     );
   }
 
-  MaterialUpdate _emit() => MaterialUpdate(label: labelCtrl.text, weight: '', pricePerBobbin: priceCtrl.text, gramsPerBobbin: gramsCtrl.text);
+  MaterialUpdate _emit() => MaterialUpdate(
+    label: labelCtrl.text,
+    weight: '',
+    pricePerBobbin: priceCtrl.text,
+    gramsPerBobbin: gramsCtrl.text,
+  );
 }
 
 /// Action chip generico para catalogos.
 class CatalogActionChip extends StatelessWidget {
-  const CatalogActionChip({super.key, required this.icon, required this.label, required this.onTap, this.maxWidth});
+  const CatalogActionChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.maxWidth,
+  });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -158,7 +236,12 @@ class CatalogActionChip extends StatelessWidget {
       avatar: Icon(icon, size: 16),
       label: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelMedium),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelMedium,
+        ),
       ),
       onPressed: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -176,8 +259,16 @@ class FilamentColorSwatch extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isWhite = color.toARGB32() == 0xFFFFFFFF;
     return Container(
-      width: 16, height: 16,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle, border: Border.all(color: isWhite ? cs.outline : cs.outlineVariant, width: 1)),
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isWhite ? cs.outline : cs.outlineVariant,
+          width: 1,
+        ),
+      ),
     );
   }
 }

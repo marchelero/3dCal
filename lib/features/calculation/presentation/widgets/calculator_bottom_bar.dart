@@ -19,7 +19,12 @@ import 'printer_selector_dialog.dart';
 
 /// Chip animado del total en AppBar.
 class TotalChip extends StatefulWidget {
-  const TotalChip({super.key, required this.totalText, required this.hasDiscount, required this.onTap});
+  const TotalChip({
+    super.key,
+    required this.totalText,
+    required this.hasDiscount,
+    required this.onTap,
+  });
   final String totalText;
   final bool hasDiscount;
   final VoidCallback onTap;
@@ -28,18 +33,29 @@ class TotalChip extends StatefulWidget {
   State<TotalChip> createState() => _TotalChipState();
 }
 
-class _TotalChipState extends State<TotalChip> with SingleTickerProviderStateMixin {
+class _TotalChipState extends State<TotalChip>
+    with SingleTickerProviderStateMixin {
   AnimationController? _pulseCtrl;
 
   @override
   void initState() {
     super.initState();
-    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
-      ..forward().then((_) { _pulseCtrl?.dispose(); _pulseCtrl = null; });
+    _pulseCtrl =
+        AnimationController(
+            vsync: this,
+            duration: const Duration(milliseconds: 600),
+          )
+          ..forward().then((_) {
+            _pulseCtrl?.dispose();
+            _pulseCtrl = null;
+          });
   }
 
   @override
-  void dispose() { _pulseCtrl?.dispose(); super.dispose(); }
+  void dispose() {
+    _pulseCtrl?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,33 +68,76 @@ class _TotalChipState extends State<TotalChip> with SingleTickerProviderStateMix
         onTap: widget.onTap,
         borderRadius: BorderRadius.circular(AppRadii.md),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
           decoration: BoxDecoration(
             color: cs.primaryContainer,
             borderRadius: BorderRadius.circular(AppRadii.md),
-            border: Border.all(color: cs.primary.withValues(alpha: 0.4), width: 1),
+            border: Border.all(
+              color: cs.primary.withValues(alpha: 0.4),
+              width: 1,
+            ),
           ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.receipt_long_rounded, size: 16, color: cs.onPrimaryContainer),
-            const SizedBox(width: AppSpacing.xs),
-            Text(widget.totalText, style: AppTheme.num(theme.textTheme.labelLarge ?? const TextStyle(), color: cs.onPrimaryContainer, fontWeight: FontWeight.w700)),
-            if (widget.hasDiscount) ...[
-              const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(color: cs.error, borderRadius: BorderRadius.circular(4)),
-                child: Text('%', style: theme.textTheme.labelSmall?.copyWith(color: cs.onError, fontWeight: FontWeight.w700, fontSize: 9)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.receipt_long_rounded,
+                size: 16,
+                color: cs.onPrimaryContainer,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                widget.totalText,
+                style: AppTheme.num(
+                  theme.textTheme.labelLarge ?? const TextStyle(),
+                  color: cs.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (widget.hasDiscount) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.error,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '%',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onError,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 9,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 2),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: cs.onPrimaryContainer.withValues(alpha: 0.7),
               ),
             ],
-            const SizedBox(width: 2),
-            Icon(Icons.chevron_right_rounded, size: 16, color: cs.onPrimaryContainer.withValues(alpha: 0.7)),
-          ]),
+          ),
         ),
       ),
     );
     if (_pulseCtrl != null) {
-      return ScaleTransition(scale: Tween<double>(begin: 0.92, end: 1).animate(CurvedAnimation(parent: _pulseCtrl!, curve: Curves.easeOutBack)), child: chip);
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.92, end: 1).animate(
+          CurvedAnimation(parent: _pulseCtrl!, curve: Curves.easeOutBack),
+        ),
+        child: chip,
+      );
     }
     return chip;
   }
@@ -94,21 +153,62 @@ class OtrosPeekPreview extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final dimColor = cs.onSurfaceVariant.withValues(alpha: 0.45);
-    final labels = [EsBO.calcFieldLabor, EsBO.calcFieldPostProcess, EsBO.calcFieldFailure, EsBO.calcFieldWaste];
+    final labels = [
+      EsBO.calcFieldLabor,
+      EsBO.calcFieldPostProcess,
+      EsBO.calcFieldFailure,
+      EsBO.calcFieldWaste,
+    ];
     return AnimatedSize(
-      duration: const Duration(milliseconds: 200), curve: Curves.easeInOut, alignment: Alignment.topCenter,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      alignment: Alignment.topCenter,
       child: Container(
         margin: const EdgeInsets.only(top: AppSpacing.xs),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(AppRadii.sm),
-          border: locked ? Border.all(color: cs.outlineVariant.withValues(alpha: 0.4), width: 1, strokeAlign: BorderSide.strokeAlignInside) : null,
+          border: locked
+              ? Border.all(
+                  color: cs.outlineVariant.withValues(alpha: 0.4),
+                  width: 1,
+                  strokeAlign: BorderSide.strokeAlignInside,
+                )
+              : null,
         ),
-        child: Row(children: [
-          Expanded(child: Wrap(spacing: AppSpacing.xs, runSpacing: AppSpacing.xs, children: labels.map((l) => Text(l, style: theme.textTheme.labelSmall?.copyWith(color: dimColor, fontStyle: FontStyle.italic))).toList())),
-          if (locked) ...[const SizedBox(width: AppSpacing.sm), Icon(Icons.lock_outline, size: 14, color: cs.primary.withValues(alpha: 0.5))],
-        ]),
+        child: Row(
+          children: [
+            Expanded(
+              child: Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: labels
+                    .map(
+                      (l) => Text(
+                        l,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: dimColor,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            if (locked) ...[
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                Icons.lock_outline,
+                size: 14,
+                color: cs.primary.withValues(alpha: 0.5),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -116,23 +216,32 @@ class OtrosPeekPreview extends StatelessWidget {
 
 /// Rubrica impresa: header + child.
 class RubricSection extends StatelessWidget {
-  const RubricSection({super.key, required this.icon, required this.title, required this.child});
+  const RubricSection({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
   final IconData icon;
   final String title;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SectionHeader(icon: icon, title: title),
-      const SizedBox(height: AppSpacing.md),
-      child,
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(icon: icon, title: title),
+        const SizedBox(height: AppSpacing.md),
+        child,
+      ],
+    );
   }
 }
 
 /// Parte entera del porcentaje para labels.
-int pctInt(Decimal? value) => value == null ? 0 : value.round().toBigInt().toInt();
+int pctInt(Decimal? value) =>
+    value == null ? 0 : value.round().toBigInt().toInt();
 
 /// Lineas compactas del lote mayorista.
 class BatchLines extends StatelessWidget {
@@ -143,34 +252,96 @@ class BatchLines extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final manualAmount = state.manualDiscountAmount;
-    final subtotalBefore = state.lotTotal + state.batchDiscountAmount + manualAmount;
+    final subtotalBefore =
+        state.lotTotal + state.batchDiscountAmount + manualAmount;
     final subtotalAfterBatch = state.lotTotal + manualAmount;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _row(context, label: EsBO.calcSubtotal, amount: subtotalBefore, bold: false),
-        if (state.batchDiscountAmount > Decimal.zero) ...[
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _row(
+            context,
+            label: EsBO.calcSubtotal,
+            amount: subtotalBefore,
+            bold: false,
+          ),
+          if (state.batchDiscountAmount > Decimal.zero) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _row(
+              context,
+              label: EsBO.calcDetailBatchDiscount(
+                pctInt(state.batchAppliedPercent),
+              ),
+              amount: state.batchDiscountAmount,
+              bold: false,
+              negative: true,
+            ),
+          ],
+          if (manualAmount > Decimal.zero) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _row(
+              context,
+              label: EsBO.calcSubtotal,
+              amount: subtotalAfterBatch,
+              bold: false,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _row(
+              context,
+              label: EsBO.calcDetailManualDiscount(
+                pctInt(state.detailDiscountPct),
+              ),
+              amount: manualAmount,
+              bold: false,
+              negative: true,
+            ),
+          ],
           const SizedBox(height: AppSpacing.xs),
-          _row(context, label: EsBO.calcDetailBatchDiscount(pctInt(state.batchAppliedPercent)), amount: state.batchDiscountAmount, bold: false, negative: true),
+          _row(
+            context,
+            label: EsBO.calcTotalFinal,
+            amount: state.lotTotal,
+            bold: true,
+          ),
         ],
-        if (manualAmount > Decimal.zero) ...[
-          const SizedBox(height: AppSpacing.xs),
-          _row(context, label: EsBO.calcSubtotal, amount: subtotalAfterBatch, bold: false),
-          const SizedBox(height: AppSpacing.xs),
-          _row(context, label: EsBO.calcDetailManualDiscount(pctInt(state.detailDiscountPct)), amount: manualAmount, bold: false, negative: true),
-        ],
-        const SizedBox(height: AppSpacing.xs),
-        _row(context, label: EsBO.calcTotalFinal, amount: state.lotTotal, bold: true),
-      ]),
+      ),
     );
   }
 
-  Widget _row(BuildContext context, {required String label, required Decimal amount, required bool bold, bool negative = false}) {
+  Widget _row(
+    BuildContext context, {
+    required String label,
+    required Decimal amount,
+    required bool bold,
+    bool negative = false,
+  }) {
     final theme = Theme.of(context);
-    return Row(children: [
-      Expanded(child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: bold ? null : theme.colorScheme.onSurfaceVariant, fontWeight: bold ? FontWeight.w700 : null), maxLines: 1, overflow: TextOverflow.ellipsis)),
-      Text('${negative ? '-' : ''}${formatCurrency(amount, currency)}', style: theme.textTheme.bodySmall?.copyWith(color: bold ? null : theme.colorScheme.onSurfaceVariant, fontWeight: bold ? FontWeight.w700 : FontWeight.w600)),
-    ]);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: bold ? null : theme.colorScheme.onSurfaceVariant,
+              fontWeight: bold ? FontWeight.w700 : null,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          '${negative ? '-' : ''}${formatCurrency(amount, currency)}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: bold ? null : theme.colorScheme.onSurfaceVariant,
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -186,42 +357,98 @@ class PrinterIndicator extends ConsumerWidget {
     final printers = printersAsync.value ?? <PrinterProfile>[];
     return Semantics(
       button: true,
-      label: activePrinter != null ? '${EsBO.calcPrinterPrefix}${activePrinter.name}' : '${EsBO.calcNoPrinter}. ${EsBO.calcPrinterEmptyCta}',
+      label: activePrinter != null
+          ? '${EsBO.calcPrinterPrefix}${activePrinter.name}'
+          : '${EsBO.calcNoPrinter}. ${EsBO.calcPrinterEmptyCta}',
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        onTap: printers.isEmpty ? () => context.push('/settings/printers/new') : () => showPrinterSelectorDialog(context, ref, printers: printers),
+        onTap: printers.isEmpty
+            ? () => context.push('/settings/printers/new')
+            : () => showPrinterSelectorDialog(context, ref, printers: printers),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: theme.colorScheme.outlineVariant)),
-          child: Row(children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, borderRadius: BorderRadius.circular(AppRadii.md)),
-              child: Icon(MdiIcons.printer3d, size: 20, color: theme.colorScheme.onPrimaryContainer),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: activePrinter != null
-                  ? Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                      Text(activePrinter.name, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                      Text(
-                        activePrinter.brand != null && activePrinter.brand!.isNotEmpty
-                            ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
-                            : '${activePrinter.averageWatts} W',
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                ),
+                child: Icon(
+                  MdiIcons.printer3d,
+                  size: 20,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: activePrinter != null
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            activePrinter.name,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            activePrinter.brand != null &&
+                                    activePrinter.brand!.isNotEmpty
+                                ? '${activePrinter.brand} · ${activePrinter.averageWatts} W'
+                                : '${activePrinter.averageWatts} W',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            EsBO.calcNoPrinter,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            EsBO.calcPrinterEmptyHint,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            EsBO.calcPrinterEmptyCta,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
-                    ])
-                  : Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                      Text(EsBO.calcNoPrinter, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 2),
-                      Text(EsBO.calcPrinterEmptyHint, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                      const SizedBox(height: 4),
-                      Text(EsBO.calcPrinterEmptyCta, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w700)),
-                    ]),
-            ),
-            Icon(Icons.chevron_right_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
-          ]),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );

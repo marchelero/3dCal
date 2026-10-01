@@ -1,4 +1,4 @@
-﻿// ignore_for_file: public_member_api_docs
+// ignore_for_file: public_member_api_docs
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -31,6 +31,8 @@ import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/discount_tier.dart';
+import '../../data/calculation_repository.dart' show DraftMaterialInput;
+import '../notifiers/calculations_notifier.dart';
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/calculator_bottom_bar.dart';
@@ -60,7 +62,12 @@ import '../widgets/save_sheet.dart';
 /// Non-Negotiables). El negocio vive en [CalculatorNotifier]; el chip de
 /// total del AppBar conserva el feedback live en cualquier paso.
 class CalculatorPage extends ConsumerStatefulWidget {
-  const CalculatorPage({super.key, this.prefillCalc, this.newMode = false});
+  const CalculatorPage({
+    super.key,
+    this.prefillCalc,
+    this.newMode = false,
+    this.editMode = false,
+  });
 
   /// Cotizacion guardada para precargar ("Reusar"). Si es null, la pagina
   /// restaura el draft de la sesion anterior (comportamiento normal).
@@ -68,6 +75,15 @@ class CalculatorPage extends ConsumerStatefulWidget {
 
   /// Cuando true, abre con formulario vacío y descarta el draft local.
   final bool newMode;
+
+  /// Cuando true, [prefillCalc] se abre para EDITAR: al guardar se
+  /// actualiza esa misma fila (mismo id/fecha/estado de venta) en vez de
+  /// crear una cotizacion nueva.
+  ///
+  /// El modo vive en la pagina, no en el notifier global: asi cada apertura
+  /// decide su propio modo y no queda un flag pegajoso de "estoy editando"
+  /// si el usuario mas adelante abre una cotizacion nueva.
+  final bool editMode;
 
   @override
   ConsumerState<CalculatorPage> createState() => _CalculatorPageState();
@@ -184,6 +200,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (widget.newMode) {
         await ref.read(draftStorageProvider).clear();
         if (!mounted) return;
+        // Invalidar el banner "Continuar" en Home (draftStatusProvider).
+        ref.invalidate(draftStatusProvider);
         ref.read(calculatorNotifierProvider.notifier).reset();
         // Limpiar controllers — se inicializaron con valores del draft
         // antes de este callback (initState los crea con initial.*).
@@ -212,6 +230,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         if (!mounted) return;
         _syncControllersFromState(ref.read(calculatorNotifierProvider));
         _rebuildAdvancedRows();
+        _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
         return;
       }
       // Cargar el draft ANTES de resetear para no dejar la UI a medio
@@ -239,6 +258,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         if (!mounted) return;
         _syncControllersFromState(ref.read(calculatorNotifierProvider));
         _rebuildAdvancedRows();
+        _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
         return;
       }
       // Sin draft: resetear todos los controllers a vacio.
@@ -278,18 +298,29 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   /// Fuente unica de verdad: el CalculatorState del notifier (evita
   /// desync si el draft y el state divergen tras el restore).
   void _syncControllersFromState(CalculatorState s) {
-    _weightCtrl.text = s.weight;
-    _hoursCtrl.text = s.printHours;
-    _minutesCtrl.text = s.printMinutes;
+    // Solo sobreescribir si el state tiene valor (no vacío). Evita que un
+    // state temporal (post-reset, pre-restore) borre los controllers que
+    // ya tienen datos del draft.
+    if (s.weight.isNotEmpty) _weightCtrl.text = s.weight;
+    if (s.printHours.isNotEmpty) _hoursCtrl.text = s.printHours;
+    if (s.printMinutes.isNotEmpty) _minutesCtrl.text = s.printMinutes;
     _discountCtrl.text = s.discountPct;
-    _priceCtrl.text = s.filamentPrice;
-    _gramsCtrl.text = s.filamentGrams;
-    _labelCtrl.text = s.filamentLabel;
-    _pieceLabelCtrl.text = s.label;
-    _extraLaborRateCtrl.text = s.extraLaborRate;
-    _extraPostProcessRateCtrl.text = s.extraPostProcessRate;
-    _extraFailureRateCtrl.text = s.extraFailureRate;
-    _extraMarkupOnMaterialsCtrl.text = s.extraMarkupOnMaterials;
+    if (s.filamentPrice.isNotEmpty) _priceCtrl.text = s.filamentPrice;
+    if (s.filamentGrams.isNotEmpty) _gramsCtrl.text = s.filamentGrams;
+    if (s.filamentLabel.isNotEmpty) _labelCtrl.text = s.filamentLabel;
+    if (s.label.isNotEmpty) _pieceLabelCtrl.text = s.label;
+    if (s.extraLaborRate.isNotEmpty) {
+      _extraLaborRateCtrl.text = s.extraLaborRate;
+    }
+    if (s.extraPostProcessRate.isNotEmpty) {
+      _extraPostProcessRateCtrl.text = s.extraPostProcessRate;
+    }
+    if (s.extraFailureRate.isNotEmpty) {
+      _extraFailureRateCtrl.text = s.extraFailureRate;
+    }
+    if (s.extraMarkupOnMaterials.isNotEmpty) {
+      _extraMarkupOnMaterialsCtrl.text = s.extraMarkupOnMaterials;
+    }
   }
 
   /// Reconstruye los rows advanced del AnimatedList desde el state
@@ -322,9 +353,29 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _saveTimer = Timer(const Duration(milliseconds: 500), _saveDraft);
   }
 
-  Future<void> _saveDraft() async {
-    if (!mounted) return;
-    final draft = CalculationDraft(
+  /// Construye el draft de sesion desde los controllers + el state actual.
+  ///
+  /// Incluye `isAdvanced` y `materials` para que una cotizacion Advanced se
+  /// restaure completa (filas de material + tiempo propio por material).
+  /// Antes solo se guardaban los campos escalares, lo que hacia que un draft
+  /// Advanced volviera como Express sin materiales.
+  CalculationDraft _buildSessionDraft() {
+    final s = ref.read(calculatorNotifierProvider);
+    return CalculationDraft(
+      isAdvanced: s.mode == CalculatorMode.advanced,
+      materials: s.materials
+          .map(
+            (m) => MaterialDraft(
+              label: m.label,
+              weight: m.weight,
+              pricePerBobbin: m.pricePerBobbin,
+              gramsPerBobbin: m.gramsPerBobbin,
+              useOwnTime: m.useOwnTime,
+              materialHours: m.materialHours,
+              materialMinutes: m.materialMinutes,
+            ),
+          )
+          .toList(),
       weight: _weightCtrl.text,
       printHours: _hoursCtrl.text,
       printMinutes: _minutesCtrl.text,
@@ -338,7 +389,25 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       extraFailureRate: _extraFailureRateCtrl.text,
       extraMarkupOnMaterials: _extraMarkupOnMaterialsCtrl.text,
     );
-    await ref.read(draftStorageProvider).save(draft);
+  }
+
+  /// True si el form no tiene nada que preservar. En Advanced basta con que
+  /// haya al menos un material (aunque no tenga horas globales).
+  bool get _formIsEmpty {
+    final s = ref.read(calculatorNotifierProvider);
+    if (s.mode == CalculatorMode.advanced && s.materials.isNotEmpty) {
+      return false;
+    }
+    return _weightCtrl.text.isEmpty &&
+        _hoursCtrl.text.isEmpty &&
+        _minutesCtrl.text.isEmpty &&
+        _priceCtrl.text.isEmpty &&
+        _gramsCtrl.text.isEmpty;
+  }
+
+  Future<void> _saveDraft() async {
+    if (!mounted) return;
+    await ref.read(draftStorageProvider).save(_buildSessionDraft());
   }
 
   /// Guardado síncrono del draft para dispose(). Solo guarda si el form
@@ -348,31 +417,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   void _saveDraftSync() {
     try {
       // No guardar si el form está vacío (nueva cotización o reset).
-      if (_weightCtrl.text.isEmpty &&
-          _hoursCtrl.text.isEmpty &&
-          _minutesCtrl.text.isEmpty &&
-          _priceCtrl.text.isEmpty &&
-          _gramsCtrl.text.isEmpty) {
-        return;
-      }
-      final draft = CalculationDraft(
-        weight: _weightCtrl.text,
-        printHours: _hoursCtrl.text,
-        printMinutes: _minutesCtrl.text,
-        discountPct: _discountCtrl.text,
-        filamentPrice: _priceCtrl.text,
-        filamentGrams: _gramsCtrl.text,
-        label: _pieceLabelCtrl.text,
-        filamentLabel: _labelCtrl.text,
-        extraLaborRate: _extraLaborRateCtrl.text,
-        extraPostProcessRate: _extraPostProcessRateCtrl.text,
-        extraFailureRate: _extraFailureRateCtrl.text,
-        extraMarkupOnMaterials: _extraMarkupOnMaterialsCtrl.text,
-      );
-      ref.read(sharedPreferencesProvider).setString(
-        'form_draft',
-        draft.encode(),
-      );
+      if (_formIsEmpty) return;
+      ref
+          .read(sharedPreferencesProvider)
+          .setString('form_draft', _buildSessionDraft().encode());
     } catch (_) {
       // Silenciar: si falla, el debounce async cubrirá el caso normal.
     }
@@ -390,18 +438,55 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     if (!mounted) return;
     final state = ref.read(calculatorNotifierProvider);
     if (state.output == null) {
-      debugPrint('[PartialSave] skip: output=null (form inválido o recompute falló)');
+      debugPrint(
+        '[PartialSave] skip: output=null (form inválido o recompute falló)',
+      );
       return;
     }
     try {
       final repo = ref.read(calculationRepositoryProvider);
       final companion = CalculatorNotifier.stateToPartialDto(state);
-      final id = await repo.savePartial(companion);
+      final id = await repo.savePartial(
+        companion,
+        materials: _partialMaterialInputs(state),
+      );
       ref.read(currentPartialIdProvider.notifier).state = id;
+      // Invalidar el historial para que refresque al volver.
+      ref.invalidate(calculationsNotifierProvider);
       debugPrint('[PartialSave] guardado id=$id');
     } catch (e, st) {
       debugPrint('[PartialSave] ERROR: $e\n$st');
     }
+  }
+
+  /// Convierte los materiales del state a filas para la tabla de materiales.
+  ///
+  /// Sin esto, un parcial guardado en Advanced se reusaba SIN materiales:
+  /// `savePartial` solo escribia la fila de `calculations`.
+  ///
+  /// El desglose de tiempo por material se persiste desde schema v15
+  /// (`useOwnTime` / `materialHours` / `materialMinutes`).
+  List<DraftMaterialInput> _partialMaterialInputs(CalculatorState state) {
+    if (state.mode != CalculatorMode.advanced) return const [];
+    return state.materials
+        .map(
+          (m) => DraftMaterialInput(
+            label: m.label,
+            weightGrams:
+                (CalculatorState.parseDecimal(m.weight) ?? Decimal.zero)
+                    .toDouble(),
+            pricePerBobbin:
+                (CalculatorState.parseDecimal(m.pricePerBobbin) ?? Decimal.zero)
+                    .toDouble(),
+            gramsPerBobbin:
+                (CalculatorState.parseDecimal(m.gramsPerBobbin) ?? Decimal.zero)
+                    .toDouble(),
+            useOwnTime: m.useOwnTime,
+            materialHours: m.ownTimeHoursDecimal?.toDouble(),
+            materialMinutes: m.ownTimeMinutesDecimal?.toDouble(),
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -484,6 +569,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     ref.read(calculatorNotifierProvider.notifier).addMaterial();
     _materialCtrls.add(MaterialCtrls.empty());
     final newIndex = _materialCtrls.length - 1;
+    // La lista de materiales vive fuera del draft solo si se persiste: sin
+    // esto, "Continuar" vuelva con los materiales previos.
+    _onAnyFieldChange();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _advancedListKey.currentState?.insertItem(newIndex);
     });
@@ -493,6 +581,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     ref.read(calculatorNotifierProvider.notifier).removeMaterial(index);
     if (index < 0 || index >= _materialCtrls.length) return;
     final removed = _materialCtrls.removeAt(index);
+    // Si se elimino el ultimo material con tiempo propio, el campo global
+    // vuelve a mostrar el tiempo global guardado.
+    _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
+    _onAnyFieldChange();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _advancedListKey.currentState?.removeItem(
         index,
@@ -504,6 +596,105 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       );
     });
     removed.dispose();
+  }
+
+  /// Escribe en los controllers de "Tiempo de impresión" lo que el usuario
+  /// debe ver:
+  /// - Si algun material tiene tiempo propio → la **suma** de esos tiempos
+  ///   (los fields siguen siendo editables; editarlos apaga los switches).
+  /// - Si ningun material tiene tiempo propio → el tiempo global del state.
+  ///
+  /// Es la contraparte visual de [CalculatorState.totalHoursDecimal], que
+  /// aplica la misma precedencia. Mantiene el form y el state alineados.
+  void _syncGlobalTimeFields(CalculatorState s) {
+    String h;
+    String m;
+    final own = s.anyMaterialOwnTime ? s.materialsOwnTimeDecimal : null;
+    if (own != null) {
+      final totalMinutes = (own * Decimal.fromInt(60)).toBigInt();
+      final hh = totalMinutes ~/ BigInt.from(60);
+      final mm = totalMinutes.remainder(BigInt.from(60)).toInt();
+      h = hh.toString();
+      m = mm == 0 ? '' : mm.toString();
+    } else {
+      h = s.printHours;
+      m = s.printMinutes;
+    }
+    if (_hoursCtrl.text != h) _hoursCtrl.text = h;
+    if (_minutesCtrl.text != m) _minutesCtrl.text = m;
+  }
+
+  /// Toggle del switch "Tiempo propio" de un material (Advanced).
+  ///
+  /// No se apaga el tiempo global al activar: ese campo pasa a mostrar la
+  /// suma de los tiempos propios (ver [_syncGlobalTimeFields]). Al desactivar
+  /// el ultimo switch, el campo vuelve a mostrar el tiempo global guardado.
+  void _onMaterialTimeToggle(int index, bool value) {
+    if (index < 0 || index >= _materialCtrls.length) return;
+    final notifier = ref.read(calculatorNotifierProvider.notifier);
+    final ctrls = _materialCtrls[index];
+
+    if (value) {
+      // Heredar el tiempo global visible la primera vez, para no obligar a
+      // reescribir un numero que el usuario ya habia puesto.
+      if (ctrls.materialHours.text.isEmpty &&
+          ctrls.materialMinutes.text.isEmpty &&
+          !ref.read(calculatorNotifierProvider).anyMaterialOwnTime) {
+        ctrls.materialHours.text = _hoursCtrl.text;
+        ctrls.materialMinutes.text = _minutesCtrl.text;
+      }
+    } else {
+      ctrls.materialHours.text = '';
+      ctrls.materialMinutes.text = '';
+    }
+
+    notifier.updateMaterial(
+      index,
+      useOwnTime: value,
+      materialHours: ctrls.materialHours.text,
+      materialMinutes: ctrls.materialMinutes.text,
+    );
+    _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
+    _onAnyFieldChange();
+    if (mounted) setState(() {});
+  }
+
+  /// Limpia el tiempo propio de todos los materiales. Se invoca cuando el
+  /// usuario edita el tiempo global: la Exclusion es mutua, asi que escribir
+  /// en el global apaga los switches individuales.
+  void _clearMaterialOwnTimes() {
+    final notifier = ref.read(calculatorNotifierProvider.notifier);
+    final materials = List<MaterialRow>.from(
+      ref.read(calculatorNotifierProvider).materials,
+    );
+    var changed = false;
+    for (var i = 0; i < materials.length; i++) {
+      if (!materials[i].useOwnTime) continue;
+      if (i < _materialCtrls.length) {
+        _materialCtrls[i].materialHours.text = '';
+        _materialCtrls[i].materialMinutes.text = '';
+      }
+      notifier.updateMaterial(
+        i,
+        useOwnTime: false,
+        materialHours: '',
+        materialMinutes: '',
+      );
+      changed = true;
+    }
+    if (changed && mounted) setState(() {});
+  }
+
+  /// Wrapper de horas globales: desactiva los tiempos propios al escribir.
+  void _onGlobalHoursChanged(String value) {
+    if (value.trim().isNotEmpty) _clearMaterialOwnTimes();
+    ref.read(calculatorNotifierProvider.notifier).setPrintHours(value);
+  }
+
+  /// Wrapper de minutos globales: desactiva los tiempos propios al escribir.
+  void _onGlobalMinutesChanged(String value) {
+    if (value.trim().isNotEmpty) _clearMaterialOwnTimes();
+    ref.read(calculatorNotifierProvider.notifier).setPrintMinutes(value);
   }
 
   void _resetAll() {
@@ -700,16 +891,19 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       builder: (sheetCtx) => SaveSheet(recentClients: recentClients),
     );
     if (result == null || !mounted) return;
+    final isEditing = widget.editMode && widget.prefillCalc != null;
     try {
       final notifier = ref.read(calculatorNotifierProvider.notifier);
 
       // 1) Siempre guardar en el historial (no modifica el state). La foto
       // de la pieza viaja desde el result sheet (F2).
+      // En edicion (`updateId`) actualiza la fila existente.
       final id = await notifier.save(
         clientName: result.clientName,
         notes: result.notes,
         conditions: result.conditions,
         pieceImageBytes: pieceImageBytes,
+        updateId: isEditing ? widget.prefillCalc!.id : null,
       );
       if (id == null) {
         if (!mounted) return;
@@ -719,9 +913,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         return;
       }
 
-      // Borrar parcial existente tras save exitoso (T6).
+      // Borrar parcial existente tras save exitoso (T6). En edicion no aplica:
+      // la fila que se guarda ES la que se edita.
       final partialId = ref.read(currentPartialIdProvider);
-      if (partialId != null) {
+      if (!isEditing && partialId != null) {
         await ref.read(calculationRepositoryProvider).deletePartial(partialId);
         ref.read(currentPartialIdProvider.notifier).state = null;
       }
@@ -753,11 +948,17 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           AppSnackBar.success(
-            EsBO.calcSavedWithId(id),
+            isEditing
+                ? ref.read(localeStringsProvider).calcEditSavedWithId(id)
+                : EsBO.calcSavedWithId(id),
             actionLabel: EsBO.calcSavedViewAction,
-            onAction: () {
+            onAction: () async {
               if (!mounted) return;
-              context.push('/history/$id');
+              final calc = await ref
+                  .read(calculationRepositoryProvider)
+                  .getById(id);
+              if (!mounted || calc == null) return;
+              unawaited(context.push('/history/$id', extra: calc));
             },
           ),
         );
@@ -844,7 +1045,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     // Calcular la posicion offsetando el step bar (~60px) y un padding.
     final box = context.findRenderObject() as RenderBox?;
     if (box == null) return;
-    final offset = box.localToGlobal(Offset.zero).dy -
+    final offset =
+        box.localToGlobal(Offset.zero).dy -
         box.size.height * 0.05; // 5% padding arriba
 
     _scrollCtrl.animateTo(
@@ -932,7 +1134,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ),
         title: Semantics(
           header: true,
-          child: Text(ref.watch(localeStringsProvider).calcSheetTitle),
+          child: Text(
+            widget.editMode
+                // En edicion el titulo cambia: el usuario debe saber que
+                // "Guardar" va a SOBRESCRIBIR la cotizacion existente y no
+                // a crear una segunda en el historial.
+                ? ref.watch(localeStringsProvider).calcEditTitle
+                : ref.watch(localeStringsProvider).calcSheetTitle,
+          ),
         ),
         actions: [
           // AppBar adaptativo: el chip de total es prioridad (SIEMPRE
@@ -1025,7 +1234,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                           theme: theme,
                           cs: cs,
                           child: state.mode == CalculatorMode.express
-                              ? _buildStepPieceExpress(state, notifier, currency)
+                              ? _buildStepPieceExpress(
+                                  state,
+                                  notifier,
+                                  currency,
+                                )
                               : _buildStepAdvancedMaterials(state, notifier),
                         ),
                         const SizedBox(height: AppSpacing.xl),
@@ -1140,7 +1353,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
         border: Border.all(
-          color: isActive ? cs.primary.withValues(alpha: 0.4) : cs.outlineVariant,
+          color: isActive
+              ? cs.primary.withValues(alpha: 0.4)
+              : cs.outlineVariant,
           width: isActive ? 1.5 : 1,
         ),
         borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -1228,6 +1443,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
   /// PASO 2 (comun): Impresion â€” tiempo (horas+minutos) + impresora activa.
   Widget _buildStepPrint(CalculatorNotifier notifier) {
+    // Cuando algun material tiene tiempo propio, estos fields muestran la
+    // SUMA de esos tiempos. Siguen editables: al escribir, se apagan los
+    // switches individuales y el valor tipeado pasa a ser el tiempo global.
+    final ownTimeActive = ref
+        .read(calculatorNotifierProvider)
+        .anyMaterialOwnTime;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1241,7 +1462,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 child: NumericInputField(
                   label: EsBO.calcLabelHours,
                   controller: _hoursCtrl,
-                  onChanged: notifier.setPrintHours,
+                  onChanged: _onGlobalHoursChanged,
                   suffix: 'h',
                   keyHint: EsBO.calcKeyHoursHint,
                   isKey: true,
@@ -1254,7 +1475,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                 child: NumericInputField(
                   label: EsBO.calcLabelMinutes,
                   controller: _minutesCtrl,
-                  onChanged: notifier.setPrintMinutes,
+                  onChanged: _onGlobalMinutesChanged,
                   suffix: 'min',
                   keyHint: EsBO.calcKeyMinutesHint,
                   isKey: true,
@@ -1265,13 +1486,34 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             ],
           ),
         ),
+        if (ownTimeActive) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  EsBO.calcTimeSumOfMaterials,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpacing.xl),
 
         // â”€â”€ Impresora â”€â”€
         RubricSection(
           icon: MdiIcons.printer3d,
           title: EsBO.calcSectionPrinter,
-                    child: const PrinterIndicator(),
+          child: const PrinterIndicator(),
         ),
       ],
     );
@@ -1366,16 +1608,37 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                       weightCtrl: _materialCtrls[index].weight,
                       priceCtrl: _materialCtrls[index].price,
                       gramsCtrl: _materialCtrls[index].grams,
+                      useOwnTime:
+                          state.materials.length > index &&
+                          state.materials[index].useOwnTime,
+                      materialHoursCtrl: _materialCtrls[index].materialHours,
+                      materialMinutesCtrl:
+                          _materialCtrls[index].materialMinutes,
                       deletable: true,
                       showValidation: _showValidationErrors,
                       isKeyWeight: true,
-                      onChanged: (m) => notifier.updateMaterial(
-                        index,
-                        label: m.label,
-                        weight: m.weight,
-                        pricePerBobbin: m.pricePerBobbin,
-                        gramsPerBobbin: m.gramsPerBobbin,
-                      ),
+                      onTimeToggle: (v) => _onMaterialTimeToggle(index, v),
+                      onChanged: (m) {
+                        notifier.updateMaterial(
+                          index,
+                          label: m.label,
+                          weight: m.weight,
+                          pricePerBobbin: m.pricePerBobbin,
+                          gramsPerBobbin: m.gramsPerBobbin,
+                          useOwnTime: m.useOwnTime,
+                          materialHours: m.materialHours,
+                          materialMinutes: m.materialMinutes,
+                        );
+                        // El campo global muestra la suma: actualizarla en
+                        // vivo mientras el usuario tipea el tiempo del material.
+                        _syncGlobalTimeFields(
+                          ref.read(calculatorNotifierProvider),
+                        );
+                        // Sin esto, editar un material NO persistia nada:
+                        // los controllers de materiales no tienen listener
+                        // propio y el draft quedaba con la lista anterior.
+                        _onAnyFieldChange();
+                      },
                       onRemove: () => _removeMaterial(index),
                     ),
                   );
@@ -1581,7 +1844,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
                   child: Icon(
                     Icons.info_outline_rounded,
                     size: 14,
-                    color: hasTiers ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                    color: hasTiers
+                        ? cs.onPrimaryContainer
+                        : cs.onSurfaceVariant,
                   ),
                 ),
               ),

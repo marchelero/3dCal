@@ -844,7 +844,7 @@ class _PrinterHealthCard extends ConsumerWidget {
       return Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => context.push('/settings/printers/${printer.id}'),
+          onTap: () => context.push('/settings/printers/${printer.id}', extra: printer),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(

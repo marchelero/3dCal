@@ -96,11 +96,7 @@ class CalculationEngine {
         : Decimal.zero;
 
     // Base (sin amortizacion — la amortizacion es solo para estadisticas)
-    final baseCost =
-        materialCost +
-        electricCost +
-        laborCost +
-        postProcessCost;
+    final baseCost = materialCost + electricCost + laborCost + postProcessCost;
 
     // Tasa de falla (% del base)
     final failureCost = input.failureRate > Decimal.zero

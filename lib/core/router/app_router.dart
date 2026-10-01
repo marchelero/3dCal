@@ -156,6 +156,15 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/calculator/edit',
+      pageBuilder: (context, state) {
+        final calc = state.extra as Calculation;
+        // Mismo prefill que "Reusar", pero en modo edicion: al guardar
+        // actualiza esta fila en vez de crear una nueva.
+        return _slideRight(CalculatorPage(prefillCalc: calc, editMode: true));
+      },
+    ),
+    GoRoute(
       path: '/history/:id',
       pageBuilder: (context, state) {
         final id = int.parse(state.pathParameters['id']!);

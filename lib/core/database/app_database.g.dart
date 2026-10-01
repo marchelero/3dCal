@@ -1345,6 +1345,21 @@ class $CalculationsTable extends Calculations
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isAdvancedMeta = const VerificationMeta(
+    'isAdvanced',
+  );
+  @override
+  late final GeneratedColumn<bool> isAdvanced = GeneratedColumn<bool>(
+    'is_advanced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_advanced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _materialCostSnapshotMeta =
       const VerificationMeta('materialCostSnapshot');
   @override
@@ -1589,6 +1604,7 @@ class $CalculationsTable extends Calculations
     isSold,
     isTemplate,
     isPartial,
+    isAdvanced,
     materialCostSnapshot,
     electricCostSnapshot,
     amortizationCostSnapshot,
@@ -1753,6 +1769,12 @@ class $CalculationsTable extends Calculations
       context.handle(
         _isPartialMeta,
         isPartial.isAcceptableOrUnknown(data['is_partial']!, _isPartialMeta),
+      );
+    }
+    if (data.containsKey('is_advanced')) {
+      context.handle(
+        _isAdvancedMeta,
+        isAdvanced.isAcceptableOrUnknown(data['is_advanced']!, _isAdvancedMeta),
       );
     }
     if (data.containsKey('material_cost_snapshot')) {
@@ -2048,6 +2070,10 @@ class $CalculationsTable extends Calculations
         DriftSqlType.bool,
         data['${effectivePrefix}is_partial'],
       )!,
+      isAdvanced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_advanced'],
+      )!,
       materialCostSnapshot: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}material_cost_snapshot'],
@@ -2210,6 +2236,12 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   /// persistida con flag, guardado rapido sin completar todos los campos).
   final bool isPartial;
 
+  /// v15: la cotizacion se creo en modo Advanced (multi-material).
+  ///
+  /// Sin este flag, reusar una cotizacion Advanced de UN SOLO material la
+  /// degradeaba a Express: la inferencia era `mats.length > 1`.
+  final bool isAdvanced;
+
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   final double materialCostSnapshot;
   final double electricCostSnapshot;
@@ -2266,6 +2298,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     required this.isSold,
     required this.isTemplate,
     required this.isPartial,
+    required this.isAdvanced,
     required this.materialCostSnapshot,
     required this.electricCostSnapshot,
     required this.amortizationCostSnapshot,
@@ -2320,6 +2353,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     map['is_sold'] = Variable<bool>(isSold);
     map['is_template'] = Variable<bool>(isTemplate);
     map['is_partial'] = Variable<bool>(isPartial);
+    map['is_advanced'] = Variable<bool>(isAdvanced);
     map['material_cost_snapshot'] = Variable<double>(materialCostSnapshot);
     map['electric_cost_snapshot'] = Variable<double>(electricCostSnapshot);
     map['amortization_cost_snapshot'] = Variable<double>(
@@ -2391,6 +2425,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       isSold: Value(isSold),
       isTemplate: Value(isTemplate),
       isPartial: Value(isPartial),
+      isAdvanced: Value(isAdvanced),
       materialCostSnapshot: Value(materialCostSnapshot),
       electricCostSnapshot: Value(electricCostSnapshot),
       amortizationCostSnapshot: Value(amortizationCostSnapshot),
@@ -2452,6 +2487,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       isSold: serializer.fromJson<bool>(json['isSold']),
       isTemplate: serializer.fromJson<bool>(json['isTemplate']),
       isPartial: serializer.fromJson<bool>(json['isPartial']),
+      isAdvanced: serializer.fromJson<bool>(json['isAdvanced']),
       materialCostSnapshot: serializer.fromJson<double>(
         json['materialCostSnapshot'],
       ),
@@ -2528,6 +2564,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
       'isSold': serializer.toJson<bool>(isSold),
       'isTemplate': serializer.toJson<bool>(isTemplate),
       'isPartial': serializer.toJson<bool>(isPartial),
+      'isAdvanced': serializer.toJson<bool>(isAdvanced),
       'materialCostSnapshot': serializer.toJson<double>(materialCostSnapshot),
       'electricCostSnapshot': serializer.toJson<double>(electricCostSnapshot),
       'amortizationCostSnapshot': serializer.toJson<double>(
@@ -2582,6 +2619,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     bool? isSold,
     bool? isTemplate,
     bool? isPartial,
+    bool? isAdvanced,
     double? materialCostSnapshot,
     double? electricCostSnapshot,
     double? amortizationCostSnapshot,
@@ -2623,6 +2661,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     isSold: isSold ?? this.isSold,
     isTemplate: isTemplate ?? this.isTemplate,
     isPartial: isPartial ?? this.isPartial,
+    isAdvanced: isAdvanced ?? this.isAdvanced,
     materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
     electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
     amortizationCostSnapshot:
@@ -2696,6 +2735,9 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ? data.isTemplate.value
           : this.isTemplate,
       isPartial: data.isPartial.present ? data.isPartial.value : this.isPartial,
+      isAdvanced: data.isAdvanced.present
+          ? data.isAdvanced.value
+          : this.isAdvanced,
       materialCostSnapshot: data.materialCostSnapshot.present
           ? data.materialCostSnapshot.value
           : this.materialCostSnapshot,
@@ -2780,6 +2822,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           ..write('isSold: $isSold, ')
           ..write('isTemplate: $isTemplate, ')
           ..write('isPartial: $isPartial, ')
+          ..write('isAdvanced: $isAdvanced, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
           ..write('amortizationCostSnapshot: $amortizationCostSnapshot, ')
@@ -2826,6 +2869,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
     isSold,
     isTemplate,
     isPartial,
+    isAdvanced,
     materialCostSnapshot,
     electricCostSnapshot,
     amortizationCostSnapshot,
@@ -2869,6 +2913,7 @@ class Calculation extends DataClass implements Insertable<Calculation> {
           other.isSold == this.isSold &&
           other.isTemplate == this.isTemplate &&
           other.isPartial == this.isPartial &&
+          other.isAdvanced == this.isAdvanced &&
           other.materialCostSnapshot == this.materialCostSnapshot &&
           other.electricCostSnapshot == this.electricCostSnapshot &&
           other.amortizationCostSnapshot == this.amortizationCostSnapshot &&
@@ -2914,6 +2959,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
   final Value<bool> isSold;
   final Value<bool> isTemplate;
   final Value<bool> isPartial;
+  final Value<bool> isAdvanced;
   final Value<double> materialCostSnapshot;
   final Value<double> electricCostSnapshot;
   final Value<double> amortizationCostSnapshot;
@@ -2953,6 +2999,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.isSold = const Value.absent(),
     this.isTemplate = const Value.absent(),
     this.isPartial = const Value.absent(),
+    this.isAdvanced = const Value.absent(),
     this.materialCostSnapshot = const Value.absent(),
     this.electricCostSnapshot = const Value.absent(),
     this.amortizationCostSnapshot = const Value.absent(),
@@ -2993,6 +3040,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     this.isSold = const Value.absent(),
     this.isTemplate = const Value.absent(),
     this.isPartial = const Value.absent(),
+    this.isAdvanced = const Value.absent(),
     required double materialCostSnapshot,
     required double electricCostSnapshot,
     this.amortizationCostSnapshot = const Value.absent(),
@@ -3053,6 +3101,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Expression<bool>? isSold,
     Expression<bool>? isTemplate,
     Expression<bool>? isPartial,
+    Expression<bool>? isAdvanced,
     Expression<double>? materialCostSnapshot,
     Expression<double>? electricCostSnapshot,
     Expression<double>? amortizationCostSnapshot,
@@ -3096,6 +3145,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       if (isSold != null) 'is_sold': isSold,
       if (isTemplate != null) 'is_template': isTemplate,
       if (isPartial != null) 'is_partial': isPartial,
+      if (isAdvanced != null) 'is_advanced': isAdvanced,
       if (materialCostSnapshot != null)
         'material_cost_snapshot': materialCostSnapshot,
       if (electricCostSnapshot != null)
@@ -3154,6 +3204,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     Value<bool>? isSold,
     Value<bool>? isTemplate,
     Value<bool>? isPartial,
+    Value<bool>? isAdvanced,
     Value<double>? materialCostSnapshot,
     Value<double>? electricCostSnapshot,
     Value<double>? amortizationCostSnapshot,
@@ -3194,6 +3245,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
       isSold: isSold ?? this.isSold,
       isTemplate: isTemplate ?? this.isTemplate,
       isPartial: isPartial ?? this.isPartial,
+      isAdvanced: isAdvanced ?? this.isAdvanced,
       materialCostSnapshot: materialCostSnapshot ?? this.materialCostSnapshot,
       electricCostSnapshot: electricCostSnapshot ?? this.electricCostSnapshot,
       amortizationCostSnapshot:
@@ -3284,6 +3336,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     }
     if (isPartial.present) {
       map['is_partial'] = Variable<bool>(isPartial.value);
+    }
+    if (isAdvanced.present) {
+      map['is_advanced'] = Variable<bool>(isAdvanced.value);
     }
     if (materialCostSnapshot.present) {
       map['material_cost_snapshot'] = Variable<double>(
@@ -3397,6 +3452,7 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
           ..write('isSold: $isSold, ')
           ..write('isTemplate: $isTemplate, ')
           ..write('isPartial: $isPartial, ')
+          ..write('isAdvanced: $isAdvanced, ')
           ..write('materialCostSnapshot: $materialCostSnapshot, ')
           ..write('electricCostSnapshot: $electricCostSnapshot, ')
           ..write('amortizationCostSnapshot: $amortizationCostSnapshot, ')
@@ -3510,6 +3566,42 @@ class $CalculationMaterialsTable extends CalculationMaterials
         type: DriftSqlType.double,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _useOwnTimeMeta = const VerificationMeta(
+    'useOwnTime',
+  );
+  @override
+  late final GeneratedColumn<bool> useOwnTime = GeneratedColumn<bool>(
+    'use_own_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use_own_time" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _materialHoursMeta = const VerificationMeta(
+    'materialHours',
+  );
+  @override
+  late final GeneratedColumn<double> materialHours = GeneratedColumn<double>(
+    'material_hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _materialMinutesMeta = const VerificationMeta(
+    'materialMinutes',
+  );
+  @override
+  late final GeneratedColumn<double> materialMinutes = GeneratedColumn<double>(
+    'material_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3519,6 +3611,9 @@ class $CalculationMaterialsTable extends CalculationMaterials
     weightGrams,
     pricePerBobbinSnapshot,
     gramsPerBobbinSnapshot,
+    useOwnTime,
+    materialHours,
+    materialMinutes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3593,6 +3688,33 @@ class $CalculationMaterialsTable extends CalculationMaterials
     } else if (isInserting) {
       context.missing(_gramsPerBobbinSnapshotMeta);
     }
+    if (data.containsKey('use_own_time')) {
+      context.handle(
+        _useOwnTimeMeta,
+        useOwnTime.isAcceptableOrUnknown(
+          data['use_own_time']!,
+          _useOwnTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('material_hours')) {
+      context.handle(
+        _materialHoursMeta,
+        materialHours.isAcceptableOrUnknown(
+          data['material_hours']!,
+          _materialHoursMeta,
+        ),
+      );
+    }
+    if (data.containsKey('material_minutes')) {
+      context.handle(
+        _materialMinutesMeta,
+        materialMinutes.isAcceptableOrUnknown(
+          data['material_minutes']!,
+          _materialMinutesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3630,6 +3752,18 @@ class $CalculationMaterialsTable extends CalculationMaterials
         DriftSqlType.double,
         data['${effectivePrefix}grams_per_bobbin_snapshot'],
       )!,
+      useOwnTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use_own_time'],
+      ),
+      materialHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}material_hours'],
+      ),
+      materialMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}material_minutes'],
+      ),
     );
   }
 
@@ -3658,6 +3792,19 @@ class CalculationMaterial extends DataClass
 
   /// Snapshot de gramos por bobina al guardar.
   final double gramsPerBobbinSnapshot;
+
+  /// v15: si este material tiene tiempo propio (independiente del global).
+  ///
+  /// Nullable con default `false`: los registros previos quedan NULL, que
+  /// `loadFromCalculation` interpreta como "usar el tiempo global" — el
+  /// comportamiento previo, intacto.
+  final bool? useOwnTime;
+
+  /// v15: horas del tiempo propio de este material.
+  final double? materialHours;
+
+  /// v15: minutos del tiempo propio de este material.
+  final double? materialMinutes;
   const CalculationMaterial({
     required this.id,
     required this.calculationId,
@@ -3666,6 +3813,9 @@ class CalculationMaterial extends DataClass
     required this.weightGrams,
     required this.pricePerBobbinSnapshot,
     required this.gramsPerBobbinSnapshot,
+    this.useOwnTime,
+    this.materialHours,
+    this.materialMinutes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3679,6 +3829,15 @@ class CalculationMaterial extends DataClass
     map['weight_grams'] = Variable<double>(weightGrams);
     map['price_per_bobbin_snapshot'] = Variable<double>(pricePerBobbinSnapshot);
     map['grams_per_bobbin_snapshot'] = Variable<double>(gramsPerBobbinSnapshot);
+    if (!nullToAbsent || useOwnTime != null) {
+      map['use_own_time'] = Variable<bool>(useOwnTime);
+    }
+    if (!nullToAbsent || materialHours != null) {
+      map['material_hours'] = Variable<double>(materialHours);
+    }
+    if (!nullToAbsent || materialMinutes != null) {
+      map['material_minutes'] = Variable<double>(materialMinutes);
+    }
     return map;
   }
 
@@ -3693,6 +3852,15 @@ class CalculationMaterial extends DataClass
       weightGrams: Value(weightGrams),
       pricePerBobbinSnapshot: Value(pricePerBobbinSnapshot),
       gramsPerBobbinSnapshot: Value(gramsPerBobbinSnapshot),
+      useOwnTime: useOwnTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(useOwnTime),
+      materialHours: materialHours == null && nullToAbsent
+          ? const Value.absent()
+          : Value(materialHours),
+      materialMinutes: materialMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(materialMinutes),
     );
   }
 
@@ -3713,6 +3881,9 @@ class CalculationMaterial extends DataClass
       gramsPerBobbinSnapshot: serializer.fromJson<double>(
         json['gramsPerBobbinSnapshot'],
       ),
+      useOwnTime: serializer.fromJson<bool?>(json['useOwnTime']),
+      materialHours: serializer.fromJson<double?>(json['materialHours']),
+      materialMinutes: serializer.fromJson<double?>(json['materialMinutes']),
     );
   }
   @override
@@ -3730,6 +3901,9 @@ class CalculationMaterial extends DataClass
       'gramsPerBobbinSnapshot': serializer.toJson<double>(
         gramsPerBobbinSnapshot,
       ),
+      'useOwnTime': serializer.toJson<bool?>(useOwnTime),
+      'materialHours': serializer.toJson<double?>(materialHours),
+      'materialMinutes': serializer.toJson<double?>(materialMinutes),
     };
   }
 
@@ -3741,6 +3915,9 @@ class CalculationMaterial extends DataClass
     double? weightGrams,
     double? pricePerBobbinSnapshot,
     double? gramsPerBobbinSnapshot,
+    Value<bool?> useOwnTime = const Value.absent(),
+    Value<double?> materialHours = const Value.absent(),
+    Value<double?> materialMinutes = const Value.absent(),
   }) => CalculationMaterial(
     id: id ?? this.id,
     calculationId: calculationId ?? this.calculationId,
@@ -3751,6 +3928,13 @@ class CalculationMaterial extends DataClass
         pricePerBobbinSnapshot ?? this.pricePerBobbinSnapshot,
     gramsPerBobbinSnapshot:
         gramsPerBobbinSnapshot ?? this.gramsPerBobbinSnapshot,
+    useOwnTime: useOwnTime.present ? useOwnTime.value : this.useOwnTime,
+    materialHours: materialHours.present
+        ? materialHours.value
+        : this.materialHours,
+    materialMinutes: materialMinutes.present
+        ? materialMinutes.value
+        : this.materialMinutes,
   );
   CalculationMaterial copyWithCompanion(CalculationMaterialsCompanion data) {
     return CalculationMaterial(
@@ -3771,6 +3955,15 @@ class CalculationMaterial extends DataClass
       gramsPerBobbinSnapshot: data.gramsPerBobbinSnapshot.present
           ? data.gramsPerBobbinSnapshot.value
           : this.gramsPerBobbinSnapshot,
+      useOwnTime: data.useOwnTime.present
+          ? data.useOwnTime.value
+          : this.useOwnTime,
+      materialHours: data.materialHours.present
+          ? data.materialHours.value
+          : this.materialHours,
+      materialMinutes: data.materialMinutes.present
+          ? data.materialMinutes.value
+          : this.materialMinutes,
     );
   }
 
@@ -3783,7 +3976,10 @@ class CalculationMaterial extends DataClass
           ..write('label: $label, ')
           ..write('weightGrams: $weightGrams, ')
           ..write('pricePerBobbinSnapshot: $pricePerBobbinSnapshot, ')
-          ..write('gramsPerBobbinSnapshot: $gramsPerBobbinSnapshot')
+          ..write('gramsPerBobbinSnapshot: $gramsPerBobbinSnapshot, ')
+          ..write('useOwnTime: $useOwnTime, ')
+          ..write('materialHours: $materialHours, ')
+          ..write('materialMinutes: $materialMinutes')
           ..write(')'))
         .toString();
   }
@@ -3797,6 +3993,9 @@ class CalculationMaterial extends DataClass
     weightGrams,
     pricePerBobbinSnapshot,
     gramsPerBobbinSnapshot,
+    useOwnTime,
+    materialHours,
+    materialMinutes,
   );
   @override
   bool operator ==(Object other) =>
@@ -3808,7 +4007,10 @@ class CalculationMaterial extends DataClass
           other.label == this.label &&
           other.weightGrams == this.weightGrams &&
           other.pricePerBobbinSnapshot == this.pricePerBobbinSnapshot &&
-          other.gramsPerBobbinSnapshot == this.gramsPerBobbinSnapshot);
+          other.gramsPerBobbinSnapshot == this.gramsPerBobbinSnapshot &&
+          other.useOwnTime == this.useOwnTime &&
+          other.materialHours == this.materialHours &&
+          other.materialMinutes == this.materialMinutes);
 }
 
 class CalculationMaterialsCompanion
@@ -3820,6 +4022,9 @@ class CalculationMaterialsCompanion
   final Value<double> weightGrams;
   final Value<double> pricePerBobbinSnapshot;
   final Value<double> gramsPerBobbinSnapshot;
+  final Value<bool?> useOwnTime;
+  final Value<double?> materialHours;
+  final Value<double?> materialMinutes;
   const CalculationMaterialsCompanion({
     this.id = const Value.absent(),
     this.calculationId = const Value.absent(),
@@ -3828,6 +4033,9 @@ class CalculationMaterialsCompanion
     this.weightGrams = const Value.absent(),
     this.pricePerBobbinSnapshot = const Value.absent(),
     this.gramsPerBobbinSnapshot = const Value.absent(),
+    this.useOwnTime = const Value.absent(),
+    this.materialHours = const Value.absent(),
+    this.materialMinutes = const Value.absent(),
   });
   CalculationMaterialsCompanion.insert({
     this.id = const Value.absent(),
@@ -3837,6 +4045,9 @@ class CalculationMaterialsCompanion
     required double weightGrams,
     required double pricePerBobbinSnapshot,
     required double gramsPerBobbinSnapshot,
+    this.useOwnTime = const Value.absent(),
+    this.materialHours = const Value.absent(),
+    this.materialMinutes = const Value.absent(),
   }) : calculationId = Value(calculationId),
        label = Value(label),
        weightGrams = Value(weightGrams),
@@ -3850,6 +4061,9 @@ class CalculationMaterialsCompanion
     Expression<double>? weightGrams,
     Expression<double>? pricePerBobbinSnapshot,
     Expression<double>? gramsPerBobbinSnapshot,
+    Expression<bool>? useOwnTime,
+    Expression<double>? materialHours,
+    Expression<double>? materialMinutes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3861,6 +4075,9 @@ class CalculationMaterialsCompanion
         'price_per_bobbin_snapshot': pricePerBobbinSnapshot,
       if (gramsPerBobbinSnapshot != null)
         'grams_per_bobbin_snapshot': gramsPerBobbinSnapshot,
+      if (useOwnTime != null) 'use_own_time': useOwnTime,
+      if (materialHours != null) 'material_hours': materialHours,
+      if (materialMinutes != null) 'material_minutes': materialMinutes,
     });
   }
 
@@ -3872,6 +4089,9 @@ class CalculationMaterialsCompanion
     Value<double>? weightGrams,
     Value<double>? pricePerBobbinSnapshot,
     Value<double>? gramsPerBobbinSnapshot,
+    Value<bool?>? useOwnTime,
+    Value<double?>? materialHours,
+    Value<double?>? materialMinutes,
   }) {
     return CalculationMaterialsCompanion(
       id: id ?? this.id,
@@ -3883,6 +4103,9 @@ class CalculationMaterialsCompanion
           pricePerBobbinSnapshot ?? this.pricePerBobbinSnapshot,
       gramsPerBobbinSnapshot:
           gramsPerBobbinSnapshot ?? this.gramsPerBobbinSnapshot,
+      useOwnTime: useOwnTime ?? this.useOwnTime,
+      materialHours: materialHours ?? this.materialHours,
+      materialMinutes: materialMinutes ?? this.materialMinutes,
     );
   }
 
@@ -3914,6 +4137,15 @@ class CalculationMaterialsCompanion
         gramsPerBobbinSnapshot.value,
       );
     }
+    if (useOwnTime.present) {
+      map['use_own_time'] = Variable<bool>(useOwnTime.value);
+    }
+    if (materialHours.present) {
+      map['material_hours'] = Variable<double>(materialHours.value);
+    }
+    if (materialMinutes.present) {
+      map['material_minutes'] = Variable<double>(materialMinutes.value);
+    }
     return map;
   }
 
@@ -3926,7 +4158,10 @@ class CalculationMaterialsCompanion
           ..write('label: $label, ')
           ..write('weightGrams: $weightGrams, ')
           ..write('pricePerBobbinSnapshot: $pricePerBobbinSnapshot, ')
-          ..write('gramsPerBobbinSnapshot: $gramsPerBobbinSnapshot')
+          ..write('gramsPerBobbinSnapshot: $gramsPerBobbinSnapshot, ')
+          ..write('useOwnTime: $useOwnTime, ')
+          ..write('materialHours: $materialHours, ')
+          ..write('materialMinutes: $materialMinutes')
           ..write(')'))
         .toString();
   }
@@ -5644,6 +5879,7 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       Value<bool> isSold,
       Value<bool> isTemplate,
       Value<bool> isPartial,
+      Value<bool> isAdvanced,
       required double materialCostSnapshot,
       required double electricCostSnapshot,
       Value<double> amortizationCostSnapshot,
@@ -5685,6 +5921,7 @@ typedef $$CalculationsTableUpdateCompanionBuilder =
       Value<bool> isSold,
       Value<bool> isTemplate,
       Value<bool> isPartial,
+      Value<bool> isAdvanced,
       Value<double> materialCostSnapshot,
       Value<double> electricCostSnapshot,
       Value<double> amortizationCostSnapshot,
@@ -5833,6 +6070,11 @@ class $$CalculationsTableFilterComposer
 
   ColumnFilters<bool> get isPartial => $composableBuilder(
     column: $table.isPartial,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAdvanced => $composableBuilder(
+    column: $table.isAdvanced,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6061,6 +6303,11 @@ class $$CalculationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isAdvanced => $composableBuilder(
+    column: $table.isAdvanced,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get materialCostSnapshot => $composableBuilder(
     column: $table.materialCostSnapshot,
     builder: (column) => ColumnOrderings(column),
@@ -6246,6 +6493,11 @@ class $$CalculationsTableAnnotationComposer
   GeneratedColumn<bool> get isPartial =>
       $composableBuilder(column: $table.isPartial, builder: (column) => column);
 
+  GeneratedColumn<bool> get isAdvanced => $composableBuilder(
+    column: $table.isAdvanced,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get materialCostSnapshot => $composableBuilder(
     column: $table.materialCostSnapshot,
     builder: (column) => column,
@@ -6420,6 +6672,7 @@ class $$CalculationsTableTableManager
                 Value<bool> isSold = const Value.absent(),
                 Value<bool> isTemplate = const Value.absent(),
                 Value<bool> isPartial = const Value.absent(),
+                Value<bool> isAdvanced = const Value.absent(),
                 Value<double> materialCostSnapshot = const Value.absent(),
                 Value<double> electricCostSnapshot = const Value.absent(),
                 Value<double> amortizationCostSnapshot = const Value.absent(),
@@ -6460,6 +6713,7 @@ class $$CalculationsTableTableManager
                 isSold: isSold,
                 isTemplate: isTemplate,
                 isPartial: isPartial,
+                isAdvanced: isAdvanced,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
                 amortizationCostSnapshot: amortizationCostSnapshot,
@@ -6501,6 +6755,7 @@ class $$CalculationsTableTableManager
                 Value<bool> isSold = const Value.absent(),
                 Value<bool> isTemplate = const Value.absent(),
                 Value<bool> isPartial = const Value.absent(),
+                Value<bool> isAdvanced = const Value.absent(),
                 required double materialCostSnapshot,
                 required double electricCostSnapshot,
                 Value<double> amortizationCostSnapshot = const Value.absent(),
@@ -6540,6 +6795,7 @@ class $$CalculationsTableTableManager
                 isSold: isSold,
                 isTemplate: isTemplate,
                 isPartial: isPartial,
+                isAdvanced: isAdvanced,
                 materialCostSnapshot: materialCostSnapshot,
                 electricCostSnapshot: electricCostSnapshot,
                 amortizationCostSnapshot: amortizationCostSnapshot,
@@ -6630,6 +6886,9 @@ typedef $$CalculationMaterialsTableCreateCompanionBuilder =
       required double weightGrams,
       required double pricePerBobbinSnapshot,
       required double gramsPerBobbinSnapshot,
+      Value<bool?> useOwnTime,
+      Value<double?> materialHours,
+      Value<double?> materialMinutes,
     });
 typedef $$CalculationMaterialsTableUpdateCompanionBuilder =
     CalculationMaterialsCompanion Function({
@@ -6640,6 +6899,9 @@ typedef $$CalculationMaterialsTableUpdateCompanionBuilder =
       Value<double> weightGrams,
       Value<double> pricePerBobbinSnapshot,
       Value<double> gramsPerBobbinSnapshot,
+      Value<bool?> useOwnTime,
+      Value<double?> materialHours,
+      Value<double?> materialMinutes,
     });
 
 final class $$CalculationMaterialsTableReferences
@@ -6713,6 +6975,21 @@ class $$CalculationMaterialsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get useOwnTime => $composableBuilder(
+    column: $table.useOwnTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get materialHours => $composableBuilder(
+    column: $table.materialHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get materialMinutes => $composableBuilder(
+    column: $table.materialMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$CalculationsTableFilterComposer get calculationId {
     final $$CalculationsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -6776,6 +7053,21 @@ class $$CalculationMaterialsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get useOwnTime => $composableBuilder(
+    column: $table.useOwnTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get materialHours => $composableBuilder(
+    column: $table.materialHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get materialMinutes => $composableBuilder(
+    column: $table.materialMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CalculationsTableOrderingComposer get calculationId {
     final $$CalculationsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6832,6 +7124,21 @@ class $$CalculationMaterialsTableAnnotationComposer
 
   GeneratedColumn<double> get gramsPerBobbinSnapshot => $composableBuilder(
     column: $table.gramsPerBobbinSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get useOwnTime => $composableBuilder(
+    column: $table.useOwnTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get materialHours => $composableBuilder(
+    column: $table.materialHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get materialMinutes => $composableBuilder(
+    column: $table.materialMinutes,
     builder: (column) => column,
   );
 
@@ -6902,6 +7209,9 @@ class $$CalculationMaterialsTableTableManager
                 Value<double> weightGrams = const Value.absent(),
                 Value<double> pricePerBobbinSnapshot = const Value.absent(),
                 Value<double> gramsPerBobbinSnapshot = const Value.absent(),
+                Value<bool?> useOwnTime = const Value.absent(),
+                Value<double?> materialHours = const Value.absent(),
+                Value<double?> materialMinutes = const Value.absent(),
               }) => CalculationMaterialsCompanion(
                 id: id,
                 calculationId: calculationId,
@@ -6910,6 +7220,9 @@ class $$CalculationMaterialsTableTableManager
                 weightGrams: weightGrams,
                 pricePerBobbinSnapshot: pricePerBobbinSnapshot,
                 gramsPerBobbinSnapshot: gramsPerBobbinSnapshot,
+                useOwnTime: useOwnTime,
+                materialHours: materialHours,
+                materialMinutes: materialMinutes,
               ),
           createCompanionCallback:
               ({
@@ -6920,6 +7233,9 @@ class $$CalculationMaterialsTableTableManager
                 required double weightGrams,
                 required double pricePerBobbinSnapshot,
                 required double gramsPerBobbinSnapshot,
+                Value<bool?> useOwnTime = const Value.absent(),
+                Value<double?> materialHours = const Value.absent(),
+                Value<double?> materialMinutes = const Value.absent(),
               }) => CalculationMaterialsCompanion.insert(
                 id: id,
                 calculationId: calculationId,
@@ -6928,6 +7244,9 @@ class $$CalculationMaterialsTableTableManager
                 weightGrams: weightGrams,
                 pricePerBobbinSnapshot: pricePerBobbinSnapshot,
                 gramsPerBobbinSnapshot: gramsPerBobbinSnapshot,
+                useOwnTime: useOwnTime,
+                materialHours: materialHours,
+                materialMinutes: materialMinutes,
               ),
           withReferenceMapper: (p0) => p0
               .map(

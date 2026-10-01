@@ -61,8 +61,13 @@ class NumericInputField extends StatefulWidget {
     this.isKey = false,
     this.keyHint,
     this.fontSize,
+    this.enabled = true,
     super.key,
   });
+
+  /// Si `false`, el field queda deshabilitado (grey, no editable). Se usa
+  /// para la exclusion mutua del tiempo global vs. tiempo por material.
+  final bool enabled;
 
   /// Etiqueta visible del field.
   final String label;
@@ -305,6 +310,7 @@ class _NumericInputFieldState extends State<NumericInputField> {
           controller: widget.controller,
           onChanged: _handleChange,
           autofocus: widget.autofocus,
+          enabled: widget.enabled,
           focusNode: _focusNode,
           keyboardType: TextInputType.numberWithOptions(
             decimal: widget.allowDecimals,

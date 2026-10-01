@@ -119,6 +119,130 @@ void main() {
     });
   });
 
+  group('savePartial: materiales (regresion)', () {
+    DraftMaterialInput mat(String label, double w) => DraftMaterialInput(
+      label: label,
+      weightGrams: w,
+      pricePerBobbin: 150,
+      gramsPerBobbin: 1000,
+    );
+
+    test('persiste los materiales del parcial (no se perdian al reusar)', () async {
+      final ts = DateTime(2026, 9, 28, 16, 0);
+      final id = await repo.savePartial(
+        _partial(createdAt: ts),
+        materials: [mat('PLA', 120), mat('ABS', 80)],
+      );
+
+      final mats = await repo.materialsOf(id);
+      expect(mats.length, 2);
+      expect(mats.map((m) => m.label).toSet(), {'PLA', 'ABS'});
+    });
+
+    test('upsert del mismo minuto reemplaza (no duplica) materiales', () async {
+      final ts = DateTime(2026, 9, 28, 16, 30);
+      final id1 = await repo.savePartial(
+        _partial(createdAt: ts),
+        materials: [mat('PLA', 120), mat('ABS', 80)],
+      );
+      final id2 = await repo.savePartial(
+        _partial(createdAt: ts),
+        materials: [mat('PLA', 100)],
+      );
+      expect(id2, equals(id1));
+
+      final mats = await repo.materialsOf(id1);
+      expect(mats.length, 1, reason: 'La lista vieja debe desaparecer');
+      expect(mats.single.label, 'PLA');
+    });
+
+    test('borrar el parcial borra tambien sus materiales', () async {
+      final ts = DateTime(2026, 9, 28, 17, 0);
+      final id = await repo.savePartial(
+        _partial(createdAt: ts),
+        materials: [mat('PLA', 120)],
+      );
+      expect((await repo.materialsOf(id)).length, 1);
+
+      await repo.deletePartial(id);
+
+      final orphans = await db.customSelect(
+        'SELECT COUNT(*) AS cnt FROM calculation_materials WHERE calculation_id = ?',
+        variables: [Variable.withInt(id)],
+      ).getSingle();
+      expect(orphans.read<int>('cnt'), 0, reason: 'Sin filas huerfanas');
+    });
+
+    test('express (sin materiales) no rompe', () async {
+      final id = await repo.savePartial(
+        _partial(createdAt: DateTime(2026, 9, 28, 18, 0)),
+      );
+      expect(await repo.materialsOf(id), isEmpty);
+    });
+
+    test('persiste el desglose de tiempo propio por material (v15)', () async {
+      final id = await repo.savePartial(
+        _partial(createdAt: DateTime(2026, 9, 28, 19, 0)),
+        materials: [
+          DraftMaterialInput(
+            label: 'PLA',
+            weightGrams: 120,
+            pricePerBobbin: 150,
+            gramsPerBobbin: 1000,
+            useOwnTime: true,
+            materialHours: 2,
+            materialMinutes: 30,
+          ),
+          // Sin tiempo propio: se persiste como false (= tiempo global).
+          const DraftMaterialInput(
+            label: 'ABS',
+            weightGrams: 80,
+            pricePerBobbin: 160,
+            gramsPerBobbin: 1000,
+          ),
+        ],
+      );
+
+      final byLabel = {for (final m in await repo.materialsOf(id)) m.label: m};
+      final pla = byLabel['PLA']!;
+      expect(pla.useOwnTime, isTrue);
+      expect(pla.materialHours, 2.0);
+      expect(pla.materialMinutes, 30.0);
+
+      final abs = byLabel['ABS']!;
+      expect(abs.useOwnTime, isFalse, reason: 'usaba el tiempo global');
+      expect(abs.materialHours, isNull);
+    });
+
+    test('el upsert actualiza el desglose viejo en vez de duplicarlo', () async {
+      final ts = DateTime(2026, 9, 28, 20, 0);
+      final id1 = await repo.savePartial(
+        _partial(createdAt: ts),
+        materials: [mat('PLA', 120)],
+      );
+      final id2 = await repo.savePartial(
+        _partial(createdAt: ts),
+        materials: [
+          DraftMaterialInput(
+            label: 'PLA',
+            weightGrams: 120,
+            pricePerBobbin: 150,
+            gramsPerBobbin: 1000,
+            useOwnTime: true,
+            materialHours: 1,
+            materialMinutes: 15,
+          ),
+        ],
+      );
+      expect(id2, equals(id1));
+
+      final mats = await repo.materialsOf(id1);
+      expect(mats, hasLength(1));
+      expect(mats.single.useOwnTime, isTrue);
+      expect(mats.single.materialMinutes, 15.0);
+    });
+  });
+
   group('findLatestPartialForMinute', () {
     test('filtra correctamente por timestamp truncado', () async {
       final bucket = DateTime(2026, 9, 28, 14, 0);

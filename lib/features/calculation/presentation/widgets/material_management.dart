@@ -24,28 +24,38 @@ class MaterialCtrls {
     required this.weight,
     required this.price,
     required this.grams,
+    required this.materialHours,
+    required this.materialMinutes,
   });
   factory MaterialCtrls.empty() => MaterialCtrls(
     label: TextEditingController(),
     weight: TextEditingController(),
     price: TextEditingController(),
     grams: TextEditingController(),
+    materialHours: TextEditingController(),
+    materialMinutes: TextEditingController(),
   );
   factory MaterialCtrls.fromRow(MaterialRow r) => MaterialCtrls(
     label: TextEditingController(text: r.label),
     weight: TextEditingController(text: r.weight),
     price: TextEditingController(text: r.pricePerBobbin),
     grams: TextEditingController(text: r.gramsPerBobbin),
+    materialHours: TextEditingController(text: r.materialHours),
+    materialMinutes: TextEditingController(text: r.materialMinutes),
   );
   final TextEditingController label;
   final TextEditingController weight;
   final TextEditingController price;
   final TextEditingController grams;
+  final TextEditingController materialHours;
+  final TextEditingController materialMinutes;
   void dispose() {
     label.dispose();
     weight.dispose();
     price.dispose();
     grams.dispose();
+    materialHours.dispose();
+    materialMinutes.dispose();
   }
 }
 
@@ -56,11 +66,17 @@ class MaterialUpdate {
     required this.weight,
     required this.pricePerBobbin,
     required this.gramsPerBobbin,
+    this.useOwnTime = false,
+    this.materialHours = '',
+    this.materialMinutes = '',
   });
   final String label;
   final String weight;
   final String pricePerBobbin;
   final String gramsPerBobbin;
+  final bool useOwnTime;
+  final String materialHours;
+  final String materialMinutes;
 }
 
 /// Fila de material para modo Advanced.
@@ -77,6 +93,10 @@ class MaterialRowTile extends ConsumerStatefulWidget {
     required this.onRemove,
     this.showValidation = false,
     this.isKeyWeight = false,
+    this.useOwnTime = false,
+    this.materialHoursCtrl,
+    this.materialMinutesCtrl,
+    this.onTimeToggle,
   });
   final int index;
   final TextEditingController labelCtrl;
@@ -88,6 +108,12 @@ class MaterialRowTile extends ConsumerStatefulWidget {
   final VoidCallback onRemove;
   final bool showValidation;
   final bool isKeyWeight;
+
+  /// Switch de tiempo independiente por material.
+  final bool useOwnTime;
+  final TextEditingController? materialHoursCtrl;
+  final TextEditingController? materialMinutesCtrl;
+  final ValueChanged<bool>? onTimeToggle;
 
   @override
   ConsumerState<MaterialRowTile> createState() => _MaterialRowTileState();
@@ -105,7 +131,9 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
     final defaultFilament = ref.watch(defaultFilamentProvider);
     final currency = ref.watch(selectedCurrencyProvider);
     final hasCatalog = filaments.isNotEmpty;
-    final colorMatches = filaments.where((f) => f.name == _selectedFilamentName);
+    final colorMatches = filaments.where(
+      (f) => f.name == _selectedFilamentName,
+    );
     final selectedColor = colorMatches.isEmpty
         ? null
         : colorFromHex(colorMatches.first.color);
@@ -188,7 +216,9 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                         borderRadius: BorderRadius.circular(AppRadii.xs),
                         onTap: () async {
                           final filament = await showFilamentSelectorDialog(
-                            context, ref, filaments: filaments,
+                            context,
+                            ref,
+                            filaments: filaments,
                           );
                           if (filament != null) _loadFromFilament(filament);
                         },
@@ -197,7 +227,10 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                           decoration: InputDecoration(
                             labelText: EsBO.calcFieldFilament,
                             hintText: EsBO.calcSelectFilament,
-                            prefixIcon: const Icon(Icons.inventory_2_rounded, size: 18),
+                            prefixIcon: const Icon(
+                              Icons.inventory_2_rounded,
+                              size: 18,
+                            ),
                             suffixIcon: const Icon(Icons.expand_more_rounded),
                             isDense: true,
                           ),
@@ -223,7 +256,8 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                   ),
               ],
             ),
-            if (hasCatalog && defaultFilament != null &&
+            if (hasCatalog &&
+                defaultFilament != null &&
                 _selectedFilamentName != defaultFilament.name) ...[
               const SizedBox(height: AppSpacing.xs),
               Align(
@@ -251,7 +285,8 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                if (_selectedFilamentName.isNotEmpty && widget.priceCtrl.text.isNotEmpty)
+                if (_selectedFilamentName.isNotEmpty &&
+                    widget.priceCtrl.text.isNotEmpty)
                   MaterialCostChip(
                     price: widget.priceCtrl.text,
                     grams: widget.gramsCtrl.text,
@@ -280,6 +315,57 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
                 ],
               ],
             ),
+            // ── Tiempo independiente por material ──
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Icon(
+                  Icons.timer_outlined,
+                  size: 16,
+                  color: cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    EsBO.calcOwnTime,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                // El switch NUNCA se bloquea: la exclusion mutua se resuelve
+                // mostrando la suma en el tiempo global y apagando los
+                // switches cuando el usuario edita ese campo.
+                Switch(
+                  value: widget.useOwnTime,
+                  onChanged: (v) => widget.onTimeToggle?.call(v),
+                ),
+              ],
+            ),
+            if (widget.useOwnTime) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                children: [
+                  Expanded(
+                    child: NumericInputField(
+                      label: EsBO.calcFieldHours,
+                      controller: widget.materialHoursCtrl!,
+                      onChanged: (v) => _emit(),
+                      suffix: 'h',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: NumericInputField(
+                      label: EsBO.calcFieldMinutes,
+                      controller: widget.materialMinutesCtrl!,
+                      onChanged: (v) => _emit(),
+                      suffix: 'min',
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -287,12 +373,17 @@ class _MaterialRowTileState extends ConsumerState<MaterialRowTile> {
   }
 
   void _emit() {
-    widget.onChanged(MaterialUpdate(
-      label: widget.labelCtrl.text,
-      weight: widget.weightCtrl.text,
-      pricePerBobbin: widget.priceCtrl.text,
-      gramsPerBobbin: widget.gramsCtrl.text,
-    ));
+    widget.onChanged(
+      MaterialUpdate(
+        label: widget.labelCtrl.text,
+        weight: widget.weightCtrl.text,
+        pricePerBobbin: widget.priceCtrl.text,
+        gramsPerBobbin: widget.gramsCtrl.text,
+        useOwnTime: widget.useOwnTime,
+        materialHours: widget.materialHoursCtrl?.text ?? '',
+        materialMinutes: widget.materialMinutesCtrl?.text ?? '',
+      ),
+    );
   }
 
   void _loadFromFilament(Filament f) {
@@ -320,7 +411,10 @@ class MaterialCostChip extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: cs.primaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AppRadii.xs),
@@ -331,7 +425,8 @@ class MaterialCostChip extends StatelessWidget {
           Text(
             '${currency.symbol}$price',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: cs.onPrimaryContainer, fontWeight: FontWeight.w600,
+              color: cs.onPrimaryContainer,
+              fontWeight: FontWeight.w600,
             ),
           ),
           Text(

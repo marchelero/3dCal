@@ -141,6 +141,37 @@ void main() {
     appRouter.go('/');
   });
 
+  /// Avanza el reloj fake lo suficiente para que corran los debounces del
+  /// CalculatorPage (draft 500ms + auto-save de parcial 1.5s) y luego deja
+  /// todo quieto.
+  ///
+  /// `pumpAndSettle` solo adelanta el reloj mientras hay frames agendados: si
+  /// no queda ninguno, deja vivos esos `Timer` y el binding aborta el test con
+  /// `'!timersPending'`. Ademas se acota el timeout del settle para que un
+  /// loop de animacion falle en segundos, no en 10 minutos.
+  Future<void> settle(WidgetTester tester) async {
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+    await tester.pumpAndSettle(
+      const Duration(milliseconds: 16),
+      EnginePhase.sendSemanticsUpdate,
+      const Duration(seconds: 5),
+    );
+  }
+
+  /// Desmonta la app a mano y adelanta el reloj un tick.
+  ///
+  /// Al destruirse el `ProviderScope`, drift cierra sus `QueryStream` con un
+  /// `Timer(Duration.zero)` (`StreamQueryStore.markAsClosed`). Ese timer nace
+  /// DENTRO del frame de teardown del binding, asi que el reloj fake nunca
+  /// avanza despues y el assert `'!timersPending'` revienta el test. Desmontar
+  /// nosotros + un `pump(Duration.zero)` deja que el timer dispare.
+  Future<void> disposeApp(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  }
+
   /// Inserta 1 cotizacion via repo real (para que dashboard/history no
   /// esten en empty state y el gate del dashboard se renderice).
   Future<void> _seedOneCalculation(ProviderContainer container) async {
@@ -228,10 +259,15 @@ void main() {
         ),
       ],
     );
-    addTearDown(container.dispose);
+    // LIFO: los tearDown corren en orden inverso al registro. Hay que
+    // disponer el container ANTES de cerrar la db; al reves, `db.close()`
+    // se queda esperando a que cancelen los streams de drift que aun
+    // sostienen vivos los StreamProvider (la cancelacion ocurre recien en
+    // `container.dispose`, que correria despues) — deadlock.
     addTearDown(() async {
       await db.close();
     });
+    addTearDown(container.dispose);
     if (seedPro) {
       repo.seedActive(
         Entitlement(
@@ -303,38 +339,35 @@ void main() {
 
         // push() devuelve un Future que resuelve al POP — no se awaita.
         unawaited(appRouter.push('/calculator'));
-        await tester.pumpAndSettle();
+        await settle(tester);
 
-        // Llenar el form express. Horas esta en el paso Impresion del
-        // wizard (oculto): enterText no hit-testea → skipOffstage:false.
-        await tester.enterText(
-          find.widgetWithText(NumericInputField, 'Peso'),
-          '100',
-        );
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          find.widgetWithText(NumericInputField, 'Horas', skipOffstage: false),
-          '5',
-        );
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          find.widgetWithText(NumericInputField, 'Precio bobina'),
-          '120',
-        );
-        await tester.pumpAndSettle();
+        // Llenar el form express. El wizard es scroll continuo: los campos
+        // de los 3 pasos estan en el arbol, asi que no hace falta saltar de
+        // paso. ensureVisible por los que quedan bajo el fold.
+        Future<void> fill(String label, String value) async {
+          final f = find.widgetWithText(NumericInputField, label);
+          await tester.ensureVisible(f);
+          await tester.pump();
+          await tester.enterText(f, value);
+          await settle(tester);
+        }
+
+        await fill('Peso', '100');
+        await fill('Precio bobina', '120');
+        await fill('Horas', '5');
 
         // Abrir el result sheet: la barra de total vive fija abajo en todos
         // los pasos del wizard (rediseño 2026-09), tap directo.
         await tester.tap(find.byType(ResultBottomBar));
-        await tester.pumpAndSettle();
+        await settle(tester);
 
         // Tap en "Guardar cotización" (save a DB) del sheet.
         await tester.tap(find.byTooltip('Guardar cotización'));
-        await tester.pumpAndSettle();
+        await settle(tester);
 
         // Confirmar el dialog de save.
         await tester.tap(find.text('Guardar'));
-        await tester.pumpAndSettle();
+        await settle(tester);
 
         // Free + 10 existentes → cap: SnackBar con CTA Go Pro.
         final goPro = find.text(EsBO.calculatorGoProAction);
@@ -346,38 +379,32 @@ void main() {
         await tester.ensureVisible(goPro);
         await tester.tap(goPro);
 
-        await _expectPaywall(tester);
+        await settle(tester);
+        expect(
+          find.byType(PaywallPage),
+          findsOneWidget,
+          reason: 'El gate debe navegar a PaywallPage (ruta real, no error).',
+        );
       },
     );
 
-    testWidgets('Historial: CSV export gate → SnackBar Go Pro → PaywallPage', (
-      tester,
-    ) async {
+    testWidgets('Historial: CSV export NO tiene gate en free', (tester) async {
       _useTallViewport(tester);
       await _pumpApp(tester, seedOne: true);
 
       appRouter.go('/history');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
-      // pumpAndSettle: deja que la snackbar termine de animar antes de
-      // tocar su action (tap durante el slide es absorbido).
+      // El export CSV es gratis: el boton existe y NO ofrece "Go Pro".
+      await tester.tap(find.byTooltip(EsBO.historyExportCsv));
       await tester.pumpAndSettle();
 
-      final goPro = find.byType(SnackBarAction);
       expect(
-        goPro,
-        findsOneWidget,
-        reason: 'CSV gate en free debe ofrecer "Go Pro".',
+        find.byType(SnackBarAction),
+        findsNothing,
+        reason: 'CSV es gratis: no debe haber action de paywall.',
       );
-      expect(
-        find.descendant(of: goPro, matching: find.text(EsBO.csvGoProAction)),
-        findsOneWidget,
-      );
-      await tester.ensureVisible(goPro);
-      await tester.tap(goPro);
-
-      await _expectPaywall(tester);
+      await disposeApp(tester);
     });
 
     testWidgets('Dashboard: Pro teaser button → PaywallPage', (tester) async {

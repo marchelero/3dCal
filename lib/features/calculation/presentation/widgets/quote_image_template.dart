@@ -15,6 +15,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../domain/entities/calculation_output.dart';
 import '../state/calculator_state.dart' show MaterialCostBreakdown;
+import 'calc_meta.dart' show MaterialMetaItem;
 import 'detail_section.dart';
 
 /// Template visual para la imagen compartida de la cotizacion.
@@ -53,6 +54,7 @@ class QuoteImageTemplate extends StatelessWidget {
     this.batchDiscountAmount,
     this.lotTotal,
     this.manualDiscountAmount,
+    this.materialMetaBreakdown = const [],
     super.key,
   });
 
@@ -74,6 +76,9 @@ class QuoteImageTemplate extends StatelessWidget {
   final Decimal? detailTotalFinal;
   final String? metaGrams;
   final String? metaTime;
+
+  /// Desglose por material para mostrar mini-detalle en la imagen.
+  final List<MaterialMetaItem> materialMetaBreakdown;
 
   /// Nombre de la empresa. Si es null, usa "3dCalc".
   final String? companyName;
@@ -248,10 +253,50 @@ class QuoteImageTemplate extends StatelessWidget {
             ),
           ],
 
+          // ── Mini detalle por material (solo si hay más de 1 material) ──
+          if (materialMetaBreakdown.length > 1) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ...materialMetaBreakdown.map(
+              (m) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      m.label,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: color.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      m.weightGrams,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: color.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (m.timeStr != null) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        m.timeStr!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: color.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+
           // ── Discount breakdown: correccion de recibo ──
           // Orden claro: Subtotal → Descuento por cantidad → Subtotal parcial
           // → Descuento manual (solo si > 0%) → Total con descuento.
-          if (hasDiscount || (batchDiscountPct != null && batchDiscountPct! > Decimal.zero)) ...[
+          if (hasDiscount ||
+              (batchDiscountPct != null &&
+                  batchDiscountPct! > Decimal.zero)) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.symmetric(

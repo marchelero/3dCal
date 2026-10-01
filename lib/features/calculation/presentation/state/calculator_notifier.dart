@@ -37,7 +37,8 @@ class FormIncompleteException implements Exception {
   const FormIncompleteException();
 
   @override
-  String toString() => 'FormIncompleteException: el formulario no está completo.';
+  String toString() =>
+      'FormIncompleteException: el formulario no está completo.';
 }
 
 /// Notifier reactivo para el formulario de cotizacion.
@@ -197,6 +198,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     String? weight,
     String? pricePerBobbin,
     String? gramsPerBobbin,
+    bool? useOwnTime,
+    String? materialHours,
+    String? materialMinutes,
   }) {
     if (index < 0 || index >= state.materials.length) return;
     final updated = state.materials[index].copyWith(
@@ -204,6 +208,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       weight: weight,
       pricePerBobbin: pricePerBobbin,
       gramsPerBobbin: gramsPerBobbin,
+      useOwnTime: useOwnTime,
+      materialHours: materialHours,
+      materialMinutes: materialMinutes,
     );
     final next = List<MaterialRow>.from(state.materials);
     next[index] = updated;
@@ -247,6 +254,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final mode = draft.isAdvanced
         ? CalculatorMode.advanced
         : CalculatorMode.express;
+    debugPrint(
+      '[restoreFromDraft] mode=$mode weight=${draft.weight} '
+      'hours=${draft.printHours} price=${draft.filamentPrice} '
+      'label=${draft.label} filament=${draft.filamentLabel}',
+    );
     state = _recompute(
       CalculatorState(
         mode: mode,
@@ -265,6 +277,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
                 weight: m.weight,
                 pricePerBobbin: m.pricePerBobbin,
                 gramsPerBobbin: m.gramsPerBobbin,
+                useOwnTime: m.useOwnTime,
+                materialHours: m.materialHours,
+                materialMinutes: m.materialMinutes,
               ),
             )
             .toList(),
@@ -287,7 +302,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   Future<void> loadFromCalculation(Calculation calc) async {
     final repo = ref.read(calculationRepositoryProvider);
     final mats = await repo.materialsOf(calc.id);
-    final mode = mats.length > 1
+    // v16+: el flag decide. Fallback `mats.length > 1` solo para filas viejas
+    // (is_advanced = false por default en v15-), donde inferir es lo unico
+    // posible y el comportamiento es el de siempre.
+    final mode = (calc.isAdvanced || mats.length > 1)
         ? CalculatorMode.advanced
         : CalculatorMode.express;
     final total =
@@ -352,6 +370,14 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
             weight: m.weightGrams.toStringAsFixed(0),
             pricePerBobbin: m.pricePerBobbinSnapshot.toStringAsFixed(2),
             gramsPerBobbin: m.gramsPerBobbinSnapshot.toStringAsFixed(0),
+            // v15: restaurar el desglose de tiempo propio por material.
+            useOwnTime: m.useOwnTime ?? false,
+            materialHours: m.materialHours == null
+                ? ''
+                : _hoursText(m.materialHours!),
+            materialMinutes: m.materialMinutes == null
+                ? ''
+                : _minutesText(m.materialMinutes!),
           ),
         )
         .toList();
@@ -379,22 +405,48 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// y NO inserta nada. Los items existentes quedan intactos.
   /// Pro users: sin cap.
   /// Al guardar, suma las horas impresas al `currentHours` de la impresora.
+  ///
+  /// **Editar** ([updateId] no null): actualiza la fila existente en vez de
+  /// crear una nueva. Tres diferencias deliberadas con el alta:
+  /// - NO hay cap gate (no crece el historial).
+  /// - NO se suman horas a la impresora: son horas ya contadas al crear la
+  ///   cotizacion; sumarlas de nuevo inflaria la depreciacion.
+  /// - Se conservan `id`, `createdAt` e `isSold`.
+  /// Devuelve `false` si la cotizacion ya no existe (borrada mientras
+  /// editaba); el caller muestra el error generico.
   Future<int?> save({
     String? pieceName,
     String? clientName,
     String? notes,
     String? conditions,
     Uint8List? pieceImageBytes,
+    int? updateId,
   }) async {
     if (!state.isValid || state.output == null) {
       throw const FormIncompleteException();
     }
     final repo = ref.read(calculationRepositoryProvider);
     final printerRepo = ref.read(printerRepositoryProvider);
-    final isPro = await resolveIsPro(ref);
     // F2: downscale antes de persistir (max 1200px lado mayor, JPEG q85).
     final downscale = ref.read(pieceImageDownscalerProvider);
     final pieceImage = await downscale(pieceImageBytes);
+
+    if (updateId != null) {
+      final ok = await repo.updateCalculation(
+        updateId,
+        _buildDraft(
+          pieceName: pieceName,
+          clientName: clientName,
+          notes: notes,
+          conditions: conditions,
+          pieceImageBytes: pieceImage,
+        ),
+      );
+      ref.invalidate(calculationsNotifierProvider);
+      return ok ? updateId : null;
+    }
+
+    final isPro = await resolveIsPro(ref);
     // El repositorio hace conteo + insercion en una sola transaccion.
     if (!isPro) {
       final id = await repo.createIfWithinLimit(
@@ -463,6 +515,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       discountPercentage: input.discountPercentage,
       output: state.output!,
       filamentLabel: state.filamentLabel,
+      isAdvanced: state.mode == CalculatorMode.advanced,
       quantity: state.quantity,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
@@ -502,6 +555,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       discountPercentage: input.discountPercentage,
       output: state.output!,
       filamentLabel: state.filamentLabel,
+      isAdvanced: state.mode == CalculatorMode.advanced,
       quantity: state.quantity,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
@@ -552,46 +606,46 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       final input = _buildInput(next);
       final output = CalculationEngine.compute(input);
 
-    // Desglose de costo por material (unitario, sin cantidad).
-    final breakdown = input.materials
-        .map((m) => MaterialCostBreakdown(label: m.label, cost: m.cost))
-        .toList();
+      // Desglose de costo por material (unitario, sin cantidad).
+      final breakdown = input.materials
+          .map((m) => MaterialCostBreakdown(label: m.label, cost: m.cost))
+          .toList();
 
-    final discountPct =
-        CalculatorState.parseDecimal(next.discountPct) ?? Decimal.zero;
+      final discountPct =
+          CalculatorState.parseDecimal(next.discountPct) ?? Decimal.zero;
 
-    // Lote mayorista (feature A — Hito 1): el motor NO se toca, solo se
-    // consume su OUTPUT. Sin escalón (o N=1) el resultado es `output.totalPrice
-    // × N` — idéntico al math actual (regla 95 %).
-    final batch = _composeBatch(
-      output: output,
-      quantity: next.quantity,
-      manualDiscountPct: discountPct,
-      minimumCharge: input.minimumCharge,
-    );
+      // Lote mayorista (feature A — Hito 1): el motor NO se toca, solo se
+      // consume su OUTPUT. Sin escalón (o N=1) el resultado es `output.totalPrice
+      // × N` — idéntico al math actual (regla 95 %).
+      final batch = _composeBatch(
+        output: output,
+        quantity: next.quantity,
+        manualDiscountPct: discountPct,
+        minimumCharge: input.minimumCharge,
+      );
 
-    return next.copyWith(
-      output: output,
-      detailMaterialBreakdown: breakdown,
-      detailElectricCost: output.electricCost,
-      detailAmortizationCost: output.amortizationCost,
-      detailLaborCost: output.laborCost,
-      detailPostProcessCost: output.postProcessCost,
-      detailBaseCost: output.baseCost,
-      detailFailureCost: output.failureCost,
-      detailMarkupCost: output.markupCost,
-      detailProfitAmount: output.profitAmount,
-      detailTotalFinal: output.totalFinal,
-      detailDiscountPct: discountPct,
-      batchAppliedPercent: batch.appliedTier?.percent,
-      batchAppliedMinQty: batch.appliedTier?.minQty,
-      batchDiscountAmount: batch.batchDiscountAmount,
-      manualDiscountAmount: batch.manualDiscountAmount,
-      subtotalImpression: batch.subtotalImpression,
-      lotTotal: batch.lotTotal,
-      showsBatchLine: batch.appliedTier != null,
-      computeVersion: version,
-    );
+      return next.copyWith(
+        output: output,
+        detailMaterialBreakdown: breakdown,
+        detailElectricCost: output.electricCost,
+        detailAmortizationCost: output.amortizationCost,
+        detailLaborCost: output.laborCost,
+        detailPostProcessCost: output.postProcessCost,
+        detailBaseCost: output.baseCost,
+        detailFailureCost: output.failureCost,
+        detailMarkupCost: output.markupCost,
+        detailProfitAmount: output.profitAmount,
+        detailTotalFinal: output.totalFinal,
+        detailDiscountPct: discountPct,
+        batchAppliedPercent: batch.appliedTier?.percent,
+        batchAppliedMinQty: batch.appliedTier?.minQty,
+        batchDiscountAmount: batch.batchDiscountAmount,
+        manualDiscountAmount: batch.manualDiscountAmount,
+        subtotalImpression: batch.subtotalImpression,
+        lotTotal: batch.lotTotal,
+        showsBatchLine: batch.appliedTier != null,
+        computeVersion: version,
+      );
     } catch (e, st) {
       debugPrint('[Recompute] ERROR: $e\n$st');
       return next.copyWith(
@@ -677,6 +731,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
             weightGrams: CalculatorState.parseDecimal(row.weight)!,
             pricePerBobbin: CalculatorState.parseDecimal(row.pricePerBobbin)!,
             gramsPerBobbin: CalculatorState.parseDecimal(row.gramsPerBobbin)!,
+            // Snapshot del desglose por material (schema v15). No afecta el
+            // costo: el tiempo total ya viene resuelto en totalHoursDecimal.
+            useOwnTime: row.useOwnTime,
+            ownTimeHours: row.ownTimeHoursDecimal,
+            ownTimeMinutes: row.ownTimeMinutesDecimal,
           ),
         );
       }
@@ -732,6 +791,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       isSold: const Value(false),
       isTemplate: const Value(false),
       isPartial: const Value(true),
+      isAdvanced: Value(state.mode == CalculatorMode.advanced),
       materialCostSnapshot: Value(o?.materialCost.toDouble() ?? 0),
       electricCostSnapshot: Value(o?.electricCost.toDouble() ?? 0),
       amortizationCostSnapshot: Value(o?.amortizationCost.toDouble() ?? 0),
@@ -758,6 +818,15 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// Convierte el `double?` de drift (REAL) al `Decimal?` del dominio.
   static Decimal? _toDecimal(double? v) =>
       v == null ? null : Decimal.parse(v.toString());
+
+  /// Formatea un REAL de drift a texto para un controller, sin notacion
+  /// cientifica ni ceros de relleno. `1.0` -> "1", `0.5` -> "0.5".
+  static String _hoursText(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toString();
+  }
+
+  static String _minutesText(double v) => _hoursText(v);
 }
 
 /// True cuando el form tiene output calculado (form valido).

@@ -106,6 +106,9 @@ class MaterialDraft {
     this.weight = '',
     this.pricePerBobbin = '',
     this.gramsPerBobbin = '',
+    this.useOwnTime = false,
+    this.materialHours = '',
+    this.materialMinutes = '',
   });
 
   factory MaterialDraft.fromJson(Map<String, dynamic> json) {
@@ -114,6 +117,9 @@ class MaterialDraft {
       weight: json['weight'] as String? ?? '',
       pricePerBobbin: json['pricePerBobbin'] as String? ?? '',
       gramsPerBobbin: json['gramsPerBobbin'] as String? ?? '',
+      useOwnTime: json['useOwnTime'] as bool? ?? false,
+      materialHours: json['materialHours'] as String? ?? '',
+      materialMinutes: json['materialMinutes'] as String? ?? '',
     );
   }
 
@@ -122,10 +128,18 @@ class MaterialDraft {
   final String pricePerBobbin;
   final String gramsPerBobbin;
 
+  /// Tiempo propio del material (exclusion mutua con el tiempo global).
+  final bool useOwnTime;
+  final String materialHours;
+  final String materialMinutes;
+
   Map<String, dynamic> toJson() => {
     'label': label,
     'weight': weight,
     'pricePerBobbin': pricePerBobbin,
     'gramsPerBobbin': gramsPerBobbin,
+    'useOwnTime': useOwnTime,
+    'materialHours': materialHours,
+    'materialMinutes': materialMinutes,
   };
 }

@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -150,6 +150,27 @@ class AppDatabase extends _$AppDatabase {
         // sin completar todos los campos). Aditiva: registros viejos quedan
         // is_partial = false (comportamiento identico al actual).
         await m.addColumn(calculations, calculations.isPartial);
+      }
+      if (from < 16) {
+        // v15→v16: flag de modo Advanced. Sin el, una cotizacion Advanced de
+        // un solo material se restauraba como Express (mats.length > 1).
+        await m.addColumn(calculations, calculations.isAdvanced);
+      }
+      if (from < 15) {
+        // v14→v15: tiempo propio por material (Advanced multi-material).
+        // Antes el tiempo de cada material no se persistia: reusar o editar
+        // una cotizacion volvia al tiempo global, perdiendo el desglose.
+        // Aditiva: registros viejos quedan NULL (= false = tiempo global),
+        // comportamiento identico al actual.
+        await m.addColumn(calculationMaterials, calculationMaterials.useOwnTime);
+        await m.addColumn(
+          calculationMaterials,
+          calculationMaterials.materialHours,
+        );
+        await m.addColumn(
+          calculationMaterials,
+          calculationMaterials.materialMinutes,
+        );
       }
     },
   );

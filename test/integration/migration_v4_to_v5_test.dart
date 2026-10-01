@@ -24,8 +24,9 @@ import 'package:tresdcal/core/database/app_database.dart';
 /// 4. Marcamos `PRAGMA user_version = 4`.
 /// 5. Envolvemos la misma instancia con `NativeDatabase.opened(...)` y la
 ///    pasamos a `AppDatabase.forTesting`. El `beforeOpen` de Drift detecta
-///    `user_version=4`, ve `schemaVersion=5`, y corre `onUpgrade(4, 5)` que
-///    crea la tabla `entitlements`.
+///    `user_version=4` (menor que el `schemaVersion` actual), y corre
+///    `onUpgrade`, que crea la tabla `entitlements` y encadena los pasos
+///    siguientes hasta el schema actual.
 ///
 /// Patron recomendado por la doc oficial de drift ("integration tests for
 /// migrations" — ver docstring de `NativeDatabase.opened`).
@@ -215,7 +216,7 @@ void main() {
     });
 
     test(
-      'onUpgrade(4, 11) crea tabla entitlements y bumpea user_version a 11',
+      'onUpgrade(4, ->16) crea tabla entitlements y bumpea user_version a 16',
       () async {
         // Forzar la apertura lazy de Drift ejecutando una query.
         final tables = await db
@@ -233,16 +234,17 @@ void main() {
               '`if (from <= 4)`.',
         );
 
-        // user_version debe ser 11 post-migration (v4 migra directo a v11:
-        // onUpgrade encadena los pasos v4→v5 ... v8→v9, v9→v10 y v10→v11).
+        // user_version debe ser el schema ACTUAL post-migration (v4 migra
+        // directo: onUpgrade encadena v4→v5 ... hasta v16).
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          11,
+          16,
           reason:
               'AppDatabase debe setear user_version=schemaVersion tras '
               'onUpgrade exitoso.',
         );
+        expect(db.schemaVersion, 16);
 
         // La cadena v5→v6→v7 tambien debe haber corrido: columnas
         // notes/conditions/isTemplate presentes.

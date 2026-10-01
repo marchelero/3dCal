@@ -34,4 +34,17 @@ class CalculationMaterials extends Table {
 
   /// Snapshot de gramos por bobina al guardar.
   RealColumn get gramsPerBobbinSnapshot => real()();
+
+  /// v15: si este material tiene tiempo propio (independiente del global).
+  ///
+  /// Nullable con default `false`: los registros previos quedan NULL, que
+  /// `loadFromCalculation` interpreta como "usar el tiempo global" — el
+  /// comportamiento previo, intacto.
+  BoolColumn get useOwnTime => boolean().nullable()();
+
+  /// v15: horas del tiempo propio de este material.
+  RealColumn get materialHours => real().nullable()();
+
+  /// v15: minutos del tiempo propio de este material.
+  RealColumn get materialMinutes => real().nullable()();
 }

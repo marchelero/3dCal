@@ -475,16 +475,13 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
       final totalGrams = gramsDec > Decimal.zero ? gramsDec : null;
 
       // Calcular meta time.
-      final h = CalculatorState.parseDecimal(state.printHours) ?? Decimal.zero;
-      final m =
-          CalculatorState.parseDecimal(state.printMinutes) ?? Decimal.zero;
-      final totalMinutes = (h * Decimal.fromInt(60) + m).toBigInt();
-      String? metaTime;
-      if (totalMinutes > BigInt.zero) {
-        final hh = totalMinutes ~/ BigInt.from(60);
-        final mm = totalMinutes.remainder(BigInt.from(60));
-        metaTime = '${hh.toInt()}h ${mm.toInt()}m';
-      }
+      //
+      // `computeMeta` es la MISMA fuente que usa la imagen de cotizacion, y ya
+      // contempla el tiempo propio por material. Recalcularlo aca con
+      // `printHours`/`printMinutes` mostraba 0h cuando todos los materiales
+      // tienen tiempo propio y el global esta en blanco.
+      final meta = computeMeta(state);
+      final metaTime = meta.time;
 
       await shareQuotePdf(
         isPro: widget.isPro,
@@ -502,6 +499,15 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         quantity: _quantity,
         totalGrams: totalGrams,
         metaTime: metaTime,
+        materialMetaBreakdown: meta.materialBreakdown
+            .map(
+              (m) => PdfMaterialMetaItem(
+                label: m.label,
+                weightGrams: m.weightGrams,
+                timeStr: m.timeStr,
+              ),
+            )
+            .toList(),
         batchDiscountPct: state.batchAppliedPercent,
         batchDiscountAmount: state.batchDiscountAmount,
         lotTotal: state.lotTotal,
@@ -725,6 +731,7 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   detailTotalFinal: state.detailTotalFinal,
                   metaGrams: meta.grams,
                   metaTime: meta.time,
+                  materialMetaBreakdown: meta.materialBreakdown,
                   companyName: widget.companyName,
                   companyLogoBase64: widget.companyLogoBase64,
                   currency: widget.currency,
@@ -770,7 +777,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                     Container(
                       width: 1,
                       height: 20,
-                      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
                       color: theme.colorScheme.outlineVariant,
                     ),
                   // Toggle detalle
@@ -941,19 +950,14 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                 state.manualDiscountAmount,
                             widget.currency,
                           ),
-                          labelColor:
-                              theme.colorScheme.onSurfaceVariant,
-                          valueColor:
-                              theme.colorScheme.onSurfaceVariant,
+                          labelColor: theme.colorScheme.onSurfaceVariant,
+                          valueColor: theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         // Descuento por cantidad
                         _DetailRow(
                           label: EsBO.calcDetailBatchDiscount(
-                            state.batchAppliedPercent
-                                    ?.toBigInt()
-                                    .toInt() ??
-                                0,
+                            state.batchAppliedPercent?.toBigInt().toInt() ?? 0,
                           ),
                           value:
                               '-${formatCurrency(state.batchDiscountAmount, widget.currency)}',
@@ -963,20 +967,16 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                           valueWeight: FontWeight.w600,
                         ),
                         // Subtotal parcial: SOLO si hay descuento manual
-                        if (state.manualDiscountAmount >
-                            Decimal.zero) ...[
+                        if (state.manualDiscountAmount > Decimal.zero) ...[
                           const SizedBox(height: AppSpacing.xs),
                           _DetailRow(
                             label: EsBO.calcSubtotal,
                             value: formatCurrency(
-                              state.lotTotal +
-                                  state.manualDiscountAmount,
+                              state.lotTotal + state.manualDiscountAmount,
                               widget.currency,
                             ),
-                            labelColor:
-                                theme.colorScheme.onSurfaceVariant,
-                            valueColor:
-                                theme.colorScheme.onSurfaceVariant,
+                            labelColor: theme.colorScheme.onSurfaceVariant,
+                            valueColor: theme.colorScheme.onSurfaceVariant,
                           ),
                         ],
                         const SizedBox(height: AppSpacing.xs),
@@ -990,31 +990,23 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                       // ── Descuento manual (input editable) ──
                       Row(
                         children: [
-                          const Icon(
-                            Icons.local_offer_rounded,
-                            size: 18,
-                          ),
+                          const Icon(Icons.local_offer_rounded, size: 18),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: Text(
                               state.showDetail &&
                                       state.showsBatchLine &&
-                                      (int.tryParse(
-                                                widget.state.discountPct,
-                                              ) ??
+                                      (int.tryParse(widget.state.discountPct) ??
                                               0) >
                                           0
                                   ? EsBO.calcDetailManualDiscount(
-                                      int.tryParse(
-                                                widget.state.discountPct,
-                                              ) ??
-                                              0,
+                                      int.tryParse(widget.state.discountPct) ??
+                                          0,
                                     )
                                   : EsBO.calcLabelDiscount,
-                              style:
-                                  theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                           SizedBox(
@@ -1038,14 +1030,10 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                 suffixText: '%',
                               ),
                               onChanged: (val) {
-                                final parsed =
-                                    int.tryParse(val) ?? 0;
+                                final parsed = int.tryParse(val) ?? 0;
                                 widget.onDiscountChanged(
                                   parsed
-                                      .clamp(
-                                        0,
-                                        kMaxDiscountPercentage,
-                                      )
+                                      .clamp(0, kMaxDiscountPercentage)
                                       .toString(),
                                 );
                               },
@@ -1066,21 +1054,16 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                           Expanded(
                             child: Text(
                               EsBO.calcTotalFinal,
-                              style:
-                                  theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                           Text(
-                            formatCurrency(
-                              state.lotTotal,
-                              widget.currency,
+                            formatCurrency(state.lotTotal, widget.currency),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
-                            style:
-                                theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
                           ),
                         ],
                       ),

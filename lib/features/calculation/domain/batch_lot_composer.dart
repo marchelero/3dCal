@@ -84,13 +84,13 @@ class BatchLotComposer {
     Decimal? additionalCost,
   }) {
     final n = Decimal.fromInt(quantity < 1 ? 1 : quantity);
-    final appliedTier =
-        tier != null && tier.isValid && tier.minQty <= quantity ? tier : null;
+    final appliedTier = tier != null && tier.isValid && tier.minQty <= quantity
+        ? tier
+        : null;
 
-    final subtotalImpression =
-        appliedTier == null
-            ? Decimal.zero
-            : (output.baseCost + output.failureCost + output.markupCost) * n;
+    final subtotalImpression = appliedTier == null
+        ? Decimal.zero
+        : (output.baseCost + output.failureCost + output.markupCost) * n;
 
     final batchDiscountAmount = appliedTier == null
         ? Decimal.zero
@@ -105,9 +105,7 @@ class BatchLotComposer {
     final totalAfterDiscounts =
         totalFinalScaled - batchDiscountAmount - manualDiscountAmount;
     final floor = minimumCharge * n;
-    final lotTotal = totalAfterDiscounts > floor
-        ? totalAfterDiscounts
-        : floor;
+    final lotTotal = totalAfterDiscounts > floor ? totalAfterDiscounts : floor;
     final unitPrice = _div(lotTotal, n);
 
     return BatchLotResult(

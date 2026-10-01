@@ -55,7 +55,8 @@ class EsBO {
   static String get settingsProfitBaseInfo => _impl.settingsProfitBaseInfo;
   static String settingsKwhRate(String symbol) => _impl.settingsKwhRate(symbol);
   static String get settingsKwhRateHelper => _impl.settingsKwhRateHelper;
-  static String settingsKwhRateInfo(String symbol) => _impl.settingsKwhRateInfo(symbol);
+  static String settingsKwhRateInfo(String symbol) =>
+      _impl.settingsKwhRateInfo(symbol);
   static String get settingsCatalogos => _impl.settingsCatalogos;
   static String get settingsFilamentos => _impl.settingsFilamentos;
   static String get settingsImpresoras => _impl.settingsImpresoras;
@@ -68,8 +69,7 @@ class EsBO {
   static String get settingsManagePrinters => _impl.settingsManagePrinters;
 
   // === Print settings page ===
-  static String get settingsPrintConfigTitle =>
-      _impl.settingsPrintConfigTitle;
+  static String get settingsPrintConfigTitle => _impl.settingsPrintConfigTitle;
   static String get settingsPrintConfigSubtitle =>
       _impl.settingsPrintConfigSubtitle;
 
@@ -309,6 +309,10 @@ class EsBO {
   static String get calcFieldLabelHelper => _impl.calcFieldLabelHelper;
   static String get calcFieldFilament => _impl.calcFieldFilament;
   static String get calcFieldWeight => _impl.calcFieldWeight;
+  static String get calcFieldHours => _impl.calcFieldHours;
+  static String get calcFieldMinutes => _impl.calcFieldMinutes;
+  static String get calcOwnTime => _impl.calcOwnTime;
+  static String get calcTimeSumOfMaterials => _impl.calcTimeSumOfMaterials;
   static String get calcFieldSpoolPrice => _impl.calcFieldSpoolPrice;
   static String get calcFieldSpoolGrams => _impl.calcFieldSpoolGrams;
 
@@ -519,14 +523,16 @@ class EsBO {
   static String get calcDuplicateSuccess => _impl.calcDuplicateSuccess;
   static String get calcDuplicateError => _impl.calcDuplicateError;
 
+  // === Editar cotizacion ===
+  static String get calcEditAction => _impl.calcEditAction;
+  static String get calcEditTitle => _impl.calcEditTitle;
+  static String calcEditSavedWithId(int id) => _impl.calcEditSavedWithId(id);
+
   // === History ===
   static String get historyTitle => _impl.historyTitle;
   static String get historyErrorLoad => _impl.historyErrorLoad;
   static String get historyEmpty => _impl.historyEmpty;
 
-  // === CSV export gate (T16) ===
-  static String get csvExportLockedBody => _impl.csvExportLockedBody;
-  static String get csvGoProAction => _impl.csvGoProAction;
   static List<String> get csvExportHeader => _impl.csvExportHeader;
   static String get csvValueYes => _impl.csvValueYes;
   static String get csvValueNo => _impl.csvValueNo;
@@ -622,7 +628,6 @@ class EsBO {
   // === Pro badge / locked visuals (UX) ===
   static String get proBadgeLabel => _impl.proBadgeLabel;
   static String get proLockedTooltip => _impl.proLockedTooltip;
-  static String get csvExportTooltipLocked => _impl.csvExportTooltipLocked;
   static String historyUsageCounter(int used, int cap) =>
       _impl.historyUsageCounter(used, cap);
 
@@ -1275,7 +1280,7 @@ class EsImpl implements AppStrings {
   @override
   String get calcWizardStepPrint => 'Impresión';
   @override
-@override
+  @override
   String get calcWizardStepAdjust => 'Otros';
   @override
   @override
@@ -1359,7 +1364,18 @@ class EsImpl implements AppStrings {
   @override
   String get calcFieldFilament => 'Filamento';
   @override
+  @override
   String get calcFieldWeight => 'Peso';
+  @override
+  String get calcFieldHours => 'Horas';
+  @override
+  String get calcFieldMinutes => 'Minutos';
+  @override
+  String get calcOwnTime => 'Tiempo propio';
+  @override
+  String get calcTimeSumOfMaterials =>
+      'Mostrando la suma de los tiempos por material. Editar este valor '
+      'desactiva el tiempo propio de todos los materiales.';
   @override
   String get calcFieldSpoolPrice => 'Precio bobina';
   @override
@@ -1724,16 +1740,18 @@ class EsImpl implements AppStrings {
   String get calcDuplicateError => 'No se pudo duplicar la cotización';
 
   @override
+  String get calcEditAction => 'Editar';
+  @override
+  String get calcEditTitle => 'Editando cotización';
+  @override
+  String calcEditSavedWithId(int id) => 'Cotización #$id actualizada.';
+
+  @override
   String get historyTitle => 'Cotizaciones';
   @override
   String get historyErrorLoad => 'Error cargando cotizaciones';
   @override
   String get historyEmpty => 'Sin cotizaciones guardadas';
-
-  @override
-  String get csvExportLockedBody => 'Exportar CSV es una función Pro';
-  @override
-  String get csvGoProAction => 'Hazte Pro';
 
   @override
   List<String> get csvExportHeader => const [
@@ -1926,8 +1944,6 @@ class EsImpl implements AppStrings {
   String get proBadgeLabel => 'PRO';
   @override
   String get proLockedTooltip => 'Funcion Pro';
-  @override
-  String get csvExportTooltipLocked => 'Exportar CSV (Pro)';
   @override
   String historyUsageCounter(int used, int cap) =>
       used == 1 ? '1/$cap cotización' : '$used/$cap cotizaciones';

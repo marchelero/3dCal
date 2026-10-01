@@ -35,6 +35,27 @@ const String kFreeDefaultCompanyName = '3dCalc';
 /// Dias de validez de la oferta (se imprime como "valido hasta").
 const int kQuoteValidDays = 15;
 
+/// Una fila del desglose por material del PDF.
+///
+/// [timeStr] es null cuando ese material usa el tiempo global (no tiene
+/// tiempo propio), que es el caso mayoritario en Express y en Advanced sin
+/// tiempo propio por material.
+class PdfMaterialMetaItem {
+  const PdfMaterialMetaItem({
+    required this.label,
+    required this.weightGrams,
+    this.timeStr,
+  });
+
+  final String label;
+
+  /// Peso ya formateado ("120 g").
+  final String weightGrams;
+
+  /// Tiempo propio del material ("2h 30m"), o null si usa el global.
+  final String? timeStr;
+}
+
 // ── Colores del diseno ──────────────────────────────────────────────
 
 const PdfColor _accentColor = PdfColors.blue800;
@@ -156,13 +177,23 @@ pw.Widget _buildMetaBox({
   required Decimal discountPct,
   String? metaGrams,
   String? metaTime,
+  List<PdfMaterialMetaItem> materialBreakdown = const [],
 }) {
   final hasHours = totalHours > Decimal.zero;
   final hasDiscount = discountPct > Decimal.zero;
   final hasGrams = metaGrams != null;
   final hasTime = metaTime != null;
 
-  if (!hasHours && !hasDiscount && !hasGrams && !hasTime) {
+  // El desglose solo tiene sentido si algun material aporta tiempo propio:
+  // sin eso, todas las filas serian identicas al total global.
+  final timedMaterials =
+      materialBreakdown.where((m) => m.timeStr != null).toList();
+
+  if (!hasHours &&
+      !hasDiscount &&
+      !hasGrams &&
+      !hasTime &&
+      timedMaterials.isEmpty) {
     return pw.SizedBox.shrink();
   }
 
@@ -236,6 +267,43 @@ pw.Widget _buildMetaBox({
             ],
           ),
         ],
+        // Desglose por material (solo si hay tiempos propios). Sin esto el PDF
+        // de una cotizacion Advanced con tiempo propio por material mostraba
+        // un unico tiempo total, perdiendo el reparto.
+        if (timedMaterials.isNotEmpty) ...[
+          if (hasHours || hasDiscount || hasGrams || hasTime)
+            pw.SizedBox(height: 6),
+          pw.Container(height: 1, color: _accentMedium),
+          pw.SizedBox(height: 4),
+          ...timedMaterials.map(
+            (m) => pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 2),
+              child: pw.Row(
+                children: [
+                  pw.Expanded(
+                    child: pw.Text(
+                      m.label,
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
+                  ),
+                  pw.Text(
+                    m.weightGrams,
+                    style: const pw.TextStyle(fontSize: 9),
+                  ),
+                  pw.SizedBox(width: 12),
+                  pw.Text(
+                    m.timeStr!,
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _accentColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
     ),
   );
@@ -264,6 +332,7 @@ Future<void> shareQuotePdf({
   Uint8List? pieceImageBytes,
   String? metaGrams,
   String? metaTime,
+  List<PdfMaterialMetaItem> materialMetaBreakdown = const [],
   int quantity = 1,
   Decimal? totalGrams,
   Decimal? batchDiscountPct,
@@ -293,6 +362,7 @@ Future<void> shareQuotePdf({
     pieceImageBytes: pieceImageBytes,
     metaGrams: metaGrams,
     metaTime: metaTime,
+    materialMetaBreakdown: materialMetaBreakdown,
     quantity: quantity,
     totalGrams: totalGrams,
     batchDiscountPct: batchDiscountPct,
@@ -338,6 +408,7 @@ Future<Uint8List> buildQuotePdfBytes({
   Uint8List? pieceImageBytes,
   String? metaGrams,
   String? metaTime,
+  List<PdfMaterialMetaItem> materialMetaBreakdown = const [],
   int quantity = 1,
   Decimal? totalGrams,
   Decimal? batchDiscountPct,
@@ -566,6 +637,7 @@ Future<Uint8List> buildQuotePdfBytes({
               discountPct: discountPct,
               metaGrams: effectiveGrams,
               metaTime: metaTime,
+              materialBreakdown: materialMetaBreakdown,
             ),
             pw.SizedBox(height: 16),
 

@@ -1,5 +1,6 @@
 /// Strings en ingles (en_US).
 library;
+
 // ignore_for_file: public_member_api_docs
 
 import 'package:flutter/material.dart' show DateTimeRange;
@@ -415,7 +416,7 @@ class EnImpl implements AppStrings {
   @override
   String get calcWizardStepPrint => 'Print';
   @override
-@override
+  @override
   String get calcWizardStepAdjust => 'Other';
   @override
   @override
@@ -497,7 +498,18 @@ class EnImpl implements AppStrings {
   @override
   String get calcFieldFilament => 'Filament';
   @override
+  @override
   String get calcFieldWeight => 'Weight';
+  @override
+  String get calcFieldHours => 'Hours';
+  @override
+  String get calcFieldMinutes => 'Minutes';
+  @override
+  String get calcOwnTime => 'Own time';
+  @override
+  String get calcTimeSumOfMaterials =>
+      'Showing the sum of the per-material times. Editing this value turns '
+      'off the own time of every material.';
   @override
   String get calcFieldSpoolPrice => 'Spool price';
   @override
@@ -860,16 +872,18 @@ class EnImpl implements AppStrings {
   String get calcDuplicateError => 'Could not duplicate the quote';
 
   @override
+  String get calcEditAction => 'Edit';
+  @override
+  String get calcEditTitle => 'Editing quote';
+  @override
+  String calcEditSavedWithId(int id) => 'Quote #$id updated.';
+
+  @override
   String get historyTitle => 'Quotations';
   @override
   String get historyErrorLoad => 'Error loading quotations';
   @override
   String get historyEmpty => 'No saved quotations';
-
-  @override
-  String get csvExportLockedBody => 'CSV export is a Pro feature';
-  @override
-  String get csvGoProAction => 'Unlock PRO';
 
   @override
   List<String> get csvExportHeader => const [
@@ -1061,8 +1075,6 @@ class EnImpl implements AppStrings {
   String get proBadgeLabel => 'PRO';
   @override
   String get proLockedTooltip => 'Pro feature';
-  @override
-  String get csvExportTooltipLocked => 'Export CSV (Pro)';
   @override
   String historyUsageCounter(int used, int cap) =>
       used == 1 ? '1/$cap quote' : '$used/$cap quotes';
@@ -1584,8 +1596,7 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String get calcPartialAutoSaved => 'Quick quote saved';
   @override
-  String get calcPartialCompleteHint =>
-      'Fill in the data to save as a quote';
+  String get calcPartialCompleteHint => 'Fill in the data to save as a quote';
   @override
   String get printSettingsVersionSuffix => ' · v{0}';
 }

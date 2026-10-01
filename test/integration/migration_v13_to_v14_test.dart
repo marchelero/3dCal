@@ -92,7 +92,22 @@ void _seedV13Schema(Database rawDb) {
     'failure_cost_snapshot, markup_cost_snapshot, profit_amount_snapshot, '
     'total_price_snapshot) '
     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [1234567890, 'Llavero logo', 'Juan Perez', 1.5, 0.0, 1, 10, 0, 0, 0, 0, 0, 0, 10],
+    [
+      1234567890,
+      'Llavero logo',
+      'Juan Perez',
+      1.5,
+      0.0,
+      1,
+      10,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10,
+    ],
   );
 
   rawDb.execute('''
@@ -142,7 +157,9 @@ void _seedV13Schema(Database rawDb) {
 }
 
 void main() {
-  group('Migration v13 -> v14', () {
+  // La DB destino es v16 (schema actual). Abrir una v13 corre las
+  // migraciones 14, 15 y 16 en orden; este test cubre la de v14.
+  group('Migration v13 -> v14 (-> v16)', () {
     late Database rawDb;
 
     setUp(() {
@@ -154,67 +171,65 @@ void main() {
       rawDb.close();
     });
 
-    test(
-      'onUpgrade(13, 14) adds is_partial column to calculations',
-      () async {
-        final db = AppDatabase.forTesting(NativeDatabase.opened(rawDb));
-        addTearDown(() async => db.close());
-        await db.customSelect('SELECT 1').get();
+    test('onUpgrade(13, 14) adds is_partial column to calculations', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.opened(rawDb));
+      addTearDown(() async => db.close());
+      await db.customSelect('SELECT 1').get();
 
-        final versionRows = await db.customSelect('PRAGMA user_version').get();
-        expect(
-          versionRows.first.read<int>('user_version'),
-          14,
-          reason: 'AppDatabase debe setear user_version=14 tras onUpgrade.',
-        );
-        expect(db.schemaVersion, 14);
+      final versionRows = await db.customSelect('PRAGMA user_version').get();
+      expect(
+        versionRows.first.read<int>('user_version'),
+        16,
+        reason: 'AppDatabase debe setear user_version=16 tras onUpgrade.',
+      );
+      expect(db.schemaVersion, 16);
 
-        final cols = await db
-            .customSelect(
-              "SELECT name, type, \"notnull\" AS isNotNull, \"pk\" AS isPrimaryKey "
-              "FROM pragma_table_info('calculations')",
-            )
-            .get();
-        final byName = <String, QueryRow>{};
-        for (final r in cols) {
-          byName[r.read<String>('name')] = r;
-        }
-        final isPartial = byName['is_partial'];
-        expect(isPartial, isNotNull, reason: 'v14 must create is_partial column.');
-        expect(isPartial!.read<String>('type'), 'INTEGER');
-        expect(
-          isPartial.read<int>('isNotNull'),
-          1,
-          reason: 'is_partial has DEFAULT 0 (NOT NULL).',
-        );
-      },
-    );
+      final cols = await db
+          .customSelect(
+            "SELECT name, type, \"notnull\" AS isNotNull, \"pk\" AS isPrimaryKey "
+            "FROM pragma_table_info('calculations')",
+          )
+          .get();
+      final byName = <String, QueryRow>{};
+      for (final r in cols) {
+        byName[r.read<String>('name')] = r;
+      }
+      final isPartial = byName['is_partial'];
+      expect(
+        isPartial,
+        isNotNull,
+        reason: 'v14 must create is_partial column.',
+      );
+      expect(isPartial!.read<String>('type'), 'INTEGER');
+      expect(
+        isPartial.read<int>('isNotNull'),
+        1,
+        reason: 'is_partial has DEFAULT 0 (NOT NULL).',
+      );
+    });
 
-    test(
-      'pre-existing rows survive with is_partial = false',
-      () async {
-        final db = AppDatabase.forTesting(NativeDatabase.opened(rawDb));
-        addTearDown(() async => db.close());
-        await db.customSelect('SELECT 1').get();
+    test('pre-existing rows survive with is_partial = false', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.opened(rawDb));
+      addTearDown(() async => db.close());
+      await db.customSelect('SELECT 1').get();
 
-        final calcs = await db.customSelect('SELECT * FROM calculations').get();
-        expect(calcs, hasLength(1));
-        expect(calcs.first.read<String>('piece_name'), 'Llavero logo');
-        expect(
-          calcs.first.read<int?>('is_partial'),
-          0,
-          reason: 'Pre-v14 rows get is_partial = 0 (false).',
-        );
-      },
-    );
+      final calcs = await db.customSelect('SELECT * FROM calculations').get();
+      expect(calcs, hasLength(1));
+      expect(calcs.first.read<String>('piece_name'), 'Llavero logo');
+      expect(
+        calcs.first.read<int?>('is_partial'),
+        0,
+        reason: 'Pre-v14 rows get is_partial = 0 (false).',
+      );
+    });
 
-    test('re-open idempotent: second open stays at v14', () async {
+    test('re-open idempotent: second open stays at v16', () async {
       final db1 = AppDatabase.forTesting(
         NativeDatabase.opened(rawDb, closeUnderlyingOnClose: false),
       );
       await db1.customSelect('SELECT 1').get();
       final v1 = await db1.customSelect('PRAGMA user_version').get();
-      expect(v1.first.read<int>('user_version'), 14);
+      expect(v1.first.read<int>('user_version'), 16);
       await db1.close();
 
       final db2 = AppDatabase.forTesting(
@@ -225,7 +240,7 @@ void main() {
       final v2 = await db2.customSelect('PRAGMA user_version').get();
       expect(
         v2.first.read<int>('user_version'),
-        14,
+        16,
         reason: 'Second open must not re-run migration.',
       );
       final calcs = await db2.customSelect('SELECT * FROM calculations').get();

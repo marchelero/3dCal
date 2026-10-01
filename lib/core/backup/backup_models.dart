@@ -11,6 +11,7 @@
 ///   "printers": [...],
 ///   "calculations": [...],
 ///   "calculationMaterials": [...],
+///   "discountTiers": [...],
 ///   "settings": [...]
 /// }
 /// ```
@@ -52,6 +53,11 @@ const int kBackupMaxMaterialRows = 200000;
 /// Limite de settings por backup.
 const int kBackupMaxSettings = 500;
 
+/// Limite de escalones de descuento por cantidad por backup.
+///
+/// Un taller usa 2-6 escalones; el limite solo detecta backups corruptos.
+const int kBackupMaxDiscountTiers = 500;
+
 /// Longitud maxima de strings en campos de texto (protege contra valores
 /// abusivos que inflarian la memoria o romperian la UI).
 const int kBackupMaxStringLength = 2048;
@@ -75,6 +81,7 @@ class BackupData {
     required this.calculations,
     required this.calculationMaterials,
     required this.settings,
+    this.discountTiers = const <Map<String, dynamic>>[],
   });
 
   /// Deserializa desde JSON. Lanza [FormatException] si falta un campo
@@ -95,6 +102,12 @@ class BackupData {
           .cast<Map<String, dynamic>>(),
       settings: (json['settings'] as List<dynamic>)
           .cast<Map<String, dynamic>>(),
+      // v12: opcional. Backups anteriores a v12 no tienen la clave y deben
+      // seguir importando (restorea la app sin escalones, no falla).
+      discountTiers: json.containsKey('discountTiers')
+          ? (json['discountTiers'] as List<dynamic>)
+                .cast<Map<String, dynamic>>()
+          : const <Map<String, dynamic>>[],
     );
   }
 
@@ -125,6 +138,12 @@ class BackupData {
   /// Settings globales (key-value).
   final List<Map<String, dynamic>> settings;
 
+  /// Escalones de descuento por cantidad (feature A - v12).
+  ///
+  /// Es opcional en la deserializacion para mantener compatibilidad hacia
+  /// atras con backups exportados antes de la inclusion de esta tabla.
+  final List<Map<String, dynamic>> discountTiers;
+
   /// Serializa a JSON para escritura a archivo.
   ///
   /// Precondiciones de tipos (BUG-024): todas las colecciones deben contener
@@ -140,6 +159,7 @@ class BackupData {
     'calculations': calculations,
     'calculationMaterials': calculationMaterials,
     'settings': settings,
+    'discountTiers': discountTiers,
   };
 
   /// Validacion exhaustiva del archivo de backup.
@@ -173,6 +193,10 @@ class BackupData {
     if (settings.length > kBackupMaxSettings) {
       return 'Demasiados settings (${settings.length}); maximo $kBackupMaxSettings';
     }
+    if (discountTiers.length > kBackupMaxDiscountTiers) {
+      return 'Demasiados escalones de descuento (${discountTiers.length}); '
+          'maximo $kBackupMaxDiscountTiers';
+    }
 
     // Validacion de filas + duplicados + referencias.
     final errors = <String>[];
@@ -200,6 +224,22 @@ class BackupData {
       }
       _checkBool(row, 'isSold', 'Cotizacion #$id', errors);
       _checkInt(row, 'printMinutes', 'Cotizacion #$id', errors);
+      // v14/v16. Opcionales: los backups previos a esas versiones no las
+      // traen y el import aplica el default (false).
+      _checkOptionalBool(row, 'isPartial', 'Cotizacion #$id', errors);
+      _checkOptionalBool(row, 'isAdvanced', 'Cotizacion #$id', errors);
+      _checkOptionalString(
+        row,
+        'batchDiscountPercent',
+        'Cotizacion #$id',
+        errors,
+      );
+      _checkOptionalString(
+        row,
+        'batchDiscountAmount',
+        'Cotizacion #$id',
+        errors,
+      );
     }
 
     final filamentIds = <int>{};
@@ -250,6 +290,10 @@ class BackupData {
       _checkNumber(row, 'weightGrams', 'Material #$id', errors);
       _checkNumber(row, 'pricePerBobbinSnapshot', 'Material #$id', errors);
       _checkNumber(row, 'gramsPerBobbinSnapshot', 'Material #$id', errors);
+      // v15. Opcionales: ausentes en backups previos (NULL = tiempo global).
+      _checkOptionalBool(row, 'useOwnTime', 'Material #$id', errors);
+      _checkOptionalNumber(row, 'materialHours', 'Material #$id', errors);
+      _checkOptionalNumber(row, 'materialMinutes', 'Material #$id', errors);
     }
 
     for (var i = 0; i < settings.length; i++) {
@@ -260,6 +304,22 @@ class BackupData {
       }
       _checkString(row, 'value', 'Setting #$key', errors);
       _checkDateTime(row, 'updatedAt', 'Setting #$key', errors);
+    }
+
+    // Escalones de descuento (v12). `percent` es TEXT decimal a proposito
+    // (regla: porcentaje/monto nunca en double), asi que se valida como string.
+    final tierIds = <String>{};
+    for (var i = 0; i < discountTiers.length; i++) {
+      final row = discountTiers[i];
+      final id = row['id'];
+      if (id is! String || id.isEmpty) {
+        errors.add('DiscountTier #${i + 1}: id invalido ($id)');
+      } else if (!tierIds.add(id)) {
+        errors.add('DiscountTier #$id: id duplicado ($id)');
+      }
+      _checkInt(row, 'minQty', 'DiscountTier #$id', errors);
+      _checkString(row, 'percent', 'DiscountTier #$id', errors);
+      _checkInt(row, 'sortOrder', 'DiscountTier #$id', errors);
     }
 
     if (errors.isNotEmpty) {
@@ -278,6 +338,57 @@ class BackupData {
   ) {
     final v = row[key];
     if (v != null && (v is! String || v.length > kBackupMaxStringLength)) {
+      errors.add('$label: $key invalido');
+    }
+  }
+
+  /// Igual que [_checkString] pero la clave puede faltar por completo.
+  ///
+  /// Se usa para columnas anadidas despues del formato de backup: la ausencia
+  /// es legitima (backup viejo) y el import aplica el default. Lo que no se
+  /// acepta es un valor con tipo incorrecto.
+  static void _checkOptionalString(
+    Map<String, dynamic> row,
+    String key,
+    String label,
+    List<String> errors,
+  ) {
+    if (!row.containsKey(key)) return;
+    _checkString(row, key, label, errors);
+  }
+
+  /// Igual que [_checkBool] pero tolerante a columna ausente y a `null`.
+  ///
+  /// Null es un valor legitimo en las columnas nullable de v15/v16: significa
+  /// "el usuario no la relleno" (o el backup es previo a la columna) y el
+  /// import lo conserva como NULL. Lo que se rechaza es un bool mal escrito
+  /// (ej: `"si"`), que fallaria en el cast del import.
+  static void _checkOptionalBool(
+    Map<String, dynamic> row,
+    String key,
+    String label,
+    List<String> errors,
+  ) {
+    final v = row[key];
+    if (v == null) return;
+    if (v is! bool) {
+      errors.add('$label: $key invalido ($v)');
+    }
+  }
+
+  /// Igual que [_checkNumber] pero tolerante a columna ausente y a null.
+  ///
+  /// Necesaria para las columnas REAL NULLABLE de v15: null es un valor
+  /// valido ("no usaba tiempo propio"), no un dato faltante.
+  static void _checkOptionalNumber(
+    Map<String, dynamic> row,
+    String key,
+    String label,
+    List<String> errors,
+  ) {
+    final v = row[key];
+    if (v == null) return;
+    if (v is! num || !v.isFinite) {
       errors.add('$label: $key invalido');
     }
   }
@@ -368,6 +479,7 @@ class BackupData {
     calculationCount: calculations.length,
     materialRowCount: calculationMaterials.length,
     settingCount: settings.length,
+    discountTierCount: discountTiers.length,
   );
 }
 
@@ -380,6 +492,7 @@ class BackupSummary {
     required this.calculationCount,
     required this.materialRowCount,
     required this.settingCount,
+    this.discountTierCount = 0,
   });
 
   /// Cantidad de filamentos en el backup.
@@ -397,12 +510,18 @@ class BackupSummary {
   /// Cantidad de settings en el backup.
   final int settingCount;
 
+  /// Cantidad de escalones de descuento por cantidad en el backup.
+  final int discountTierCount;
+
   /// Describe el resumen en formato legible.
   String describe() {
     final parts = <String>[];
     if (filamentCount > 0) parts.add('$filamentCount filamentos');
     if (printerCount > 0) parts.add('$printerCount impresoras');
     if (calculationCount > 0) parts.add('$calculationCount cotizaciones');
+    if (discountTierCount > 0) {
+      parts.add('$discountTierCount escalones de descuento');
+    }
     if (parts.isEmpty) return 'Sin datos';
     return parts.join(', ');
   }

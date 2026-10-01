@@ -306,6 +306,10 @@ abstract class AppStrings {
   String get calcFieldLabelHelper;
   String get calcFieldFilament;
   String get calcFieldWeight;
+  String get calcFieldHours;
+  String get calcFieldMinutes;
+  String get calcOwnTime;
+  String get calcTimeSumOfMaterials;
   String get calcFieldSpoolPrice;
   String get calcFieldSpoolGrams;
 
@@ -563,20 +567,21 @@ abstract class AppStrings {
   String get calcDuplicateSuccess;
   String get calcDuplicateError;
 
+  // === Editar cotizacion ===
+  /// Label de la accion "Editar" (historial y detalle).
+  String get calcEditAction;
+
+  /// Titulo del AppBar de la calculadora cuando se esta editando una
+  /// cotizacion existente (debe differentiate de una nueva).
+  String get calcEditTitle;
+
+  /// Confirmacion de guardado en modo edicion ([calcEditAction]).
+  String calcEditSavedWithId(int id);
+
   // === History / Calculations list ===
   String get historyTitle;
   String get historyErrorLoad;
   String get historyEmpty;
-
-  // === CSV export gate (T16 — ver docs/plans/2026-07-22_1100-free-pro-monetization) ===
-  /// Body del SnackBar que se muestra cuando un usuario Free intenta
-  /// exportar a CSV. Acompana al [csvGoProAction] en el action del SnackBar.
-  String get csvExportLockedBody;
-
-  /// Label del action del SnackBar del gate CSV. Al tap, navega a
-  /// `/paywall` (no es required: las Apple/Google guidelines piden restore
-  /// visible, no necesariamente un upsell — pero ayuda a la conversion).
-  String get csvGoProAction;
 
   /// Header del CSV exportado (12 columnas, coma-separadas).
   /// El orden debe coincidir con el writer de CSV en calculations_list_page.
@@ -732,10 +737,6 @@ abstract class AppStrings {
 
   /// Tooltip / semantics del badge "PRO" (accesibilidad).
   String get proLockedTooltip;
-
-  /// Tooltip del boton export CSV cuando esta locked (free): indica que
-  /// la accion es Pro en vez de describir la accion habilitada.
-  String get csvExportTooltipLocked;
 
   /// Contador de uso del historial free: "$used/$cap cotizaciones".
   /// Singular para used == 1. [used] = cantidad actual de cotizaciones,

@@ -26,23 +26,18 @@ import 'package:tresdcal/features/entitlement/presentation/providers/entitlement
 import 'package:tresdcal/l10n/en_us.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
 
-/// Widget tests del gate "Exportar CSV" (T16 del plan de monetizacion).
+/// Widget tests del export CSV del historial.
 ///
-/// **Scope**:
-/// - **Free**: tap en "Exportar CSV" muestra SnackBar con
-///   [EsBO.csvExportLockedBody] + action [EsBO.csvGoProAction].
-///   El action navega a `/paywall`. El export NO ocurre (no se invoca
-///   `Share.shareXFiles`).
-/// - **Pro**: tap en "Exportar CSV" NO muestra el gate SnackBar. Procede
-///   al export (que en el test fallara con MissingPluginException — el
-///   aserto relevante es "no se mostro el SnackBar de gate").
-/// - **l10n**: las 2 keys nuevas existen en es_bo y en_us.
+/// **Contexto**: el export CSV es **gratis** (37b6870 quito el gate Pro:
+/// `_exportCsv` no consulta `isProProvider` — "CSV export es gratuito, los
+/// datos son del usuario"). Estos tests fijan esa decision: el boton existe
+/// igual en Free y en Pro, y el tap NUNCA muestra un SnackBar de gate.
 ///
 /// **Mocking**: `_FakeEntitlementRepository` + `_FakePaymentService`
 /// (in-memory, sin SDK nativo). El `isProProvider` real se evalua
 /// contra los fakes via el [entitlementNotifierProvider] real — asi
 /// se ejercita la cadena completa (cache SP → repo → notifier →
-/// isProProvider → gate).
+/// isProProvider).
 
 class _FakeEntitlementRepository implements EntitlementRepository {
   Entitlement? _active;
@@ -311,30 +306,10 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────────────────
-  // l10n (las 2 keys nuevas del gate)
+  // Export CSV: disponible en Free y en Pro (sin gate)
   // ─────────────────────────────────────────────────────────────
 
-  group('CSV gate l10n (T16)', () {
-    test('EsBO.csvExportLockedBody esta definido y no vacio', () {
-      expect(EsBO.csvExportLockedBody, isNotEmpty);
-    });
-
-    test('EsBO.csvGoProAction esta definido y no vacio', () {
-      expect(EsBO.csvGoProAction, isNotEmpty);
-    });
-
-    test('EnImpl expone las 2 keys del CSV gate con texto no vacio', () {
-      EsBO.setImpl(const EnImpl());
-      expect(EsBO.csvExportLockedBody, isNotEmpty);
-      expect(EsBO.csvGoProAction, isNotEmpty);
-    });
-  });
-
-  // ─────────────────────────────────────────────────────────────
-  // Gate behavior (Free + tap CSV)
-  // ─────────────────────────────────────────────────────────────
-
-  group('CalculationsListPage — CSV export gate en Free', () {
+  group('CalculationsListPage — export CSV sin gate', () {
     testWidgets('duplicar al alcanzar el cap muestra el gate de historial', (
       tester,
     ) async {
@@ -355,50 +330,41 @@ void main() {
     ) async {
       await _pumpPageFree(tester);
       expect(
-        find.byTooltip(EsBO.csvExportTooltipLocked),
+        find.byTooltip(EsBO.historyExportCsv),
         findsOneWidget,
-        reason: 'Free: el boton de export CSV (tooltip locked) en la AppBar.',
+        reason: 'Free: el boton de export CSV en la AppBar (export es gratis).',
       );
     });
 
-    testWidgets(
-      'tap en "Exportar CSV" muestra SnackBar con body + action "Go Pro"',
-      (tester) async {
-        await _pumpPageFree(tester);
+    testWidgets('tap en "Exportar CSV" en Free NO muestra SnackBar de gate', (
+      tester,
+    ) async {
+      await _pumpPageFree(tester);
 
-        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
-        await tester.pump(); // Schedule SnackBar.
-        await tester.pump(const Duration(milliseconds: 100)); // Anima SnackBar.
+      await tester.tap(find.byTooltip(EsBO.historyExportCsv));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-        // El SnackBar del gate debe estar visible.
-        expect(
-          find.byType(SnackBar),
-          findsOneWidget,
-          reason: 'Free debe ver SnackBar del gate.',
-        );
-        // Body del gate.
-        expect(
-          find.text(EsBO.csvExportLockedBody),
-          findsOneWidget,
-          reason: 'Body del SnackBar debe ser csvExportLockedBody.',
-        );
-        // Action label.
-        expect(
-          find.text(EsBO.csvGoProAction),
-          findsOneWidget,
-          reason: 'Action del SnackBar debe ser csvGoProAction.',
-        );
-      },
-    );
+      // El export es gratis: no hay gate, asi que ningun SnackBar con CTA
+      // "Go Pro" debe aparecer. Lo que se ve (o no) depende de si la lista
+      // tiene datos; lo relevante es la ausencia del gate.
+      expect(
+        find.byType(SnackBar),
+        findsNothing,
+        reason: 'CSV es gratis en Free: sin SnackBar de gate.',
+      );
+      // El share va a throw MissingPluginException (no hay platform channel
+      // en test), pero eso no rompe el assert.
+    });
 
     testWidgets(
       'NO muestra el SnackBar de "no hay cotizaciones" cuando hay datos',
       (tester) async {
         // La lista tiene 1 cotizacion seeded → el codigo del export debe
-        // entrar al gate (no al branch de lista vacia).
+        // proceder al share (no al branch de lista vacia).
         await _pumpPageFree(tester);
 
-        await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
+        await tester.tap(find.byTooltip(EsBO.historyExportCsv));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
@@ -406,42 +372,14 @@ void main() {
         expect(
           find.text('No hay cotizaciones para exportar'),
           findsNothing,
-          reason:
-              'Lista no vacia: el gate debe dispararse, no el branch empty.',
+          reason: 'Lista no vacia: exporta, no dispara el branch empty.',
         );
-        // El body del gate SI debe aparecer.
-        expect(find.text(EsBO.csvExportLockedBody), findsOneWidget);
       },
     );
-
-    testWidgets('tap en action "Go Pro" navega a /paywall', (tester) async {
-      await _pumpPageFree(tester);
-
-      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      // El action "Go Pro" del SnackBar debe estar visible.
-      final goProAction = find.text(EsBO.csvGoProAction);
-      expect(goProAction, findsOneWidget);
-
-      // Tap en el action. Usamos ensureVisible por si quedo fuera del
-      // viewport en viewports chicos.
-      await tester.ensureVisible(goProAction);
-      await tester.tap(goProAction);
-      await tester.pumpAndSettle();
-
-      // La pagina paywall (stub) debe estar visible.
-      expect(
-        find.text('Paywall stub'),
-        findsOneWidget,
-        reason: 'Action "Go Pro" debe navegar a /paywall.',
-      );
-    });
   });
 
   // ─────────────────────────────────────────────────────────────
-  // Gate behavior (Pro + tap CSV) — export debe proceder, no gate
+  // Export en Pro — mismo comportamiento que Free (sin gate)
   // ─────────────────────────────────────────────────────────────
 
   group('CalculationsListPage — CSV export en Pro', () {
@@ -461,22 +399,12 @@ void main() {
         reason: 'Pro setup: el notifier debe haber resuelto a Pro.',
       );
 
-      await tester.tap(find.byTooltip('Exportar CSV'));
+      await tester.tap(find.byTooltip(EsBO.historyExportCsv));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // El body del gate NO debe aparecer.
-      expect(
-        find.text(EsBO.csvExportLockedBody),
-        findsNothing,
-        reason: 'Pro: el gate no debe dispararse.',
-      );
-      // El action "Go Pro" tampoco.
-      expect(
-        find.text(EsBO.csvGoProAction),
-        findsNothing,
-        reason: 'Pro: no debe ofrecer "Go Pro" en el export.',
-      );
+      // Pro se comporta igual que Free: sin gate.
+      expect(find.byType(SnackBar), findsNothing);
       // Y no debe aparecer el branch de lista vacia tampoco.
       expect(
         find.text('No hay cotizaciones para exportar'),
@@ -485,7 +413,7 @@ void main() {
       );
       // El share va a throw MissingPluginException (no hay platform
       // channel en test), pero eso no rompe el assert: lo que importa
-      // es que el gate NO se disparo.
+      // es que el exportSI se intento (no se corto por un gate).
     });
   });
 

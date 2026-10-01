@@ -7,6 +7,32 @@ import '../domain/entities/calculation_output.dart';
 import '../domain/entities/material_input.dart';
 import '../domain/monthly_totals.dart';
 
+/// Fila de material para persistir en el guardado parcial.
+///
+/// [DraftMaterial] (el draft de sesion) usa strings porque el form todavia
+/// esta en edicion; el parcial se escribe a la DB y necesita numeros.
+class DraftMaterialInput {
+  const DraftMaterialInput({
+    required this.label,
+    required this.weightGrams,
+    required this.pricePerBobbin,
+    required this.gramsPerBobbin,
+    this.useOwnTime = false,
+    this.materialHours,
+    this.materialMinutes,
+  });
+
+  final String label;
+  final double weightGrams;
+  final double pricePerBobbin;
+  final double gramsPerBobbin;
+
+  /// Tiempo propio del material (schema v15). Null = no usaba tiempo propio.
+  final bool? useOwnTime;
+  final double? materialHours;
+  final double? materialMinutes;
+}
+
 /// Vista ligera de una cotizacion para el historial (F3).
 ///
 /// Pensada para la lista y el export CSV: contiene SOLO las columnas que
@@ -83,6 +109,7 @@ class CalculationDraft {
     this.notes,
     this.conditions,
     this.isTemplate = false,
+    this.isAdvanced = false,
     this.quantity = 1,
     this.pieceImageBytes,
     this.batchDiscountPercent,
@@ -110,6 +137,11 @@ class CalculationDraft {
   /// True si el registro es una plantilla de trabajo frecuente (reusada para
   /// cargar configuraciones, nunca aparece en historial/dashboard).
   final bool isTemplate;
+
+  /// v16: la cotizacion se creo en modo Advanced. Persistido porque la
+  /// inferencia por cantidad de materiales degrada Advanced de 1 material
+  /// a Express al reusar.
+  final bool isAdvanced;
 
   /// Cantidad de unidades del lote (>= 1). Los snapshots financieros de
   /// [output] son UNITARIOS; el total efectivo es `unitario x quantity`.
@@ -201,48 +233,13 @@ class CalculationRepository {
     CalculationDraft draft, {
     required bool isTemplate,
   }) async {
-    final o = draft.output;
     final calcId = await _db
         .into(_db.calculations)
         .insert(
-          CalculationsCompanion.insert(
-            createdAt: DateTime.now().toUtc(),
-            pieceName: Value(draft.pieceName),
-            clientName: Value(draft.clientName),
-            notes: Value(draft.notes),
-            conditions: Value(draft.conditions),
-            printerId: const Value(null),
-            printerNameSnapshot: const Value(null),
-            printerWattsSnapshot: Value(0),
-            totalHours: draft.totalHours.toDouble(),
-            printMinutes: Value(draft.printMinutes),
-            discountPercentage: draft.discountPercentage.toDouble(),
-            kwhRateSnapshot: 0,
-            profitBaseSnapshot: 0,
-            materialCostSnapshot: o.materialCost.toDouble(),
-            electricCostSnapshot: o.electricCost.toDouble(),
-            amortizationCostSnapshot: Value(o.amortizationCost.toDouble()),
-            laborCostSnapshot: o.laborCost.toDouble(),
-            postProcessCostSnapshot: o.postProcessCost.toDouble(),
-            baseCostSnapshot: o.baseCost.toDouble(),
-            failureCostSnapshot: o.failureCost.toDouble(),
-            markupCostSnapshot: o.markupCost.toDouble(),
-            profitAmountSnapshot: o.profitAmount.toDouble(),
-            minimumChargeAppliedSnapshot: 0,
-            effectiveTotalSnapshot: o.totalFinal.toDouble(),
-            totalPriceSnapshot: o.totalPrice.toDouble(),
-            quantity: Value(draft.quantity < 1 ? 1 : draft.quantity),
-            laborRateSnapshot: 0,
-            postProcessRateSnapshot: 0,
-            failureRateSnapshot: 0,
-            minimumChargeSnapshot: 0,
-            markupOnMaterialsSnapshot: 0,
+          _snapshotColumns(draft).copyWith(
+            createdAt: Value(DateTime.now().toUtc()),
+            isSold: const Value(false),
             isTemplate: Value(isTemplate),
-            pieceImageBlob: Value(draft.pieceImageBytes),
-            batchDiscountPercent:
-                Value(draft.batchDiscountPercent?.toString()),
-            batchDiscountAmount:
-                Value(draft.batchDiscountAmount?.toString()),
           ),
         );
     for (final m in draft.materials) {
@@ -256,10 +253,116 @@ class CalculationRepository {
               weightGrams: m.weightGrams.toDouble(),
               pricePerBobbinSnapshot: m.pricePerBobbin.toDouble(),
               gramsPerBobbinSnapshot: m.gramsPerBobbin.toDouble(),
+              useOwnTime: Value(m.useOwnTime),
+              materialHours: Value(m.ownTimeHours?.toDouble()),
+              materialMinutes: Value(m.ownTimeMinutes?.toDouble()),
             ),
           );
     }
     return calcId;
+  }
+
+  /// Columnas de snapshot derivadas de [draft], compartidas por la escritura
+  /// inicial ([_insertInTransaction]) y la edicion ([updateCalculation]).
+  ///
+  /// **Por que un solo lugar**: `CalculationsCompanion.insert(...)` obliga a
+  /// enumerar cada columna a mano, asi que agregar un campo al draft obliga a
+  /// tocar ambos caminos. Si solo se actualiza el `insert`, una edicion deja
+  /// el snapshot viejo (bug silencioso de datos, no de compilacion).
+  ///
+  /// Deliberadamente NO incluye `createdAt`, `isSold` ni `isTemplate`: son
+  /// identidad/estado de la fila, no resultado del calculo. Editar NO puede
+  /// cambiarlos.
+  CalculationsCompanion _snapshotColumns(CalculationDraft draft) {
+    final o = draft.output;
+    return CalculationsCompanion(
+      pieceName: Value(draft.pieceName),
+      clientName: Value(draft.clientName),
+      notes: Value(draft.notes),
+      conditions: Value(draft.conditions),
+      printerId: const Value(null),
+      printerNameSnapshot: const Value(null),
+      printerWattsSnapshot: const Value(0),
+      totalHours: Value(draft.totalHours.toDouble()),
+      printMinutes: Value(draft.printMinutes),
+      discountPercentage: Value(draft.discountPercentage.toDouble()),
+      kwhRateSnapshot: const Value(0),
+      profitBaseSnapshot: const Value(0),
+      materialCostSnapshot: Value(o.materialCost.toDouble()),
+      electricCostSnapshot: Value(o.electricCost.toDouble()),
+      amortizationCostSnapshot: Value(o.amortizationCost.toDouble()),
+      laborCostSnapshot: Value(o.laborCost.toDouble()),
+      postProcessCostSnapshot: Value(o.postProcessCost.toDouble()),
+      baseCostSnapshot: Value(o.baseCost.toDouble()),
+      failureCostSnapshot: Value(o.failureCost.toDouble()),
+      markupCostSnapshot: Value(o.markupCost.toDouble()),
+      profitAmountSnapshot: Value(o.profitAmount.toDouble()),
+      minimumChargeAppliedSnapshot: const Value(0),
+      effectiveTotalSnapshot: Value(o.totalFinal.toDouble()),
+      totalPriceSnapshot: Value(o.totalPrice.toDouble()),
+      quantity: Value(draft.quantity < 1 ? 1 : draft.quantity),
+      laborRateSnapshot: const Value(0),
+      postProcessRateSnapshot: const Value(0),
+      failureRateSnapshot: const Value(0),
+      minimumChargeSnapshot: const Value(0),
+      markupOnMaterialsSnapshot: const Value(0),
+      isAdvanced: Value(draft.isAdvanced),
+      pieceImageBlob: Value(draft.pieceImageBytes),
+      batchDiscountPercent: Value(draft.batchDiscountPercent?.toString()),
+      batchDiscountAmount: Value(draft.batchDiscountAmount?.toString()),
+    );
+  }
+
+  /// Actualiza una cotizacion existente en el lugar ("Editar").
+  ///
+  /// **NO crea una fila nueva**: la transaccion hace UPDATE de los snapshots y
+  /// reemplaza los materiales, conservando `id`, `createdAt`, `isSold` e
+  /// `isTemplate`. Editar una venta no la desmarca ni cambia su fecha en el
+  /// historial.
+  ///
+  /// Atomicidad: el UPDATE y el reemplazo de materiales van juntos; si el
+  /// segundo falla, la fila queda con los snapshots viejo y los materiales
+  /// nuevos (estado incoherente que un rollback evita).
+  ///
+  /// Devuelve `false` si la cotizacion ya no existe (borrada en otra pestana
+  /// mientras el usuario editaba).
+  Future<bool> updateCalculation(int id, CalculationDraft draft) {
+    return _db.transaction(() async {
+      final updated = await (_db.update(
+        _db.calculations,
+      )..where((c) => c.id.equals(id))).write(_snapshotColumns(draft));
+      if (updated == 0) return false;
+      await _replaceMaterialsFromDraft(id, draft);
+      return true;
+    });
+  }
+
+  /// Inserta las filas de material de un [CalculationDraft] (weight/price ya
+  /// vem en double, a diferencia de [DraftMaterialInput]).
+  Future<void> _replaceMaterialsFromDraft(
+    int calculationId,
+    CalculationDraft draft,
+  ) async {
+    await (_db.delete(
+      _db.calculationMaterials,
+    )..where((t) => t.calculationId.equals(calculationId))).go();
+    for (final m in draft.materials) {
+      await _db
+          .into(_db.calculationMaterials)
+          .insert(
+            CalculationMaterialsCompanion.insert(
+              calculationId: calculationId,
+              filamentId: Value(_filamentIdFromLabel(m.label)),
+              label: m.label,
+              weightGrams: m.weightGrams.toDouble(),
+              pricePerBobbinSnapshot: m.pricePerBobbin.toDouble(),
+              gramsPerBobbinSnapshot: m.gramsPerBobbin.toDouble(),
+              useOwnTime: Value(m.useOwnTime),
+              materialHours: Value(m.ownTimeHours?.toDouble()),
+              materialMinutes: Value(m.ownTimeMinutes?.toDouble()),
+            ),
+          );
+    }
   }
 
   /// Duplica una cotizacion existente: copia todos los snapshots y
@@ -331,6 +434,7 @@ class CalculationRepository {
             printerWattsSnapshot: Value(source.printerWattsSnapshot),
             totalHours: source.totalHours,
             printMinutes: Value(source.printMinutes),
+            isAdvanced: Value(source.isAdvanced),
             discountPercentage: source.discountPercentage,
             kwhRateSnapshot: source.kwhRateSnapshot,
             profitBaseSnapshot: source.profitBaseSnapshot,
@@ -366,6 +470,9 @@ class CalculationRepository {
               weightGrams: m.weightGrams,
               pricePerBobbinSnapshot: m.pricePerBobbinSnapshot,
               gramsPerBobbinSnapshot: m.gramsPerBobbinSnapshot,
+              useOwnTime: Value(m.useOwnTime),
+              materialHours: Value(m.materialHours),
+              materialMinutes: Value(m.materialMinutes),
             ),
           );
     }
@@ -803,15 +910,55 @@ class CalculationRepository {
   ///
   /// Si ya existe un parcial en el mismo minuto, lo actualiza (misma fila).
   /// Si no, inserta una nueva fila. Devuelve el id de la fila.
-  Future<int> savePartial(CalculationsCompanion companion) async {
+  ///
+  /// [materials] son las filas de material del form. Se persisten para que
+  /// "Reusar" sobre un parcial no pierda los materiales: sin esto, un
+  /// parcial guardado en modo Advanced se reusaba sin ningun material.
+  Future<int> savePartial(
+    CalculationsCompanion companion, {
+    List<DraftMaterialInput> materials = const [],
+  }) async {
     final now = companion.createdAt.value;
     final bucket = DateTime(now.year, now.month, now.day, now.hour, now.minute);
     final existing = await findLatestPartialForMinute(bucket);
+    final int id;
     if (existing != null) {
       await updatePartial(existing.id, companion);
-      return existing.id;
+      id = existing.id;
+    } else {
+      id = await _db.into(_db.calculations).insert(companion);
     }
-    return _db.into(_db.calculations).insert(companion);
+    await _replaceMaterials(id, materials);
+    return id;
+  }
+
+  /// Reemplaza todas las filas de material de una cotizacion.
+  ///
+  /// Borra las previas (update idempotente del parcial) e inserta las nuevas.
+  Future<void> _replaceMaterials(
+    int calculationId,
+    List<DraftMaterialInput> materials,
+  ) async {
+    await (_db.delete(
+      _db.calculationMaterials,
+    )..where((t) => t.calculationId.equals(calculationId))).go();
+    for (final m in materials) {
+      await _db
+          .into(_db.calculationMaterials)
+          .insert(
+            CalculationMaterialsCompanion.insert(
+              calculationId: calculationId,
+              filamentId: Value(_filamentIdFromLabel(m.label)),
+              label: m.label,
+              weightGrams: m.weightGrams,
+              pricePerBobbinSnapshot: m.pricePerBobbin,
+              gramsPerBobbinSnapshot: m.gramsPerBobbin,
+              useOwnTime: Value(m.useOwnTime),
+              materialHours: Value(m.materialHours),
+              materialMinutes: Value(m.materialMinutes),
+            ),
+          );
+    }
   }
 
   /// Actualiza un parcial existente con los campos del patch.
@@ -838,13 +985,20 @@ class CalculationRepository {
       totalPriceSnapshot: patch.totalPriceSnapshot,
       pieceImageBlob: patch.pieceImageBlob,
     );
-    await (_db.update(_db.calculations)..where((t) => t.id.equals(id)))
-        .write(companion);
+    await (_db.update(
+      _db.calculations,
+    )..where((t) => t.id.equals(id))).write(companion);
   }
 
   /// Elimina un parcial por id.
   Future<void> deletePartial(int id) async {
-    await (_db.delete(_db.calculations)..where((t) => t.id.equals(id))).go();
+    await _db.transaction(() async {
+      //materials primero (FK): si no, quedan filas huerfanas.
+      await (_db.delete(
+        _db.calculationMaterials,
+      )..where((t) => t.calculationId.equals(id))).go();
+      await (_db.delete(_db.calculations)..where((t) => t.id.equals(id))).go();
+    });
   }
 
   /// Busca el parcial mas reciente dentro de un minuto dado.

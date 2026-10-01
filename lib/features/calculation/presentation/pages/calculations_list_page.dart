@@ -97,10 +97,7 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
               Tooltip(
                 message: EsBO.historyExportCsv,
                 child: IconButton(
-                  icon: const Icon(
-                    Icons.file_download_outlined,
-                    size: 20,
-                  ),
+                  icon: const Icon(Icons.file_download_outlined, size: 20),
                   onPressed: () => _exportCsv(notifier),
                 ),
               ),
@@ -878,6 +875,17 @@ class _PopupMenu extends ConsumerWidget {
       iconSize: 18,
       itemBuilder: (_) => [
         PopupMenuItem<_TileAction>(
+          value: _TileAction.edit,
+          child: ListTile(
+            leading: const Icon(Icons.edit_outlined, size: 20),
+            title: Text(
+              EsBO.calcEditAction,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            dense: true,
+          ),
+        ),
+        PopupMenuItem<_TileAction>(
           value: _TileAction.repeat,
           child: ListTile(
             leading: const Icon(Icons.replay_rounded, size: 20),
@@ -932,8 +940,20 @@ class _PopupMenu extends ConsumerWidget {
     );
   }
 
-  Future<void> _handle(BuildContext context, WidgetRef ref, _TileAction a) async {
+  Future<void> _handle(
+    BuildContext context,
+    WidgetRef ref,
+    _TileAction a,
+  ) async {
     switch (a) {
+      case _TileAction.edit:
+        // "Editar": abre la calculacion en la calculadora y, al guardar,
+        // actualiza esa misma fila (no crea una segunda cotizacion).
+        final repo = ref.read(calculationRepositoryProvider);
+        final full = await repo.getById(calc.id);
+        if (full != null && context.mounted) {
+          await context.push('/calculator/edit', extra: full);
+        }
       case _TileAction.repeat:
         // "Cotizar igual": cargar la cotizacion completa y navegar al
         // calculator con prefill (misma UX que el FAB del detalle).
@@ -988,7 +1008,7 @@ class _PopupMenu extends ConsumerWidget {
   }
 }
 
-enum _TileAction { repeat, duplicate, toggleSold, delete }
+enum _TileAction { edit, repeat, duplicate, toggleSold, delete }
 
 /// Staggered entrance animation para items de lista.
 ///

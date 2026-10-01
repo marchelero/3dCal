@@ -611,6 +611,7 @@ void main() {
           printMinutes: 0, // v3: siempre 0
           isTemplate: false,
           isPartial: false,
+          isAdvanced: false,
           quantity: 1,
           discountPercentage: 0,
           kwhRateSnapshot: 0.6,
@@ -645,6 +646,110 @@ void main() {
         expect(state.printMinutes, '33');
       },
     );
+
+    group('round-trip Advanced (v15/v16)', () {
+      /// Guarda el state actual y lo vuelve a cargar desde la DB, que es
+      /// exactamente lo que hace "Reusar" en el historial.
+      Future<CalculatorState> saveAndReuse() async {
+        final n = container.read(calculatorNotifierProvider.notifier);
+        final id = await n.save(pieceName: 'Advanced Test');
+        n.reset();
+        final repo = container.read(calculationRepositoryProvider);
+        final calc = await repo.getById(id!);
+        await container
+            .read(calculatorNotifierProvider.notifier)
+            .loadFromCalculation(calc!);
+        return container.read(calculatorNotifierProvider);
+      }
+
+      test('Advanced de UN SOLO material no degrada a Express (v16)', () async {
+        final n = container.read(calculatorNotifierProvider.notifier);
+        n.setMode(CalculatorMode.advanced);
+        n.addMaterial();
+        n.updateMaterial(
+          0,
+          label: 'PLA Negro',
+          weight: '120',
+          pricePerBobbin: '150',
+          gramsPerBobbin: '1000',
+        );
+        n.setPrintHours('2');
+
+        final state = await saveAndReuse();
+
+        expect(
+          state.mode,
+          CalculatorMode.advanced,
+          reason: 'El flag is_advanced debe ganar sobre mats.length > 1',
+        );
+        expect(state.materials, hasLength(1));
+        expect(state.materials.single.label, 'PLA Negro');
+      });
+
+      test('restaura el desglose de tiempo propio por material (v15)',
+          () async {
+        final n = container.read(calculatorNotifierProvider.notifier);
+        n.setMode(CalculatorMode.advanced);
+        n.addMaterial();
+        n.updateMaterial(
+          0,
+          label: 'PLA',
+          weight: '120',
+          pricePerBobbin: '150',
+          gramsPerBobbin: '1000',
+          useOwnTime: true,
+          materialHours: '2',
+          materialMinutes: '30',
+        );
+        n.addMaterial();
+        n.updateMaterial(
+          1,
+          label: 'ABS',
+          weight: '80',
+          pricePerBobbin: '160',
+          gramsPerBobbin: '1000',
+          useOwnTime: true,
+          materialHours: '1',
+          materialMinutes: '15',
+        );
+
+        final state = await saveAndReuse();
+
+        expect(state.materials, hasLength(2));
+        final pla = state.materials.firstWhere((m) => m.label == 'PLA');
+        expect(pla.useOwnTime, isTrue);
+        expect(pla.materialHours, '2');
+        expect(pla.materialMinutes, '30');
+
+        final abs = state.materials.firstWhere((m) => m.label == 'ABS');
+        expect(abs.useOwnTime, isTrue);
+        expect(abs.materialHours, '1');
+        expect(abs.materialMinutes, '15');
+
+        // El total debe seguir siendo la suma de los dos tiempos propios.
+        expect(state.totalHoursDecimal, Decimal.parse('3.75'));
+      });
+
+      test('un material SIN tiempo propio queda en el tiempo global', () async {
+        final n = container.read(calculatorNotifierProvider.notifier);
+        n.setMode(CalculatorMode.advanced);
+        n.addMaterial();
+        n.updateMaterial(
+          0,
+          label: 'PLA',
+          weight: '120',
+          pricePerBobbin: '150',
+          gramsPerBobbin: '1000',
+        );
+        n.setPrintHours('5');
+
+        final state = await saveAndReuse();
+
+        expect(state.materials.single.useOwnTime, isFalse);
+        expect(state.materials.single.materialHours, isEmpty);
+        expect(state.printHours, '5', reason: 'El global se preserva');
+      });
+    });
   });
 }
 

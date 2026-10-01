@@ -38,9 +38,9 @@ import 'package:tresdcal/shared/widgets/numeric_input_field.dart';
 ///
 /// **Paths cubiertos**:
 /// - purchase success → gates unlock (dashboard charts visibles, CSV
-///   habilitado, history cap levantado).
+///   libre en free y Pro, history cap levantado).
 /// - restore success → unlock (dashboard charts visibles).
-/// - cancel → snackbar del gate sigue + sin unlock.
+/// - cancel → dashboard sigue free + CSV sigue libre (es gratis) + sin unlock.
 /// - error → sin unlock.
 ///
 /// **Desvio documentado**: el plan menciona "advanced mode visible" como
@@ -199,10 +199,15 @@ void main() {
         ),
       ],
     );
-    addTearDown(container.dispose);
+    // LIFO: los tearDown corren en orden inverso al registro. Hay que
+    // disponer el container ANTES de cerrar la db; al reves, `db.close()`
+    // se queda esperando a que cancelen los streams de drift que aun
+    // sostienen vivos los StreamProvider (la cancelacion ocurre recien en
+    // `container.dispose`, que correria despues) — deadlock de 10 min.
     addTearDown(() async {
       await db.close();
     });
+    addTearDown(container.dispose);
     if (seedCalculations > 0) {
       await _seedCalculations(container, seedCalculations);
     }
@@ -219,21 +224,17 @@ void main() {
 
   /// Llena el form express del calculator (Peso / Horas / Precio bobina).
   Future<void> _fillCalculatorForm(WidgetTester tester) async {
-    await tester.enterText(
-      find.widgetWithText(NumericInputField, 'Peso'),
-      '100',
-    );
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(NumericInputField, 'Horas'),
-      '5',
-    );
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(NumericInputField, 'Precio bobina'),
-      '120',
-    );
-    await tester.pumpAndSettle();
+    Future<void> fill(String label, String value) async {
+      final f = find.widgetWithText(NumericInputField, label);
+      await tester.ensureVisible(f);
+      await tester.pumpAndSettle();
+      await tester.enterText(f, value);
+      await tester.pumpAndSettle();
+    }
+
+    await fill('Peso', '100');
+    await fill('Precio bobina', '120');
+    await fill('Horas', '5');
   }
 
   /// Tapa el boton Unlock del paywall (paywall ya montado).
@@ -308,27 +309,17 @@ void main() {
         reason: 'Free: charts ocultos (dashboardIsProProvider=false).',
       );
 
-      // ── Free: CSV gated ──
+      // ── Free: CSV export sin gate (es gratis) ──
       appRouter.go('/history');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
+      await tester.tap(find.byTooltip(EsBO.historyExportCsv));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(
-        find.text(EsBO.csvExportLockedBody),
-        findsOneWidget,
-        reason: 'Free: CSV gate con SnackBar.',
+        find.byType(SnackBarAction),
+        findsNothing,
+        reason: 'Free: CSV es gratis, no debe ofrecer paywall.',
       );
-
-      // Oculta la snackbar free: el messenger es root-level y persiste
-      // entre paginas. Si queda viva, al volver a /history en modo Pro la
-      // asercion veria la snackbar vieja como si el gate siguiera activo.
-      // (El auto-dismiss timer de la SnackBar arranca recien cuando termina
-      // la animacion de entrada, asi que pump(5s) no es deterministico.)
-      tester
-          .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
-          .hideCurrentSnackBar();
-      await tester.pumpAndSettle();
 
       // ── Paywall → purchase success ──
       await _unlockViaPaywall(
@@ -368,11 +359,11 @@ void main() {
       // ── Pro: CSV habilitado (sin gate) ──
       appRouter.go('/history');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Exportar CSV'));
+      await tester.tap(find.byTooltip(EsBO.historyExportCsv));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(
-        find.text(EsBO.csvExportLockedBody),
+        find.byType(SnackBarAction),
         findsNothing,
         reason: 'Pro: CSV sin gate.',
       );
@@ -472,16 +463,16 @@ void main() {
       );
       expect(find.byType(BarChart), findsNothing);
 
-      // CSV sigue gated (snackbar del gate persiste al tap).
+      // CSV sigue libre (sin gate) — no depende de Pro.
       appRouter.go('/history');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip(EsBO.csvExportTooltipLocked));
+      await tester.tap(find.byTooltip(EsBO.historyExportCsv));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(
-        find.text(EsBO.csvExportLockedBody),
-        findsOneWidget,
-        reason: 'Cancel: el gate CSV debe seguir activo.',
+        find.byType(SnackBarAction),
+        findsNothing,
+        reason: 'Cancel: CSV es gratis, sin gate.',
       );
     });
   });

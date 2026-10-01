@@ -47,12 +47,21 @@ class MaterialRow {
     this.weight = '',
     this.pricePerBobbin = '',
     this.gramsPerBobbin = '',
+    this.useOwnTime = false,
+    this.materialHours = '',
+    this.materialMinutes = '',
   });
 
   final String label;
   final String weight; // gramos de ESTE material en la pieza
   final String pricePerBobbin;
   final String gramsPerBobbin;
+
+  /// Si true, este material tiene su propio tiempo (hours/minutes)
+  /// independiente del tiempo global.
+  final bool useOwnTime;
+  final String materialHours;
+  final String materialMinutes;
 
   bool get isValid {
     final w = CalculatorState.parseDecimal(weight);
@@ -66,16 +75,53 @@ class MaterialRow {
         g > Decimal.zero;
   }
 
+  /// Horas del tiempo propio como Decimal, o null si no aplica.
+  Decimal? get ownTimeHoursDecimal => useOwnTime
+      ? CalculatorState.parseDecimal(materialHours) ?? Decimal.zero
+      : null;
+
+  /// Minutos del tiempo propio como Decimal, o null si no aplica.
+  Decimal? get ownTimeMinutesDecimal => useOwnTime
+      ? CalculatorState.parseDecimal(materialMinutes) ?? Decimal.zero
+      : null;
+
+  /// Tiempo propio de ESTE material en horas decimales, o null si no aplica.
+  ///
+  /// Retorna null cuando [useOwnTime] es false o cuando el par
+  /// horas/minutos esta vacio o en 0 (switch ON pero sin valor aun).
+  Decimal? get ownTimeDecimal {
+    if (!useOwnTime) return null;
+    final h = CalculatorState.parseDecimal(materialHours) ?? Decimal.zero;
+    final m = CalculatorState.parseDecimal(materialMinutes) ?? Decimal.zero;
+    if (h <= Decimal.zero && m <= Decimal.zero) return null;
+    if (m <= Decimal.zero) return h;
+    if (h <= Decimal.zero) {
+      return (m / Decimal.fromInt(60)).toDecimal(scaleOnInfinitePrecision: 12);
+    }
+    return h +
+        (m / Decimal.fromInt(60)).toDecimal(scaleOnInfinitePrecision: 12);
+  }
+
+  /// El switch de tiempo propio esta ON pero sin horas/minutos informadas.
+  /// La UI lo marca como incompleto para que el usuario no olvide llenarlo.
+  bool get ownTimeMissing => useOwnTime && ownTimeDecimal == null;
+
   MaterialRow copyWith({
     String? label,
     String? weight,
     String? pricePerBobbin,
     String? gramsPerBobbin,
+    bool? useOwnTime,
+    String? materialHours,
+    String? materialMinutes,
   }) => MaterialRow(
     label: label ?? this.label,
     weight: weight ?? this.weight,
     pricePerBobbin: pricePerBobbin ?? this.pricePerBobbin,
     gramsPerBobbin: gramsPerBobbin ?? this.gramsPerBobbin,
+    useOwnTime: useOwnTime ?? this.useOwnTime,
+    materialHours: materialHours ?? this.materialHours,
+    materialMinutes: materialMinutes ?? this.materialMinutes,
   );
 
   @override
@@ -85,11 +131,21 @@ class MaterialRow {
           other.label == label &&
           other.weight == weight &&
           other.pricePerBobbin == pricePerBobbin &&
-          other.gramsPerBobbin == gramsPerBobbin);
+          other.gramsPerBobbin == gramsPerBobbin &&
+          other.useOwnTime == useOwnTime &&
+          other.materialHours == materialHours &&
+          other.materialMinutes == materialMinutes);
 
   @override
-  int get hashCode =>
-      Object.hash(label, weight, pricePerBobbin, gramsPerBobbin);
+  int get hashCode => Object.hash(
+    label,
+    weight,
+    pricePerBobbin,
+    gramsPerBobbin,
+    useOwnTime,
+    materialHours,
+    materialMinutes,
+  );
 }
 
 /// Estado del formulario de cotizacion.
@@ -144,11 +200,11 @@ class CalculatorState {
     Decimal? subtotalImpression,
     Decimal? lotTotal,
     this.showsBatchLine = false,
-  })  : assert(quantity >= 1, 'La cantidad minima es 1.'),
-        batchDiscountAmount = batchDiscountAmount ?? Decimal.zero,
-        manualDiscountAmount = manualDiscountAmount ?? Decimal.zero,
-        subtotalImpression = subtotalImpression ?? Decimal.zero,
-        lotTotal = lotTotal ?? Decimal.zero;
+  }) : assert(quantity >= 1, 'La cantidad minima es 1.'),
+       batchDiscountAmount = batchDiscountAmount ?? Decimal.zero,
+       manualDiscountAmount = manualDiscountAmount ?? Decimal.zero,
+       subtotalImpression = subtotalImpression ?? Decimal.zero,
+       lotTotal = lotTotal ?? Decimal.zero;
 
   /// Estado inicial (modo express, sin materiales).
   factory CalculatorState.initial() => CalculatorState(
@@ -332,7 +388,9 @@ class CalculatorState {
         ? Decimal.zero
         : (subtotalImpression ?? this.subtotalImpression),
     lotTotal: clearBatch ? Decimal.zero : (lotTotal ?? this.lotTotal),
-    showsBatchLine: clearBatch ? false : (showsBatchLine ?? this.showsBatchLine),
+    showsBatchLine: clearBatch
+        ? false
+        : (showsBatchLine ?? this.showsBatchLine),
     detailElectricCost: clearDetail
         ? null
         : (detailElectricCost ?? this.detailElectricCost),
@@ -372,10 +430,34 @@ class CalculatorState {
     computeVersion: computeVersion ?? this.computeVersion,
   );
 
+  /// True si algun material tiene su propio switch de tiempo activado.
+  /// Cuando es true, el tiempo global queda deshabilitado (exclusion mutua).
+  bool get anyMaterialOwnTime => materials.any((m) => m.useOwnTime);
+
+  /// Suma de los tiempos propios de los materiales que los tienen activados.
+  /// Null si ninguno aporta tiempo (> 0).
+  Decimal? get materialsOwnTimeDecimal {
+    Decimal? acc;
+    for (final m in materials) {
+      final t = m.ownTimeDecimal;
+      if (t == null) continue;
+      acc = (acc ?? Decimal.zero) + t;
+    }
+    if (acc == null || acc <= Decimal.zero) return null;
+    return acc;
+  }
+
+  /// True si hay tiempo disponible para calcular: tiempo global O suma de
+  /// tiempos propios de materiales (exclusion mutua: si hay tiempo propio,
+  /// el global se ignora).
+  bool get hasTimeInput {
+    if (anyMaterialOwnTime) return materialsOwnTimeDecimal != null;
+    return _parsePos(printHours) != null || _parsePos(printMinutes) != null;
+  }
+
   /// True si el form completo es valido y se puede calcular output.
   bool get isValid {
-    final hasTime =
-        _parsePos(printHours) != null || _parsePos(printMinutes) != null;
+    final hasTime = hasTimeInput;
     if (mode == CalculatorMode.express) {
       return _parsePos(weight) != null &&
           _parsePos(filamentPrice) != null &&
@@ -397,8 +479,7 @@ class CalculatorState {
   List<String> get missingRequiredFields {
     if (isValid) return const <String>[];
     final missing = <String>[];
-    final hasTime =
-        _parsePos(printHours) != null || _parsePos(printMinutes) != null;
+    final hasTime = hasTimeInput;
     if (mode == CalculatorMode.express) {
       if (_parsePos(weight) == null) missing.add('weight');
       if (_parsePos(filamentPrice) == null) missing.add('price');
@@ -423,7 +504,13 @@ class CalculatorState {
   /// una pieza que imprime en 45 min sin escribir "0" en horas. El form ya
   /// valida via [isValid] que al menos uno sea > 0, asi que aqui el
   /// resultado sera > 0 cuando [isValid] es true.
+  ///
+  /// **Exclusion mutua**: si algun material tiene `useOwnTime`, el tiempo
+  /// global se ignora por completo y el total es la suma de los tiempos
+  /// propios de los materiales. Si todos los switches estan OFF, se usa el
+  /// tiempo global como siempre.
   Decimal? get totalHoursDecimal {
+    if (anyMaterialOwnTime) return materialsOwnTimeDecimal;
     final h = parseDecimal(printHours) ?? Decimal.zero;
     final m = parseDecimal(printMinutes) ?? Decimal.zero;
     if (h <= Decimal.zero && m <= Decimal.zero) return null;

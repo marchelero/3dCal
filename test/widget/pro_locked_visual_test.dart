@@ -36,9 +36,8 @@ import 'package:tresdcal/shared/widgets/pro_badge.dart';
 /// 1. `calculator_page.dart` — modo advanced free: badge "PRO" + Opacity
 ///    0.6 en el segmento (badge a opacidad completa). Pro: sin badge,
 ///    normal.
-/// 2. `calculations_list_page.dart` — CSV export free: icono candado +
-///    Opacity 0.6 + tooltip locked ([EsBO.csvExportTooltipLocked]).
-///    Pro: icono descarga normal.
+/// 2. `calculations_list_page.dart` — CSV export: SIN candado ni atenuado
+///    en free (el export es gratis). La accion se ve igual en Free y Pro.
 /// 3. `calculations_list_page.dart` — contador "x/$kFreeHistoryCap" para
 ///    free (oculto en Pro, con filtros/busqueda activos y durante
 ///    loading/error via `async.hasValue`).
@@ -383,8 +382,8 @@ void main() {
       expect(EsBO.proLockedTooltip, isNotEmpty);
     });
 
-    test('EsBO.csvExportTooltipLocked indica que la accion es Pro', () {
-      expect(EsBO.csvExportTooltipLocked, 'Exportar CSV (Pro)');
+    test('EsBO.historyExportCsv describe la accion sin marcar Pro', () {
+      expect(EsBO.historyExportCsv, 'Exportar CSV');
     });
 
     test('EsBO.historyUsageCounter formatea en es', () {
@@ -402,7 +401,7 @@ void main() {
       EsBO.setImpl(const EnImpl());
       expect(EsBO.proBadgeLabel, 'PRO');
       expect(EsBO.proLockedTooltip, isNotEmpty);
-      expect(EsBO.csvExportTooltipLocked, 'Export CSV (Pro)');
+      expect(EsBO.historyExportCsv, 'Export CSV');
       expect(
         EsBO.historyUsageCounter(5, kFreeHistoryCap),
         '5/$kFreeHistoryCap quotes',
@@ -480,40 +479,31 @@ void main() {
   });
 
   // ─────────────────────────────────────────────────────────────
-  // History — CSV export: candado en free, normal en pro
+  // History — CSV export: sin candado (el export es gratis)
   // ─────────────────────────────────────────────────────────────
 
-  group('History — CSV export gate visual', () {
-    testWidgets('free: el boton CSV muestra icono candado atenuado', (
+  group('History — CSV export sin gate', () {
+    testWidgets('free: el boton CSV NO muestra candado ni atenuado', (
       tester,
     ) async {
       await _pumpHistory(tester, seedCalculations: 1);
 
+      // El export CSV es gratis (37b6870 quito el gate): el boton se ve
+      // igual en Free que en Pro.
       expect(
         find.byIcon(Icons.lock_rounded),
-        findsOneWidget,
-        reason: 'Free: el boton CSV debe mostrar el icono de candado.',
+        findsNothing,
+        reason: 'El export CSV es gratis: no debe verse candado.',
       );
       expect(
         find.byIcon(Icons.file_download_outlined),
-        findsNothing,
-        reason: 'Free: el icono de descarga no debe verse.',
-      );
-      expect(
-        _dimmed(),
-        findsAtLeastNWidgets(1),
-        reason: 'Free: el boton CSV debe estar atenuado (0.6).',
-      );
-      // El tooltip locked describe la accion como Pro (no la habilita).
-      expect(
-        find.byTooltip(EsBO.csvExportTooltipLocked),
         findsOneWidget,
-        reason: 'Free: el tooltip debe indicar que el CSV es Pro.',
+        reason: 'Free: el icono de descarga debe verse igual que en Pro.',
       );
       expect(
-        find.byTooltip('Exportar CSV'),
-        findsNothing,
-        reason: 'Free: el tooltip no debe describir la accion habilitada.',
+        find.byTooltip(EsBO.historyExportCsv),
+        findsOneWidget,
+        reason: 'Free: el tooltip describe la accion (no la bloquea).',
       );
     });
 
@@ -620,7 +610,8 @@ void main() {
       expect(
         find.byType(ProBadge),
         findsOneWidget,
-        reason: 'Free: el badge "PRO" de bloqueo debe verse en la seccion Empresa.',
+        reason:
+            'Free: el badge "PRO" de bloqueo debe verse en la seccion Empresa.',
       );
       // Campo empresa (1) + botones de logo (1) = 2 Opacity 0.6.
       expect(
@@ -685,10 +676,16 @@ void main() {
         findsNothing,
         reason: 'Loading: el boton CSV no debe atenuarse.',
       );
+      // El contador "0/10" SI aparece durante este loading: su guard es
+      // `async.hasValue` (stream de cotizaciones), NO `ent.isLoading`. El
+      // entitlement demorado aqui no lo afecta — el stream de la lista si
+      // resuelve (db en memoria), asi que el contador es correcto.
       expect(
         find.text(EsBO.historyUsageCounter(0, kFreeHistoryCap)),
-        findsNothing,
-        reason: 'Loading: no debe mostrarse "0/10" antes de resolver.',
+        findsOneWidget,
+        reason:
+            'El contador depende del stream de la lista, no del loading '
+            'del entitlement.',
       );
     });
 

@@ -1,5 +1,6 @@
 /// Strings em português do Brasil (pt_BR).
 library;
+
 // ignore_for_file: public_member_api_docs
 
 import 'package:flutter/material.dart' show DateTimeRange;
@@ -420,7 +421,7 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcWizardStepPrint => 'Impressão';
   @override
-@override
+  @override
   String get calcWizardStepAdjust => 'Outros';
   @override
   @override
@@ -505,7 +506,18 @@ class PtBrImpl implements AppStrings {
   @override
   String get calcFieldFilament => 'Filamento';
   @override
+  @override
   String get calcFieldWeight => 'Peso';
+  @override
+  String get calcFieldHours => 'Horas';
+  @override
+  String get calcFieldMinutes => 'Minutos';
+  @override
+  String get calcOwnTime => 'Tempo próprio';
+  @override
+  String get calcTimeSumOfMaterials =>
+      'Mostrando a soma dos tempos por material. Editar este valor desativa '
+      'o tempo próprio de todos os materiais.';
   @override
   String get calcFieldSpoolPrice => 'Preço da bobina';
   @override
@@ -875,16 +887,18 @@ class PtBrImpl implements AppStrings {
   String get calcDuplicateError => 'Não foi possível duplicar a cotação';
 
   @override
+  String get calcEditAction => 'Editar';
+  @override
+  String get calcEditTitle => 'Editando cotação';
+  @override
+  String calcEditSavedWithId(int id) => 'Cotação #$id atualizada.';
+
+  @override
   String get historyTitle => 'Orçamentos';
   @override
   String get historyErrorLoad => 'Erro ao carregar orçamentos';
   @override
   String get historyEmpty => 'Nenhum orçamento salvo';
-
-  @override
-  String get csvExportLockedBody => 'A exportação CSV é um recurso Pro';
-  @override
-  String get csvGoProAction => 'Desbloquear PRO';
 
   @override
   String get localeLabel => 'Idioma';
@@ -1031,8 +1045,6 @@ class PtBrImpl implements AppStrings {
   String get proBadgeLabel => 'PRO';
   @override
   String get proLockedTooltip => 'Recurso Pro';
-  @override
-  String get csvExportTooltipLocked => 'Exportar CSV (Pro)';
   @override
   String historyUsageCounter(int used, int cap) =>
       used == 1 ? '1/$cap orçamento' : '$used/$cap orçamentos';

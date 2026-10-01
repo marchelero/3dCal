@@ -85,6 +85,12 @@ class Calculations extends Table {
   /// persistida con flag, guardado rapido sin completar todos los campos).
   BoolColumn get isPartial => boolean().withDefault(const Constant(false))();
 
+  /// v15: la cotizacion se creo en modo Advanced (multi-material).
+  ///
+  /// Sin este flag, reusar una cotizacion Advanced de UN SOLO material la
+  /// degradeaba a Express: la inferencia era `mats.length > 1`.
+  BoolColumn get isAdvanced => boolean().withDefault(const Constant(false))();
+
   /// Snapshots financieros (cacheados para queries rapidas en dashboard).
   RealColumn get materialCostSnapshot => real()();
   RealColumn get electricCostSnapshot => real()();

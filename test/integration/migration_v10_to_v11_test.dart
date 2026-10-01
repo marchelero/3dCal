@@ -147,17 +147,19 @@ void main() {
     });
 
     test(
-      'onUpgrade(10, 11) agrega color TEXT NULL en filaments y bumpea a 11',
+      'onUpgrade(10, ->16) agrega color TEXT NULL en filaments y bumpea a 16',
       () async {
         await db.customSelect('SELECT 1').get();
 
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          11,
-          reason: 'AppDatabase debe setear user_version=11 tras onUpgrade.',
+          16,
+          reason:
+              'AppDatabase debe setear user_version=16 tras onUpgrade '
+              '(v10→v11 y pasos siguientes).',
         );
-        expect(db.schemaVersion, 11);
+        expect(db.schemaVersion, 16);
 
         // filaments: nueva columna `color` TEXT nullable.
         final filamentCols = await db

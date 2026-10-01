@@ -56,7 +56,17 @@ class CalculationDetailPage extends ConsumerWidget {
           // AppBar adaptativo: 2 acciones (duplicar + eliminar) que
           // colapsan al menu ⋮ en pantallas angostas.
           SmartAppBarActions(
-            priority: const [],
+            priority: [
+              // "Editar" es prioridad (siempre visible): es la accion que el
+              // usuario busca al detectar un error de calculo.
+              if (calc != null)
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: EsBO.calcEditAction,
+                  onPressed: () =>
+                      context.push('/calculator/edit', extra: calc),
+                ),
+            ],
             menuActions: [
               if (calc != null)
                 (
@@ -207,6 +217,38 @@ class _DetailState extends ConsumerState<_Detail> {
     }
   }
 
+  /// Desglose por material para el PDF (v15).
+  ///
+  /// Solo se renderiza si algun material tiene tiempo propio; si ninguno lo
+  /// tiene, el PDF muestra unicamente el tiempo global.
+  List<PdfMaterialMetaItem> _pdfMaterialBreakdown(
+    List<CalculationMaterial> materials,
+  ) {
+    final timed = materials
+        .where((m) => (m.useOwnTime ?? false) && m.materialHours != null)
+        .toList();
+    if (timed.isEmpty) return const [];
+    return timed
+        .map(
+          (m) => PdfMaterialMetaItem(
+            label: m.label,
+            weightGrams:
+                '${NumberFormat.decimalPattern('es_BO').format(m.weightGrams)} g',
+            timeStr: _timeTextFromMinutes(
+              (m.materialHours ?? 0) * 60 + (m.materialMinutes ?? 0),
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  /// Formatea minutos como "Xh Ym". Null si no hay minutos.
+  static String? _timeTextFromMinutes(double totalMinutes) {
+    final rounded = totalMinutes.round();
+    if (rounded <= 0) return null;
+    return '${rounded ~/ 60}h ${rounded % 60}m';
+  }
+
   Future<void> _handleSharePdf() async {
     if (_isBusy) return;
     setState(() => _isBusy = true);
@@ -229,8 +271,11 @@ class _DetailState extends ConsumerState<_Detail> {
       // Gramos totales: suma de weightGrams de cada material.
       final totalGrams = materials.fold(
         Decimal.zero,
-        (Decimal sum, m) => sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
+        (Decimal sum, m) =>
+            sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
       );
+      final timedMaterials = _pdfMaterialBreakdown(materials);
+
       await shareQuotePdf(
         isPro: ref.read(isProProvider),
         output: result.output,
@@ -253,6 +298,7 @@ class _DetailState extends ConsumerState<_Detail> {
         pieceImageBytes: calc.pieceImageBlob,
         metaGrams: result.metaGrams,
         metaTime: result.metaTime,
+        materialMetaBreakdown: timedMaterials,
         quantity: _quantity,
         totalGrams: totalGrams,
         batchDiscountPct: calc.batchDiscountPercent != null
@@ -261,12 +307,13 @@ class _DetailState extends ConsumerState<_Detail> {
         batchDiscountAmount: calc.batchDiscountAmount != null
             ? Decimal.tryParse(calc.batchDiscountAmount!)
             : null,
-        lotTotal: result.output.totalPrice * Decimal.fromInt(_quantity) -
+        lotTotal:
+            result.output.totalPrice * Decimal.fromInt(_quantity) -
             (calc.batchDiscountAmount != null
                 ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
                 : Decimal.zero),
-        manualDiscountAmount: result.output.discountAmount *
-            Decimal.fromInt(_quantity),
+        manualDiscountAmount:
+            result.output.discountAmount * Decimal.fromInt(_quantity),
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -300,7 +347,8 @@ class _DetailState extends ConsumerState<_Detail> {
       if (result == null) return;
       final totalGrams = materials.fold(
         Decimal.zero,
-        (Decimal sum, m) => sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
+        (Decimal sum, m) =>
+            sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
       );
       final pdfBytes = await buildQuotePdfBytes(
         isPro: ref.read(isProProvider),
@@ -324,6 +372,7 @@ class _DetailState extends ConsumerState<_Detail> {
         pieceImageBytes: calc.pieceImageBlob,
         metaGrams: result.metaGrams,
         metaTime: result.metaTime,
+        materialMetaBreakdown: _pdfMaterialBreakdown(materials),
         quantity: _quantity,
         totalGrams: totalGrams,
         batchDiscountPct: calc.batchDiscountPercent != null
@@ -332,12 +381,13 @@ class _DetailState extends ConsumerState<_Detail> {
         batchDiscountAmount: calc.batchDiscountAmount != null
             ? Decimal.tryParse(calc.batchDiscountAmount!)
             : null,
-        lotTotal: result.output.totalPrice * Decimal.fromInt(_quantity) -
+        lotTotal:
+            result.output.totalPrice * Decimal.fromInt(_quantity) -
             (calc.batchDiscountAmount != null
                 ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
                 : Decimal.zero),
-        manualDiscountAmount: result.output.discountAmount *
-            Decimal.fromInt(_quantity),
+        manualDiscountAmount:
+            result.output.discountAmount * Decimal.fromInt(_quantity),
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
     } catch (e) {
@@ -1041,11 +1091,13 @@ _recomputeOutput(
         : Decimal.zero;
     breakdown.add(MaterialCostBreakdown(label: m.label, cost: cost * qtyD));
     totalGrams += weight * qtyD;
-    snapshots.add(MaterialSnapshot(
-      weightGrams: m.weightGrams,
-      pricePerBobbinSnapshot: m.pricePerBobbinSnapshot,
-      gramsPerBobbinSnapshot: m.gramsPerBobbinSnapshot,
-    ));
+    snapshots.add(
+      MaterialSnapshot(
+        weightGrams: m.weightGrams,
+        pricePerBobbinSnapshot: m.pricePerBobbinSnapshot,
+        gramsPerBobbinSnapshot: m.gramsPerBobbinSnapshot,
+      ),
+    );
   }
 
   // Delegar la formula al engine centralizado

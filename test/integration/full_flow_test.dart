@@ -12,6 +12,7 @@ import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculations_list_page.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/calculator_page.dart';
 import 'package:tresdcal/features/calculation/presentation/pages/home_page.dart';
+import 'package:tresdcal/features/calculation/presentation/widgets/calculator_wizard.dart';
 import 'package:tresdcal/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:tresdcal/features/dashboard/presentation/widgets/profit_bar_chart.dart';
 import 'package:tresdcal/shared/widgets/numeric_input_field.dart';
@@ -50,6 +51,35 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
   }
 
+  /// Avanza el reloj fake para que corran los debounces del CalculatorPage
+  /// (draft 500ms + auto-save de parcial 1.5s) y luego deja todo quieto.
+  ///
+  /// `pumpAndSettle` solo adelanta el reloj mientras hay frames agendados: si
+  /// no queda ninguno, deja vivos los `Timer` de debounce y el binding aborta
+  /// el test con `'!timersPending'`. Por eso avanzamos el reloj a mano.
+  Future<void> settle(WidgetTester tester) async {
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+    await tester.pumpAndSettle(
+      const Duration(milliseconds: 16),
+      EnginePhase.sendSemanticsUpdate,
+      const Duration(seconds: 5),
+    );
+  }
+
+  /// Desmonta la app a mano y adelanta el reloj un tick.
+  ///
+  /// Al destruirse el `ProviderScope`, drift cierra sus `QueryStream` con un
+  /// `Timer(Duration.zero)` (`StreamQueryStore.markAsClosed`). Ese timer nace
+  /// DENTRO del frame de teardown del binding, asi que el reloj fake nunca
+  /// avanza despues y el assert `'!timersPending'` revienta el test. Desmontar
+  /// nosotros + un `pump(Duration.zero)` deja que el timer dispare.
+  Future<void> disposeApp(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(Duration.zero);
+  }
+
   tearDown(() async {
     await db.close();
   });
@@ -66,7 +96,7 @@ void main() {
         child: const TresdcalApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(find.byType(HomePage), findsOneWidget);
     // Los labels aparecen tambien en la NavigationBar, asi que usamos
@@ -74,8 +104,8 @@ void main() {
     expect(find.text('Nueva cotización'), findsAtLeastNWidgets(1));
     expect(find.text('Historial'), findsAtLeastNWidgets(1));
     expect(find.text('Dashboard'), findsAtLeastNWidgets(1));
+    await disposeApp(tester);
   });
-
   testWidgets('Tap Nueva → CalculatorPage con form completo (AC-1)', (
     tester,
   ) async {
@@ -88,24 +118,21 @@ void main() {
         child: const TresdcalApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     await tester.tap(find.text('Nueva cotización'));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(find.byType(CalculatorPage), findsOneWidget);
     expect(find.widgetWithText(NumericInputField, 'Peso'), findsOneWidget);
-    // Wizard: 'Horas' vive en el paso "Impresión" (rediseño 2026-09).
-    expect(
-      find.widgetWithText(NumericInputField, 'Horas'),
-      findsNothing,
-      reason: 'El paso 2 no esta visible todavia.',
-    );
-    await tester.tap(find.text('Impresión'));
-    await tester.pumpAndSettle();
+    // El wizard es un scroll CONTINUO (no paginado): los 3 pasos viven en el
+    // mismo arbol, asi que los campos del paso 2 ya existen aunque el step bar
+    // marque "Pieza". Lo que si debe estar en el arbol es el step bar.
+    expect(find.byType(CalcWizardStepBar), findsOneWidget);
+    expect(find.text('Impresión'), findsWidgets);
     expect(find.widgetWithText(NumericInputField, 'Horas'), findsOneWidget);
+    await disposeApp(tester);
   });
-
   testWidgets(
     'Form completo: input 4 campos → output BOB visible (AC-1, AC-2)',
     (tester) async {
@@ -118,32 +145,29 @@ void main() {
           child: const TresdcalApp(),
         ),
       );
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text('Nueva cotización'));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
-      await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Peso'),
-        '100',
-      );
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Precio bobina'),
-        '120',
-      );
-      await tester.pumpAndSettle();
-      // Horas esta en el paso "Impresión" del wizard.
-      await tester.tap(find.text('Impresión'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(NumericInputField, 'Horas'),
-        '5',
-      );
-      await tester.pumpAndSettle();
+      // El wizard es scroll continuo: los campos de los 3 pasos estan en el
+      // arbol. ensureVisible por si alguno quedo bajo el fold.
+      Future<void> fill(String label, String value) async {
+        final f = find.widgetWithText(NumericInputField, label);
+        await tester.ensureVisible(f);
+        await settle(tester);
+        await tester.enterText(f, value);
+        await settle(tester);
+      }
+
+      await fill('Peso', '100');
+      await fill('Precio bobina', '120');
+      await fill('Horas', '5');
       // Gramos / bobina ya no se muestra — default 1000 internamente.
 
       expect(find.textContaining(r'$ '), findsWidgets);
+
+      await disposeApp(tester);
     },
   );
 
@@ -160,19 +184,21 @@ void main() {
         child: const TresdcalApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
 
-    // Tap tab Dashboard (indice 2 en AppScaffold._destinations).
-    // Tap por NavigationDestination.at(2) en vez de por texto "Dashboard"
+    // Tap tab Dashboard (indice 3 en AppScaffold._destinations: 0 Inicio,
+    // 1 Historial, 2 Impresoras, 3 Dashboard, 4 Ajustes).
+    //
+    // Tap por NavigationDestination.at(3) en vez de por texto "Dashboard"
     // porque el label se renderiza fuera del area visible del bottom nav
     // (NavigationBar con height custom hace overflow del label).
-    await tester.tap(find.byType(NavigationDestination).at(2));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byType(NavigationDestination).at(3));
+    await settle(tester);
 
     // DashboardPage se renderiza (puede mostrar empty state o stats).
     expect(find.byType(DashboardPage), findsOneWidget);
+    await disposeApp(tester);
   });
-
   testWidgets('Tab switch: Inicio → Historial via NavigationBar (AC-7.1)', (
     tester,
   ) async {
@@ -186,15 +212,15 @@ void main() {
         child: const TresdcalApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     // Tab Historial (indice 1 en AppScaffold._destinations).
     await tester.tap(find.byType(NavigationDestination).at(1));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(find.byType(CalculationsListPage), findsOneWidget);
+    await disposeApp(tester);
   });
-
   testWidgets('Dashboard vacio: muestra EmptyView con CTA (AC-8.4)', (
     tester,
   ) async {
@@ -208,15 +234,16 @@ void main() {
         child: const TresdcalApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
 
-    // Tab Dashboard (indice 2).
-    await tester.tap(find.byType(NavigationDestination).at(2));
-    await tester.pumpAndSettle();
+    // Tab Dashboard (indice 3).
+    await tester.tap(find.byType(NavigationDestination).at(3));
+    await settle(tester);
 
     // Empty state: el ProfitBarChart NO debe renderizar (no hay datos).
     expect(find.byType(ProfitBarChart), findsNothing);
     // CTA visible.
     expect(find.text('Ir a Inicio'), findsOneWidget);
+    await disposeApp(tester);
   });
 }

@@ -16,6 +16,9 @@ class MaterialInput {
     required this.weightGrams,
     required this.pricePerBobbin,
     required this.gramsPerBobbin,
+    this.useOwnTime = false,
+    this.ownTimeHours,
+    this.ownTimeMinutes,
   }) : assert(weightGrams > Decimal.zero, 'weightGrams debe ser > 0'),
        assert(pricePerBobbin > Decimal.zero, 'pricePerBobbin debe ser > 0'),
        assert(gramsPerBobbin > Decimal.zero, 'gramsPerBobbin debe ser > 0');
@@ -31,6 +34,16 @@ class MaterialInput {
 
   /// Gramos por bobina. Debe ser > 0.
   final Decimal gramsPerBobbin;
+
+  /// Si este material tiene tiempo propio (schema v15).
+  ///
+  /// **NO participa del calculo de costo**: el tiempo total de la cotizacion
+  /// vive en [CalculationInput.totalHours] (la suma ya viene resuelta desde
+  /// `CalculatorState.totalHoursDecimal`). Estos campos son metadata de
+  /// snapshot para poder reconstruir el desglose al reusar o editar.
+  final bool useOwnTime;
+  final Decimal? ownTimeHours;
+  final Decimal? ownTimeMinutes;
 
   /// Precio por gramo derivado (BOB/g).
   ///
