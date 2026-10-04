@@ -424,7 +424,7 @@ void main() {
         await _pumpCalculator(tester);
 
         // El badge puede aparecer en varios lugares (modo Advanced + seccion
-        // Costos de la pieza) — se verifica al menos uno.
+        // Costos adicionales) — se verifica al menos uno.
         expect(
           find.text(EsBO.proBadgeLabel),
           findsAtLeastNWidgets(1),

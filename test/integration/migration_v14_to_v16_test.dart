@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs, depend_on_referenced_packages
 
-/// Migracion v14 -> v16.
+/// Migracion v14 -> v17 (test data pre-v15/v16; corriendo onUpgrade llega
+/// hasta la version actual del schema, hoy v17).
 library;
 
 import 'package:drift/drift.dart' show QueryRow;
@@ -81,7 +82,7 @@ Future<Map<String, QueryRow>> _columnsOf(AppDatabase db, String table) async {
 }
 
 void main() {
-  group('Migration v14 -> v16', () {
+  group('Migration v14 -> schema actual (v17)', () {
     late Database rawDb;
 
     setUp(() {
@@ -176,7 +177,7 @@ void main() {
       );
       await db1.customSelect('SELECT 1').get();
       final v1 = await db1.customSelect('PRAGMA user_version').get();
-      expect(v1.first.read<int>('user_version'), 16);
+      expect(v1.first.read<int>('user_version'), 17);
       await db1.close();
 
       final db2 = AppDatabase.forTesting(
@@ -187,7 +188,7 @@ void main() {
       final v2 = await db2.customSelect('PRAGMA user_version').get();
       expect(
         v2.first.read<int>('user_version'),
-        16,
+        17,
         reason: 'Second open must not re-run migration.',
       );
       expect(

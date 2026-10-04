@@ -302,17 +302,12 @@ abstract class AppStrings {
   /// Placeholder del campo de descripcion libre de los extras.
   String get extraDescriptionHint;
 
-  /// Etiqueta del switch en modo porcentaje.
+  /// Etiqueta del lado izquierdo del switch de los costos: el valor es un
+  /// porcentaje sobre el costo base.
   String get modePercent;
 
-  /// Etiqueta del switch en modo precio fijo.
+  /// Etiqueta del lado derecho del switch: el valor es un monto fijo.
   String get modeFixed;
-
-  /// Etiqueta del modo "auto" (replica la formula legacy).
-  String get modeAuto;
-
-  /// Etiqueta del modo "off" (sin cobro, solo para extras).
-  String get modeOff;
 
   // === Cantidad / lotes ===
   String get detailQuantityLabel;
@@ -1097,11 +1092,41 @@ abstract class AppStrings {
   /// "/h" — sufijo de unidad de las tarifas por hora.
   String get pdfRatePerHour;
 
-  /// "Margen" — fila de porcentajes.
+  /// "Ganancia (sobre costo)" — fila de porcentajes: el % que el usuario
+  /// configuro y que se aplica sobre el costo antes de ganancia.
+  String get pdfRateProfit;
+
+  /// "Margen (sobre venta)" — fila de porcentajes: parte del precio final que
+  /// es ganancia. Siempre menor que [pdfRateProfit].
   String get pdfRateMargin;
 
-  /// "Markup sobre costo" — fila de porcentajes.
+  /// "Recargo sobre costo" — fila de porcentajes: cuanto crece el costo base
+  /// hasta el precio final, incluyendo falla y desperdicio.
   String get pdfRateMarkupOverCost;
+
+  /// Leyenda corta que explica la diferencia entre ganancia, margen y recargo.
+  /// Se imprime debajo de la tabla de parametros (PDF y preview).
+  String get pdfRateLegend;
+
+  // === Detalle de cotizacion (rediseno 2026-10) ===
+
+  /// "Resumen" — titulo de la tarjeta resumen del detalle.
+  String get detailSummaryTitle;
+
+  /// "Compartir reporte" — boton principal del detalle.
+  String get detailActionShareReport;
+
+  /// "Edita, comparte o crea una copia desde aqui." — subtitulo de acciones.
+  String get detailActionsHint;
+
+  /// "Nueva" — boton para crear una cotizacion nueva basada en esta.
+  String get detailNewFromThis;
+
+  /// "Reusar" (texto corto) — boton para reabrir esta cotizacion.
+  String get detailReuseShort;
+
+  /// "Reporte" — titulo de la tarjeta de vista previa/exportacion.
+  String get detailReportTitle;
 
   // === Paginacion y estado ===
 

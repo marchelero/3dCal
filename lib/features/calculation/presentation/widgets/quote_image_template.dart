@@ -59,6 +59,10 @@ class QuoteImageTemplate extends StatelessWidget {
     this.rateAudit,
     this.isSold,
     this.materialMetaBreakdown = const [],
+    // v17: Extras (argollas, pegamento, etc.). Opcionales: si no se
+    // setean, la fila no aparece en el reporte.
+    this.detailExtrasCost,
+    this.extraLabel = '',
     super.key,
   });
 
@@ -77,6 +81,14 @@ class QuoteImageTemplate extends StatelessWidget {
   final Decimal? detailAmortizationCost;
   final Decimal? detailLaborCost;
   final Decimal? detailPostProcessCost;
+
+  /// v17: Extras unitario (sin cantidad). Si es null o 0, no se muestra la fila.
+  final Decimal? detailExtrasCost;
+
+  /// v17: descripcion libre del extra. Cadena vacia = solo el titulo, sin
+  /// parenteticos.
+  final String extraLabel;
+
   final Decimal? detailBaseCost;
   final Decimal? detailFailureCost;
   final Decimal? detailMarkupCost;
@@ -404,6 +416,9 @@ class QuoteImageTemplate extends StatelessWidget {
               amortizationCost: (detailAmortizationCost ?? Decimal.zero) * qty,
               laborCost: (detailLaborCost ?? Decimal.zero) * qty,
               postProcessCost: (detailPostProcessCost ?? Decimal.zero) * qty,
+              // Escala para (disponible desde o pasado en extract).
+              extrasCost: (detailExtrasCost ?? Decimal.zero) * qty,
+              extraLabel: extraLabel,
               baseCost: (detailBaseCost ?? Decimal.zero) * qty,
               failureCost: (detailFailureCost ?? Decimal.zero) * qty,
               markupCost: (detailMarkupCost ?? Decimal.zero) * qty,
@@ -806,7 +821,7 @@ class QuoteImageTemplate extends StatelessWidget {
             : formatPercentage(audit.markupOnMaterials!),
       ),
       (
-        EsBO.calcDetailProfit,
+        EsBO.pdfRateProfit,
         audit.profitBase == null ? '—' : formatPercentage(audit.profitBase!),
       ),
       (
@@ -864,6 +879,17 @@ class QuoteImageTemplate extends StatelessWidget {
               ],
             ),
           ),
+        // Leyenda: por que ganancia, margen y recargo son tres porcentajes
+        // distintos.
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          EsBO.pdfRateLegend,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color.onSurfaceVariant,
+            fontSize: 8.5,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
       ],
     );
   }

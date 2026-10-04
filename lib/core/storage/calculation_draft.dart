@@ -23,6 +23,13 @@ class CalculationDraft {
     this.extraPostProcessRate = '',
     this.extraFailureRate = '',
     this.extraMarkupOnMaterials = '',
+    this.modelingMode = 'fixed',
+    this.modelingValue = 0,
+    this.postprocMode = 'fixed',
+    this.postprocValue = 0,
+    this.extraCostMode = 'fixed',
+    this.extraCostValue = 0,
+    this.extraCostLabel = '',
   });
 
   factory CalculationDraft.fromJson(Map<String, dynamic> json) {
@@ -46,7 +53,23 @@ class CalculationDraft {
       extraPostProcessRate: json['extraPostProcessRate'] as String? ?? '',
       extraFailureRate: json['extraFailureRate'] as String? ?? '',
       extraMarkupOnMaterials: json['extraMarkupOnMaterials'] as String? ?? '',
+      modelingMode: json['modelingMode'] as String? ?? 'fixed',
+      modelingValue: _toDouble(json['modelingValue']),
+      postprocMode: json['postprocMode'] as String? ?? 'fixed',
+      postprocValue: _toDouble(json['postprocValue']),
+      extraCostMode: json['extraCostMode'] as String? ?? 'fixed',
+      extraCostValue: _toDouble(json['extraCostValue']),
+      extraCostLabel: json['extraCostLabel'] as String? ?? '',
     );
+  }
+
+  /// Acepta el valor numerico venga como `double` (draft nuevo) o como `String`
+  /// (draft escrito por una version previa / por el editor de texto). Un draft
+  /// corrupto no debe tumbar la restauracion: cae en 0.
+  static double _toDouble(Object? v) {
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0;
+    return 0;
   }
 
   final String weight;
@@ -67,6 +90,20 @@ class CalculationDraft {
   final String extraFailureRate;
   final String extraMarkupOnMaterials;
 
+  // === v17: Costos de la pieza (modelado / postprocesado / extras) ===
+  //
+  // Modos: solo `pct` (porcentaje sobre coreBase) o `fixed` (monto fijo).
+  // Los valores van como `double` porque terminan en columnas REAL de Drift.
+  final String modelingMode;
+  final double modelingValue;
+  final String postprocMode;
+  final double postprocValue;
+  final String extraCostMode;
+  final double extraCostValue;
+
+  /// Texto libre de los extras ("2 argollas M3"). No afecta el calculo.
+  final String extraCostLabel;
+
   Map<String, dynamic> toJson() => {
     'weight': weight,
     'printHours': printHours,
@@ -83,6 +120,13 @@ class CalculationDraft {
     'extraPostProcessRate': extraPostProcessRate,
     'extraFailureRate': extraFailureRate,
     'extraMarkupOnMaterials': extraMarkupOnMaterials,
+    'modelingMode': modelingMode,
+    'modelingValue': modelingValue,
+    'postprocMode': postprocMode,
+    'postprocValue': postprocValue,
+    'extraCostMode': extraCostMode,
+    'extraCostValue': extraCostValue,
+    'extraCostLabel': extraCostLabel,
   };
 
   String encode() => jsonEncode(toJson());

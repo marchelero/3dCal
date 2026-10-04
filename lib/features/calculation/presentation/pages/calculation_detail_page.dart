@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -14,6 +16,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/export/pdf_export.dart';
 import '../../../../core/export/pdf_rate_audit.dart';
 import '../../../../core/export/quote_report_variant.dart';
+import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/providers.dart';
@@ -29,7 +32,7 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/partial_save_badge.dart';
 import '../../../../shared/widgets/pro_badge.dart';
-import '../../../../shared/widgets/smart_app_bar_actions.dart';
+import '../../../../shared/widgets/section_card.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/settings.dart';
 import '../../../settings/presentation/notifiers/settings_notifier.dart';
@@ -40,7 +43,11 @@ import '../state/calculator_state.dart';
 import '../widgets/quote_image_template.dart';
 import '../widgets/report_variant_selector.dart';
 
-/// Detalle de una cotizacion guardada. Readonly — version mejorada.
+/// Detalle de una cotizacion guardada (readonly).
+///
+/// Nueva vista centrada en el resumen de lo que tuvo la cotizacion:
+/// hero con foto + total efectivo, KPIs (tiempo/peso/ganancia), desglose
+/// completo, materiales, notas/condiciones y el reporte exportable.
 class CalculationDetailPage extends ConsumerWidget {
   const CalculationDetailPage({super.key, required this.calcId});
 
@@ -50,81 +57,9 @@ class CalculationDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
     final calcAsync = ref.watch(_calculationByIdProvider(calcId));
-    final calc = calcAsync.value;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(EsBO.calcDetailTitle),
-        actions: [
-          // AppBar adaptativo: 2 acciones (duplicar + eliminar) que
-          // colapsan al menu ⋮ en pantallas angostas.
-          SmartAppBarActions(
-            // "Editar" ya no vive aca: se movio junto a "Reusar" en el FAB
-            // inferior, donde es mas visible.
-            priority: const <Widget>[],
-            menuActions: [
-              if (calc != null)
-                (
-                  icon: const Icon(Icons.copy_all_rounded),
-                  label: EsBO.calcDuplicateAction,
-                  onTap: () async {
-                    try {
-                      await ref
-                          .read(calculationsNotifierProvider.notifier)
-                          .duplicate(
-                            calcId,
-                            pieceNameSuffix: EsBO.calcDuplicateSuffix,
-                          );
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        AppSnackBar.success(EsBO.calcDuplicateSuccess),
-                      );
-                    } catch (e) {
-                      if (e is HistoryCapReachedException) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            AppSnackBar.info(
-                              context,
-                              EsBO.historyCapReachedBody,
-                              actionLabel: EsBO.calculatorGoProAction,
-                              onAction: () => context.push('/paywall'),
-                            ),
-                          );
-                        return;
-                      }
-                      debugPrint('Duplicate quote failed: $e');
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        AppSnackBar.error(EsBO.calcDuplicateError),
-                      );
-                    }
-                  },
-                ),
-              if (calc != null)
-                (
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  label: EsBO.calcDetailDelete,
-                  onTap: () async {
-                    final confirm = await showConfirmDialog(
-                      context,
-                      title: EsBO.calcDetailDeleteTitle,
-                      message: EsBO.calcDetailDeleteConfirm,
-                    );
-                    if (confirm && context.mounted) {
-                      await ref
-                          .read(calculationsNotifierProvider.notifier)
-                          .delete(calcId);
-                      if (context.mounted) context.pop();
-                    }
-                  },
-                ),
-            ],
-            overflowTooltip: EsBO.commonMoreActions,
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(EsBO.calcDetailTitle)),
       body: calcAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorView(
@@ -132,36 +67,8 @@ class CalculationDetailPage extends ConsumerWidget {
           details: e.toString(),
           onRetry: () => ref.invalidate(_calculationByIdProvider(calcId)),
         ),
-        data: (c) =>
-            c == null ? const Center(child: Text('—')) : _Detail(calc: c),
+        data: (c) => c == null ? const Center(child: Text('—')) : _Detail(calc: c),
       ),
-      floatingActionButton: calc == null
-          ? null
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // "Editar" junto a "Reusar" (misma fila de acciones
-                // principales) para que sea facil corregir un calculo sin
-                // volver al historial.
-                FloatingActionButton.extended(
-                  heroTag: 'calc-detail-edit',
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(EsBO.calcEditAction),
-                  onPressed: () {
-                    context.push('/calculator/edit', extra: calc);
-                  },
-                ),
-                const SizedBox(width: AppSpacing.md),
-                FloatingActionButton.extended(
-                  heroTag: 'calc-detail-reuse',
-                  icon: const Icon(Icons.replay_rounded),
-                  label: Text(EsBO.calcDetailReuse),
-                  onPressed: () {
-                    context.push('/calculator/prefill', extra: calc);
-                  },
-                ),
-              ],
-            ),
     );
   }
 }
@@ -180,23 +87,26 @@ class _DetailState extends ConsumerState<_Detail> {
   bool _isBusy = false;
 
   /// Variante del reporte (pantalla, PDF, PNG e impresion) elegida para esta
-  /// cotizacion.
-  ///
-  /// Se deriva del modo guardado: el selector solo ofrece las 2 variantes del
-  /// eje correspondiente, asi que arrancar en [QuoteReportVariant.clientSimple]
-  /// dejaria sin marcar el chip en toda cotizacion advanced. La variante simple
-  /// sigue siendo el default cuando el modo es express, que es el caso mas
-  /// comun y el unico seguro para mandar a un tercero.
+  /// cotizacion. Se deriva del modo guardado: el selector solo ofrece las 2
+  /// variantes del eje correspondiente.
   late QuoteReportVariant _reportVariant = (widget.calc.isAdvanced
       ? QuoteReportVariant.clientAdvanced
       : QuoteReportVariant.clientSimple);
 
-  /// Cantidad mostrada/editable. Arranca con la cantidad guardada de la
-  /// cotizacion (lotes, v8) para que preview/export coincidan con lo saved.
+  /// Cantidad mostrada/editable (lotes). Arranca con la cantidad guardada para
+  /// que preview/export coincidan con lo saved.
   late int _quantity = widget.calc.quantity < 1 ? 1 : widget.calc.quantity;
   late final TextEditingController _quantityCtrl = TextEditingController(
     text: '$_quantity',
   );
+
+  @override
+  void dispose() {
+    _quantityCtrl.dispose();
+    super.dispose();
+  }
+
+  // === Handlers de exportacion ===
 
   Future<void> _handleShare() async {
     if (_isBusy) return;
@@ -241,42 +151,9 @@ class _DetailState extends ConsumerState<_Detail> {
     }
   }
 
-  /// Desglose por material para el PDF (v15).
-  ///
-  /// Solo se renderiza si algun material tiene tiempo propio; si ninguno lo
-  /// tiene, el PDF muestra unicamente el tiempo global.
-  List<PdfMaterialMetaItem> _pdfMaterialBreakdown(
-    List<CalculationMaterial> materials,
-    List<MaterialCostBreakdown> unitCosts,
-  ) {
-    // TODOS los materiales, no solo los que tienen tiempo propio: la tabla del
-    // reporte necesita el peso de cada uno, y el tiempo propio es una columna
-    // opcional. Filtrar aca dejaba la tabla sin peso cuando nadie usa tiempo
-    // por material (el caso mas comun).
-    return [
-      for (var i = 0; i < materials.length; i++)
-        PdfMaterialMetaItem(
-          label: materials[i].label,
-          weightGrams:
-              '${NumberFormat.decimalPattern('es_BO').format(materials[i].weightGrams)} g',
-          timeStr: (materials[i].useOwnTime ?? false)
-              ? _timeTextFromMinutes(
-                  (materials[i].materialHours ?? 0) * 60 +
-                      (materials[i].materialMinutes ?? 0),
-                )
-              : null,
-          unitCost: i < unitCosts.length ? unitCosts[i].cost : null,
-        ),
-    ];
-  }
-
-  /// Formatea minutos como "Xh Ym". Null si no hay minutos.
-  static String? _timeTextFromMinutes(double totalMinutes) {
-    final rounded = totalMinutes.round();
-    if (rounded <= 0) return null;
-    return '${rounded ~/ 60}h ${rounded % 60}m';
-  }
-
+  /// Genera el PDF de la cotizacion y abre el menu de compartir (mail,
+  /// WhatsApp, etc.). Distinto de "Imprimir": mismo PDF, pero aca se envia
+  /// a otra app en vez de ir a la impresora. Requiere PRO.
   Future<void> _handleSharePdf() async {
     if (_isBusy) return;
     setState(() => _isBusy = true);
@@ -296,11 +173,9 @@ class _DetailState extends ConsumerState<_Detail> {
         quantity: 1,
       );
       if (result == null) return;
-      // Gramos totales: suma de weightGrams de cada material.
       final totalGrams = materials.fold(
         Decimal.zero,
-        (Decimal sum, m) =>
-            sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
+        (Decimal sum, m) => sum + _money(m.weightGrams),
       );
       final timedMaterials = _pdfMaterialBreakdown(materials, result.breakdown);
 
@@ -308,8 +183,8 @@ class _DetailState extends ConsumerState<_Detail> {
         isPro: ref.read(isProProvider),
         output: result.output,
         materials: result.breakdown,
-        totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
-        discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        totalHours: _money(calc.totalHours),
+        discountPct: _money(calc.discountPercentage),
         currency: ref.read(selectedCurrencyProvider),
         variant: _reportVariant,
         companyName: settings.companyName,
@@ -340,8 +215,8 @@ class _DetailState extends ConsumerState<_Detail> {
             (calc.batchDiscountAmount != null
                 ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
                 : Decimal.zero),
-        manualDiscountAmount:
-            result.output.discountAmount * Decimal.fromInt(_quantity),
+        manualDiscountAmount: result.output.discountAmount *
+            Decimal.fromInt(_quantity),
         rateAudit: result.rateAudit,
       );
     } catch (e) {
@@ -365,7 +240,6 @@ class _DetailState extends ConsumerState<_Detail> {
       final settingsAsync = ref.read(settingsNotifierProvider);
       final settings = settingsAsync.value ?? Settings.defaults;
       final printer = ref.read(activePrinterProvider);
-      // PDF con precio UNITARIO. El PDF maneja quantity para display.
       final result = _recomputeOutput(
         calc,
         materials,
@@ -376,15 +250,14 @@ class _DetailState extends ConsumerState<_Detail> {
       if (result == null) return;
       final totalGrams = materials.fold(
         Decimal.zero,
-        (Decimal sum, m) =>
-            sum + Decimal.parse(m.weightGrams.toStringAsFixed(2)),
+        (Decimal sum, m) => sum + _money(m.weightGrams),
       );
       final pdfBytes = await buildQuotePdfBytes(
         isPro: ref.read(isProProvider),
         output: result.output,
         materials: result.breakdown,
-        totalHours: Decimal.parse(calc.totalHours.toStringAsFixed(2)),
-        discountPct: Decimal.parse(calc.discountPercentage.toStringAsFixed(2)),
+        totalHours: _money(calc.totalHours),
+        discountPct: _money(calc.discountPercentage),
         currency: ref.read(selectedCurrencyProvider),
         variant: _reportVariant,
         companyName: settings.companyName,
@@ -418,8 +291,8 @@ class _DetailState extends ConsumerState<_Detail> {
             (calc.batchDiscountAmount != null
                 ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
                 : Decimal.zero),
-        manualDiscountAmount:
-            result.output.discountAmount * Decimal.fromInt(_quantity),
+        manualDiscountAmount: result.output.discountAmount *
+            Decimal.fromInt(_quantity),
         rateAudit: result.rateAudit,
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
@@ -434,6 +307,36 @@ class _DetailState extends ConsumerState<_Detail> {
     }
   }
 
+  /// Desglose por material para el PDF (v15).
+  List<PdfMaterialMetaItem> _pdfMaterialBreakdown(
+    List<CalculationMaterial> materials,
+    List<MaterialCostBreakdown> unitCosts,
+  ) {
+    return [
+      for (var i = 0; i < materials.length; i++)
+        PdfMaterialMetaItem(
+          label: materials[i].label,
+          weightGrams:
+              '${NumberFormat.decimalPattern('es_BO').format(materials[i].weightGrams)} g',
+          timeStr: (materials[i].useOwnTime ?? false)
+              ? _timeTextFromMinutes(
+                  (materials[i].materialHours ?? 0) * 60 +
+                      (materials[i].materialMinutes ?? 0),
+                )
+              : null,
+          unitCost: i < unitCosts.length ? unitCosts[i].cost : null,
+        ),
+    ];
+  }
+
+  static String? _timeTextFromMinutes(double totalMinutes) {
+    final rounded = totalMinutes.round();
+    if (rounded <= 0) return null;
+    return '${rounded ~/ 60}h ${rounded % 60}m';
+  }
+
+  // === Build ===
+
   @override
   Widget build(BuildContext context) {
     final calc = widget.calc;
@@ -443,506 +346,399 @@ class _DetailState extends ConsumerState<_Detail> {
     final settingsAsync = ref.watch(settingsNotifierProvider);
     final currency = ref.watch(selectedCurrencyProvider);
     final printer = ref.watch(activePrinterProvider);
+    final isPro = ref.watch(isProProvider);
 
     final materials = materialsAsync.value ?? <CalculationMaterial>[];
     final settings = settingsAsync.value ?? Settings.defaults;
-
-    // Recompute output + detail values from stored data + current settings.
     final result = _recomputeOutput(calc, materials, settings, printer);
 
-    return MaxWidthScrollView(
-      maxWidth: 720,
-      child: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        shrinkWrap: true,
-        children: [
-          // === Partial quote banner (T6) ===
-          if (calc.isPartial) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: color.tertiaryContainer,
-                borderRadius: BorderRadius.circular(AppRadii.md),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      const PartialSaveBadge(),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          EsBO.calcPartialAutoSaved,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: color.onTertiaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    EsBO.calcPartialCompleteHint,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: color.onTertiaryContainer,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  FilledButton.tonalIcon(
-                    icon: const Icon(Icons.edit_rounded, size: 18),
-                    label: Text(EsBO.calcDetailReuse),
-                    onPressed: () {
-                      context.push('/calculator/prefill', extra: calc);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
+    final qtyD = Decimal.fromInt(_quantity);
+    // Valores UNITARIOS guardados como snapshot (fieles al historial).
+    final unitTotal = _money(calc.totalPriceSnapshot);
+    final effectiveTotal = unitTotal * qtyD;
+    final materialUnit = _money(calc.materialCostSnapshot);
+    final electricUnit = _money(calc.electricCostSnapshot);
+    final amortizationUnit = _money(calc.amortizationCostSnapshot);
+    final laborUnit = _money(calc.laborCostSnapshot);
+    final postProcessUnit = _money(calc.postProcessCostSnapshot);
+    final extrasUnit = result?.extrasCost ?? Decimal.zero;
+    final baseUnit = _money(calc.baseCostSnapshot);
+    final failureUnit = _money(calc.failureCostSnapshot);
+    final markupUnit = _money(calc.markupCostSnapshot);
+    final profitUnit = _money(calc.profitAmountSnapshot);
+    final discountUnit = result?.output.discountAmount ?? Decimal.zero;
 
-          // === Header card (hero) ===
-          // Sin Hero: el vuelo desde el icono 44x44 de la lista hacia este
-          // card grande encajaba el contenido en el frame inicial del flight
-          // y producia RenderFlex overflow al entrar al detalle.
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.primaryContainer,
-                  color.primaryContainer.withValues(alpha: 0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    final totalGrams = materials.fold<Decimal>(
+      Decimal.zero,
+      (sum, m) => sum + _money(m.weightGrams),
+    ) * qtyD;
+    final totalMinutes =
+        CalculatorState.decimalHoursToMinutes(_money(calc.totalHours)) *
+            _quantity;
+    final timeText = _formatMinutes(totalMinutes);
+    final profit = profitUnit * qtyD;
+
+    return Column(
+      children: [
+        Expanded(
+          child: MaxWidthScrollView(
+            maxWidth: 720,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
               ),
-              borderRadius: BorderRadius.circular(AppRadii.xxxl),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        calc.pieceName ?? EsBO.calcDetailNoName,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: color.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                    if (calc.isSold)
-                      Chip(
-                        label: Text(EsBO.calcDetailSold),
-                        backgroundColor: color.tertiaryContainer,
-                        labelStyle: TextStyle(color: color.onTertiaryContainer),
-                        avatar: Icon(
-                          Icons.check_circle_rounded,
-                          color: color.tertiary,
-                          size: 16,
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                  ],
-                ),
-                if (calc.clientName != null && calc.clientName!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.person_outline_rounded,
-                          size: 14,
-                          color: color.onPrimaryContainer,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${EsBO.calcDialogClient}: ${calc.clientName}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: color.onPrimaryContainer,
-                          ),
-                        ),
-                      ],
-                    ),
+                if (calc.isPartial) ...[
+                  _PartialBanner(
+                    // Habilitado solo mientras siga siendo borrador (no
+                    // guardado con Guardar -> cliente + notas).
+                    onEdit: calc.isPartial
+                        ? () => unawaited(
+                            context.push('/calculator/edit', extra: calc),
+                          )
+                        : null,
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                _HeroCard(
+                  calc: calc,
+                  currency: currency,
+                  unitTotal: unitTotal,
+                  effectiveTotal: effectiveTotal,
+                  quantity: _quantity,
+                  printerName: calc.printerNameSnapshot ?? printer?.name,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _quantityCard(context, isPro),
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 14,
-                      color: color.onPrimaryContainer.withValues(alpha: 0.7),
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        DateFormat(
-                          'dd MMM yyyy · HH:mm',
-                        ).format(calc.createdAt.toLocal()),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: color.onPrimaryContainer.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
+                    Expanded(
+                      child: _KpiTile(
+                        icon: Icons.timer_outlined,
+                        value: timeText,
+                        label: EsBO.pdfSummaryTotalTime,
+                        color: color.primary,
                       ),
                     ),
-                    if (calc.totalHours > 0) ...[
-                      const SizedBox(width: AppSpacing.lg),
-                      Icon(
-                        Icons.timer_outlined,
-                        size: 14,
-                        color: color.onPrimaryContainer.withValues(alpha: 0.7),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _KpiTile(
+                        icon: Icons.monitor_weight_outlined,
+                        value: '${_formatGrams(totalGrams)} g',
+                        label: EsBO.pdfSummaryTotalWeight,
+                        color: color.tertiary,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${calc.totalHours.toStringAsFixed(1)} h',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: color.onPrimaryContainer.withValues(
-                            alpha: 0.7,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _KpiTile(
+                        icon: Icons.trending_up_rounded,
+                        value: formatCurrency(profit, currency),
+                        label: EsBO.calcDetailProfit,
+                        color: color.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SectionCard(
+                  icon: Icons.receipt_long_outlined,
+                  title: EsBO.detailBreakdown,
+                  semanticLabel: EsBO.detailBreakdown,
+                  child: Column(
+                    children: [
+                      _Row(
+                        label: EsBO.calcDetailMaterial,
+                        value: formatCurrency(materialUnit * qtyD, currency),
+                      ),
+                      if (materials.length > 1)
+                        for (final m in result?.breakdown ??
+                            const <MaterialCostBreakdown>[])
+                          _Row(
+                            label: m.label,
+                            value: formatCurrency(m.cost * qtyD, currency),
+                            indent: true,
+                          ),
+                      _Row(
+                        label: EsBO.calcDetailEnergy,
+                        value: formatCurrency(electricUnit * qtyD, currency),
+                      ),
+                      if (amortizationUnit > Decimal.zero)
+                        _Row(
+                          label: EsBO.calcDetailAmortization,
+                          value: formatCurrency(
+                            amortizationUnit * qtyD,
+                            currency,
                           ),
                         ),
+                      if (laborUnit > Decimal.zero)
+                        _Row(
+                          label: EsBO.calcDetailModeling,
+                          value: formatCurrency(laborUnit * qtyD, currency),
+                        ),
+                      if (postProcessUnit > Decimal.zero)
+                        _Row(
+                          label: EsBO.calcDetailPostProcess,
+                          value: formatCurrency(postProcessUnit * qtyD, currency),
+                        ),
+                      if (extrasUnit > Decimal.zero)
+                        _Row(
+                          label: calc.extraLabel.isNotEmpty
+                              ? '${EsBO.calcExtraExtras} (${calc.extraLabel})'
+                              : EsBO.calcExtraExtras,
+                          value: formatCurrency(extrasUnit * qtyD, currency),
+                        ),
+                      const SizedBox(height: AppSpacing.xs),
+                      _Row(
+                        label: EsBO.calcDetailBase,
+                        value: formatCurrency(baseUnit * qtyD, currency),
+                        emphasis: true,
+                      ),
+                      if (failureUnit > Decimal.zero)
+                        _Row(
+                          label: EsBO.calcDetailFailure,
+                          value: formatCurrency(failureUnit * qtyD, currency),
+                        ),
+                      if (markupUnit > Decimal.zero)
+                        _Row(
+                          label: EsBO.calcDetailMarkup,
+                          value: formatCurrency(markupUnit * qtyD, currency),
+                        ),
+                      _Row(
+                        label: EsBO.calcDetailProfit,
+                        value: formatCurrency(profitUnit * qtyD, currency),
+                        color: color.primary,
+                        emphasis: true,
+                      ),
+                      if (discountUnit > Decimal.zero)
+                        _Row(
+                          label:
+                              '${EsBO.calcLabelDiscount} (${calc.discountPercentage.round()}%)',
+                          value:
+                              '-${formatCurrency(discountUnit * qtyD, currency)}',
+                          color: color.error,
+                        ),
+                      const SizedBox(height: AppSpacing.sm),
+                      const Divider(height: 1),
+                      const SizedBox(height: AppSpacing.sm),
+                      _Row(
+                        label: _quantity > 1
+                            ? '${EsBO.calcDetailTotal} ($_quantity u.)'
+                            : EsBO.calcDetailTotal,
+                        value: formatCurrency(effectiveTotal, currency),
+                        big: true,
+                        emphasis: true,
                       ),
                     ],
-                  ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _materialsCard(context, materials, currency),
+                if ((calc.notes ?? '').isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  SectionCard(
+                    icon: Icons.sticky_note_2_outlined,
+                    title: EsBO.pdfNotesTitle,
+                    child: Text(
+                      calc.notes!,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+                if ((calc.conditions ?? '').isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  SectionCard(
+                    icon: Icons.gavel_rounded,
+                    title: EsBO.pdfConditionsTitle,
+                    child: Text(
+                      calc.conditions!,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                _reportCard(calc, materials, result, currency, settings),
+                SizedBox(
+                  height: AppSpacing.lg + MediaQuery.of(context).padding.bottom,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.lg),
+        ),
+        _footer(context),
+      ],
+    );
+  }
 
-          // === Materiales ===
-          Text(
-            EsBO.calcSectionMaterials,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          materialsAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (e, _) => Text('${EsBO.commonError}: $e'),
-            data: (ms) {
-              if (ms.isEmpty) {
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Text(
-                      EsBO.calcNoMaterials,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: color.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return Card(
-                child: Column(
-                  children: [
-                    for (var i = 0; i < ms.length; i++) ...[
-                      if (i > 0)
-                        const Divider(height: 1, indent: 16, endIndent: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: color.primaryContainer,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadii.sm,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '${i + 1}',
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: color.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    ms[i].label,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xxs),
-                                  Text(
-                                    '${ms[i].weightGrams.toStringAsFixed(0)} g · '
-                                    '${currency.code} ${ms[i].pricePerBobbinSnapshot.toStringAsFixed(2)} / '
-                                    '${ms[i].gramsPerBobbinSnapshot.toStringAsFixed(0)} g',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: color.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              // BUG-009-display fix: guard contra division
-                              // por cero (gramsPerBobbinSnapshot == 0 en datos
-                              // legacy/corruptos) que producia Infinity/NaN.
-                              formatCurrency(
-                                ms[i].gramsPerBobbinSnapshot <= 0
-                                    ? Decimal.zero
-                                    : Decimal.parse(
-                                        (ms[i].weightGrams *
-                                                ms[i].pricePerBobbinSnapshot /
-                                                ms[i].gramsPerBobbinSnapshot)
-                                            .toStringAsFixed(2),
-                                      ),
-                                currency,
-                              ),
-                              style: GoogleFonts.jetBrainsMono(
-                                textStyle: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: AppSpacing.lg),
+  // === Secciones ===
 
-          // === Desglose ===
-          Text(
-            EsBO.detailBreakdown,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+  Widget _quantityCard(BuildContext context, bool isPro) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Row(
-                    label: EsBO.calcDetailMaterial,
-                    value: formatCurrency(
-                      Decimal.parse(
-                            calc.materialCostSnapshot.toStringAsFixed(2),
-                          ) *
-                          Decimal.fromInt(calc.quantity),
-                      currency,
-                    ),
-                  ),
-                  if (calc.discountPercentage > 0) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: color.errorContainer.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(AppRadii.md),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            EsBO.detailDiscountPct(
-                              calc.discountPercentage.round(),
-                            ),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: color.onErrorContainer,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            // BUG-001 fix: el descuento real se calcula sobre
-                            // totalFinal (no materialCost) — debe coincidir con
-                            // calculation_engine.dart:84 para que el cliente
-                            // vea el mismo numero en el detalle y en el PDF.
-                            // totalFinal = baseCost + failureCost + markupCost
-                            //              + profitAmount (ver F1 engine).
-                            // Monto efectivo: unitario x cantidad (lotes).
-                            '-${formatCurrency(Decimal.parse(((calc.baseCostSnapshot + calc.failureCostSnapshot + calc.markupCostSnapshot + calc.profitAmountSnapshot) * calc.discountPercentage / 100).toStringAsFixed(2)) * Decimal.fromInt(calc.quantity), currency)}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: color.onErrorContainer,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.md),
-                  const Divider(height: 1),
-                  const SizedBox(height: AppSpacing.md),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        // Con lote > 1 se explicita para que el total
-                        // efectivo no confunda frente al unitario.
-                        calc.quantity > 1
-                            ? '${EsBO.calcDetailTotal} (${calc.quantity} u.)'
-                            : EsBO.calcDetailTotal,
-                        style: theme.textTheme.titleLarge?.copyWith(
+                        EsBO.detailQuantityLabel,
+                        style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          // Total efectivo = unitario x cantidad (lotes).
-                          formatCurrency(
-                            Decimal.parse(
-                                  calc.totalPriceSnapshot.toStringAsFixed(2),
-                                ) *
-                                Decimal.fromInt(calc.quantity),
-                            currency,
-                          ),
-                          style: GoogleFonts.jetBrainsMono(
-                            textStyle: theme.textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      if (!isPro) const ProBadge(),
                     ],
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    EsBO.detailQuantitySubtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // === Selector PRO de Cantidad ===
-          const SizedBox(height: AppSpacing.lg),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              EsBO.detailQuantityLabel,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            if (!ref.watch(isProProvider)) const ProBadge(),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          EsBO.detailQuantitySubtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: color.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton.outlined(
-                    icon: const Icon(Icons.remove_rounded),
-                    onPressed: _quantity > 1
-                        ? () {
-                            if (!ref.read(isProProvider)) {
-                              context.push('/paywall');
-                            } else {
-                              setState(() => _quantity--);
-                              _quantityCtrl.text = '$_quantity';
-                            }
-                          }
-                        : null,
-                  ),
-                  SizedBox(
-                    width: 64,
-                    child: TextFormField(
-                      key: const ValueKey('detail_quantity_input'),
-                      controller: _quantityCtrl,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.num(
-                        theme.textTheme.titleMedium ?? const TextStyle(),
-                        fontWeight: FontWeight.bold,
-                      ),
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xs,
-                          vertical: AppSpacing.xs,
-                        ),
-                        border: OutlineInputBorder(),
-                        suffixText: 'u.',
-                      ),
-                      onChanged: (val) {
-                        final parsed = int.tryParse(val) ?? 1;
-                        final clamped = parsed.clamp(1, kMaxQuantity);
-                        setState(() => _quantity = clamped);
-                      },
-                    ),
-                  ),
-                  IconButton.outlined(
-                    icon: const Icon(Icons.add_rounded),
-                    onPressed: () {
-                      if (!ref.read(isProProvider)) {
+            IconButton.outlined(
+              icon: const Icon(Icons.remove_rounded),
+              onPressed: _quantity > 1
+                  ? () {
+                      if (!isPro) {
                         context.push('/paywall');
                       } else {
-                        setState(() => _quantity++);
+                        setState(() => _quantity--);
                         _quantityCtrl.text = '$_quantity';
                       }
-                    },
+                    }
+                  : null,
+            ),
+            SizedBox(
+              width: 64,
+              child: TextFormField(
+                key: const ValueKey('detail_quantity_input'),
+                controller: _quantityCtrl,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: AppTheme.num(
+                  theme.textTheme.titleMedium ?? const TextStyle(),
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.xs,
+                  ),
+                  border: OutlineInputBorder(),
+                  suffixText: 'u.',
+                ),
+                onChanged: (val) {
+                  final parsed = int.tryParse(val) ?? 1;
+                  final clamped = parsed.clamp(1, kMaxQuantity);
+                  setState(() => _quantity = clamped);
+                },
+              ),
+            ),
+            IconButton.outlined(
+              icon: const Icon(Icons.add_rounded),
+              onPressed: () {
+                if (!isPro) {
+                  context.push('/paywall');
+                } else {
+                  setState(() => _quantity++);
+                  _quantityCtrl.text = '$_quantity';
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _materialsCard(
+    BuildContext context,
+    List<CalculationMaterial> materials,
+    WorldCurrency currency,
+  ) {
+    final theme = Theme.of(context);
+    return SectionCard(
+      icon: Icons.category_outlined,
+      title: EsBO.calcSectionMaterials,
+      child: materials.isEmpty
+          ? Text(
+              EsBO.calcNoMaterials,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            )
+          : Column(
+              children: [
+                for (var i = 0; i < materials.length; i++) ...[
+                  if (i > 0)
+                    const Divider(height: 1, indent: 44, endIndent: 8),
+                  _MaterialTile(
+                    index: i + 1,
+                    material: materials[i],
+                    currency: currency,
                   ),
                 ],
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+    );
+  }
 
-          // === Quote image preview (capturable) ===
+  Widget _reportCard(
+    Calculation calc,
+    List<CalculationMaterial> materials,
+    ({
+      CalculationOutput output,
+      List<MaterialCostBreakdown> breakdown,
+      Decimal electricCost,
+      Decimal amortizationCost,
+      Decimal laborCost,
+      Decimal postProcessCost,
+      Decimal extrasCost,
+      Decimal baseCost,
+      Decimal failureCost,
+      Decimal markupCost,
+      Decimal profitAmount,
+      Decimal totalFinal,
+      String? metaGrams,
+      String? metaTime,
+      PdfRateAudit rateAudit,
+    })?
+    result,
+    WorldCurrency currency,
+    Settings settings,
+  ) {
+    return SectionCard(
+      icon: Icons.picture_as_pdf_outlined,
+      title: EsBO.detailReportTitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ReportVariantSelector(
+            selected: _reportVariant,
+            isAdvanced: calc.isAdvanced,
+            onChanged: (v) => setState(() => _reportVariant = v),
+          ),
           if (result != null) ...[
-            Text(
-              EsBO.detailPreview,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
             Center(
               child: RepaintBoundary(
                 key: _captureKey,
@@ -961,6 +757,8 @@ class _DetailState extends ConsumerState<_Detail> {
                   detailAmortizationCost: result.amortizationCost,
                   detailLaborCost: result.laborCost,
                   detailPostProcessCost: result.postProcessCost,
+                  detailExtrasCost: result.extrasCost,
+                  extraLabel: calc.extraLabel,
                   detailBaseCost: result.baseCost,
                   detailFailureCost: result.failureCost,
                   detailMarkupCost: result.markupCost,
@@ -982,103 +780,767 @@ class _DetailState extends ConsumerState<_Detail> {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Selector de variante del reporte (2 opciones: Cliente / Detalle).
-            // Reemplaza al toggle binario de detalle, que no permitia
-            // distinguir "cliente avanzado" de "cliente simple" ni avisar del
-            // riesgo de compartir la variante interna. El modo de la
-            // cotizacion decide el eje, asi que el selector ofrece solo las 2
-            // variantes validas para el.
-            ReportVariantSelector(
-              selected: _reportVariant,
-              isAdvanced: calc.isAdvanced,
-              onChanged: (v) => setState(() => _reportVariant = v),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Share / Save actions
-            Center(
-              child: Wrap(
-                spacing: AppSpacing.lg,
-                runSpacing: AppSpacing.sm,
-                alignment: WrapAlignment.center,
-                children: [
-                  _DetailActionIcon(
-                    icon: Icons.share_rounded,
-                    tooltip: EsBO.calcBtnShare,
-                    color: color.primary,
-                    isBusy: _isBusy,
-                    onPressed: _isBusy ? null : _handleShare,
-                  ),
-                  _DetailActionIcon(
-                    icon: Icons.download_rounded,
-                    tooltip: EsBO.commonSaveImage,
-                    color: color.primary,
-                    isBusy: _isBusy,
-                    onPressed: _isBusy ? null : _handleSave,
-                  ),
-                  _DetailActionIcon(
-                    icon: Icons.picture_as_pdf_rounded,
-                    tooltip: EsBO.commonExportPdf,
-                    color: color.error,
-                    isBusy: _isBusy,
-                    onPressed: _isBusy ? null : _handleSharePdf,
-                  ),
-                  _DetailActionIcon(
-                    icon: Icons.print_rounded,
-                    tooltip: EsBO.commonPrint,
-                    color: AppTheme.blueSuccess,
-                    isBusy: _isBusy,
-                    onPressed: _isBusy ? null : _handlePrint,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
           ],
-
-          // === Acciones ===
+          const SizedBox(height: AppSpacing.md),
+          // Accion principal: PDF por el menu de compartir (mail, WhatsApp).
+          // Diferente de "Compartir imagen" (PNG) e "Imprimir" (mismo PDF,
+          // pero a la impresora). Requiere PRO.
+          FilledButton.icon(
+            icon: const Icon(Icons.picture_as_pdf_rounded),
+            label: Text(EsBO.detailActionShareReport),
+            onPressed: _isBusy
+                ? null
+                : () {
+                    if (!ref.read(isProProvider)) {
+                      unawaited(context.push('/paywall'));
+                    } else {
+                      unawaited(_handleSharePdf());
+                    }
+                  },
+          ),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
-                child: FilledButton.tonalIcon(
-                  icon: Icon(
-                    calc.isSold
-                        ? Icons.undo_rounded
-                        : Icons.check_circle_outline_rounded,
-                  ),
-                  label: Text(
-                    calc.isSold
-                        ? EsBO.calcDetailMarkPending
-                        : EsBO.calcDetailMarkSold,
-                  ),
-                  onPressed: () async {
-                    await ref
-                        .read(calculationsNotifierProvider.notifier)
-                        .toggleSold(calc.id, !calc.isSold);
-                    // F3: el detalle ya no se alimenta de la lista; el
-                    // provider propio se invalida para re-leer isSold.
-                    ref.invalidate(_calculationByIdProvider(calc.id));
-                  },
+                child: _DetailActionButton(
+                  icon: Icons.share_rounded,
+                  label: EsBO.calcBtnShare,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handleShare,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _DetailActionButton(
+                  icon: Icons.download_rounded,
+                  label: EsBO.commonSaveImage,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handleSave,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _DetailActionButton(
+                  icon: Icons.print_rounded,
+                  label: EsBO.commonPrint,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handlePrint,
                 ),
               ),
             ],
           ),
-          // Padding bottom para FAB + bottom inset.
-          SizedBox(height: 80 + MediaQuery.of(context).padding.bottom),
+        ],
+      ),
+    );
+  }
+
+  /// Elimina la cotizacion (con confirmacion) y vuelve al historial.
+  Future<void> _handleDelete() async {
+    final confirm = await showConfirmDialog(
+      context,
+      title: EsBO.calcDetailDeleteTitle,
+      message: EsBO.calcDetailDeleteConfirm,
+    );
+    if (!confirm || !mounted) return;
+    await ref
+        .read(calculationsNotifierProvider.notifier)
+        .delete(widget.calc.id);
+    if (mounted) context.pop();
+  }
+
+  /// Alterna vendida/pendiente e invalida el provider del detalle.
+  void _handleToggleSold() {
+    final calc = widget.calc;
+    unawaited(
+      ref
+          .read(calculationsNotifierProvider.notifier)
+          .toggleSold(calc.id, !calc.isSold),
+    );
+    ref.invalidate(_calculationByIdProvider(calc.id));
+  }
+
+  /// Barra inferior fija con 3 acciones, solo iconos con micro-descripcion.
+  /// Orden: Reusar · Marcar vendida (dorado) · Eliminar (rojo).
+  /// "Editar" vive en el banner de borrador (arriba) y los exports del
+  /// reporte (compartir/guardar imagen e imprimir) en su seccion.
+  Widget _footer(BuildContext context) {
+    final color = Theme.of(context).colorScheme;
+    final calc = widget.calc;
+    return Material(
+      color: color.surface,
+      elevation: 0,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: color.outlineVariant)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _FooterAction(
+                    icon: Icons.replay_rounded,
+                    label: EsBO.calcDetailReuse,
+                    onPressed: () => unawaited(
+                      context.push('/calculator/prefill', extra: calc),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: _FooterAction(
+                    icon: calc.isSold
+                        ? Icons.undo_rounded
+                        : Icons.check_circle_outline_rounded,
+                    label: calc.isSold
+                        ? EsBO.calcDetailMarkPending
+                        : EsBO.calcDetailMarkSold,
+                    color: _kSoldGold,
+                    onPressed: _handleToggleSold,
+                  ),
+                ),
+                Expanded(
+                  child: _FooterAction(
+                    icon: Icons.delete_outline_rounded,
+                    label: EsBO.calcDetailDelete,
+                    color: color.error,
+                    onPressed: () => unawaited(_handleDelete()),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hero del detalle: foto (si hay) + nombre + cliente + fecha + total efectivo.
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({
+    required this.calc,
+    required this.currency,
+    required this.unitTotal,
+    required this.effectiveTotal,
+    required this.quantity,
+    this.printerName,
+  });
+
+  final Calculation calc;
+  final WorldCurrency currency;
+  final Decimal unitTotal;
+  final Decimal effectiveTotal;
+  final int quantity;
+  final String? printerName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final onC = cs.onPrimaryContainer;
+    final blob = calc.pieceImageBlob;
+    final client = calc.clientName;
+    final printer = printerName;
+    final name = (calc.pieceName == null || calc.pieceName!.isEmpty)
+        ? EsBO.calcDetailNoName
+        : calc.pieceName!;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.xxxl),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              cs.primaryContainer,
+              cs.primaryContainer.withValues(alpha: 0.55),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (blob != null)
+              Image.memory(
+                blob,
+                height: 180,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: onC,
+                          ),
+                        ),
+                      ),
+                      if (calc.isSold) const _SoldChip(),
+                    ],
+                  ),
+                  if (client != null && client.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    _metaRow(
+                      Icons.person_outline_rounded,
+                      '${EsBO.calcDialogClient}: $client',
+                      onC,
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.sm),
+                  _metaRow(
+                    Icons.calendar_today_rounded,
+                    DateFormat(
+                      'dd MMM yyyy · HH:mm',
+                    ).format(calc.createdAt.toLocal()),
+                    onC,
+                  ),
+                  if (printer != null && printer.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    _metaRow(Icons.print_outlined, printer, onC),
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  Divider(color: onC.withValues(alpha: 0.18), height: 1),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              EsBO.calcDetailTotal,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: onC.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (quantity > 1) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '$quantity × ${formatCurrency(unitTotal, currency)}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: onC.withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            formatCurrency(effectiveTotal, currency),
+                            style: GoogleFonts.jetBrainsMono(
+                              textStyle: theme.textTheme.headlineMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: onC,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _metaRow(IconData icon, String text, Color onC) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: onC.withValues(alpha: 0.75)),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: onC.withValues(alpha: 0.85),
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Chip "Vendida" del hero.
+class _SoldChip extends StatelessWidget {
+  const _SoldChip();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_rounded, size: 13, color: cs.tertiary),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            EsBO.calcDetailSold,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: cs.onTertiaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
+/// Tile compacta de KPI (tiempo / peso / ganancia).
+class _KpiTile extends StatelessWidget {
+  const _KpiTile({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(height: AppSpacing.sm),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: GoogleFonts.jetBrainsMono(
+                  textStyle: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila de material dentro de la seccion "Materiales".
+class _MaterialTile extends StatelessWidget {
+  const _MaterialTile({
+    required this.index,
+    required this.material,
+    required this.currency,
+  });
+
+  final int index;
+  final CalculationMaterial material;
+  final WorldCurrency currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final grams = material.gramsPerBobbinSnapshot;
+    final cost = grams <= 0
+        ? Decimal.zero
+        : _money(
+            material.weightGrams *
+                material.pricePerBobbinSnapshot /
+                grams,
+          );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.primaryContainer,
+              borderRadius: BorderRadius.circular(AppRadii.sm),
+            ),
+            child: Center(
+              child: Text(
+                '$index',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: color.onPrimaryContainer,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  material.label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  '${_formatGrams(_money(material.weightGrams))} g · '
+                  '${currency.code} '
+                  '${material.pricePerBobbinSnapshot.toStringAsFixed(2)} / '
+                  '${material.gramsPerBobbinSnapshot.toStringAsFixed(0)} g',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            formatCurrency(cost, currency),
+            style: GoogleFonts.jetBrainsMono(
+              textStyle: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Banner de cotizacion parcial (autoguardado incompleto).
+///
+/// Incluye el acceso a "Editar" para completar el borrador. Queda deshabilitado
+/// cuando la cotizacion ya se guardo con la opcion Guardar (cliente + notas),
+/// que es justamente cuando deja de ser parcial.
+class _PartialBanner extends StatelessWidget {
+  const _PartialBanner({required this.onEdit});
+
+  /// Accion de edicion. Null deshabilita el boton.
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: color.tertiaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const PartialSaveBadge(),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  EsBO.calcPartialAutoSaved,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: color.onTertiaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              FilledButton.icon(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(EsBO.calcEditAction),
+                // El theme define minimumSize = Size(infinity, 52) (botones
+                // full-width). Dentro de un Row el ancho es libre, asi que
+                // hay que pisar el minimo para que no resuelva w=Infinity.
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                ),
+                onPressed: onEdit,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            EsBO.calcPartialCompleteHint,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: color.onTertiaryContainer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dorado para la accion de venta (marcar vendida/pendiente).
+const Color _kSoldGold = Color(0xFFD4AF37);
+
+/// Accion de la barra inferior del detalle: solo icono + micro-descripcion,
+/// con tooltip. [color] permite destacar el estado de venta (dorado) y la
+/// accion destructiva (rojo).
+class _FooterAction extends StatelessWidget {
+  const _FooterAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  /// Color de acento. Default: `onSurfaceVariant`.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final base = color ?? theme.colorScheme.onSurfaceVariant;
+    final enabled = onPressed != null;
+    final effective = base.withValues(alpha: enabled ? 1 : 0.4);
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: effective),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: effective,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Boton con icono + label para las acciones secundarias del reporte.
+class _DetailActionButton extends StatelessWidget {
+  const _DetailActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.isBusy = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+    return Tooltip(
+      message: label,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
+          ),
+        ),
+        child: isBusy
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: color,
+                ),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 20),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// Fila label + valor del desglose.
+class _Row extends StatelessWidget {
+  const _Row({
+    required this.label,
+    required this.value,
+    this.color,
+    this.indent = false,
+    this.emphasis = false,
+    this.big = false,
+  });
+
+  final String label;
+  final String value;
+  final Color? color;
+
+  /// Sub-fila de material (sangria + cursiva).
+  final bool indent;
+
+  /// Fila de subtotal/ganancia (mayor contraste, peso w600).
+  final bool emphasis;
+
+  /// Fila de total (tipografia grande).
+  final bool big;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final labelStyle = (big
+            ? theme.textTheme.titleMedium
+            : theme.textTheme.bodyMedium)
+        ?.copyWith(
+          color: indent
+              ? theme.colorScheme.onSurfaceVariant
+              : color ?? theme.colorScheme.onSurface,
+          fontStyle: indent ? FontStyle.italic : null,
+          fontWeight: emphasis || big ? FontWeight.w600 : null,
+        );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: labelStyle,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Text(
+            value,
+            style: GoogleFonts.jetBrainsMono(
+              textStyle: (big
+                      ? theme.textTheme.titleLarge
+                      : theme.textTheme.bodyMedium)
+                  ?.copyWith(
+                    fontWeight: big ? FontWeight.bold : FontWeight.w600,
+                    color: color ?? theme.colorScheme.onSurface,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Xh Ym" / "Ym" / "—" desde minutos totales.
+String _formatMinutes(int minutes) {
+  if (minutes <= 0) return '—';
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  if (h <= 0) return '${m}m';
+  return '${h}h ${m}m';
+}
+
+/// Formatea gramos con separador de miles (es_BO).
+String _formatGrams(Decimal grams) =>
+    NumberFormat.decimalPattern('es_BO').format(grams.toDouble());
+
+/// Convierte un double de dominio a [Decimal] con 2 decimales (display).
+Decimal _money(double value) => Decimal.parse(value.toStringAsFixed(2));
+
 /// Reconstruye [CalculationOutput] + valores detallados desde datos
 /// guardados en DB + settings actuales.
 ///
 /// **Single source of truth**: delega a [CalculationEngine.computeFromSnapshot]
-/// para la formula. Si cambia la formula del engine, esta funcion se
-/// actualiza automaticamente (ya no duplica la logica).
+/// para la formula.
 ///
 /// [quantity]: multiplica todos los montos y las metricas (gramos/tiempo)
 /// para reportar valores EFECTIVOS del lote (default 1 = unitario).
@@ -1091,6 +1553,7 @@ class _DetailState extends ConsumerState<_Detail> {
   Decimal amortizationCost,
   Decimal laborCost,
   Decimal postProcessCost,
+  Decimal extrasCost,
   Decimal baseCost,
   Decimal failureCost,
   Decimal markupCost,
@@ -1116,9 +1579,9 @@ _recomputeOutput(
   var totalGrams = Decimal.zero;
   final breakdown = <MaterialCostBreakdown>[];
   for (final m in materials) {
-    final weight = Decimal.parse(m.weightGrams.toStringAsFixed(2));
-    final price = Decimal.parse(m.pricePerBobbinSnapshot.toStringAsFixed(2));
-    final grams = Decimal.parse(m.gramsPerBobbinSnapshot.toStringAsFixed(2));
+    final weight = _money(m.weightGrams);
+    final price = _money(m.pricePerBobbinSnapshot);
+    final grams = _money(m.gramsPerBobbinSnapshot);
     final cost = grams > Decimal.zero
         ? (weight * price / grams).toDecimal(scaleOnInfinitePrecision: 12)
         : Decimal.zero;
@@ -1155,11 +1618,22 @@ _recomputeOutput(
     fallbackProfitBase: settings.profitBase,
     fallbackPrinterWatts: printer?.averageWatts ?? 0,
     quantity: qty,
+    // v17: overrides per-cotizacion. Filas pre-v17 tienen los defaults que
+    // reproducen el calculo legacy; filas v17+ honran los modos guardados.
+    modelingModeRaw: calc.modelingMode,
+    modelingPct: calc.modelingValue,
+    modelingFixed: calc.modelingValue,
+    postprocModeRaw: calc.postprocMode,
+    postprocPct: calc.postprocValue,
+    postprocFixed: calc.postprocValue,
+    extraCostModeRaw: calc.extraMode,
+    extraCostPct: calc.extraValue,
+    extraCostFixed: calc.extraValue,
   );
   if (output == null) return null;
 
   // Meta
-  final hours = Decimal.parse(calc.totalHours.toStringAsFixed(2));
+  final hours = _money(calc.totalHours);
   final totalMinutes = BigInt.from(
     CalculatorState.decimalHoursToMinutes(hours) * qty,
   );
@@ -1180,6 +1654,7 @@ _recomputeOutput(
     amortizationCost: output.amortizationCost,
     laborCost: output.laborCost,
     postProcessCost: output.postProcessCost,
+    extrasCost: output.extrasCost,
     baseCost: output.baseCost,
     failureCost: output.failureCost,
     markupCost: output.markupCost,
@@ -1209,7 +1684,6 @@ _recomputeOutput(
       ),
       printerName: calc.printerNameSnapshot ?? printer?.name,
       profitAmount: output.profitAmount,
-      totalBeforeProfit: output.totalBeforeProfit,
       baseCost: output.baseCost,
       totalFinal: output.totalFinal,
       totalHours: hours,
@@ -1217,81 +1691,12 @@ _recomputeOutput(
   );
 }
 
-/// Boton circular icono, usado en la fila de acciones de imagen.
-class _DetailActionIcon extends StatelessWidget {
-  const _DetailActionIcon({
-    required this.icon,
-    required this.tooltip,
-    required this.color,
-    this.isBusy = false,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final Color color;
-  final bool isBusy;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      iconSize: 22,
-      tooltip: tooltip,
-      onPressed: onPressed,
-      style: IconButton.styleFrom(
-        foregroundColor: color,
-        backgroundColor: color.withValues(alpha: 0.12),
-        shape: const CircleBorder(),
-        minimumSize: const Size(48, 48),
-        padding: const EdgeInsets.all(AppSpacing.md),
-      ),
-      icon: isBusy
-          ? SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: color),
-            )
-          : Icon(icon, color: color, size: 22),
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  const _Row({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Text(
-            value,
-            style: GoogleFonts.jetBrainsMono(
-              textStyle: const TextStyle(
-                fontFeatures: [FontFeature.tabularFigures()],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 final _calculationByIdProvider = FutureProvider.family<Calculation?, int>((
   ref,
   id,
 ) async {
-  // F3: la lista ya no carga BLOBs; el detalle materializa la fila
-  // completa (con BLOB para el preview de la foto) on-demand.
+  // La lista ya no carga BLOBs; el detalle materializa la fila completa
+  // (con BLOB para el preview de la foto) on-demand.
   final repo = ref.watch(calculationRepositoryProvider);
   return repo.getById(id);
 });

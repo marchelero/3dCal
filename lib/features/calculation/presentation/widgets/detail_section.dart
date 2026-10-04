@@ -26,10 +26,16 @@ class DetailSection extends StatelessWidget {
     required this.profitAmount,
     required this.totalFinal,
     Decimal? amortizationCost,
+    // v17: Extras (argollas, pegamento, etc.). Aparece solo si > 0.
+    Decimal? extrasCost,
+    // v17: descripcion libre del extra ("2 argollas M3"). Si esta vacia o el
+    // monto es 0, no aparece en la fila.
+    this.extraLabel = '',
     this.currency = WorldCurrency.bob,
     this.textColor,
     super.key,
-  }) : amortizationCost = amortizationCost ?? Decimal.zero;
+  }) : amortizationCost = amortizationCost ?? Decimal.zero,
+       extrasCost = extrasCost ?? Decimal.zero;
 
   final Decimal materialCost;
   final List<MaterialCostBreakdown> materialBreakdown;
@@ -43,6 +49,14 @@ class DetailSection extends StatelessWidget {
   final Decimal baseCost;
   final Decimal failureCost;
   final Decimal markupCost;
+
+  /// v17: Extras. `Decimal.zero` si no se cobra o no se seteo.
+  final Decimal extrasCost;
+
+  /// v17: descripcion libre del extra ("2 argollas M3"). Cadena vacia por
+  /// default: en ese caso la fila Extras solo muestra el monto.
+  final String extraLabel;
+
   final Decimal profitAmount;
   final Decimal totalFinal;
 
@@ -62,7 +76,8 @@ class DetailSection extends StatelessWidget {
         laborCost > Decimal.zero ||
         postProcessCost > Decimal.zero ||
         failureCost > Decimal.zero ||
-        markupCost > Decimal.zero;
+        markupCost > Decimal.zero ||
+        extrasCost > Decimal.zero;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -101,6 +116,18 @@ class DetailSection extends StatelessWidget {
           _dr(
             EsBO.calcDetailPostProcess,
             formatCurrency(postProcessCost, currency),
+            s,
+            tc: tc,
+          ),
+        // v17: Extras con label opcional. Si el usuario ingreso descripcion
+        // (ej: "2 argollas M3"), se muestra adyacente al titulo para que
+        // el reporte explique que es ese cobro extra.
+        if (extrasCost > Decimal.zero)
+          _dr(
+            extraLabel.isNotEmpty
+                ? '${EsBO.calcExtraExtras} ($extraLabel)'
+                : EsBO.calcExtraExtras,
+            formatCurrency(extrasCost, currency),
             s,
             tc: tc,
           ),

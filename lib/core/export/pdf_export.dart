@@ -479,6 +479,9 @@ Future<void> shareQuotePdf({
   bool? isSold,
   pw.Font? regularFont,
   pw.Font? boldFont,
+  // v17: campo "Extras" (argollas, pegamento, etc.). Si [extraLabel] no
+  // esta vacio, aparece en la fila de desglose al lado del monto.
+  String? extraLabel,
 }) async {
   final pdfBytes = await buildQuotePdfBytes(
     isPro: isPro,
@@ -511,6 +514,7 @@ Future<void> shareQuotePdf({
     isSold: isSold,
     regularFont: regularFont,
     boldFont: boldFont,
+    extraLabel: extraLabel,
   );
 
   await Printing.sharePdf(
@@ -563,6 +567,9 @@ Future<Uint8List> buildQuotePdfBytes({
   bool? isSold,
   pw.Font? regularFont,
   pw.Font? boldFont,
+  // v17: campo "Extras" (argollas, pegamento, etc.). Si [extraLabel] no
+  // esta vacio, aparece en la fila de desglose al lado del monto.
+  String? extraLabel,
 }) async {
   final branding = resolveBranding(
     isPro: isPro,
@@ -614,6 +621,7 @@ Future<Uint8List> buildQuotePdfBytes({
   final dAmortizationCost = output.amortizationCost * qtyD;
   final dLaborCost = output.laborCost * qtyD;
   final dPostProcessCost = output.postProcessCost * qtyD;
+  final dExtrasCost = output.extrasCost * qtyD;
   final dBaseCost = output.baseCost * qtyD;
   final dFailureCost = output.failureCost * qtyD;
   final dMarkupCost = output.markupCost * qtyD;
@@ -880,6 +888,18 @@ Future<Uint8List> buildQuotePdfBytes({
               _dataRow(
                 EsBO.calcDetailPostProcess,
                 _fmt(dPostProcessCost, currency),
+                altBackground: true,
+              ),
+            // v17: Extras (argollas, pegamento, etc.). Solo aparece si > 0.
+            // El label del usuario ("2 argollas M3") se muestra adyacente al
+            // monto: es informacion que ya esta en la cotizacion, asi que
+            // mostrarla refuerza el vinculo entre el cobro y lo que el
+            // cliente vio.
+            if (output.extrasCost > Decimal.zero)
+              _dataRow(
+                '${EsBO.calcExtraExtras}'
+                '${(extraLabel ?? '').isNotEmpty ? ' (${extraLabel!})' : ''}',
+                _fmt(dExtrasCost, currency),
                 altBackground: true,
               ),
             _dataRow(
@@ -1312,7 +1332,7 @@ pw.Widget _buildRateAuditBlock({
     (EsBO.calcDetailPostProcess, pct(audit.postProcessRate)),
     (EsBO.calcDetailFailure, pct(audit.failureRate)),
     (EsBO.calcFieldWaste, pct(audit.markupOnMaterials)),
-    (EsBO.calcDetailProfit, pct(audit.profitBase)),
+    (EsBO.pdfRateProfit, pct(audit.profitBase)),
     (EsBO.pdfRateMargin, pct(audit.profitMarginPct)),
     (EsBO.pdfRateMarkupOverCost, pct(audit.markupOverCostPct)),
   ];
@@ -1359,6 +1379,20 @@ pw.Widget _buildRateAuditBlock({
               style: pw.TextStyle(fontSize: 8, color: _textMuted),
             ),
           ),
+        // Leyenda: explica en una linea por que ganancia, margen y recargo son
+        // tres porcentajes distintos (el usuario los confundia cuando el margen
+        // se calculaba mal y daba identico a la ganancia).
+        pw.Container(
+          padding: const pw.EdgeInsets.fromLTRB(10, 4, 10, 5),
+          child: pw.Text(
+            EsBO.pdfRateLegend,
+            style: pw.TextStyle(
+              fontSize: 7.5,
+              color: _textMuted,
+              fontStyle: pw.FontStyle.italic,
+            ),
+          ),
+        ),
       ],
     ),
   );

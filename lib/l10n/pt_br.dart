@@ -119,7 +119,7 @@ class PtBrImpl implements AppStrings {
 
   // === Hito 1: lotes y reorganización (T-H1) ===
   @override
-  String get calcSectionPieceCosts => 'Custos da peça';
+  String get calcSectionPieceCosts => 'Custos adicionais';
   @override
   String get calcSectionTarifas => 'Tarifas';
   @override
@@ -1331,9 +1331,28 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   @override
   String get pdfRatePerHour => '/h';
   @override
-  String get pdfRateMargin => 'Margem';
+  String get pdfRateProfit => 'Lucro (sobre custo)';
   @override
-  String get pdfRateMarkupOverCost => 'Markup sobre custo';
+  String get pdfRateMargin => 'Margem (sobre venda)';
+  @override
+  String get pdfRateMarkupOverCost => 'Acréscimo sobre custo';
+  @override
+  String get pdfRateLegend =>
+      'Lucro: % aplicado sobre o custo. Margem: parte do preço final que é lucro. Acréscimo: quanto o custo base cresce até o preço final (inclui falha e desperdício).';
+
+  @override
+  String get detailSummaryTitle => 'Resumo';
+  @override
+  String get detailActionShareReport => 'Compartilhar relatório';
+  @override
+  String get detailActionsHint =>
+      'Edite, compartilhe ou crie um novo orçamento daqui.';
+  @override
+  String get detailNewFromThis => 'Novo';
+  @override
+  String get detailReuseShort => 'Reutilizar';
+  @override
+  String get detailReportTitle => 'Relatório';
 
   @override
   String pdfPageOf(int page, int total) => 'Página $page de $total';
@@ -1699,15 +1718,12 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
   @override
   String get calcExtraExtras => 'Extras';
   @override
-  String get extraInfo => 'argolas, cola e qualquer outro extra que uma peca impressa em 3D possa exigir';
+  String get extraInfo =>
+      'argolas, cola e qualquer outro extra que uma peca impressa em 3D possa exigir';
   @override
   String get extraDescriptionHint => 'argolas, cola, etc.';
   @override
   String get modePercent => '%';
   @override
   String get modeFixed => 'Fixo';
-  @override
-  String get modeAuto => 'Auto';
-  @override
-  String get modeOff => 'Desligado';
 }

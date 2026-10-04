@@ -143,22 +143,26 @@ class _TotalChipState extends State<TotalChip>
   }
 }
 
-/// Peek preview de Otros colapsado.
+/// Peek preview de la seccion "Costos de la pieza" colapsada.
+///
+/// Muestra los nombres de los campos en una fila sutil para que el usuario
+/// sepa que existen sin tocarlos. Free ve el candado.
 class OtrosPeekPreview extends StatelessWidget {
-  const OtrosPeekPreview({super.key, required this.locked});
+  const OtrosPeekPreview({
+    super.key,
+    required this.locked,
+    required this.labels,
+  });
   final bool locked;
+
+  /// Nombres de los campos de la seccion, en orden.
+  final List<String> labels;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final dimColor = cs.onSurfaceVariant.withValues(alpha: 0.45);
-    final labels = [
-      EsBO.calcFieldLabor,
-      EsBO.calcFieldPostProcess,
-      EsBO.calcFieldFailure,
-      EsBO.calcFieldWaste,
-    ];
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,

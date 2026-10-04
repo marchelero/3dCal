@@ -114,6 +114,13 @@ class CalculationDraft {
     this.pieceImageBytes,
     this.batchDiscountPercent,
     this.batchDiscountAmount,
+    this.modelingMode = 'fixed',
+    this.modelingValue = 0,
+    this.postprocMode = 'fixed',
+    this.postprocValue = 0,
+    this.extraCostMode = 'fixed',
+    this.extraCostValue = 0,
+    this.extraCostLabel = '',
   });
 
   final List<MaterialInput> materials;
@@ -157,6 +164,31 @@ class CalculationDraft {
 
   /// Monto del descuento mayorista (snapshot). 0 sin escalón.
   final Decimal? batchDiscountAmount;
+
+  // === v17: Costos de la pieza ===
+
+  /// Modo del campo "Modelado y diseño": `pct` (porcentaje sobre el costo
+  /// base) o `fixed` (monto fijo). Default `fixed`.
+  final String modelingMode;
+
+  /// Valor del modelado: porcentaje si [modelingMode] es `pct`, monto si es
+  /// `fixed`.
+  final double modelingValue;
+
+  /// Modo del campo "Postprocesado". Misma semantica que [modelingMode].
+  final String postprocMode;
+
+  /// Valor del postprocesado.
+  final double postprocValue;
+
+  /// Modo del campo "Extras". Misma semantica que [modelingMode].
+  final String extraCostMode;
+
+  /// Valor de los extras.
+  final double extraCostValue;
+
+  /// Texto libre de los extras ("2 argollas M3"). No afecta el calculo.
+  final String extraCostLabel;
 }
 
 /// CRUD + queries de cotizaciones.
@@ -310,6 +342,16 @@ class CalculationRepository {
       pieceImageBlob: Value(draft.pieceImageBytes),
       batchDiscountPercent: Value(draft.batchDiscountPercent?.toString()),
       batchDiscountAmount: Value(draft.batchDiscountAmount?.toString()),
+      // v17: los 3 costos de servicio con su modo (% / fijo). Sin esto el
+      // INSERT deja los defaults de columna ('auto'/'auto'/'off') y el valor
+      // del usuario se pierde al guardar.
+      modelingMode: Value(draft.modelingMode),
+      modelingValue: Value(draft.modelingValue),
+      postprocMode: Value(draft.postprocMode),
+      postprocValue: Value(draft.postprocValue),
+      extraMode: Value(draft.extraCostMode),
+      extraValue: Value(draft.extraCostValue),
+      extraLabel: Value(draft.extraCostLabel),
     );
   }
 
@@ -457,6 +499,15 @@ class CalculationRepository {
             minimumChargeSnapshot: source.minimumChargeSnapshot,
             markupOnMaterialsSnapshot: source.markupOnMaterialsSnapshot,
             pieceImageBlob: Value(source.pieceImageBlob),
+            // v17: duplicar una cotizacion debe arrastrar los 3 costos de
+            // servicio, no reiniciarlos a los defaults de columna.
+            modelingMode: Value(source.modelingMode),
+            modelingValue: Value(source.modelingValue),
+            postprocMode: Value(source.postprocMode),
+            postprocValue: Value(source.postprocValue),
+            extraMode: Value(source.extraMode),
+            extraValue: Value(source.extraValue),
+            extraLabel: Value(source.extraLabel),
           ),
         );
     for (final m in materials) {

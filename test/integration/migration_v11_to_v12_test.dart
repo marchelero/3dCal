@@ -169,12 +169,12 @@ void main() {
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          16,
+          17,
           reason:
               'AppDatabase debe setear user_version=<schema actual> tras '
-              'onUpgrade (11→12 y las siguientes hasta v16).',
+              'onUpgrade (11→17 pasando por 12, 13, 14, 15, 16, 17).',
         );
-        expect(db.schemaVersion, 16);
+        expect(db.schemaVersion, 17);
 
         // discount_tiers: nueva tabla con el schema correcto.
         final tierCols = await db
@@ -304,10 +304,10 @@ void main() {
         );
         await db1.customSelect('SELECT 1').get();
         final v1 = await db1.customSelect('PRAGMA user_version').get();
-        expect(v1.first.read<int>('user_version'), 16);
+        expect(v1.first.read<int>('user_version'), 17);
         await db1.close();
 
-        // Reabrir sobre la misma DB: user_version sigue en 16, schema usable.
+        // Reabrir sobre la misma DB: user_version sigue en 17, schema usable.
         final db2 = AppDatabase.forTesting(
           NativeDatabase.opened(rawDb, closeUnderlyingOnClose: false),
         );
@@ -316,7 +316,7 @@ void main() {
         final v2 = await db2.customSelect('PRAGMA user_version').get();
         expect(
           v2.first.read<int>('user_version'),
-          16,
+          17,
           reason: 'La segunda apertura no debe re-ejecutar la migracion.',
         );
         final calcs = await db2

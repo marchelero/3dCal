@@ -122,7 +122,7 @@ class DeImpl implements AppStrings {
 
   // === Hito 1: lotes y reorganización (T-H1) ===
   @override
-  String get calcSectionPieceCosts => 'Teilekosten';
+  String get calcSectionPieceCosts => 'Zusatzkosten';
   @override
   String get calcSectionTarifas => 'Tarife';
   @override
@@ -1378,9 +1378,28 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   @override
   String get pdfRatePerHour => '/h';
   @override
-  String get pdfRateMargin => 'Marge';
+  String get pdfRateProfit => 'Gewinn (auf Kosten)';
+  @override
+  String get pdfRateMargin => 'Marge (auf Preis)';
   @override
   String get pdfRateMarkupOverCost => 'Aufschlag auf Kosten';
+  @override
+  String get pdfRateLegend =>
+      'Gewinn: % auf die Kosten. Marge: Anteil des Endpreises, der Gewinn ist. Aufschlag: wie stark die Basiskosten bis zum Endpreis steigen (inkl. Ausschuss und Verschnitt).';
+
+  @override
+  String get detailSummaryTitle => 'Übersicht';
+  @override
+  String get detailActionShareReport => 'Bericht teilen';
+  @override
+  String get detailActionsHint =>
+      'Hier bearbeiten, teilen oder ein neues Angebot erstellen.';
+  @override
+  String get detailNewFromThis => 'Neu';
+  @override
+  String get detailReuseShort => 'Wiederverwenden';
+  @override
+  String get detailReportTitle => 'Bericht';
 
   @override
   String pdfPageOf(int page, int total) => 'Seite $page von $total';
@@ -1707,15 +1726,12 @@ Wir können Funktionen der Anwendung aktualisieren, aussetzen oder entfernen. Au
   @override
   String get calcExtraExtras => 'Extras';
   @override
-  String get extraInfo => 'Ringe, Kleber und alle weiteren Extras, die ein 3D-gedrucktes Teil benoetigen kann';
+  String get extraInfo =>
+      'Ringe, Kleber und alle weiteren Extras, die ein 3D-gedrucktes Teil benoetigen kann';
   @override
   String get extraDescriptionHint => 'Ringe, Kleber usw.';
   @override
   String get modePercent => '%';
   @override
   String get modeFixed => 'Fest';
-  @override
-  String get modeAuto => 'Auto';
-  @override
-  String get modeOff => 'Aus';
 }

@@ -239,12 +239,12 @@ void main() {
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          16,
+          17,
           reason:
               'AppDatabase debe setear user_version=schemaVersion tras '
               'onUpgrade exitoso.',
         );
-        expect(db.schemaVersion, 16);
+        expect(db.schemaVersion, 17);
 
         // La cadena v5→v6→v7 tambien debe haber corrido: columnas
         // notes/conditions/isTemplate presentes.

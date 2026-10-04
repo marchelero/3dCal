@@ -760,8 +760,16 @@ class EsBO {
   static String get pdfRateAmortization => _impl.pdfRateAmortization;
   static String get pdfRatePerKwh => _impl.pdfRatePerKwh;
   static String get pdfRatePerHour => _impl.pdfRatePerHour;
+  static String get pdfRateProfit => _impl.pdfRateProfit;
   static String get pdfRateMargin => _impl.pdfRateMargin;
   static String get pdfRateMarkupOverCost => _impl.pdfRateMarkupOverCost;
+  static String get pdfRateLegend => _impl.pdfRateLegend;
+  static String get detailSummaryTitle => _impl.detailSummaryTitle;
+  static String get detailActionShareReport => _impl.detailActionShareReport;
+  static String get detailActionsHint => _impl.detailActionsHint;
+  static String get detailNewFromThis => _impl.detailNewFromThis;
+  static String get detailReuseShort => _impl.detailReuseShort;
+  static String get detailReportTitle => _impl.detailReportTitle;
 
   // === Paginacion y estado ===
   static String pdfPageOf(int page, int total) => _impl.pdfPageOf(page, total);
@@ -917,8 +925,6 @@ class EsBO {
   static String get extraDescriptionHint => _impl.extraDescriptionHint;
   static String get modePercent => _impl.modePercent;
   static String get modeFixed => _impl.modeFixed;
-  static String get modeAuto => _impl.modeAuto;
-  static String get modeOff => _impl.modeOff;
 }
 
 // ─── Implementacion espanol ─────────────────────
@@ -1035,7 +1041,7 @@ class EsImpl implements AppStrings {
 
   // === Hito 1: lotes y reorganización (T-H1) ===
   @override
-  String get calcSectionPieceCosts => 'Costos de la pieza';
+  String get calcSectionPieceCosts => 'Costos adicionales';
   @override
   String get calcSectionTarifas => 'Tarifas';
   @override
@@ -2288,9 +2294,28 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String get pdfRatePerHour => '/h';
   @override
-  String get pdfRateMargin => 'Margen';
+  String get pdfRateProfit => 'Ganancia (sobre costo)';
   @override
-  String get pdfRateMarkupOverCost => 'Markup sobre costo';
+  String get pdfRateMargin => 'Margen (sobre venta)';
+  @override
+  String get pdfRateMarkupOverCost => 'Recargo sobre costo';
+  @override
+  String get pdfRateLegend =>
+      'Ganancia: % que aplicás sobre el costo. Margen: parte del precio final que es ganancia. Recargo: cuánto crece el costo base hasta el precio final (incluye falla y desperdicio).';
+
+  @override
+  String get detailSummaryTitle => 'Resumen';
+  @override
+  String get detailActionShareReport => 'Compartir reporte';
+  @override
+  String get detailActionsHint =>
+      'Edita, comparte o crea una nueva cotización desde aquí.';
+  @override
+  String get detailNewFromThis => 'Nueva';
+  @override
+  String get detailReuseShort => 'Reusar';
+  @override
+  String get detailReportTitle => 'Reporte';
 
   @override
   String pdfPageOf(int page, int total) => 'Página $page de $total';
@@ -2611,15 +2636,12 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String get calcExtraExtras => 'Extras';
   @override
-  String get extraInfo => 'argollas, pegamento y cualquier otro extra que una pieza en impresion 3D pueda requerir';
+  String get extraInfo =>
+      'argollas, pegamento y cualquier otro extra que una pieza en impresion 3D pueda requerir';
   @override
   String get extraDescriptionHint => 'argollas, pegamento, etc.';
   @override
   String get modePercent => '%';
   @override
   String get modeFixed => 'Fijo';
-  @override
-  String get modeAuto => 'Auto';
-  @override
-  String get modeOff => 'No';
 }

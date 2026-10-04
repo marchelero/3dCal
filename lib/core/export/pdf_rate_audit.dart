@@ -40,13 +40,15 @@ class PdfRateAudit {
   /// construyera a mano con otros valores, la tabla de parametros podria
   /// contradecir al desglose de montos.
   ///
-  /// [profitAmount], [totalBeforeProfit], [baseCost] y [totalFinal] son
-  /// **unitarios** (antes de escalar por cantidad): son insumos de ratios, no
-  /// montos a imprimir.
+  /// [profitAmount], [baseCost] y [totalFinal] son **unitarios** (antes de
+  /// escalar por cantidad): son insumos de ratios, no montos a imprimir.
+  ///
+  /// `totalBeforeProfit` no se recibe: se elimino al corregir el margen, que
+  /// ahora se calcula sobre [totalFinal] (precio de venta) y no sobre la base
+  /// previa a la ganancia.
   factory PdfRateAudit.fromRates({
     required ResolvedRates rates,
     required Decimal profitAmount,
-    required Decimal totalBeforeProfit,
     required Decimal baseCost,
     required Decimal totalFinal,
     required Decimal totalHours,
@@ -70,13 +72,21 @@ class PdfRateAudit {
               scaleOnInfinitePrecision: 6,
             )
           : Decimal.zero,
-      // Margen = ganancia / (base + falla + markup). `null` si el denominador
-      // es 0 para no imprimir NaN/Infinity.
+      // Margen (sobre precio de venta) = ganancia / precio final. Es el
+      // porcentaje del precio que es ganancia pura; siempre < 100%. `null` si
+      // el precio es 0 para no imprimir NaN/Infinity.
+      //
+      // OJO: antes se calculaba sobre `totalBeforeProfit`, lo que lo hacia
+      // identico a `profitBase` (el markup aplicado) y confundia al usuario:
+      // un "margen 200%" es imposible. El markup sobre costo es la otra fila.
       profitMarginPct: _ratioPct(
         numerator: profitAmount,
-        denominator: totalBeforeProfit,
+        denominator: totalFinal,
       ),
-      // Markup sobre costo = (totalFinal - costoBase) / costoBase.
+      // Recargo sobre costo = (totalFinal - costoBase) / costoBase. Mide cuanto
+      // crece el costo base (material + luz + amort + modelado + postproc +
+      // extras) hasta el precio final, incorporando tambien falla y
+      // desperdicio. Coincide con `profitBase` solo cuando ambos son 0.
       markupOverCostPct: baseCost > Decimal.zero
           ? _ratioPct(numerator: totalFinal - baseCost, denominator: baseCost)
           : null,
@@ -128,10 +138,13 @@ class PdfRateAudit {
   /// Profit base (% de (base + falla + markup)).
   final Decimal? profitBase;
 
-  /// Ganancia / (base + falla + markup) * 100. `null` si el denominador es 0.
+  /// Ganancia / precio final * 100 (porcentaje del precio que es ganancia).
+  /// `null` si el precio final es 0.
   final Decimal? profitMarginPct;
 
-  /// (totalFinal - costoBase) / costoBase * 100. `null` si baseCost es 0.
+  /// (totalFinal - costoBase) / costoBase * 100: cuanto crece el costo base
+  /// hasta el precio final (incluye falla y desperdicio). `null` si baseCost
+  /// es 0.
   final Decimal? markupOverCostPct;
 
   /// Horas facturadas de la impresion.

@@ -154,12 +154,12 @@ void main() {
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          16,
+          17,
           reason:
-              'AppDatabase debe setear user_version=16 tras onUpgrade '
+              'AppDatabase debe setear user_version=17 tras onUpgrade '
               '(v10→v11 y pasos siguientes).',
         );
-        expect(db.schemaVersion, 16);
+        expect(db.schemaVersion, 17);
 
         // filaments: nueva columna `color` TEXT nullable.
         final filamentCols = await db

@@ -115,7 +115,7 @@ class FrImpl implements AppStrings {
 
   // === Hito 1: lotes y reorganización (T-H1) ===
   @override
-  String get calcSectionPieceCosts => 'Coûts de la pièce';
+  String get calcSectionPieceCosts => 'Coûts supplémentaires';
   @override
   String get calcSectionTarifas => 'Tarifs';
   @override
@@ -1323,9 +1323,28 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   @override
   String get pdfRatePerHour => '/h';
   @override
-  String get pdfRateMargin => 'Marge';
+  String get pdfRateProfit => 'Bénéfice (sur coût)';
   @override
-  String get pdfRateMarkupOverCost => 'Marge sur coût';
+  String get pdfRateMargin => 'Marge (sur prix)';
+  @override
+  String get pdfRateMarkupOverCost => 'Majoration sur coût';
+  @override
+  String get pdfRateLegend =>
+      'Bénéfice : % appliqué sur le coût. Marge : part du prix final qui est le bénéfice. Majoration : de combien le coût de base augmente jusqu\'au prix final (inclut échec et déchets).';
+
+  @override
+  String get detailSummaryTitle => 'Résumé';
+  @override
+  String get detailActionShareReport => 'Partager le rapport';
+  @override
+  String get detailActionsHint =>
+      'Modifiez, partagez ou créez un nouveau devis d\'ici.';
+  @override
+  String get detailNewFromThis => 'Nouveau';
+  @override
+  String get detailReuseShort => 'Réutiliser';
+  @override
+  String get detailReportTitle => 'Rapport';
 
   @override
   String pdfPageOf(int page, int total) => 'Page $page sur $total';
@@ -1642,15 +1661,12 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   @override
   String get calcExtraExtras => 'Extras';
   @override
-  String get extraInfo => "anneaux, colle et tout autre extra qu'une piece imprimee en 3D peut necessiter";
+  String get extraInfo =>
+      "anneaux, colle et tout autre extra qu'une piece imprimee en 3D peut necessiter";
   @override
   String get extraDescriptionHint => 'anneaux, colle, etc.';
   @override
   String get modePercent => '%';
   @override
   String get modeFixed => 'Fixe';
-  @override
-  String get modeAuto => 'Auto';
-  @override
-  String get modeOff => 'Desactive';
 }

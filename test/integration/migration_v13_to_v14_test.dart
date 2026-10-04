@@ -179,10 +179,10 @@ void main() {
       final versionRows = await db.customSelect('PRAGMA user_version').get();
       expect(
         versionRows.first.read<int>('user_version'),
-        16,
-        reason: 'AppDatabase debe setear user_version=16 tras onUpgrade.',
+        17,
+        reason: 'AppDatabase debe setear user_version=17 tras onUpgrade.',
       );
-      expect(db.schemaVersion, 16);
+      expect(db.schemaVersion, 17);
 
       final cols = await db
           .customSelect(
@@ -229,7 +229,7 @@ void main() {
       );
       await db1.customSelect('SELECT 1').get();
       final v1 = await db1.customSelect('PRAGMA user_version').get();
-      expect(v1.first.read<int>('user_version'), 16);
+      expect(v1.first.read<int>('user_version'), 17);
       await db1.close();
 
       final db2 = AppDatabase.forTesting(
@@ -240,7 +240,7 @@ void main() {
       final v2 = await db2.customSelect('PRAGMA user_version').get();
       expect(
         v2.first.read<int>('user_version'),
-        16,
+        17,
         reason: 'Second open must not re-run migration.',
       );
       final calcs = await db2.customSelect('SELECT * FROM calculations').get();

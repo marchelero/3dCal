@@ -512,6 +512,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
         lotTotal: state.lotTotal,
         manualDiscountAmount: state.manualDiscountAmount,
         rateAudit: state.rateAudit,
+        // v17: etiqueta libre de los extras ("2 argollas M3", etc.). Solo
+        // aparece en el PDF si extras > 0; ver pdf_export.dart.
+        extraLabel: state.extraCostLabel,
       );
     } catch (e) {
       debugPrint('Quote PDF share failed: $e');
@@ -724,6 +727,9 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   detailAmortizationCost: state.detailAmortizationCost,
                   detailLaborCost: state.detailLaborCost,
                   detailPostProcessCost: state.detailPostProcessCost,
+                  // v17: Extras + label opcional.
+                  detailExtrasCost: state.detailExtrasCost,
+                  extraLabel: state.extraCostLabel,
                   detailBaseCost: state.detailBaseCost,
                   detailFailureCost: state.detailFailureCost,
                   detailMarkupCost: state.detailMarkupCost,

@@ -189,14 +189,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
   // === v17: setters de los 3 campos de servicio con modo % / fijo ===
 
-  /// Cambia el modo del campo "Modelado y diseño" (`auto` | `pct` | `fixed`).
+  /// Cambia el modo del campo "Modelado y diseño" (`pct` | `fixed`).
   void setModelingMode(String mode) {
-    final next = switch (mode) {
-      'pct' => 'pct',
-      'fixed' => 'fixed',
-      _ => 'auto',
-    };
-    state = _recompute(state.copyWith(modelingMode: next));
+    state = _recompute(
+      state.copyWith(modelingMode: _normalizeServiceMode(mode)),
+    );
   }
 
   /// Cambia el valor del modelado. Se interpreta segun el modo activo.
@@ -204,14 +201,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     state = _recompute(state.copyWith(modelingValue: value));
   }
 
-  /// Cambia el modo del campo "Postprocesado" (`auto` | `pct` | `fixed`).
+  /// Cambia el modo del campo "Postprocesado" (`pct` | `fixed`).
   void setPostprocMode(String mode) {
-    final next = switch (mode) {
-      'pct' => 'pct',
-      'fixed' => 'fixed',
-      _ => 'auto',
-    };
-    state = _recompute(state.copyWith(postprocMode: next));
+    state = _recompute(
+      state.copyWith(postprocMode: _normalizeServiceMode(mode)),
+    );
   }
 
   /// Cambia el valor del postprocesado.
@@ -219,14 +213,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     state = _recompute(state.copyWith(postprocValue: value));
   }
 
-  /// Cambia el modo del campo "Extras" (`off` | `pct` | `fixed`).
+  /// Cambia el modo del campo "Extras" (`pct` | `fixed`).
   void setExtraCostMode(String mode) {
-    final next = switch (mode) {
-      'pct' => 'pct',
-      'fixed' => 'fixed',
-      _ => 'off',
-    };
-    state = _recompute(state.copyWith(extraCostMode: next));
+    state = _recompute(
+      state.copyWith(extraCostMode: _normalizeServiceMode(mode)),
+    );
   }
 
   /// Cambia el valor de los extras.
@@ -365,6 +356,14 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         extraPostProcessRate: draft.extraPostProcessRate,
         extraFailureRate: draft.extraFailureRate,
         extraMarkupOnMaterials: draft.extraMarkupOnMaterials,
+        // v17: los 3 costos de servicio sobreviven al cierre de la app.
+        modelingMode: _normalizeServiceMode(draft.modelingMode),
+        modelingValue: _hoursText(draft.modelingValue),
+        postprocMode: _normalizeServiceMode(draft.postprocMode),
+        postprocValue: _hoursText(draft.postprocValue),
+        extraCostMode: _normalizeServiceMode(draft.extraCostMode),
+        extraCostValue: _hoursText(draft.extraCostValue),
+        extraCostLabel: draft.extraCostLabel,
       ),
     );
   }
@@ -452,14 +451,13 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           materials: const <MaterialRow>[],
           output: null,
           quantity: calc.quantity < 1 ? 1 : calc.quantity,
-          // v17: restaurar overrides per-cotizacion (modelado/postproc/extras).
-          // Filas pre-v17 quedan con los defaults 'auto'/'off' = replica
-          // exactamente el calculo legacy.
-          modelingMode: calc.modelingMode,
+          // v17: restaurar los 3 costos de servicio. Filas pre-v17 (y las
+          // guardadas con el modo "Auto" que se elimino) caen a `fixed`.
+          modelingMode: _normalizeServiceMode(calc.modelingMode),
           modelingValue: _hoursText(calc.modelingValue),
-          postprocMode: calc.postprocMode,
+          postprocMode: _normalizeServiceMode(calc.postprocMode),
           postprocValue: _hoursText(calc.postprocValue),
-          extraCostMode: calc.extraMode,
+          extraCostMode: _normalizeServiceMode(calc.extraMode),
           extraCostValue: _hoursText(calc.extraValue),
           extraCostLabel: calc.extraLabel,
         ),
@@ -498,11 +496,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         materials: rows,
         output: null,
         quantity: calc.quantity < 1 ? 1 : calc.quantity,
-        modelingMode: calc.modelingMode,
+        modelingMode: _normalizeServiceMode(calc.modelingMode),
         modelingValue: _hoursText(calc.modelingValue),
-        postprocMode: calc.postprocMode,
+        postprocMode: _normalizeServiceMode(calc.postprocMode),
         postprocValue: _hoursText(calc.postprocValue),
-        extraCostMode: calc.extraMode,
+        extraCostMode: _normalizeServiceMode(calc.extraMode),
         extraCostValue: _hoursText(calc.extraValue),
         extraCostLabel: calc.extraLabel,
       ),
@@ -643,6 +641,15 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       pieceImageBytes: pieceImageBytes,
       batchDiscountPercent: state.batchAppliedPercent,
       batchDiscountAmount: state.batchDiscountAmount,
+      // v17: modo + valor de los 3 costos de servicio. Sin esto el guardado
+      // escribe los defaults de columna y el usuario pierde lo que configuro.
+      modelingMode: _normalizeServiceMode(state.modelingMode),
+      modelingValue: _textToDouble(state.modelingValue),
+      postprocMode: _normalizeServiceMode(state.postprocMode),
+      postprocValue: _textToDouble(state.postprocValue),
+      extraCostMode: _normalizeServiceMode(state.extraCostMode),
+      extraCostValue: _textToDouble(state.extraCostValue),
+      extraCostLabel: state.extraCostLabel,
     );
   }
 
@@ -757,6 +764,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         detailAmortizationCost: output.amortizationCost,
         detailLaborCost: output.laborCost,
         detailPostProcessCost: output.postProcessCost,
+        // v17: extras en su propio slot. El reporte (PDF/PNG) lo lee
+        // directo y muestra la fila solo si > 0.
+        detailExtrasCost: output.extrasCost,
         detailBaseCost: output.baseCost,
         detailFailureCost: output.failureCost,
         detailMarkupCost: output.markupCost,
@@ -772,7 +782,6 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         rateAudit: PdfRateAudit.fromRates(
           rates: rates,
           profitAmount: output.profitAmount,
-          totalBeforeProfit: output.totalBeforeProfit,
           baseCost: output.baseCost,
           totalFinal: output.totalFinal,
           totalHours: input.totalHours,
@@ -993,6 +1002,20 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   }
 
   static String _minutesText(double v) => _hoursText(v);
+
+  /// Convierte el texto de un controller de costo a REAL para persistir.
+  /// Texto vacio, invalido o con coma decimal -> 0.
+  static double _textToDouble(String v) =>
+      double.tryParse(v.trim().replaceAll(',', '.')) ?? 0;
+
+  /// Deja el modo en una de las 2 opciones que el switch expone.
+  ///
+  /// El motor todavia acepta los modos legacy `auto` / `off` (las filas
+  /// guardadas antes de quitar el "Auto" los tienen persistidos y deben seguir
+  /// dando los mismos numeros en el historial), pero la UI no puede
+  /// representarlos: si llegaran aqui se cairian a `fixed`.
+  static String _normalizeServiceMode(String mode) =>
+      (mode == 'pct' || mode == 'fixed') ? mode : 'fixed';
 }
 
 /// True cuando el form tiene output calculado (form valido).

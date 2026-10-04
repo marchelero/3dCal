@@ -198,6 +198,7 @@ class CalculatorState {
     this.detailAmortizationCost,
     this.detailLaborCost,
     this.detailPostProcessCost,
+    this.detailExtrasCost,
     this.detailBaseCost,
     this.detailFailureCost,
     this.detailMarkupCost,
@@ -221,11 +222,11 @@ class CalculatorState {
     // 'auto'/'off' = sin override (usa el calculo legacy o no cobra).
     // 'pct' = el valor es un porcentaje sobre coreBase.
     // 'fixed' = el valor es un monto fijo en moneda local.
-    this.modelingMode = 'auto',
+    this.modelingMode = 'fixed',
     this.modelingValue = '',
-    this.postprocMode = 'auto',
+    this.postprocMode = 'fixed',
     this.postprocValue = '',
-    this.extraCostMode = 'off',
+    this.extraCostMode = 'fixed',
     this.extraCostValue = '',
     this.extraCostLabel = '',
   }) : assert(quantity >= 1, 'La cantidad minima es 1.'),
@@ -299,6 +300,11 @@ class CalculatorState {
   final Decimal? detailAmortizationCost;
   final Decimal? detailLaborCost;
   final Decimal? detailPostProcessCost;
+
+  /// v17: Extras (argollas, pegamento, etc.). Si es null o 0, no se
+  /// imprime fila en el reporte.
+  final Decimal? detailExtrasCost;
+
   final Decimal? detailBaseCost;
   final Decimal? detailFailureCost;
   final Decimal? detailMarkupCost;
@@ -356,16 +362,21 @@ class CalculatorState {
   /// True cuando hay línea de "Descuento por cantidad (X %)" para mostrar.
   final bool showsBatchLine;
 
-  // === Costos adicionales (v17) ===
+  // === Costos de la pieza (v17) ===
   //
-  // Cada uno de los 3 campos de servicio tiene un modo (`auto`/`off` | `pct`
-  // | `fixed`) y un valor texto libre. `auto` para modelado y postprocesado
-  // significa "usa la formula legacy" (replica el calculo anterior a v17
-  // exactamente); `off` para extras significa "no se cobra nada". `pct`
-  // significa "valor es un porcentaje sobre coreBase"; `fixed` significa
-  // "valor es un monto fijo en moneda local". El estado inicial (`auto` /
-  // `off`, valor vacio) es seguro: cotizaciones nuevas arrancan identicas
-  // a como se calculaban antes de v17.
+  // Cada uno de los 3 campos de servicio tiene un modo de 2 posiciones
+  // (`pct` | `fixed`) y un valor texto libre. `pct` significa "el valor es un
+  // porcentaje sobre coreBase"; `fixed` significa "el valor es un monto fijo
+  // en moneda local". No existe modo automatico: el switch de la UI solo
+  // ofrece esas 2 opciones.
+  //
+  // Default: `fixed` con valor vacio (= 0), o sea que una cotizacion nueva no
+  // suma nada por estos 3 campos hasta que el usuario los configure.
+  //
+  // Los modos legacy `auto` / `off` SIGUEN siendo validos en el motor: filas
+  // guardadas antes de este cambio los tienen persistidos y deben seguir
+  // calculando igual (historial / computeFromSnapshot). `loadFromCalculation`
+  // los normaliza a `fixed` al reeditar.
   final String modelingMode;
   final String modelingValue;
   final String postprocMode;
@@ -405,6 +416,7 @@ class CalculatorState {
     Decimal? detailAmortizationCost,
     Decimal? detailLaborCost,
     Decimal? detailPostProcessCost,
+    Decimal? detailExtrasCost,
     Decimal? detailBaseCost,
     Decimal? detailFailureCost,
     Decimal? detailMarkupCost,
@@ -472,6 +484,9 @@ class CalculatorState {
     detailPostProcessCost: clearDetail
         ? null
         : (detailPostProcessCost ?? this.detailPostProcessCost),
+    detailExtrasCost: clearDetail
+        ? null
+        : (detailExtrasCost ?? this.detailExtrasCost),
     detailBaseCost: clearDetail
         ? null
         : (detailBaseCost ?? this.detailBaseCost),
@@ -684,6 +699,7 @@ class CalculatorState {
         detailAmortizationCost == other.detailAmortizationCost &&
         detailLaborCost == other.detailLaborCost &&
         detailPostProcessCost == other.detailPostProcessCost &&
+        detailExtrasCost == other.detailExtrasCost &&
         detailBaseCost == other.detailBaseCost &&
         detailFailureCost == other.detailFailureCost &&
         detailMarkupCost == other.detailMarkupCost &&
@@ -751,6 +767,7 @@ class CalculatorState {
     detailAmortizationCost,
     detailLaborCost,
     detailPostProcessCost,
+    detailExtrasCost,
     detailBaseCost,
     detailFailureCost,
     detailMarkupCost,

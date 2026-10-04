@@ -209,12 +209,12 @@ void main() {
         final versionRows = await db.customSelect('PRAGMA user_version').get();
         expect(
           versionRows.first.read<int>('user_version'),
-          16,
+          17,
           reason:
               'AppDatabase debe setear user_version=16 tras onUpgrade '
               '(v9→v10 y pasos siguientes).',
         );
-        expect(db.schemaVersion, 16);
+        expect(db.schemaVersion, 17);
 
         // printers: purchase_cost REAL nullable + useful_life_hours INTEGER.
         final printerCols = await db

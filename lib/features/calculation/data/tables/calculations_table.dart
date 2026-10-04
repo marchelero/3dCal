@@ -139,16 +139,14 @@ class Calculations extends Table {
   ///             los calculos existentes dan los mismos numeros.
   /// - `pct`   : el campo se cobra como porcentaje sobre `coreBase`.
   /// - `fixed` : el campo se cobra como monto fijo en moneda local.
-  TextColumn get modelingMode =>
-      text().withDefault(const Constant('auto'))();
+  TextColumn get modelingMode => text().withDefault(const Constant('auto'))();
 
   /// Valor numerico del modelado. Si `mode = pct` es el porcentaje (0..∞);
   /// si `mode = fixed` es el monto fijo. `0` cuando `mode = auto`.
   RealColumn get modelingValue => real().withDefault(const Constant(0))();
 
   /// Modo del campo "Postprocesado" (v17). Misma semantica que [modelingMode].
-  TextColumn get postprocMode =>
-      text().withDefault(const Constant('auto'))();
+  TextColumn get postprocMode => text().withDefault(const Constant('auto'))();
 
   /// Valor numerico del postprocesado. Misma semantica que [modelingValue].
   RealColumn get postprocValue => real().withDefault(const Constant(0))();

@@ -431,6 +431,20 @@ class BackupService {
               ),
               batchDiscountAmount: Value(row['batchDiscountAmount'] as String?),
               pieceImageBlob: Value(_decodePieceImage(row)),
+              // v17: los 3 costos de servicio. Un backup viejo no trae las
+              // keys -> caen al default ('fixed' + 0), que es el estado
+              // neutro. Un backup nuevo las restaura tal cual.
+              modelingMode: Value(row['modelingMode'] as String? ?? 'fixed'),
+              modelingValue: Value(
+                (row['modelingValue'] as num?)?.toDouble() ?? 0,
+              ),
+              postprocMode: Value(row['postprocMode'] as String? ?? 'fixed'),
+              postprocValue: Value(
+                (row['postprocValue'] as num?)?.toDouble() ?? 0,
+              ),
+              extraMode: Value(row['extraMode'] as String? ?? 'fixed'),
+              extraValue: Value((row['extraValue'] as num?)?.toDouble() ?? 0),
+              extraLabel: Value(row['extraLabel'] as String? ?? ''),
             ),
           );
     }

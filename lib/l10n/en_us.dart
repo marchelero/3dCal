@@ -118,7 +118,7 @@ class EnImpl implements AppStrings {
 
   // === Hito 1: lotes y reorganización (T-H1) ===
   @override
-  String get calcSectionPieceCosts => 'Piece costs';
+  String get calcSectionPieceCosts => 'Additional costs';
   @override
   String get calcSectionTarifas => 'Rates';
   @override
@@ -1362,9 +1362,28 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String get pdfRatePerHour => '/h';
   @override
-  String get pdfRateMargin => 'Margin';
+  String get pdfRateProfit => 'Profit (on cost)';
+  @override
+  String get pdfRateMargin => 'Margin (on price)';
   @override
   String get pdfRateMarkupOverCost => 'Markup over cost';
+  @override
+  String get pdfRateLegend =>
+      'Profit: % applied on cost. Margin: share of the final price that is profit. Markup: how much the base cost grows to reach the final price (includes failure and waste).';
+
+  @override
+  String get detailSummaryTitle => 'Summary';
+  @override
+  String get detailActionShareReport => 'Share report';
+  @override
+  String get detailActionsHint =>
+      'Edit, share or create a new quote from here.';
+  @override
+  String get detailNewFromThis => 'New';
+  @override
+  String get detailReuseShort => 'Reuse';
+  @override
+  String get detailReportTitle => 'Report';
 
   @override
   String pdfPageOf(int page, int total) => 'Page $page of $total';
@@ -1679,15 +1698,12 @@ We may update, suspend, or remove application features. These terms may also cha
   @override
   String get calcExtraExtras => 'Extras';
   @override
-  String get extraInfo => 'rings, glue and any other extra a 3D-printed part may require';
+  String get extraInfo =>
+      'rings, glue and any other extra a 3D-printed part may require';
   @override
   String get extraDescriptionHint => 'rings, glue, etc.';
   @override
   String get modePercent => '%';
   @override
   String get modeFixed => 'Fixed';
-  @override
-  String get modeAuto => 'Auto';
-  @override
-  String get modeOff => 'Off';
 }

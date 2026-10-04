@@ -295,46 +295,43 @@ void main() {
     test('regression: solo minutos (horas vacias) calcula correctamente', () {
       // Bug original: con printHours='' y printMinutes='33', el calculo
       // usaba 0 horas en vez de 0.55. Ahora debe usar 0.55.
-      // Para hacer el test observable, agregamos labor rate (que depende
-      // de totalHours): labor = totalHours * rate. Con rate=10 y horas=0.55,
-      // labor = 5.5. Si horas fuera 0, labor seria 0.
+      // El tiempo total se observa directo en el state: antes se observaba a
+      // traves del modelado automatico (hours * laborRate), que ya no existe
+      // porque el switch de "Modelado y diseno" solo ofrece % / fijo.
       final notifier = container.read(calculatorNotifierProvider.notifier);
       notifier.setWeight('100');
       notifier.setFilamentPrice('100');
       notifier.setFilamentGrams('1000');
       notifier.setPrintHours('');
       notifier.setPrintMinutes('33');
-      notifier.setExtraLaborRate('10');
 
-      final output = container.read(calculatorNotifierProvider).output;
+      final state = container.read(calculatorNotifierProvider);
+      // 33min = 0.55h (si fuera 0, el bug original).
+      expect(state.totalHoursDecimal, Decimal.parse('0.55'));
+      final output = state.output;
       expect(output, isNotNull);
       // materialCost = 100 * 100/1000 = 10
       expect(output!.materialCost, Decimal.fromInt(10));
-      // labor = 0.55h * 10 = 5.5 (prueba que totalHours=0.55, no 0)
-      expect(output.laborCost, Decimal.parse('5.5'));
-      // baseCost = 10 + 5.5 = 15.5
-      // profit default 0 → totalFinal = 15.5
-      // discount 0 → totalPrice = 15.5
-      expect(output.totalPrice, Decimal.parse('15.5'));
+      // baseCost = 10 (modelado arranca en fijo 0, igual que extras).
+      // profit 0, discount 0 -> totalPrice = 10
+      expect(output.totalPrice, Decimal.fromInt(10));
     });
 
     test('horas + minutos se suman en el output final', () {
-      // 1h 33min = 1.55h. Con labor rate 10 la suma de horas es observable:
-      // labor = 1.55 * 10 = 15.5 (si solo contara 1h, seria 10).
-      // totalPrice = material 10 + labor 15.5 (profit default 0) = 25.5.
+      // 1h 33min = 1.55h. Si solo contara 1h, seria 1.0.
       final notifier = container.read(calculatorNotifierProvider.notifier);
       notifier.setWeight('100');
       notifier.setFilamentPrice('100');
       notifier.setFilamentGrams('1000');
       notifier.setPrintHours('1');
       notifier.setPrintMinutes('33');
-      notifier.setExtraLaborRate('10');
 
-      final output = container.read(calculatorNotifierProvider).output;
+      final state = container.read(calculatorNotifierProvider);
+      expect(state.totalHoursDecimal, Decimal.parse('1.55'));
+      final output = state.output;
       expect(output, isNotNull);
       expect(output!.materialCost, Decimal.fromInt(10));
-      expect(output.laborCost, Decimal.parse('15.5'));
-      expect(output.totalPrice, Decimal.parse('25.5'));
+      expect(output.totalPrice, Decimal.fromInt(10));
     });
 
     test(
@@ -347,18 +344,25 @@ void main() {
         notifier.setWeight('100');
         notifier.setFilamentPrice('100');
         notifier.setFilamentGrams('1000');
-        notifier.setExtraLaborRate('10'); // hace el tiempo relevante
         notifier.setPrintHours('3');
-        final base = container.read(calculatorNotifierProvider).output!;
-        // 3h: labor = 3 * 10 = 30 → totalPrice = (10 + 30) * 3 = 120
-        expect(base.laborCost, Decimal.fromInt(30));
+        final baseState = container.read(calculatorNotifierProvider);
+        // 3h exactos.
+        expect(baseState.totalHoursDecimal, Decimal.fromInt(3));
+        // Snapshot del output antes del cambio: sirve para detectar que el
+        // recalculo ocurrio (el bug congelaba el output viejo).
+        final baseVersion = baseState.computeVersion;
 
         notifier.setPrintMinutes('59');
-        final out = container.read(calculatorNotifierProvider).output!;
+        final afterState = container.read(calculatorNotifierProvider);
+        final out = afterState.output!;
         expect(out, isNotNull);
-        // 3.98333h: labor = 39.8333 → totalPrice > 120
-        expect(out.laborCost.toDouble(), closeTo(39.8333, 0.001));
-        expect(out.totalPrice, greaterThan(base.totalPrice));
+        // 3h59m = 3.98333h (la parte fraccionaria entra).
+        expect(
+          afterState.totalHoursDecimal!.toDouble(),
+          closeTo(3.98333, 0.001),
+        );
+        // El output debe haberse recalculado, no quedado congelado.
+        expect(afterState.computeVersion, isNot(baseVersion));
       },
     );
 
@@ -674,6 +678,16 @@ void main() {
           failureRateSnapshot: 0,
           minimumChargeSnapshot: 0,
           markupOnMaterialsSnapshot: 0,
+          // v17: defaults replican el calculo legacy (modelado auto, postproc
+          // auto, extras off). Filas pre-v17 en DB tienen estos mismos
+          // defaults via la migracion aditiva.
+          modelingMode: 'auto',
+          modelingValue: 0,
+          postprocMode: 'auto',
+          postprocValue: 0,
+          extraMode: 'off',
+          extraValue: 0,
+          extraLabel: '',
         );
 
         await container

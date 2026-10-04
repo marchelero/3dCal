@@ -451,4 +451,161 @@ void main() {
       expect(out.totalPrice, DecimalParse.fromString('80'));
     });
   });
+
+  group('v17: 3 campos de servicio con modo % / fijo', () {
+    /// v17 inputs en su forma optima.
+    CalculationInput v17Input({
+      String totalHours = '0',
+      String laborMode = 'auto',
+      String laborPct = '0',
+      String laborFixed = '0',
+      String postprocMode = 'auto',
+      String postprocPct = '0',
+      String postprocFixed = '0',
+      String extraMode = 'off',
+      String extraPct = '0',
+      String extraFixed = '0',
+      String laborRate = '0',
+      String postProcessRate = '0',
+      String amortizationPerHour = '0',
+    }) {
+      return CalculationInput(
+        materials: [_material()],
+        totalHours: DecimalParse.fromString(totalHours),
+        discountPercentage: Decimal.zero,
+        printerWatts: 0,
+        kwhRate: Decimal.zero,
+        profitBase: Decimal.zero,
+        laborRate: DecimalParse.fromString(laborRate),
+        postProcessRate: DecimalParse.fromString(postProcessRate),
+        failureRate: Decimal.zero,
+        markupOnMaterials: Decimal.zero,
+        amortizationPerHour: DecimalParse.fromString(amortizationPerHour),
+        modelingMode: ServiceCostMode.parse(laborMode),
+        modelingPct: DecimalParse.fromString(laborPct),
+        modelingFixed: DecimalParse.fromString(laborFixed),
+        postprocMode: ServiceCostMode.parse(postprocMode),
+        postprocPct: DecimalParse.fromString(postprocPct),
+        postprocFixed: DecimalParse.fromString(postprocFixed),
+        extraCostMode: ServiceCostMode.parse(extraMode),
+        extraCostPct: DecimalParse.fromString(extraPct),
+        extraCostFixed: DecimalParse.fromString(extraFixed),
+      );
+    }
+
+    test(
+      'equivalencia legacy: auto + auto + off reproduce el calculo antiguo',
+      () {
+        // Material 15 kg (legacy). Mira F: con labor rate=0 (auto) y
+        // postProcessRate=0 (auto) el resultado DEBE ser identico a la
+        // formula pre-v17.
+        final out = CalculationEngine.compute(
+          v17Input(totalHours: '0', laborRate: '0', postProcessRate: '0'),
+        );
+        // materialCost = 100*150/1000 = 15. Sin labor, sin postproc.
+        expect(out.laborCost, Decimal.zero);
+        expect(out.postProcessCost, Decimal.zero);
+        expect(out.extrasCost, Decimal.zero);
+        expect(out.baseCost, DecimalParse.fromString('15'));
+        expect(out.totalPrice, DecimalParse.fromString('15'));
+      },
+    );
+
+    test('modelado pct sobre coreBase (15) → 15% = 2.25', () {
+      final out = CalculationEngine.compute(
+        v17Input(laborMode: 'pct', laborPct: '15'),
+      );
+      expect(out.laborCost, DecimalParse.fromString('2.25'));
+      expect(out.baseCost, DecimalParse.fromString('17.25'));
+    });
+
+    test('modelado fixed = 7.5 → baseCost = 22.5', () {
+      final out = CalculationEngine.compute(
+        v17Input(laborMode: 'fixed', laborFixed: '7.5'),
+      );
+      expect(out.laborCost, DecimalParse.fromString('7.5'));
+      expect(out.baseCost, DecimalParse.fromString('22.5'));
+    });
+
+    test('postproc pct sobre coreBase = 20%', () {
+      final out = CalculationEngine.compute(
+        v17Input(postprocMode: 'pct', postprocPct: '20'),
+      );
+      // coreBase = 15. postproc = 15 * 20 / 100 = 3.
+      expect(out.postProcessCost, DecimalParse.fromString('3'));
+    });
+
+    test(
+      'extras off (sin nada) no aporta, total = material',
+      () {
+        final out = CalculationEngine.compute(v17Input(extraMode: 'off'));
+        expect(out.extrasCost, Decimal.zero);
+        expect(out.baseCost, DecimalParse.fromString('15'));
+      },
+    );
+
+    test('extras pct 10 sobre coreBase (15) = 1.5', () {
+      final out = CalculationEngine.compute(
+        v17Input(extraMode: 'pct', extraPct: '10'),
+      );
+      expect(out.extrasCost, DecimalParse.fromString('1.5'));
+      expect(out.baseCost, DecimalParse.fromString('16.5'));
+    });
+
+    test('extras fixed 5.5 → baseCost = 20.5', () {
+      final out = CalculationEngine.compute(
+        v17Input(extraMode: 'fixed', extraFixed: '5.5'),
+      );
+      expect(out.extrasCost, DecimalParse.fromString('5.5'));
+      expect(out.baseCost, DecimalParse.fromString('20.5'));
+    });
+
+    test(
+      'pct + fixed + pct en simultaneo: cada uno aporta su monto',
+      () {
+        final out = CalculationEngine.compute(
+          v17Input(
+            laborMode: 'pct',
+            laborPct: '10', // 1.5
+            postprocMode: 'fixed',
+            postprocFixed: '2', // 2
+            extraMode: 'pct',
+            extraPct: '5', // 0.75
+          ),
+        );
+        expect(out.laborCost, DecimalParse.fromString('1.5'));
+        expect(out.postProcessCost, DecimalParse.fromString('2'));
+        expect(out.extrasCost, DecimalParse.fromString('0.75'));
+        // 15 + 1.5 + 2 + 0.75 = 19.25
+        expect(out.baseCost, DecimalParse.fromString('19.25'));
+      },
+    );
+
+    test(
+      'amortizacion SI entra en coreBase (fix live vs snapshot)',
+      () {
+        // v17: live y snapshot ahora SI la incluyen (antes live la omitia).
+        // Confirma que ammort en base produce sube el % del modelo.
+        final out = CalculationEngine.compute(
+          v17Input(
+            totalHours: '2',
+            amortizationPerHour: '0.875',
+            laborMode: 'pct',
+            laborPct: '50', // brackets + electricity + amort
+          ),
+        );
+        // electricCost = 0 (no watts)
+        // amort = 0.875 * 2 = 1.75
+        // coreBase = 15 + 0 + 1.75 = 16.75
+        // labor = 16.75 * 50 / 100 = 8.375
+        expect(out.amortizationCost, DecimalParse.fromString('1.75'));
+        expect(out.laborCost, DecimalParse.fromString('8.375'));
+        // baseCost = coreBase (16.75) + modeling (8.375) = 25.125
+        expect(
+          out.baseCost,
+          DecimalParse.fromString('25.125'),
+        );
+      },
+    );
+  });
 }

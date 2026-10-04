@@ -38,6 +38,7 @@ import '../state/calculator_state.dart';
 import '../widgets/calculator_bottom_bar.dart';
 import '../widgets/calculator_wizard.dart';
 import '../widgets/cost_help_dialog.dart';
+import '../widgets/costos_adicionales_panel.dart';
 import '../widgets/filament_row.dart';
 import '../widgets/material_management.dart';
 import '../widgets/mode_selector.dart';
@@ -50,7 +51,7 @@ import '../widgets/save_sheet.dart';
 /// 1. Pieza: nombre + peso + filamento (Express) | nombre + materiales
 ///    (Advanced). Incluye membrete y selector de modo.
 /// 2. Impresion: horas/minutos + impresora activa.
-/// 3. Otros: cantidad (Pro) + descuento + OTROS/costos de la pieza (Pro).
+/// 3. Ajustes: cantidad (Pro) + descuento + "Costos de la pieza" (Pro, los 5 campos).
 ///
 /// El resultado NO es un paso: la barra de total fija abajo (con lineas de
 /// lote y hint de validacion) se conserva en todos los pasos y su tap abre
@@ -100,11 +101,20 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   _labelCtrl; // material label (Express) / piece label (Advanced listener)
   late final TextEditingController _pieceLabelCtrl; // piece name (Express only)
 
-  // OTROS controllers (F1: mano de obra, post-procesado, falla, minimo, markup).
-  late final TextEditingController _extraLaborRateCtrl;
-  late final TextEditingController _extraPostProcessRateCtrl;
+  // Controllers de la seccion "Costos de la pieza". Las tasas de mano de obra
+  // y post-proceso que vivian aqui se fueron en v17: quedaron absorbidas por
+  // los campos "Modelado y diseño" y "Postprocesado" (switch % / fijo).
   late final TextEditingController _extraFailureRateCtrl;
   late final TextEditingController _extraMarkupOnMaterialsCtrl;
+
+  // === v17: Costos de la pieza — controllers para los 3 campos de servicio
+  // (Modelado, Postprocesado, Extras) + el description TextField de Extras.
+  // Cada uno sobrevive a rebuilds via State del padre; el panel
+  // `CostosAdicionalesPanel` los lee via `ref.read(...)`.
+  late final TextEditingController _modelingCtrl;
+  late final TextEditingController _postprocCtrl;
+  late final TextEditingController _extraCostCtrl;
+  late final TextEditingController _extraCostLabelCtrl;
 
   // Quantity controller.
   late final TextEditingController _quantityCtrl;
@@ -112,9 +122,6 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   // Advanced controllers.
   final List<MaterialCtrls> _materialCtrls = [];
   final _advancedListKey = GlobalKey<AnimatedListState>();
-
-  /// Toggle local para la seccion OTROS (puramente visual, no persiste).
-  bool _showOtros = false;
 
   /// Paso visible del wizard (0-based). Estado efimero de UI: setState es
   /// el mecanismo permitido (no se persiste ni se comparte).
@@ -151,16 +158,16 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _gramsCtrl = TextEditingController(text: initial.filamentGrams);
     _labelCtrl = TextEditingController(text: initial.filamentLabel);
     _pieceLabelCtrl = TextEditingController(text: initial.label);
-    _extraLaborRateCtrl = TextEditingController(text: initial.extraLaborRate);
-    _extraPostProcessRateCtrl = TextEditingController(
-      text: initial.extraPostProcessRate,
-    );
     _extraFailureRateCtrl = TextEditingController(
       text: initial.extraFailureRate,
     );
     _extraMarkupOnMaterialsCtrl = TextEditingController(
       text: initial.extraMarkupOnMaterials,
     );
+    _modelingCtrl = TextEditingController(text: initial.modelingValue);
+    _postprocCtrl = TextEditingController(text: initial.postprocValue);
+    _extraCostCtrl = TextEditingController(text: initial.extraCostValue);
+    _extraCostLabelCtrl = TextEditingController(text: initial.extraCostLabel);
     _quantityCtrl = TextEditingController(text: '${initial.quantity}');
 
     for (final c in [
@@ -170,10 +177,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       _discountCtrl,
       _priceCtrl,
       _gramsCtrl,
-      _extraLaborRateCtrl,
-      _extraPostProcessRateCtrl,
       _extraFailureRateCtrl,
       _extraMarkupOnMaterialsCtrl,
+      _modelingCtrl,
+      _postprocCtrl,
+      _extraCostCtrl,
     ]) {
       c.addListener(_onAnyFieldChange);
     }
@@ -186,6 +194,15 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       ref
           .read(calculatorNotifierProvider.notifier)
           .setLabel(_pieceLabelCtrl.text);
+    });
+    _extraCostLabelCtrl.addListener(() {
+      // Description libre: NO triggerea recompute (solo etiqueta, no cambia
+      // el calculo). Se persiste en el state, pero el listener no se mete en
+      // _onAnyFieldChange para evitar saltos del recompute por cada keystroke
+      // de descripcion.
+      ref
+          .read(calculatorNotifierProvider.notifier)
+          .setExtraCostLabel(_extraCostLabelCtrl.text);
     });
 
     if (initial.mode == CalculatorMode.advanced) {
@@ -213,10 +230,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         _discountCtrl.text = '0';
         _labelCtrl.text = '';
         _pieceLabelCtrl.text = '';
-        _extraLaborRateCtrl.text = '';
-        _extraPostProcessRateCtrl.text = '';
         _extraFailureRateCtrl.text = '';
         _extraMarkupOnMaterialsCtrl.text = '';
+        _modelingCtrl.text = '';
+        _postprocCtrl.text = '';
+        _extraCostCtrl.text = '';
+        _extraCostLabelCtrl.text = '';
         _quantityCtrl.text = '1';
         return;
       }
@@ -274,10 +293,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       _gramsCtrl.text = '';
       _labelCtrl.text = '';
       _pieceLabelCtrl.text = '';
-      _extraLaborRateCtrl.text = '';
-      _extraPostProcessRateCtrl.text = '';
       _extraFailureRateCtrl.text = '';
       _extraMarkupOnMaterialsCtrl.text = '';
+      _modelingCtrl.text = '';
+      _postprocCtrl.text = '';
+      _extraCostCtrl.text = '';
+      _extraCostLabelCtrl.text = '';
       // Cargar defaults del filamento por defecto para precio/gramos.
       final defaultFilament = ref.read(defaultFilamentProvider);
       if (defaultFilament != null) {
@@ -313,17 +334,26 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     if (s.filamentGrams.isNotEmpty) _gramsCtrl.text = s.filamentGrams;
     if (s.filamentLabel.isNotEmpty) _labelCtrl.text = s.filamentLabel;
     if (s.label.isNotEmpty) _pieceLabelCtrl.text = s.label;
-    if (s.extraLaborRate.isNotEmpty) {
-      _extraLaborRateCtrl.text = s.extraLaborRate;
-    }
-    if (s.extraPostProcessRate.isNotEmpty) {
-      _extraPostProcessRateCtrl.text = s.extraPostProcessRate;
-    }
     if (s.extraFailureRate.isNotEmpty) {
       _extraFailureRateCtrl.text = s.extraFailureRate;
     }
     if (s.extraMarkupOnMaterials.isNotEmpty) {
       _extraMarkupOnMaterialsCtrl.text = s.extraMarkupOnMaterials;
+    }
+    // v17: sincronizar los 4 controllers del panel Costos adicionales.
+    // Sin esta linea, recargar una cotizacion guardada dejaria los
+    // TextFields mostrando el valor viejo.
+    if (s.modelingValue.isNotEmpty) {
+      _modelingCtrl.text = s.modelingValue;
+    }
+    if (s.postprocValue.isNotEmpty) {
+      _postprocCtrl.text = s.postprocValue;
+    }
+    if (s.extraCostValue.isNotEmpty) {
+      _extraCostCtrl.text = s.extraCostValue;
+    }
+    if (s.extraCostLabel.isNotEmpty) {
+      _extraCostLabelCtrl.text = s.extraCostLabel;
     }
   }
 
@@ -388,12 +418,27 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       filamentGrams: _gramsCtrl.text,
       label: _pieceLabelCtrl.text,
       filamentLabel: _labelCtrl.text,
-      extraLaborRate: _extraLaborRateCtrl.text,
-      extraPostProcessRate: _extraPostProcessRateCtrl.text,
+      extraLaborRate: s.extraLaborRate,
+      extraPostProcessRate: s.extraPostProcessRate,
       extraFailureRate: _extraFailureRateCtrl.text,
       extraMarkupOnMaterials: _extraMarkupOnMaterialsCtrl.text,
+      // v17: modo + valor de los 3 costos de servicio, para que el draft de
+      // sesion los restaure tal cual (el switch incluido). El input acepta
+      // coma decimal, asi que se normaliza antes de parsear.
+      modelingMode: s.modelingMode,
+      modelingValue: _draftDouble(_modelingCtrl.text),
+      postprocMode: s.postprocMode,
+      postprocValue: _draftDouble(_postprocCtrl.text),
+      extraCostMode: s.extraCostMode,
+      extraCostValue: _draftDouble(_extraCostCtrl.text),
+      extraCostLabel: _extraCostLabelCtrl.text,
     );
   }
+
+  /// Texto de un input numerico -> REAL para el draft. Acepta coma o punto
+  /// decimal; texto vacio o invalido -> 0.
+  static double _draftDouble(String text) =>
+      double.tryParse(text.trim().replaceAll(',', '.')) ?? 0;
 
   /// True si el form no tiene nada que preservar. En Advanced basta con que
   /// haya al menos un material (aunque no tenga horas globales).
@@ -520,10 +565,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _gramsCtrl.dispose();
     _labelCtrl.dispose();
     _pieceLabelCtrl.dispose();
-    _extraLaborRateCtrl.dispose();
-    _extraPostProcessRateCtrl.dispose();
     _extraFailureRateCtrl.dispose();
     _extraMarkupOnMaterialsCtrl.dispose();
+    _modelingCtrl.dispose();
+    _postprocCtrl.dispose();
+    _extraCostCtrl.dispose();
+    _extraCostLabelCtrl.dispose();
     _quantityCtrl.dispose();
     for (final c in _materialCtrls) {
       c.dispose();
@@ -712,10 +759,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     _gramsCtrl.text = i.filamentGrams;
     _labelCtrl.text = i.filamentLabel;
     _pieceLabelCtrl.text = i.label;
-    _extraLaborRateCtrl.text = '';
-    _extraPostProcessRateCtrl.text = '';
     _extraFailureRateCtrl.text = '';
     _extraMarkupOnMaterialsCtrl.text = '';
+    _modelingCtrl.text = '';
+    _postprocCtrl.text = '';
+    _extraCostCtrl.text = '';
+    _extraCostLabelCtrl.text = '';
     for (final c in _materialCtrls) {
       c.dispose();
     }
@@ -1524,9 +1573,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     );
   }
 
-  /// PASO 3 (comun): Otros â€” cantidad (Pro) + descuento + OTROS/costos de
-  /// la pieza (Pro). El descuento subio desde el result sheet al form:
-  /// ahora es un campo de primer nivel del wizard.
+  /// PASO 3 (comun): cantidad (Pro) + descuento + "Costos de la pieza" (Pro,
+  /// los 5 campos). El descuento subio desde el result sheet al form: ahora es
+  /// un campo de primer nivel del wizard.
   Widget _buildStepAdjust(CalculatorNotifier notifier, WorldCurrency currency) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1549,8 +1598,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ),
         const SizedBox(height: AppSpacing.xl),
 
-        // â”€â”€ OTROS (con peek preview) â”€â”€
-        _buildOtrosSection(notifier, currency),
+        // v17: seccion unificada "Costos adicionales" con los 5 campos:
+        // modelado, postprocesado, extras (switch % / fijo) + tasa de falla y
+        // desperdicio (solo %). Reemplaza la seccion de Otros y la de costos
+        // adicionales, que eran dos bloques separados.
+        _buildPieceCostsSection(),
       ],
     );
   }
@@ -1663,127 +1715,29 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   }
 
   // ============================================================
-  // OTROS SECTION â€” collapsable card
+  // COSTOS ADICIONALES — seccion collapsable Pro con los 5 campos
   // ============================================================
 
-  /// Seccion colapsable "Otros" con 4 campos F1 en grid 2x2.
-  /// Toggle via [_showOtros]. Reutilizada en ambas formas (Express y Advanced).
+  /// Seccion colapsable "Costos adicionales" (Pro) con los 5 campos.
   ///
-  /// **Peek preview**: cuando esta colapsado, muestra los nombres de los
-  /// 4 campos en una fila sutil (labels atenuados) para que el usuario
-  /// sepa que existe sin tener que tocar. Free ve un overlay de bloqueo;
-  /// Pro puede expandir normalmente.
-  Widget _buildOtrosSection(
-    CalculatorNotifier notifier,
-    WorldCurrency currency,
-  ) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isPro = ref.watch(isProProvider);
-    final entitlementState = ref.watch(entitlementNotifierProvider);
-    final isLoading = entitlementState.isLoading;
-    final showProBadge = !isPro && !isLoading;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionHeader(
-          icon: Icons.more_horiz_rounded,
-          title: EsBO.calcSectionPieceCosts,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (showProBadge) ...[
-                const ProBadge(),
-                const SizedBox(width: AppSpacing.xs),
-              ],
-              AnimatedRotation(
-                turns: _showOtros ? 0.5 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  Icons.expand_more,
-                  size: 20,
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          onTap: () {
-            if (!isPro) {
-              context.push('/paywall');
-            } else {
-              setState(() => _showOtros = !_showOtros);
-            }
-          },
-        ),
-        // Peek preview: labels de los 4 campos cuando esta colapsado
-        if (!_showOtros) OtrosPeekPreview(locked: showProBadge),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          alignment: Alignment.topCenter,
-          child: _showOtros
-              ? Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.md),
-                  child: Column(
-                    children: [
-                      // Fila 1: Mano de obra + Post-procesado
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: NumericInputField(
-                              label: EsBO.calcFieldLabor,
-                              controller: _extraLaborRateCtrl,
-                              onChanged: notifier.setExtraLaborRate,
-                              suffix: '${currency.symbol}/h',
-                              helperText: EsBO.calcFieldLaborHelper,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: NumericInputField(
-                              label: EsBO.calcFieldPostProcess,
-                              controller: _extraPostProcessRateCtrl,
-                              onChanged: notifier.setExtraPostProcessRate,
-                              suffix: '%',
-                              helperText: EsBO.calcFieldPostProcessHelper,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      // Fila 2: Falla + Desperdicio
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: NumericInputField(
-                              label: EsBO.calcFieldFailure,
-                              controller: _extraFailureRateCtrl,
-                              onChanged: notifier.setExtraFailureRate,
-                              suffix: '%',
-                              helperText: EsBO.calcFieldFailureHelper,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: NumericInputField(
-                              label: EsBO.calcFieldWaste,
-                              controller: _extraMarkupOnMaterialsCtrl,
-                              onChanged: notifier.setExtraMarkupOnMaterials,
-                              suffix: '%',
-                              helperText: EsBO.calcFieldWasteHelper,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
+  /// El gate Pro, el peek preview y el toggle viven dentro del panel; la
+  /// pagina solo le pasa los `TextEditingController` de cada campo (que son
+  /// de la pagina para sobrevivir a rebuilds y-centralizar el `dispose()`).
+  ///
+  /// Orden de los campos:
+  /// 1. Modelado y diseño (switch % / fijo)
+  /// 2. Postprocesado (switch % / fijo)
+  /// 3. Extras (switch % / fijo + descripcion)
+  /// 4. Tasa de falla (solo %)
+  /// 5. Desperdicio (solo %)
+  Widget _buildPieceCostsSection() {
+    return CostosAdicionalesPanel(
+      modelingCtrl: _modelingCtrl,
+      postprocCtrl: _postprocCtrl,
+      extraCostCtrl: _extraCostCtrl,
+      extraCostLabelCtrl: _extraCostLabelCtrl,
+      failureCtrl: _extraFailureRateCtrl,
+      wasteCtrl: _extraMarkupOnMaterialsCtrl,
     );
   }
 

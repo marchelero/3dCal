@@ -91,15 +91,15 @@ class CalculationEngine {
   static final Decimal _pct = Decimal.fromInt(100);
 
   /// Amortizacion fija por hora de la impresora.
-///
-/// `costo / vida_util_horas`, escala interna 6. Retorna `null` si la vida
-/// util es <= 0 o el costo no es positivo.
-///
-/// v17: ahora SI entra en `coreBase` y por lo tanto en el costo de la
-/// cotizacion (antes solo se usaba para metricas). El cambio alinea el
-/// calculo live con `computeFromSnapshot` (que ya lo incluia en
-/// `baseCost`) y evita la inconsistencia entre live y historial.
-static Decimal? amortizationPerHour({
+  ///
+  /// `costo / vida_util_horas`, escala interna 6. Retorna `null` si la vida
+  /// util es <= 0 o el costo no es positivo.
+  ///
+  /// v17: ahora SI entra en `coreBase` y por lo tanto en el costo de la
+  /// cotizacion (antes solo se usaba para metricas). El cambio alinea el
+  /// calculo live con `computeFromSnapshot` (que ya lo incluia en
+  /// `baseCost`) y evita la inconsistencia entre live y historial.
+  static Decimal? amortizationPerHour({
     required Decimal purchaseCost,
     required int usefulLifeHours,
   }) {
@@ -280,6 +280,14 @@ static Decimal? amortizationPerHour({
   /// [fallbackPrinterWatts]: watts de la impresora activa actual.
   /// [quantity]: multiplica todos los montos (default 1 = unitario).
   ///
+  /// v17: los parametros `modelingMode`/`postprocMode`/`extraCostMode` +
+  /// sus rates/percentages/fijos vienen de las columnas nuevas de la tabla
+  /// `calculations`. Filas pre-v17 (que no tenian esas columnas) reciben
+  /// los defaults que reproducen el calculo legacy: `auto` para los 2 primeros
+  /// (= horas*laborRate y materialCost*postProcessRate/100) y `off` para
+  /// extras. Asi una fila v16 migrada a v17 produce los MISMOS numeros que
+  /// antes.
+  ///
   /// Retorna null si no hay datos suficientes para computar.
   static CalculationOutput? computeFromSnapshot({
     required List<MaterialSnapshot> materials,
@@ -302,6 +310,16 @@ static Decimal? amortizationPerHour({
     required Decimal fallbackProfitBase,
     required int fallbackPrinterWatts,
     int quantity = 1,
+    // === v17: overrides per-cotizacion. Defaults = replica legacy. ===
+    String modelingModeRaw = 'auto',
+    double modelingPct = 0,
+    double modelingFixed = 0,
+    String postprocModeRaw = 'auto',
+    double postprocPct = 0,
+    double postprocFixed = 0,
+    String extraCostModeRaw = 'off',
+    double extraCostPct = 0,
+    double extraCostFixed = 0,
   }) {
     if (materials.isEmpty && materialCostSnapshot <= 0) return null;
     final qty = quantity < 1 ? 1 : quantity;
@@ -349,17 +367,39 @@ static Decimal? amortizationPerHour({
     // Amortizacion desde snapshot
     final amortCost = rates.amortizationCost;
 
-    // Mano de obra
-    final laborCost = hours * laborRate;
+    // coreBase = costo automatico. Es la base sobre la que los 3 servicios
+    // en modo pct calculan su monto.
+    final coreBase = materialCost + electricCost + amortCost;
 
-    // Post-procesado
-    final postProcessCost = postProcessRate > Decimal.zero
-        ? (materialCost * postProcessRate / pctDivisor).toDecimal()
-        : Decimal.zero;
+    // v17: 3 campos de servicio con modo % / fijo. Mismas reglas que
+    // [compute]: `auto` replica la formula legacy; `pct`/`fixed` aplican
+    // sobre `coreBase` / monto literal; `off` no cobra.
+    final modelingCost = _resolveService(
+      mode: ServiceCostMode.parse(modelingModeRaw),
+      coreBase: coreBase,
+      pct: Decimal.parse(modelingPct.toStringAsFixed(6)),
+      fixed: Decimal.parse(modelingFixed.toStringAsFixed(2)),
+      legacyAmount: hours * laborRate,
+    );
+    final postProcCost = _resolveService(
+      mode: ServiceCostMode.parse(postprocModeRaw),
+      coreBase: coreBase,
+      pct: Decimal.parse(postprocPct.toStringAsFixed(6)),
+      fixed: Decimal.parse(postprocFixed.toStringAsFixed(2)),
+      legacyAmount: postProcessRate > Decimal.zero
+          ? (materialCost * postProcessRate / pctDivisor).toDecimal()
+          : Decimal.zero,
+    );
+    final extrasCost = _resolveService(
+      mode: ServiceCostMode.parse(extraCostModeRaw),
+      coreBase: coreBase,
+      pct: Decimal.parse(extraCostPct.toStringAsFixed(6)),
+      fixed: Decimal.parse(extraCostFixed.toStringAsFixed(2)),
+      legacyAmount: Decimal.zero,
+    );
 
-    // Base
-    final baseCost =
-        materialCost + electricCost + amortCost + laborCost + postProcessCost;
+    // Base: coreBase + los 3 servicios.
+    final baseCost = coreBase + modelingCost + postProcCost + extrasCost;
 
     // Tasa de falla
     final failureCost = failureRate > Decimal.zero
@@ -392,8 +432,9 @@ static Decimal? amortizationPerHour({
       materialCost: materialCost * qtyD,
       electricCost: electricCost * qtyD,
       amortizationCost: amortCost * qtyD,
-      laborCost: laborCost * qtyD,
-      postProcessCost: postProcessCost * qtyD,
+      laborCost: modelingCost * qtyD,
+      postProcessCost: postProcCost * qtyD,
+      extrasCost: extrasCost * qtyD,
       baseCost: baseCost * qtyD,
       failureCost: failureCost * qtyD,
       costWithFailure: costWithFailure * qtyD,

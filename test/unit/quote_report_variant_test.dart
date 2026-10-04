@@ -74,10 +74,7 @@ void main() {
     });
 
     test('showsMaterialTime: las 2 advanced + las 2 internas', () {
-      expect(
-        QuoteReportVariant.clientAdvanced.showsMaterialTime,
-        isTrue,
-      );
+      expect(QuoteReportVariant.clientAdvanced.showsMaterialTime, isTrue);
       expect(QuoteReportVariant.internalAdvanced.showsMaterialTime, isTrue);
       expect(
         QuoteReportVariant.internalDetail.showsMaterialTime,
@@ -340,17 +337,16 @@ void main() {
       amortizationCost: _d(10),
     );
 
-    test('margen = profitAmount / totalBeforeProfit * 100', () {
-      // totalBeforeProfit = 200, profit = 100 -> 50%.
+    test('margen = profitAmount / totalFinal (precio de venta) * 100', () {
+      // Precio final = 300, profit = 100 -> 33.33%.
       final audit = PdfRateAudit.fromRates(
         rates: rates,
         profitAmount: _d(100),
-        totalBeforeProfit: _d(200),
         baseCost: _d(150),
         totalFinal: _d(300),
         totalHours: _d(2),
       );
-      expect(audit.profitMarginPct, _d(50));
+      expect(audit.profitMarginPct, _d(33.33));
     });
 
     test('markup sobre costo = (totalFinal - baseCost) / baseCost * 100', () {
@@ -358,7 +354,6 @@ void main() {
       final audit = PdfRateAudit.fromRates(
         rates: rates,
         profitAmount: _d(100),
-        totalBeforeProfit: _d(200),
         baseCost: _d(150),
         totalFinal: _d(300),
         totalHours: _d(2),
@@ -370,7 +365,6 @@ void main() {
       final audit = PdfRateAudit.fromRates(
         rates: rates,
         profitAmount: _d(100),
-        totalBeforeProfit: _d(200),
         baseCost: _d(150),
         totalFinal: _d(300),
         totalHours: _d(4),
@@ -382,7 +376,6 @@ void main() {
       final audit = PdfRateAudit.fromRates(
         rates: rates,
         profitAmount: Decimal.zero,
-        totalBeforeProfit: Decimal.zero,
         baseCost: Decimal.zero,
         totalFinal: Decimal.zero,
         totalHours: Decimal.zero,
@@ -419,7 +412,6 @@ void main() {
             amortizationCost: Decimal.zero,
           ),
           profitAmount: Decimal.zero,
-          totalBeforeProfit: Decimal.zero,
           baseCost: Decimal.zero,
           totalFinal: Decimal.zero,
           totalHours: Decimal.zero,
@@ -438,7 +430,6 @@ void main() {
       final conTasa = PdfRateAudit.fromRates(
         rates: rates,
         profitAmount: _d(100),
-        totalBeforeProfit: _d(200),
         baseCost: _d(150),
         totalFinal: _d(300),
         totalHours: _d(2),
@@ -457,7 +448,6 @@ void main() {
           amortizationCost: Decimal.zero,
         ),
         profitAmount: Decimal.zero,
-        totalBeforeProfit: Decimal.zero,
         baseCost: Decimal.zero,
         totalFinal: Decimal.zero,
         totalHours: Decimal.zero,

@@ -286,7 +286,7 @@ void main() {
     }
 
     testWidgets(
-      'Calculator: badge del header "Costos de la pieza" → PaywallPage (AC-103)',
+      'Calculator: badge del header "Costos adicionales" → PaywallPage (AC-103)',
       (tester) async {
         _useTallViewport(tester);
         await pumpApp(tester);
@@ -294,13 +294,13 @@ void main() {
         unawaited(appRouter.push('/calculator'));
         await tester.pumpAndSettle();
 
-        // Wizard (rediseño 2026-09): "Costos de la pieza" vive en el paso
-        // Ajustes. Se navega y se identifica SU header (hay otro SectionHeader
-        // con badge en Cantidad, en el mismo paso).
+        // Wizard (rediseño 2026-09): la seccion de costos adicionales vive en
+        // el paso Ajustes. Se navega y se identifica SU header (hay otro
+        // SectionHeader con badge en Cantidad, en el mismo paso).
         await tester.tap(find.text('Otros'));
         await tester.pumpAndSettle();
         final otrosHeader = find.ancestor(
-          of: find.text('COSTOS DE LA PIEZA'),
+          of: find.text('COSTOS ADICIONALES'),
           matching: find.byType(SectionHeader),
         );
         final otrosBadge = find.descendant(
@@ -325,7 +325,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // El pill "Avanzado" (locked en free) contiene su propio ProBadge,
-        // FUERA del SectionHeader de "Costos de la pieza". En el wizard el
+        // FUERA del SectionHeader de "Costos adicionales". En el wizard el
         // paso visible (Pieza) muestra UN solo badge: el del pill (los de
         // Cantidad/OTROS estan en el paso Ajustes, offstage).
         final scaffoldBadges = find.descendant(
