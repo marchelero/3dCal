@@ -665,21 +665,6 @@ class CalculationRepository {
         .getSingleOrNull();
   }
 
-  /// Parcial (borrador de guardado rapido) mas reciente, o null.
-  ///
-  /// Lo usa Home para ofrecer "Continuar" cuando el usuario dejo un
-  /// borrador a medias que quedo `isPartial` en DB (incluso si el draft
-  /// de sesion en SharedPreferences se perdio o se limpio).
-  Future<Calculation?> latestPartial() {
-    return (_db.select(_db.calculations)
-          ..where(
-            (c) => c.isPartial.equals(true) & excludeTemplatesFilter(),
-          )
-          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])
-          ..limit(1))
-        .getSingleOrNull();
-  }
-
   /// Stream reactivo de [getById]: re-emite cuando cambia ESA fila.
   ///
   /// El detalle lo usa para no quedar stale al volver del calculator
