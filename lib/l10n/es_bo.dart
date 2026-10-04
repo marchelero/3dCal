@@ -1602,7 +1602,7 @@ class EsImpl implements AppStrings {
   @override
   String get calcSheetTitle => 'Cotización';
   @override
-  String get calcBtnShare => 'Compartir imagen';
+  String get calcBtnShare => 'Compartir img';
   @override
   String get calcBtnShareTooltip => 'Genera una imagen lista para enviar';
   @override
@@ -2105,7 +2105,7 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String get commonUndo => 'Deshacer';
   @override
-  String get commonSaveImage => 'Guardar imagen';
+  String get commonSaveImage => 'Guardar img';
   @override
   String get commonExportPdf => 'Exportar PDF';
   @override
@@ -2306,7 +2306,7 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @override
   String get detailSummaryTitle => 'Resumen';
   @override
-  String get detailActionShareReport => 'Compartir reporte';
+  String get detailActionShareReport => 'Compartir PDF';
   @override
   String get detailActionsHint =>
       'Edita, comparte o crea una nueva cotización desde aquí.';

@@ -395,10 +395,13 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   Future<void> loadFromCalculation(Calculation calc) async {
     final repo = ref.read(calculationRepositoryProvider);
     final mats = await repo.materialsOf(calc.id);
-    // v16+: el flag decide. Fallback `mats.length > 1` solo para filas viejas
-    // (is_advanced = false por default en v15-), donde inferir es lo unico
-    // posible y el comportamiento es el de siempre.
-    final mode = (calc.isAdvanced || mats.length > 1)
+    // v16+: el flag `is_advanced` es la fuente de verdad. Antes se usaba
+    // `mats.length > 1` como fallback, pero eso rompia cotizaciones Express
+    // cuyo guardado rapido habia persistido el material implicito (1 fila) y,
+    // combinado con filas previas, forzaba Advanced: el form quedaba en
+    // multi-material y el total no aparecia. Las filas pre-v16 con varios
+    // materiales ya quedaron marcadas por la migracion v16 (data migration).
+    final mode = calc.isAdvanced
         ? CalculatorMode.advanced
         : CalculatorMode.express;
     final total =
@@ -530,6 +533,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     String? conditions,
     Uint8List? pieceImageBytes,
     int? updateId,
+    bool markDefinitive = false,
   }) async {
     if (!state.isValid || state.output == null) {
       throw const FormIncompleteException();
@@ -541,6 +545,24 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final pieceImage = await downscale(pieceImageBytes);
 
     if (updateId != null) {
+      // Convertir un borrador en definitiva SUMA al historial real (los
+      // borradores no cuentan). Validar el cap Free antes para no dejar al
+      // usuario con una "cotizacion" que excede el limite.
+      if (markDefinitive) {
+        final isPro = await resolveIsPro(ref);
+        if (!isPro) {
+          final count = await repo.countAll();
+          if (count >= kFreeHistoryCap) {
+            throw HistoryCapReachedException(
+              cap: kFreeHistoryCap,
+              currentCount: count,
+            );
+          }
+        }
+        // Sumar horas a la impresora solo al convertir (una vez). Editar una
+        // cotizacion existente NO re-suma (son horas ya contadas).
+        await _addHoursToPrinter(printerRepo);
+      }
       final ok = await repo.updateCalculation(
         updateId,
         _buildDraft(
@@ -550,8 +572,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           conditions: conditions,
           pieceImageBytes: pieceImage,
         ),
+        markDefinitive: markDefinitive,
       );
-      ref.invalidate(calculationsNotifierProvider);
+      // El historial se refresca solo via drift watchItems().
       return ok ? updateId : null;
     }
 
@@ -577,7 +600,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       }
       // Sumar horas impresas a la impresora activa.
       await _addHoursToPrinter(printerRepo);
-      ref.invalidate(calculationsNotifierProvider);
+      // El historial se refresca solo via drift watchItems().
       return id;
     }
     final id = await repo.create(
@@ -591,7 +614,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     );
     // Sumar horas impresas a la impresora activa.
     await _addHoursToPrinter(printerRepo);
-    ref.invalidate(calculationsNotifierProvider);
+    // El historial se refresca solo via drift watchItems().
     return id;
   }
 
@@ -688,6 +711,9 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       batchDiscountAmount: state.batchDiscountAmount,
     );
     final id = await repo.createTemplate(draft);
+    // Plantillas no viven en el historial (isTemplate=true); el stream de
+    // watchItems no emite por ellas, pero invalidar es barato y cubre el
+    // cap/contadores que sí dependen de calculations.
     ref.invalidate(calculationsNotifierProvider);
     return id;
   }
@@ -925,14 +951,18 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
 
   /// Convierte el state actual a un `CalculationsCompanion` parcial para upsert.
   ///
-  /// Solo incluye campos que [CalculatorState] tiene valores para. Los campos
-  /// de nombre/cliente quedan vacios (el usuario los completa al guardar).
+  /// Solo incluye campos que [CalculatorState] tiene valores para.
+  /// `pieceName`/`clientName` se escriben SOLO si el form los tiene (state.label);
+  /// si estan vacios van ausentes y NO pisan lo que ya tenga la fila en DB.
+  /// Antes iban siempre `Value('')` y borraban el nombre al editar un
+  /// borrador que ya tenia pieza asignada.
   static CalculationsCompanion stateToPartialDto(CalculatorState state) {
     final o = state.output;
+    final label = state.label.trim();
     return CalculationsCompanion(
       createdAt: Value(DateTime.now()),
-      pieceName: const Value(''),
-      clientName: const Value(''),
+      pieceName: label.isNotEmpty ? Value(label) : const Value.absent(),
+      clientName: const Value.absent(),
       notes: const Value.absent(),
       conditions: const Value.absent(),
       printerId: const Value.absent(),

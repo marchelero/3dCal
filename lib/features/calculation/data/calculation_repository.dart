@@ -1,4 +1,4 @@
-// ignore_for_file: public_member_api_docs
+﻿// ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 
@@ -75,7 +75,7 @@ class CalculationListItem {
   final double totalPriceSnapshot;
   final bool hasImage;
 
-  /// Porcentaje del escalón de descuento mayorista (snapshot).
+  /// Porcentaje del escalÃ³n de descuento mayorista (snapshot).
   final String? batchDiscountPercent;
 
   /// Monto del descuento mayorista (snapshot).
@@ -158,16 +158,16 @@ class CalculationDraft {
   /// JPEG q85). Null = cotizacion sin foto.
   final Uint8List? pieceImageBytes;
 
-  /// Porcentaje del escalón de descuento mayorista (snapshot).
-  /// Null cuando no aplica escalón.
+  /// Porcentaje del escalÃ³n de descuento mayorista (snapshot).
+  /// Null cuando no aplica escalÃ³n.
   final Decimal? batchDiscountPercent;
 
-  /// Monto del descuento mayorista (snapshot). 0 sin escalón.
+  /// Monto del descuento mayorista (snapshot). 0 sin escalÃ³n.
   final Decimal? batchDiscountAmount;
 
   // === v17: Costos de la pieza ===
 
-  /// Modo del campo "Modelado y diseño": `pct` (porcentaje sobre el costo
+  /// Modo del campo "Modelado y diseÃ±o": `pct` (porcentaje sobre el costo
   /// base) o `fixed` (monto fijo). Default `fixed`.
   final String modelingMode;
 
@@ -196,13 +196,13 @@ class CalculationDraft {
 /// **Atomicidad**: `create` usa una transaccion para insertar el padre
 /// (calculation) y los hijos (materials) en una sola operacion.
 ///
-/// **Precision monetaria (decisión documentada)**: drift persiste los
+/// **Precision monetaria (decisiÃ³n documentada)**: drift persiste los
 /// snapshots como REAL (`double`). El motor y el dominio usan `Decimal`;
 /// el redondeo solo ocurre en la frontera de persistencia y en lectura se
 /// normaliza con `toStringAsFixed(2)` antes del `Decimal.parse`. Con los
 /// rangos de la app (miles de Bs por cotizacion) el error de double es
-/// < 0.005 — indetectable a 2 decimales. Migrar a TEXT/centavos es la
-/// salida si algún día se suman >10^11 Bs acumulados.
+/// < 0.005 â€” indetectable a 2 decimales. Migrar a TEXT/centavos es la
+/// salida si algÃºn dÃ­a se suman >10^11 Bs acumulados.
 ///
 /// **Cantidad (lotes, v8)**: `quantity` >= 1. Los snapshots financieros y
 /// de materiales son UNITARIOS; todas las queries agregadas multiplican
@@ -220,6 +220,20 @@ class CalculationRepository {
   /// Para las plantillas, ver [listTemplates].
   Expression<bool> excludeTemplatesFilter() =>
       _db.calculations.isTemplate.equals(false);
+
+  /// Filtro que excluye plantillas **y borradores** (`isPartial`).
+  ///
+  /// Se usa SOLO donde un borrador no debe contar: el **cap free**
+  /// ([_countCalculations]) y las ventas ([countSold]). Un borrador es una
+  /// cotizacion a medio hacer: no debe consumir el cap (si no, el guardado
+  /// real falla) ni contar como venta.
+  ///
+  /// El HISTORIAL ([listItems], [listAll], [search]) y el detalle ([getById])
+  /// usan [excludeTemplatesFilter] a proposito: el usuario quiere ver y
+  /// retomar sus borradores.
+  Expression<bool> excludeDraftsAndTemplatesFilter() =>
+      _db.calculations.isTemplate.equals(false) &
+      _db.calculations.isPartial.equals(false);
 
   /// Crea una cotizacion con sus materiales.
   ///
@@ -355,12 +369,17 @@ class CalculationRepository {
     );
   }
 
-  /// Actualiza una cotizacion existente en el lugar ("Editar").
+  /// Actualiza una cotizacion existente en el lugar ("Editar" / "guardar
+  /// definitiva desde un borrador").
   ///
   /// **NO crea una fila nueva**: la transaccion hace UPDATE de los snapshots y
   /// reemplaza los materiales, conservando `id`, `createdAt`, `isSold` e
   /// `isTemplate`. Editar una venta no la desmarca ni cambia su fecha en el
   /// historial.
+  ///
+  /// [markDefinitive]: cuando true, la fila deja de ser borrador
+  /// (`isPartial = false`). Es el caso "guardar con cliente" sobre un
+  /// autoguardado: el mismo id pasa a ser cotizacion definitiva.
   ///
   /// Atomicidad: el UPDATE y el reemplazo de materiales van juntos; si el
   /// segundo falla, la fila queda con los snapshots viejo y los materiales
@@ -368,11 +387,20 @@ class CalculationRepository {
   ///
   /// Devuelve `false` si la cotizacion ya no existe (borrada en otra pestana
   /// mientras el usuario editaba).
-  Future<bool> updateCalculation(int id, CalculationDraft draft) {
+  Future<bool> updateCalculation(
+    int id,
+    CalculationDraft draft, {
+    bool markDefinitive = false,
+  }) {
     return _db.transaction(() async {
+      final columns = _snapshotColumns(draft);
       final updated = await (_db.update(
         _db.calculations,
-      )..where((c) => c.id.equals(id))).write(_snapshotColumns(draft));
+      )..where((c) => c.id.equals(id))).write(
+        markDefinitive
+            ? columns.copyWith(isPartial: const Value(false))
+            : columns,
+      );
       if (updated == 0) return false;
       await _replaceMaterialsFromDraft(id, draft);
       return true;
@@ -531,6 +559,9 @@ class CalculationRepository {
   }
 
   /// Lista todas las cotizaciones (no plantillas), mas recientes primero.
+  ///
+  /// **Incluye borradores** (`isPartial`): el historial los muestra con el
+  /// badge "Borrador" para que el usuario retome una cotizacion empezada.
   Future<List<Calculation>> listAll() {
     return (_db.select(_db.calculations)
           ..where((_) => excludeTemplatesFilter())
@@ -544,53 +575,69 @@ class CalculationRepository {
   /// lista/CSV leen + `hasImage` (bool) para que la UI sepa que la foto
   /// existe sin cargarla. La fila completa (con BLOB) se lee on-demand via
   /// [getById].
+  ///
+  /// **Reactiva**: [watchItems] re-emite cuando cambia la tabla
+  /// `calculations` (drift invalidacion automatica). El historial la usa para
+  /// no quedar stale tras editar un borrador (bug: la lista mostraba el total
+  /// viejo mientras el detalle/edit ya leian el nuevo).
   Future<List<CalculationListItem>> listItems() async {
+    return watchItems().first;
+  }
+
+  /// Stream reactivo de [listItems]: re-emite en cada escritura a
+  /// `calculations` (insert/update/delete de cotizaciones y borradores).
+  ///
+  /// Preferir esta API en providers que quieran auto-refresh sin
+  /// `ref.invalidate` manual. `materialLabelsByCalcId` NO viaja en el
+  /// stream: es cara (GROUP_CONCAT) y solo hace falta al buscar.
+  Stream<List<CalculationListItem>> watchItems() {
     final t = _db.calculations;
     final hasImage = t.pieceImageBlob.isNotNull();
-    final rows =
-        await (_db.selectOnly(t)
-              ..addColumns([
-                t.id,
-                t.createdAt,
-                t.pieceName,
-                t.clientName,
-                t.quantity,
-                t.totalHours,
-                t.discountPercentage,
-                t.isSold,
-                t.isPartial,
-                t.materialCostSnapshot,
-                t.electricCostSnapshot,
-                t.profitAmountSnapshot,
-                t.totalPriceSnapshot,
-                hasImage,
-                t.batchDiscountPercent,
-                t.batchDiscountAmount,
-              ])
-              ..where(excludeTemplatesFilter())
-              ..orderBy([OrderingTerm.desc(t.createdAt)]))
-            .get();
-    return [
-      for (final r in rows)
-        CalculationListItem(
-          id: r.read(t.id)!,
-          createdAt: r.read(t.createdAt)!,
-          pieceName: r.read(t.pieceName),
-          clientName: r.read(t.clientName),
-          quantity: r.read(t.quantity)!,
-          totalHours: r.read(t.totalHours)!,
-          discountPercentage: r.read(t.discountPercentage)!,
-          isSold: r.read(t.isSold)!,
-          isPartial: r.read(t.isPartial) ?? false,
-          materialCostSnapshot: r.read(t.materialCostSnapshot)!,
-          electricCostSnapshot: r.read(t.electricCostSnapshot)!,
-          profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
-          totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
-          hasImage: r.read(hasImage) ?? false,
-          batchDiscountPercent: r.read(t.batchDiscountPercent),
-          batchDiscountAmount: r.read(t.batchDiscountAmount),
-        ),
-    ];
+    return (_db.selectOnly(t)
+          ..addColumns([
+            t.id,
+            t.createdAt,
+            t.pieceName,
+            t.clientName,
+            t.quantity,
+            t.totalHours,
+            t.discountPercentage,
+            t.isSold,
+            t.isPartial,
+            t.materialCostSnapshot,
+            t.electricCostSnapshot,
+            t.profitAmountSnapshot,
+            t.totalPriceSnapshot,
+            hasImage,
+            t.batchDiscountPercent,
+            t.batchDiscountAmount,
+          ])
+          ..where(excludeTemplatesFilter())
+          ..orderBy([OrderingTerm.desc(t.createdAt)]))
+        .watch()
+        .map(
+          (rows) => [
+            for (final r in rows)
+              CalculationListItem(
+                id: r.read(t.id)!,
+                createdAt: r.read(t.createdAt)!,
+                pieceName: r.read(t.pieceName),
+                clientName: r.read(t.clientName),
+                quantity: r.read(t.quantity)!,
+                totalHours: r.read(t.totalHours)!,
+                discountPercentage: r.read(t.discountPercentage)!,
+                isSold: r.read(t.isSold)!,
+                isPartial: r.read(t.isPartial) ?? false,
+                materialCostSnapshot: r.read(t.materialCostSnapshot)!,
+                electricCostSnapshot: r.read(t.electricCostSnapshot)!,
+                profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
+                totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
+                hasImage: r.read(hasImage) ?? false,
+                batchDiscountPercent: r.read(t.batchDiscountPercent),
+                batchDiscountAmount: r.read(t.batchDiscountAmount),
+              ),
+          ],
+        );
   }
 
   /// Obtiene una cotizacion completa (incluido el BLOB de imagen) por id.
@@ -603,8 +650,57 @@ class CalculationRepository {
         .getSingleOrNull();
   }
 
+  /// Parcial (borrador de guardado rapido) mas reciente, o null.
+  ///
+  /// Lo usa Home para ofrecer "Continuar" cuando el usuario dejo un
+  /// borrador a medias que quedo `isPartial` en DB (incluso si el draft
+  /// de sesion en SharedPreferences se perdio o se limpio).
+  Future<Calculation?> latestPartial() {
+    return (_db.select(_db.calculations)
+          ..where(
+            (c) => c.isPartial.equals(true) & excludeTemplatesFilter(),
+          )
+          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Parcial (borrador de guardado rapido) mas reciente, o null.
+  ///
+  /// Lo usa Home para ofrecer "Continuar" cuando el usuario dejo un
+  /// borrador a medias que quedo `isPartial` en DB (incluso si el draft
+  /// de sesion en SharedPreferences se perdio o se limpio).
+  Future<Calculation?> latestPartial() {
+    return (_db.select(_db.calculations)
+          ..where(
+            (c) => c.isPartial.equals(true) & excludeTemplatesFilter(),
+          )
+          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Stream reactivo de [getById]: re-emite cuando cambia ESA fila.
+  ///
+  /// El detalle lo usa para no quedar stale al volver del calculator
+  /// (el autosave del borrador actualiza la fila y el stream notifica).
+  Stream<Calculation?> watchById(int id) {
+    return (_db.select(_db.calculations)
+          ..where((c) => c.id.equals(id) & excludeTemplatesFilter()))
+        .watch()
+        .map((rows) => rows.isEmpty ? null : rows.first);
+  }
+
+  /// Stream reactivo de [materialsOf]: re-emite al reemplazar materiales
+  /// del parcial (delete + insert en cada autosave).
+  Stream<List<CalculationMaterial>> watchMaterialsOf(int calculationId) {
+    return (_db.select(
+      _db.calculationMaterials,
+    )..where((m) => m.calculationId.equals(calculationId))).watch();
+  }
+
   /// Busca cotizaciones por nombre de pieza o cliente (LIKE %query%).
-  /// Excluye plantillas.
+  /// Excluye plantillas (incluye borradores).
   Future<List<Calculation>> search(String query) {
     final pattern = '%$query%';
     return (_db.select(_db.calculations)
@@ -635,9 +731,9 @@ class CalculationRepository {
     return result.read(_db.calculations.id.count()) ?? 0;
   }
 
-  /// Clientes más recientes (distintos), ordenados por la última cotización
-  /// de cada uno. Excluye plantillas y nombres vacíos. Pensado para el
-  /// quick-pick del diálogo de guardado.
+  /// Clientes mÃ¡s recientes (distintos), ordenados por la Ãºltima cotizaciÃ³n
+  /// de cada uno. Excluye plantillas y nombres vacÃ­os. Pensado para el
+  /// quick-pick del diÃ¡logo de guardado.
   Future<List<String>> recentClientNames({int limit = 8}) async {
     final rows = await _db
         .customSelect(
@@ -645,6 +741,7 @@ class CalculationRepository {
       SELECT client_name AS name
       FROM calculations
       WHERE is_template = 0
+        AND is_partial = 0
         AND client_name IS NOT NULL
         AND client_name != ''
       GROUP BY client_name
@@ -785,7 +882,7 @@ class CalculationRepository {
               ..addColumns([_db.calculations.id.count()])
               ..where(
                 _db.calculations.isSold.equals(true) &
-                    excludeTemplatesFilter() &
+                    excludeDraftsAndTemplatesFilter() &
                     _sinceExpression(since),
               ))
             .getSingle();
@@ -802,7 +899,9 @@ class CalculationRepository {
     final result =
         await (_db.selectOnly(_db.calculations)
               ..addColumns([countExpression])
-              ..where(excludeTemplatesFilter() & _sinceExpression(since)))
+              ..where(
+                excludeDraftsAndTemplatesFilter() & _sinceExpression(since),
+              ))
             .getSingle();
     return result.read(countExpression) ?? 0;
   }
@@ -871,6 +970,7 @@ class CalculationRepository {
              COUNT(*) AS cnt
       FROM calculations
       WHERE is_template = 0
+        AND is_partial = 0
         AND client_name IS NOT NULL
         AND client_name != ''${_sinceSql(since)}
       GROUP BY client_name
@@ -945,7 +1045,7 @@ class CalculationRepository {
   ///
   /// Protocolo interno: el selector de catalogo construye el label como
   /// `id:<filamentId>`. Un material manual cuyo nombre empiece por "id:"
-  /// seguido de digits colisionaria con este protocolo — caso aceptado,
+  /// seguido de digits colisionaria con este protocolo â€” caso aceptado,
   /// el efecto es solo un filamentId soft-FK incorrecto en la fila.
   int? _filamentIdFromLabel(String label) {
     if (label.startsWith('id:')) {
@@ -957,25 +1057,37 @@ class CalculationRepository {
 
   // === Partial save (T6) ===
 
-  /// Inserta o actualiza una cotizacion parcial (upsert por minuto).
+  /// Inserta o actualiza la cotizacion parcial **activa** (upsert por id).
   ///
-  /// Si ya existe un parcial en el mismo minuto, lo actualiza (misma fila).
-  /// Si no, inserta una nueva fila. Devuelve el id de la fila.
+  /// **Identidad estable**: recibe [existingId] (el id del parcial que el
+  /// calculator ya venia editando, ver `currentPartialIdProvider`). Si viene,
+  /// se actualiza ESA fila; si no, se inserta una nueva.
+  ///
+  /// Antes se hacia upsert por **minuto** (`findLatestPartialForMinute`): cada
+  /// vez que un autosave caia en un minuto distinto creaba una fila nueva, asi
+  /// que una sola cotizacion terminaba como N borradores "Sin nombre". El id
+  /// es la identidad real de la cotizacion, no la hora.
   ///
   /// [materials] son las filas de material del form. Se persisten para que
-  /// "Reusar" sobre un parcial no pierda los materiales: sin esto, un
-  /// parcial guardado en modo Advanced se reusaba sin ningun material.
+  /// "Reusar" sobre un parcial no pierda los materiales.
   Future<int> savePartial(
     CalculationsCompanion companion, {
     List<DraftMaterialInput> materials = const [],
+    int? existingId,
   }) async {
-    final now = companion.createdAt.value;
-    final bucket = DateTime(now.year, now.month, now.day, now.hour, now.minute);
-    final existing = await findLatestPartialForMinute(bucket);
     final int id;
-    if (existing != null) {
-      await updatePartial(existing.id, companion);
-      id = existing.id;
+    if (existingId != null) {
+      // Verificar que la fila sigue existiendo (pudo borrarse desde otra
+      // pantalla). Si ya no esta, cae a insert.
+      final exists = await (_db.select(_db.calculations)
+            ..where((t) => t.id.equals(existingId)))
+          .getSingleOrNull();
+      if (exists != null) {
+        await updatePartial(existingId, companion);
+        id = existingId;
+      } else {
+        id = await _db.into(_db.calculations).insert(companion);
+      }
     } else {
       id = await _db.into(_db.calculations).insert(companion);
     }
@@ -1013,28 +1125,22 @@ class CalculationRepository {
   }
 
   /// Actualiza un parcial existente con los campos del patch.
+  ///
+  /// Escribe **todo** el [patch] (no una lista a mano): enumerar columnas era
+  /// fragil y omitia campos como `isAdvanced`, asi que el upsert del borrador
+  /// nunca actualizaba el modo -> un Express cambiado a Advanced se guardaba
+  /// (y se reabria) como Express, perdiendo los materiales.
+  ///
+  /// Solo se fuerza `isPartial = true` (la fila es un borrador) y se preservan
+  /// los campos de identidad que el patch no debe tocar (`createdAt`,
+  /// `isSold`, `isTemplate`).
   Future<void> updatePartial(int id, CalculationsCompanion patch) async {
-    final companion = CalculationsCompanion(
-      pieceName: patch.pieceName,
-      clientName: patch.clientName,
-      printerWattsSnapshot: patch.printerWattsSnapshot,
-      totalHours: patch.totalHours,
-      printMinutes: patch.printMinutes,
-      discountPercentage: patch.discountPercentage,
-      quantity: patch.quantity,
-      materialCostSnapshot: patch.materialCostSnapshot,
-      electricCostSnapshot: patch.electricCostSnapshot,
-      amortizationCostSnapshot: patch.amortizationCostSnapshot,
-      laborCostSnapshot: patch.laborCostSnapshot,
-      postProcessCostSnapshot: patch.postProcessCostSnapshot,
-      baseCostSnapshot: patch.baseCostSnapshot,
-      failureCostSnapshot: patch.failureCostSnapshot,
-      markupCostSnapshot: patch.markupCostSnapshot,
-      profitAmountSnapshot: patch.profitAmountSnapshot,
-      minimumChargeAppliedSnapshot: patch.minimumChargeAppliedSnapshot,
-      effectiveTotalSnapshot: patch.effectiveTotalSnapshot,
-      totalPriceSnapshot: patch.totalPriceSnapshot,
-      pieceImageBlob: patch.pieceImageBlob,
+    final companion = patch.copyWith(
+      isPartial: const Value(true),
+      // Identidad/estado de la fila: no los cambia el autoguardado.
+      createdAt: const Value.absent(),
+      isSold: const Value.absent(),
+      isTemplate: const Value.absent(),
     );
     await (_db.update(
       _db.calculations,

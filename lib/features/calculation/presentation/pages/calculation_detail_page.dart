@@ -782,21 +782,38 @@ class _DetailState extends ConsumerState<_Detail> {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          // Accion principal: PDF por el menu de compartir (mail, WhatsApp).
-          // Diferente de "Compartir imagen" (PNG) e "Imprimir" (mismo PDF,
-          // pero a la impresora). Requiere PRO.
-          FilledButton.icon(
-            icon: const Icon(Icons.picture_as_pdf_rounded),
-            label: Text(EsBO.detailActionShareReport),
-            onPressed: _isBusy
-                ? null
-                : () {
-                    if (!ref.read(isProProvider)) {
-                      unawaited(context.push('/paywall'));
-                    } else {
-                      unawaited(_handleSharePdf());
-                    }
-                  },
+          // Acciones de export agrupadas 2x2 por tipo:
+          //   PDF    → Compartir PDF · Imprimir
+          //   Imagen → Compartir img · Guardar img
+          // (antes: 1 full-width + fila de 3; ocupaba mucho espacio vertical).
+          Row(
+            children: [
+              Expanded(
+                child: _DetailActionButton(
+                  icon: Icons.picture_as_pdf_rounded,
+                  label: EsBO.detailActionShareReport,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy
+                      ? null
+                      : () {
+                          if (!ref.read(isProProvider)) {
+                            unawaited(context.push('/paywall'));
+                          } else {
+                            unawaited(_handleSharePdf());
+                          }
+                        },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _DetailActionButton(
+                  icon: Icons.print_rounded,
+                  label: EsBO.commonPrint,
+                  isBusy: _isBusy,
+                  onPressed: _isBusy ? null : _handlePrint,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
@@ -816,15 +833,6 @@ class _DetailState extends ConsumerState<_Detail> {
                   label: EsBO.commonSaveImage,
                   isBusy: _isBusy,
                   onPressed: _isBusy ? null : _handleSave,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _DetailActionButton(
-                  icon: Icons.print_rounded,
-                  label: EsBO.commonPrint,
-                  isBusy: _isBusy,
-                  onPressed: _isBusy ? null : _handlePrint,
                 ),
               ),
             ],
@@ -860,18 +868,20 @@ class _DetailState extends ConsumerState<_Detail> {
   }
 
   /// Barra inferior fija con 3 acciones, solo iconos con micro-descripcion.
-  /// Orden: Reusar · Marcar vendida (dorado) · Eliminar (rojo).
+  /// Orden: Reusar · Marcar vendida · Eliminar. Todos usan el color por
+  /// defecto de la barra (sin dorado ni rojo) para verse uniformes.
   /// "Editar" vive en el banner de borrador (arriba) y los exports del
   /// reporte (compartir/guardar imagen e imprimir) en su seccion.
   Widget _footer(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
     final calc = widget.calc;
     return Material(
-      color: color.surface,
+      color: Theme.of(context).colorScheme.surface,
       elevation: 0,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: color.outlineVariant)),
+          border: Border(
+            top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          ),
         ),
         child: SafeArea(
           top: false,
@@ -899,7 +909,6 @@ class _DetailState extends ConsumerState<_Detail> {
                     label: calc.isSold
                         ? EsBO.calcDetailMarkPending
                         : EsBO.calcDetailMarkSold,
-                    color: _kSoldGold,
                     onPressed: _handleToggleSold,
                   ),
                 ),
@@ -907,7 +916,6 @@ class _DetailState extends ConsumerState<_Detail> {
                   child: _FooterAction(
                     icon: Icons.delete_outline_rounded,
                     label: EsBO.calcDetailDelete,
-                    color: color.error,
                     onPressed: () => unawaited(_handleDelete()),
                   ),
                 ),
@@ -1337,31 +1345,23 @@ class _PartialBanner extends StatelessWidget {
   }
 }
 
-/// Dorado para la accion de venta (marcar vendida/pendiente).
-const Color _kSoldGold = Color(0xFFD4AF37);
-
 /// Accion de la barra inferior del detalle: solo icono + micro-descripcion,
-/// con tooltip. [color] permite destacar el estado de venta (dorado) y la
-/// accion destructiva (rojo).
+/// con tooltip. Color default: `onSurfaceVariant`.
 class _FooterAction extends StatelessWidget {
   const _FooterAction({
     required this.icon,
     required this.label,
     required this.onPressed,
-    this.color,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
 
-  /// Color de acento. Default: `onSurfaceVariant`.
-  final Color? color;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final base = color ?? theme.colorScheme.onSurfaceVariant;
+    final base = theme.colorScheme.onSurfaceVariant;
     final enabled = onPressed != null;
     final effective = base.withValues(alpha: enabled ? 1 : 0.4);
     return Tooltip(
@@ -1691,18 +1691,23 @@ _recomputeOutput(
   );
 }
 
-final _calculationByIdProvider = FutureProvider.family<Calculation?, int>((
-  ref,
-  id,
-) async {
-  // La lista ya no carga BLOBs; el detalle materializa la fila completa
-  // (con BLOB para el preview de la foto) on-demand.
-  final repo = ref.watch(calculationRepositoryProvider);
-  return repo.getById(id);
-});
+final _calculationByIdProvider =
+    StreamProvider.autoDispose.family<Calculation?, int>((ref, id) {
+      // Stream de drift (no Future cacheado): al volver del calculator el
+      // autosave del borraor ya escribio la fila y el provider emite el
+      // snapshot nuevo. Un FutureProvider quedaba stale hasta salir y
+      // volver a entrar al detalle.
+      final repo = ref.watch(calculationRepositoryProvider);
+      return repo.watchById(id);
+    });
 
 final _materialsOfProvider =
-    FutureProvider.family<List<CalculationMaterial>, int>((ref, id) {
+    StreamProvider.autoDispose.family<List<CalculationMaterial>, int>((
+      ref,
+      id,
+    ) {
+      // Idem: el autosave del parcial reemplaza materiales (delete+insert);
+      // el stream mantiene el desglose del detalle al dia.
       final repo = ref.watch(calculationRepositoryProvider);
-      return repo.materialsOf(id);
+      return repo.watchMaterialsOf(id);
     });

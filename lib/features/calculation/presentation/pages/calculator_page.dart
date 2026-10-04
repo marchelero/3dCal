@@ -31,8 +31,9 @@ import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/discount_tier.dart';
-import '../../data/calculation_repository.dart' show DraftMaterialInput;
-import '../notifiers/calculations_notifier.dart';
+import '../../data/calculation_repository.dart'
+    show CalculationRepository, DraftMaterialInput;
+import '../notifiers/calculations_notifier.dart' show latestPartialProvider;
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/calculator_bottom_bar.dart';
@@ -134,6 +135,37 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   /// Se activa al tocar la barra inferior con form invalido.
   bool _showValidationErrors = false;
 
+  /// Repo cacheado para persistir el parcial en [dispose] (donde `ref` ya no
+  /// es usable). Se captura al montar.
+  CalculationRepository? _cachedRepo;
+
+  /// Ultimo state del form visto. Fuente para persistir el parcial en
+  /// [dispose] sin `ref`. Se actualiza en cada build.
+  CalculatorState? _cachedState;
+
+  /// Ultimo id de parcial activo visto. Con el se hace upsert en [dispose].
+  int? _cachedPartialId;
+
+  /// True una vez que el usuario guardo la cotizacion como definitiva
+  /// (boton Guardar). A partir de ahi el autoguardado rapido NO debe correr:
+  /// recrearia un borrador huerfano que el historial mostraria como "Borrador"
+  /// ademas de la cotizacion real.
+  bool _savedDefinitive = false;
+
+  /// True mientras la pagina restaura estado async (prefill de "Reusar"/
+  /// "Editar", draft de sesion o defaults del catalogo). Evita que el form
+  /// se muestre vacio por un instante antes de que aparezcan los valores.
+  bool _isRestoring = true;
+
+  /// True una vez que se persistio el parcial al salir (X/back/dispose).
+  /// Evita que las multiples invocaciones de [_persistPartialSync] durante un
+  /// mismo pop guarden dos veces (la segunda, sin `ref`, con datos viejos).
+  bool _partialPersisted = false;
+
+  /// Habilita el pop programaticamente (tras guardar) para que [PopScope] con
+  /// `canPop: false` no vuelva a interceptarlo (evita el bucle pop).
+  bool _allowPop = false;
+
   /// Scroll controller para el scroll continuo del wizard.
   late final ScrollController _scrollCtrl;
 
@@ -149,6 +181,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   void initState() {
     super.initState();
     _scrollCtrl = ScrollController();
+    // Cachear el repo mientras `ref` es valido (dispose no puede leerlo).
+    _cachedRepo = ref.read(calculationRepositoryProvider);
     final initial = ref.read(calculatorNotifierProvider);
     _weightCtrl = TextEditingController(text: initial.weight);
     _hoursCtrl = TextEditingController(text: initial.printHours);
@@ -213,12 +247,19 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      try {
       // Bug fix: "Nueva cotización" debe abrir vacío, no continuar draft.
       if (widget.newMode) {
         await ref.read(draftStorageProvider).clear();
         if (!mounted) return;
-        // Invalidar el banner "Continuar" en Home (draftStatusProvider).
+        // Invalidar el banner "Continuar" en Home (draftStatusProvider +
+        // latestPartialProvider: el parcial rapido en DB).
         ref.invalidate(draftStatusProvider);
+        ref.invalidate(latestPartialProvider);
+        // Nueva cotizacion: soltar el puntero al parcial anterior. El
+        // borrador viejo queda en el historial (retomable), pero esta sesion
+        // arranca con identidad nueva.
+        ref.read(currentPartialIdProvider.notifier).state = null;
         ref.read(calculatorNotifierProvider.notifier).reset();
         // Limpiar controllers — se inicializaron con valores del draft
         // antes de este callback (initState los crea con initial.*).
@@ -247,6 +288,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         final notifier = ref.read(calculatorNotifierProvider.notifier);
         await notifier.loadFromCalculation(widget.prefillCalc!);
         if (!mounted) return;
+        // El prefill arranca una cotizacion NUEVA en el formulario: soltar el
+        // puntero al parcial anterior. "Reusar" crea un id nuevo (el autosave
+        // inserta un parcial nuevo); "Editar" guarda sobre prefillCalc.id.
+        ref.read(currentPartialIdProvider.notifier).state = null;
         // Garantiza el total calculado ni bien se entra (Editar/Reusar), sin
         // esperar a que el usuario toque un campo.
         notifier.recompute();
@@ -312,6 +357,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         final updated = ref.read(calculatorNotifierProvider);
         _priceCtrl.text = updated.filamentPrice;
         _gramsCtrl.text = updated.filamentGrams;
+      }
+      } finally {
+        // Terminar el loader de restauracion pase lo que pase (cualquier
+        // rama: prefill, draft, nueva o vacio).
+        if (mounted && _isRestoring) {
+          setState(() => _isRestoring = false);
+        }
       }
     });
   }
@@ -379,6 +431,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       _showValidationErrors = false;
       if (mounted) setState(() {});
     }
+    // Hay cambios nuevos: habilitar de nuevo el guardado de salida (por si un
+    // intento de pop previo no llego a cerrar la pagina).
+    _partialPersisted = false;
     _scheduleDraftSave();
   }
 
@@ -475,7 +530,22 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     }
   }
 
+  /// True cuando se esta editando un BORRADOR existente (no una cotizacion
+  /// definitiva).
+  ///
+  /// Diferencia clave del autoguardado:
+  /// - Editar un borrador -> SI autoguarda en ese mismo id (el usuario sigue
+  ///   armando la cotizacion; cada cambio debe persistirse en el parcial).
+  /// - Editar una cotizacion definitiva -> NO autoguarda como parcial (la fila
+  ///   ya es real; se actualiza con Guardar).
+  bool get _editingDraft => widget.editMode && (widget.prefillCalc?.isPartial ?? false);
+
   void _schedulePartialSave() {
+    // Editar una cotizacion DEFINITIVA no autoguarda como parcial (crearia un
+    // borrador duplicado). Editar un BORRADOR si: hay que reflejar cada cambio.
+    if (widget.editMode && !_editingDraft) return;
+    // Si ya se guardo como definitiva, no re-crear un borrador.
+    if (_savedDefinitive) return;
     _partialSaveTimer?.cancel();
     _partialSaveTimer = Timer(
       const Duration(milliseconds: 1500),
@@ -485,6 +555,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
   Future<void> _persistPartial() async {
     if (!mounted) return;
+    if ((widget.editMode && !_editingDraft) || _savedDefinitive) return;
+    if (_isRestoring) return;
     final state = ref.read(calculatorNotifierProvider);
     if (state.output == null) {
       debugPrint(
@@ -492,19 +564,112 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       );
       return;
     }
+    final materials = _partialMaterialInputs(state);
     try {
       final repo = ref.read(calculationRepositoryProvider);
       final companion = CalculatorNotifier.stateToPartialDto(state);
+      // Upsert sobre el parcial activo (mismo id) para no crear uno nuevo
+      // por cada guardado. Al editar un borrador, el id ES el del prefill
+      // (el provider se reseteo al entrar en modo edicion).
+      final existingId = _partialTargetId;
+      // No sobrescribir un borrador existente con un estado sin materiales.
+      if (materials.isEmpty && existingId != null) return;
       final id = await repo.savePartial(
         companion,
-        materials: _partialMaterialInputs(state),
+        materials: materials,
+        existingId: existingId,
       );
       ref.read(currentPartialIdProvider.notifier).state = id;
-      // Invalidar el historial para que refresque al volver.
-      ref.invalidate(calculationsNotifierProvider);
+      // NO se invalida el historial aca: el autoguardado corre cada pocos
+      // segundos mientras el usuario tipea, y recargar la lista completa
+      // (con `materialLabelsByCalcId`) en cada guardado volvia lenta la app en
+      // web. El historial se refresca al volver (autoDispose de sus providers)
+      // y en el guardado definitivo / salida.
       debugPrint('[PartialSave] guardado id=$id');
     } catch (e, st) {
       debugPrint('[PartialSave] ERROR: $e\n$st');
+    }
+  }
+
+  /// Id al que debe apuntar el autoguardado del parcial.
+  ///
+  /// - Editando un borrador: el id del borrador ([prefillCalc]).
+  /// - Caso normal: el parcial activo ([currentPartialIdProvider]).
+  int? get _partialTargetId => _editingDraft
+      ? widget.prefillCalc!.id
+      : ref.read(currentPartialIdProvider);
+
+  /// Persiste el parcial AHORA (fire-and-forget), pensado para ejecutarse
+  /// antes de salir de la pagina.
+  ///
+  /// **Por que existe**: el guardado rapido tiene un debounce de 1.5s. Si el
+  /// usuario escribe y sale antes de ese tiempo (patron normal: cotizar, ver
+  /// el resultado, volver), [dispose] cancelaba el timer SIN guardar y el
+  /// parcial nunca llegaba al historial. Esto lo fuerza en la salida.
+  ///
+  /// En [dispose] `ref` ya esta invalidado (Riverpod), asi que se usan las
+  /// referencias cacheadas ([_cachedRepo] + el state leido en el ultimo
+  /// cambio). En la salida via X/back el `ref` todavia vive y se lee fresco.
+  /// Devuelve un [Future] que completa cuando el guardado termina, para que
+  /// el X pueda **esperar** antes de hacer `pop` (si no, el guardado async se
+  /// perdia al desmontarse el arbol).
+  Future<void> _persistPartialSync() async {
+    // No autoguardar si: se edita una DEFINITIVA (fila real, se persiste con
+    // Guardar) o si ya se guardo definitiva (recrearia un borrador huerfano).
+    // Editar un BORRADOR si autoguarda (refleja cada cambio).
+    if ((widget.editMode && !_editingDraft) || _savedDefinitive) return;
+    // No sobrescribir el borrador mientras la restauracion esta en curso: el
+    // state todavia no refleja la fila y se guardaria un borrador incompleto
+    // (perdiendo materiales/modo ya persistidos).
+    if (_isRestoring) return;
+    // Una sola vez por salida: X/back y dispose pueden llamar este metodo; la
+    // segunda invocacion (dispose, sin `ref`) podia sobrescribir con un state
+    // cacheado viejo o crear un borrador duplicado.
+    if (_partialPersisted) return;
+    _partialPersisted = true;
+    CalculationRepository? repo;
+    CalculatorState? state;
+    int? existingId;
+    try {
+      state = ref.read(calculatorNotifierProvider);
+      repo = ref.read(calculationRepositoryProvider);
+      existingId = _partialTargetId;
+    } catch (_) {
+      // dispose: `ref` invalido. Usar lo cacheado.
+      state = _cachedState;
+      repo = _cachedRepo;
+      existingId = _editingDraft ? widget.prefillCalc!.id : _cachedPartialId;
+    }
+    if (state == null || repo == null) return;
+    await _persistToRepo(repo, state, existingId);
+  }
+
+  Future<void> _persistToRepo(
+    CalculationRepository repo,
+    CalculatorState state,
+    int? existingId,
+  ) async {
+    debugPrint(
+      '[PartialSave][toRepo] existingId=$existingId '
+      'editingDraft=$_editingDraft output=${state.output != null}',
+    );
+    if (state.output == null) return;
+    final materials = _partialMaterialInputs(state);
+    // No sobrescribir un borrador con un estado que no tiene materiales: en
+    // Advanced sin materiales validos no hay nada util que persistir y se
+    // borrarian los materiales que ya estaban guardados. En Express sin peso
+    // pasa lo mismo (la fila quedaria sin su material implicito).
+    if (materials.isEmpty && existingId != null) return;
+    final companion = CalculatorNotifier.stateToPartialDto(state);
+    try {
+      final id = await repo.savePartial(
+        companion,
+        materials: materials,
+        existingId: existingId,
+      );
+      debugPrint('[PartialSave] onExit guardado id=$id');
+    } catch (e, st) {
+      debugPrint('[PartialSave] onExit ERROR: $e\n$st');
     }
   }
 
@@ -513,10 +678,36 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   /// Sin esto, un parcial guardado en Advanced se reusaba SIN materiales:
   /// `savePartial` solo escribia la fila de `calculations`.
   ///
+  /// **Express**: no hay filas de material, pero el formulario SI tiene un
+  /// material (peso + precio + gramos). Se persiste ese material "implicito"
+  /// para que "Reusar"/detalle recuperen el peso y el filamento: la lista de
+  /// materiales es la unica fuente para reconstruir esos campos (las columnas
+  /// de `calculations` no guardan el peso ni el precio por bobina).
+  ///
   /// El desglose de tiempo por material se persiste desde schema v15
   /// (`useOwnTime` / `materialHours` / `materialMinutes`).
   List<DraftMaterialInput> _partialMaterialInputs(CalculatorState state) {
-    if (state.mode != CalculatorMode.advanced) return const [];
+    debugPrint(
+      '[PartialSave][mats] mode=${state.mode} '
+      'stateMats=${state.materials.length} ctrlMats=${_materialCtrls.length} '
+      'weight=${state.weight}',
+    );
+    if (state.mode != CalculatorMode.advanced) {
+      final weight = CalculatorState.parseDecimal(state.weight);
+      final price = CalculatorState.parseDecimal(state.filamentPrice);
+      final grams = CalculatorState.parseDecimal(state.filamentGrams);
+      if (weight == null || weight <= Decimal.zero) return const [];
+      return [
+        DraftMaterialInput(
+          label: state.filamentLabel.isNotEmpty
+              ? state.filamentLabel
+              : 'Filamento',
+          weightGrams: weight.toDouble(),
+          pricePerBobbin: (price ?? Decimal.zero).toDouble(),
+          gramsPerBobbin: (grams ?? Decimal.fromInt(1000)).toDouble(),
+        ),
+      ];
+    }
     return state.materials
         .map(
           (m) => DraftMaterialInput(
@@ -545,17 +736,24 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     // "Continuar" no aparecería. SharedPreferences.write es suficientemente
     // rápido para dispose (microseconds en web, <1ms en mobile).
     _saveDraftSync();
+    // Forzar el guardado rapido pendiente ANTES de cancelar el timer: si el
+    // usuario salio dentro de la ventana de debounce (1.5s), el parcial nunca
+    // se persistia y no aparecia en el historial. El X/back ya lo guardan con
+    // await; `_partialPersisted` evita el doble guardado.
+    _persistPartialSync();
     _saveTimer?.cancel();
     _partialSaveTimer?.cancel();
-    // Limpieza de parcial al salir. ref.read puede fallar en dispose si
-    // el widget ya fue desmontado por un route pop concurrente (Riverpod
-    // 2.x bloquea escrituras en lifecycle). try-catch previene el crash;
-    // el provider se limpia solo al reabrir la calculator.
-    try {
-      ref.read(currentPartialIdProvider.notifier).state = null;
-    } catch (_) {
-      // Widget ya desmontado — state queda stale pero harmless.
-    }
+    // NO invalidar el historial desde dispose: hacerlo puede dejar la lista en
+    // `loading` perpetuo si el provider se reconstruye durante el desmontaje
+    // (el skeleton anima sin fin -> CanvasKit reintenta shaders en bucle y la
+    // app se pone lenta). El X y el back ya invalidan ANTES del pop.
+    // NO limpiar `currentPartialIdProvider` aca: el parcial sigue en la DB y
+    // ese provider es el vinculo entre el borrador y la proxima sesion. Si se
+    // limpiaba al salir, al volver el guardado definitivo no sabia cual
+    // parcial convertir, creaba una fila nueva y dejaba el borrador huerfano
+    // (aparecia en el historial como "Borrador" junto a la cotizacion real).
+    // Se limpia en los casos correctos: "Nueva cotizacion" (newMode) y
+    // prefill ("Reusar"/"Editar"), y tras un guardado definitivo.
     _scrollCtrl.dispose();
     _weightCtrl.dispose();
     _hoursCtrl.dispose();
@@ -607,8 +805,29 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     }
     final notifier = ref.read(calculatorNotifierProvider.notifier);
     if (mode == CalculatorMode.advanced && _materialCtrls.isEmpty) {
+      // Heredar el material Express (peso + filamento + precio/gramos) a la
+      // primera fila Advanced: pasar a multi-material no debe perder lo que el
+      // usuario ya habia cargado.
+      final prev = ref.read(calculatorNotifierProvider);
       notifier.addMaterial();
-      _materialCtrls.add(MaterialCtrls.empty());
+      _materialCtrls.add(
+        MaterialCtrls(
+          label: TextEditingController(text: prev.filamentLabel),
+          weight: TextEditingController(text: prev.weight),
+          price: TextEditingController(text: prev.filamentPrice),
+          grams: TextEditingController(text: prev.filamentGrams),
+          materialHours: TextEditingController(),
+          materialMinutes: TextEditingController(),
+        ),
+      );
+      // Reflejar el material heredado en el state.
+      notifier.updateMaterial(
+        0,
+        label: prev.filamentLabel,
+        weight: prev.weight,
+        pricePerBobbin: prev.filamentPrice,
+        gramsPerBobbin: prev.filamentGrams,
+      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _advancedListKey.currentState?.insertItem(0);
       });
@@ -944,19 +1163,29 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       builder: (sheetCtx) => SaveSheet(recentClients: recentClients),
     );
     if (result == null || !mounted) return;
+    // Editar DEFINITIVA (fila real ya guardada) vs editar BORRADOR (aun no
+    // es cotizacion). El segundo debe convertirse en definitiva al guardar.
     final isEditing = widget.editMode && widget.prefillCalc != null;
+    final partialId = ref.read(currentPartialIdProvider);
+    final targetId = isEditing ? widget.prefillCalc!.id : partialId;
+    // Se guarda como definitiva siempre que NO se edite una cotizacion ya
+    // definitiva: cubre el caso normal (parcial activo) y el de editar un
+    // borrador. Editar una definitiva conserva su estado.
+    final convertsToDefinitive = isEditing
+        ? (widget.prefillCalc!.isPartial)
+        : (partialId != null);
     try {
       final notifier = ref.read(calculatorNotifierProvider.notifier);
 
-      // 1) Siempre guardar en el historial (no modifica el state). La foto
-      // de la pieza viaja desde el result sheet (F2).
-      // En edicion (`updateId`) actualiza la fila existente.
+      // 1) Guardar en el historial. Con targetId actualiza esa fila; con
+      //    markDefinitive la convierte en cotizacion definitiva.
       final id = await notifier.save(
         clientName: result.clientName,
         notes: result.notes,
         conditions: result.conditions,
         pieceImageBytes: pieceImageBytes,
-        updateId: isEditing ? widget.prefillCalc!.id : null,
+        updateId: targetId,
+        markDefinitive: convertsToDefinitive,
       );
       if (id == null) {
         if (!mounted) return;
@@ -965,12 +1194,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         ).showSnackBar(AppSnackBar.error(EsBO.calcSaveFailed));
         return;
       }
-
-      // Borrar parcial existente tras save exitoso (T6). En edicion no aplica:
-      // la fila que se guarda ES la que se edita.
-      final partialId = ref.read(currentPartialIdProvider);
-      if (!isEditing && partialId != null) {
-        await ref.read(calculationRepositoryProvider).deletePartial(partialId);
+      // Guardado definitivo: apagar el autoguardado rapido para que no
+      // re-cree un borrador al salir.
+      _savedDefinitive = true;
+      _partialSaveTimer?.cancel();
+      // La fila ya es definitiva: soltar el puntero al parcial.
+      if (convertsToDefinitive) {
         ref.read(currentPartialIdProvider.notifier).state = null;
       }
 
@@ -991,9 +1220,12 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       //    los valores quedan "cacheados" en el notifier y solo desaparecen
       //    al salir y volver a entrar. El reset dispara listeners que
       //    re-agendarían el draft; lo cancelamos para no re-persistir un
-      //    draft vacío.
+      //    draft vacío. Tambien cancelamos el timer del guardado rapido: si
+      //    quedaba pendiente, podia re-crear un parcial (y confundir el
+      //    historial) despues de que el guardado real ya limpio el form.
       await ref.read(draftStorageProvider).clear();
       _saveTimer?.cancel();
+      _partialSaveTimer?.cancel();
       _resetAll();
       if (!mounted) return;
 
@@ -1151,6 +1383,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(calculatorNotifierProvider);
     final notifier = ref.read(calculatorNotifierProvider.notifier);
+    // Cachear el ultimo state para poder persistir el parcial en dispose.
+    _cachedState = state;
+    _cachedPartialId = _editingDraft
+        ? widget.prefillCalc!.id
+        : ref.watch(currentPartialIdProvider);
     final currency = ref.watch(selectedCurrencyProvider);
     final isValid = state.isValid && state.output != null;
     final theme = Theme.of(context);
@@ -1162,18 +1399,40 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     ref.listen(discountTiersProvider, (_, next) {
       notifier.updateTiers(next.value ?? const <DiscountTier>[]);
     });
-    ref.listen<bool>(isValidProvider, (prev, next) {
-      if (next) {
-        // Dispara auto-save cuando el form ES válido (transición o ya válido
-        // al montar). Antes solo cubría false→true, perdiendo el caso de
-        // draft restaurado que ya es válido.
-        _schedulePartialSave();
-      }
-    });
+    // Autoguardado rapido: debe correr en CADA recalculo (cada nuevo total),
+    // no solo cuando el form pasa de invalido a valido. `isValidProvider` es
+    // un bool que ya no cambia tras el primer calculo, asi que cambiar el peso
+    // o el material NO re-disparaba el guardado y el borrador quedaba viejo.
+    // `computeVersion` incrementa en cada _recompute -> es la señal correcta.
+    ref.listen<int>(
+      calculatorNotifierProvider.select((s) => s.computeVersion),
+      (prev, next) {
+        if (prev == next) return;
+        // Solo si hay un total valido que guardar.
+        if (ref.read(isValidProvider)) {
+          _schedulePartialSave();
+        }
+      },
+    );
     final totalText = isValid ? formatCurrency(state.lotTotal, currency) : null;
 
-    return Scaffold(
-      appBar: AppBar(
+    return PopScope(
+      // Interceptamos el pop (back del sistema / gesto / navegador) para
+      // poder ESPERAR el guardado del parcial antes de salir. Con el patron
+      // anterior (didPop = true) el guardado era fire-and-forget y se perdia
+      // al desmontarse el arbol en web. `_allowPop` deja pasar el pop
+      // programatico que disparamos nosotros tras guardar.
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || _allowPop) return;
+        await _persistPartialSync();
+        if (!mounted) return;
+        // El historial se refresca solo via drift watchItems() (el write
+        // del parcial dispara el stream). No hace falta invalidate manual.
+        setState(() => _allowPop = true);
+      },
+      child: Scaffold(
+        appBar: AppBar(
         // Salida explícita: con ruta push, el leading por defecto es una
         // flecha sutil. Un botón "cerrar" comunica mejor que vuelve al menú
         // (sobre todo en web, donde no hay back del sistema).
@@ -1183,7 +1442,15 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           child: IconButton(
             icon: const Icon(Icons.close_rounded),
             tooltip: EsBO.calcCloseAction,
-            onPressed: () => context.pop(),
+            onPressed: () async {
+              // Persistir el parcial pendiente ANTES de salir y ESPERARLO:
+              // fire-and-forget se perdia al desmontarse el arbol (web).
+              await _persistPartialSync();
+              if (!context.mounted) return;
+              // El historial se refresca solo via drift watchItems().
+              setState(() => _allowPop = true);
+              if (context.mounted) Navigator.of(context).pop();
+            },
           ),
         ),
         title: Semantics(
@@ -1243,7 +1510,17 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
           ),
         ],
       ),
-      body: SafeArea(
+      body: _isRestoring
+          // Loader mientras se restaura el prefill ("Reusar"/"Editar") o el
+          // draft: evita mostrar el formulario vacio por un instante antes de
+          // que aparezcan los valores.
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xxl),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          : SafeArea(
         child: Column(
           // stretch: el step bar (Row con Expanded) y la perforacion
           // (CustomPaint de ancho infinito) necesitan ancho acotado.
@@ -1350,6 +1627,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

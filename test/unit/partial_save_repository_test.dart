@@ -1,9 +1,12 @@
 // ignore_for_file: public_member_api_docs
+import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' show Variable, Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tresdcal/core/constants/app_constants.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/features/calculation/data/calculation_repository.dart';
+import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 
 /// Unit tests para los metodos de guardado parcial en [CalculationRepository]:
 /// - savePartial (insert + update/upsert)
@@ -79,16 +82,36 @@ void main() {
         variables: [Variable.withInt(id)],
       ).getSingle();
       expect(row.read<int>('is_partial'), 1);
-      expect(row.read<String>('piece_name'), '');
+      // El helper del test pasa pieceName='' explicito; el dto de produccion
+      // lo deja ausente (columna default). Cubrimos el caso del helper.
+      expect(row.read<String?>('piece_name'), anyOf(isNull, isEmpty));
     });
 
-    test('bucket existente → update (no duplicado)', () async {
+    test('sin existingId inserta fila nueva (identidad por id, no por minuto)',
+        () async {
       final ts = DateTime(2026, 9, 28, 12, 5);
       final id1 = await repo.savePartial(
         _partial(createdAt: ts, pieceName: 'Vaso'),
       );
       final id2 = await repo.savePartial(
-        _partial(createdAt: ts, pieceName: 'Vaso actualizado'),
+        _partial(createdAt: ts, pieceName: 'Vaso 2'),
+      );
+
+      expect(id2, isNot(equals(id1)), reason: 'sin existingId = insert nuevo');
+      final count = await db.customSelect(
+        'SELECT COUNT(*) AS cnt FROM calculations',
+      ).getSingle();
+      expect(count.read<int>('cnt'), 2);
+    });
+
+    test('existingId → update (no duplicado, conserva createdAt)', () async {
+      final ts = DateTime(2026, 9, 28, 12, 5);
+      final id1 = await repo.savePartial(
+        _partial(createdAt: ts, pieceName: 'Vaso'),
+      );
+      final id2 = await repo.savePartial(
+        _partial(createdAt: ts.add(const Duration(minutes: 3)), pieceName: 'Vaso actualizado'),
+        existingId: id1,
       );
 
       expect(id2, equals(id1), reason: 'Debe reusar la misma fila (upsert)');
@@ -96,12 +119,42 @@ void main() {
         'SELECT * FROM calculations WHERE id = ?',
         variables: [Variable.withInt(id1)],
       ).getSingle();
-      expect(row.read<String>('piece_name'), 'Vaso actualizado');
+      expect(row.read<String?>('piece_name'), 'Vaso actualizado');
+      expect(
+        row.read<DateTime>('created_at'),
+        ts,
+        reason: 'el upsert no debe tocar createdAt',
+      );
 
       final count = await db.customSelect(
         'SELECT COUNT(*) AS cnt FROM calculations',
       ).getSingle();
       expect(count.read<int>('cnt'), 1, reason: 'Solo 1 fila, no duplicada');
+    });
+
+    test('existingId conserva pieceName/clientName si el patch los trae ausentes', () async {
+      final ts = DateTime(2026, 9, 28, 12, 10);
+      final id = await repo.savePartial(
+        _partial(createdAt: ts, pieceName: 'Taza'),
+      );
+      // Patch tipico del autosave: nombres absentes, totales nuevos.
+      await repo.savePartial(
+        CalculationsCompanion(
+          createdAt: Value(ts),
+          pieceName: const Value.absent(),
+          clientName: const Value.absent(),
+          totalPriceSnapshot: const Value(99),
+          effectiveTotalSnapshot: const Value(99),
+          isPartial: const Value(true),
+        ),
+        existingId: id,
+      );
+      final row = await db.customSelect(
+        'SELECT * FROM calculations WHERE id = ?',
+        variables: [Variable.withInt(id)],
+      ).getSingle();
+      expect(row.read<String?>('piece_name'), 'Taza');
+      expect(row.read<double>('total_price_snapshot'), 99);
     });
   });
 
@@ -139,7 +192,7 @@ void main() {
       expect(mats.map((m) => m.label).toSet(), {'PLA', 'ABS'});
     });
 
-    test('upsert del mismo minuto reemplaza (no duplica) materiales', () async {
+    test('upsert con existingId reemplaza (no duplica) materiales', () async {
       final ts = DateTime(2026, 9, 28, 16, 30);
       final id1 = await repo.savePartial(
         _partial(createdAt: ts),
@@ -148,6 +201,7 @@ void main() {
       final id2 = await repo.savePartial(
         _partial(createdAt: ts),
         materials: [mat('PLA', 100)],
+        existingId: id1,
       );
       expect(id2, equals(id1));
 
@@ -214,7 +268,7 @@ void main() {
       expect(abs.materialHours, isNull);
     });
 
-    test('el upsert actualiza el desglose viejo en vez de duplicarlo', () async {
+    test('el upsert con existingId actualiza el desglose viejo en vez de duplicarlo', () async {
       final ts = DateTime(2026, 9, 28, 20, 0);
       final id1 = await repo.savePartial(
         _partial(createdAt: ts),
@@ -233,6 +287,7 @@ void main() {
             materialMinutes: 15,
           ),
         ],
+        existingId: id1,
       );
       expect(id2, equals(id1));
 
@@ -240,6 +295,50 @@ void main() {
       expect(mats, hasLength(1));
       expect(mats.single.useOwnTime, isTrue);
       expect(mats.single.materialMinutes, 15.0);
+    });
+  });
+
+  group('borradores (partial): visibles en historial, fuera del cap', () {
+    /// Crear un borrador via savePartial.
+    Future<int> seedDraft(int minute) =>
+        repo.savePartial(_partial(createdAt: DateTime(2026, 10, 3, 12, minute)));
+
+    test('countAll excluye borradores (no consumen el cap free)', () async {
+      await seedDraft(0);
+      await seedDraft(1);
+      await seedDraft(2);
+      expect(await repo.countAll(), 0, reason: 'borradores no cuentan');
+    });
+
+    test('listItems SI muestra borradores (retomables desde historial)',
+        () async {
+      await seedDraft(0);
+      await seedDraft(1);
+      final items = await repo.listItems();
+      expect(items, hasLength(2));
+      expect(items.every((i) => i.isPartial), isTrue);
+    });
+
+    test('con el cap lleno de borradores, un save real SI entra', () async {
+      // 10 borradores (el cap free) + un save real.
+      for (var i = 0; i < 10; i++) {
+        await seedDraft(i);
+      }
+      final draft = CalculationDraft(
+        materials: const [],
+        totalHours: Decimal.fromInt(2),
+        discountPercentage: Decimal.zero,
+        output: CalculationOutput.simple(
+          materialCost: Decimal.fromInt(12),
+          discountAmount: Decimal.zero,
+          totalPrice: Decimal.fromInt(12),
+        ),
+        clientName: 'Cliente',
+      );
+      final id = await repo.createIfWithinLimit(draft, limit: kFreeHistoryCap);
+      expect(id, isNotNull, reason: 'los borradores no deben llenar el cap');
+      // Historial: 10 borradores + 1 real.
+      expect(await repo.listItems(), hasLength(11));
     });
   });
 

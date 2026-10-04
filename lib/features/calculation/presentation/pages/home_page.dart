@@ -10,9 +10,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/database/app_database.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
 import '../../../../core/theme/app_radii.dart';
@@ -38,9 +40,18 @@ class HomePage extends ConsumerWidget {
     ref.watch(localeProvider);
     final asyncSettings = ref.watch(settingsNotifierProvider);
     final asyncDraft = ref.watch(draftStatusProvider);
+    // Borrador rapido en DB (isPartial): banner "Continuar" SIEMPRE que
+    // exista, aunque el draft de sesion no este.
+    final asyncPartial = ref.watch(latestPartialProvider);
     final settings = asyncSettings.value;
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+
+    final sessionDraft = asyncDraft.value;
+    final dbPartial = asyncPartial.value;
+    final sessionHasContent =
+        sessionDraft != null && _hasDraftContent(sessionDraft);
+    final showDraftBanner = sessionHasContent || dbPartial != null;
 
     return Scaffold(
       body: SafeArea(
@@ -64,14 +75,18 @@ class HomePage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: AppSpacing.lg),
-                      // Banner "Continuar cotización" (solo si hay draft).
-                      if (asyncDraft.value != null &&
-                          _hasDraftContent(asyncDraft.value!)) ...[
+                      // Banner "Continuar cotización": draft de sesion y/o
+                      // parcial rapido en DB.
+                      if (showDraftBanner) ...[
                         _buildDraftBanner(
                           context,
+                          ref,
                           theme,
                           color,
-                          asyncDraft.value!,
+                          sessionDraft: sessionHasContent
+                              ? sessionDraft
+                              : null,
+                          dbPartial: dbPartial,
                         ),
                         const SizedBox(height: AppSpacing.lg),
                       ],
@@ -456,19 +471,23 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  /// Banner "Continuar cotización": aparece cuando hay un draft persistido
-  /// con contenido (la calculadora guarda en cada cambio, debounced).
+  /// Banner "Continuar cotización": draft de sesion (SharedPreferences)
+  /// y/o ultimo parcial rapido en DB (isPartial).
   ///
-  /// "Continuar" navega a `/calculator`, que restaura el draft al iniciar
-  /// (comportamiento default de la pagina). El banner se pinta con el color
-  /// del contenedor primario para diferenciarse de las acciones neutras.
+  /// "Continuar" navega a `/calculator` (draft de sesion) o a
+  /// `/calculator/edit` con el parcial de DB para retomarlo.
   Widget _buildDraftBanner(
     BuildContext context,
+    WidgetRef ref,
     ThemeData theme,
-    ColorScheme color,
-    CalculationDraft draft,
-  ) {
-    final label = draft.label.trim();
+    ColorScheme color, {
+    CalculationDraft? sessionDraft,
+    Calculation? dbPartial,
+  }) {
+    final label = sessionDraft?.label.trim() ??
+        (dbPartial?.pieceName?.trim().isNotEmpty ?? false
+            ? dbPartial!.pieceName!.trim()
+            : dbPartial?.clientName?.trim() ?? '');
     return Semantics(
       container: true,
       label:
@@ -532,7 +551,28 @@ class HomePage extends ConsumerWidget {
                     horizontal: AppSpacing.lg,
                   ),
                 ),
-                onPressed: () => context.push('/calculator'),
+                onPressed: () async {
+                  // Draft de sesion con contenido: restaura el form.
+                  if (sessionDraft != null) {
+                    await context.push('/calculator');
+                    return;
+                  }
+                  // Solo parcial en DB: carga la fila y entra en modo
+                  // edicion para retomar ese borrador rapido.
+                  final partial = dbPartial;
+                  if (partial == null) {
+                    await context.push('/calculator');
+                    return;
+                  }
+                  final repo = ref.read(calculationRepositoryProvider);
+                  final full = await repo.getById(partial.id);
+                  if (!context.mounted) return;
+                  if (full != null) {
+                    await context.push('/calculator/edit', extra: full);
+                  } else {
+                    await context.push('/calculator');
+                  }
+                },
                 child: Text(EsBO.homeDraftContinue),
               ),
             ],

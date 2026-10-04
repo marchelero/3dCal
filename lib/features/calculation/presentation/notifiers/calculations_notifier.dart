@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/database/app_database.dart';
 import '../../../../core/providers.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../data/calculation_repository.dart';
@@ -64,7 +65,14 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
   String? _clientFilter;
 
   /// Cache `calcId -> labels de materiales` para la busqueda por filamento.
+  ///
+  /// Lazy: solo se carga cuando hay query de busqueda ([_searchQuery] no
+  /// vacio). Antes se recargaba en cada build/refresh del historial y
+  /// volvia lenta la app en web (GROUP_CONCAT sobre todas las filas).
   Map<int, String> _materialLabels = {};
+
+  /// True cuando [_materialLabels] ya fue cargado (evita re-query).
+  bool _materialLabelsLoaded = false;
 
   /// Query de busqueda activa (lectura para la UI).
   String get searchQuery => _searchQuery;
@@ -91,15 +99,41 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
   @override
   Future<List<CalculationListItem>> build() async {
     final repo = ref.watch(calculationRepositoryProvider);
-    _materialLabels = await repo.materialLabelsByCalcId();
+    // Suscripcion al stream de drift: cada INSERT/UPDATE/DELETE de
+    // calculations re-emite y actualiza el estado SIN pasar por
+    // AsyncValue.loading (evita el skeleton flash en cada autosave).
+    final sub = repo.watchItems().listen((items) {
+      _all = items;
+      state = AsyncValue.data(_applyFilters());
+    });
+    ref.onDispose(sub.cancel);
+
     _all = await repo.listItems();
     return _applyFilters();
+  }
+
+  /// Carga los labels de materiales solo si hay busqueda activa.
+  Future<void> _ensureMaterialLabels() async {
+    if (_materialLabelsLoaded) return;
+    final repo = ref.read(calculationRepositoryProvider);
+    _materialLabels = await repo.materialLabelsByCalcId();
+    _materialLabelsLoaded = true;
   }
 
   /// Busca cotizaciones cuyo nombre de pieza, cliente o material contenga
   /// [query]. Vacio restaura la lista completa.
   void search(String query) {
     _searchQuery = query.trim().toLowerCase();
+    if (_searchQuery.isNotEmpty && !_materialLabelsLoaded) {
+      // Pinta ya con lo que hay (pieza/cliente) y refina cuando lleguen
+      // los labels de material.
+      state = AsyncValue.data(_applyFilters());
+      _ensureMaterialLabels().then((_) {
+        if (!ref.mounted) return;
+        state = AsyncValue.data(_applyFilters());
+      });
+      return;
+    }
     state = AsyncValue.data(_applyFilters());
   }
 
@@ -129,14 +163,19 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
   }
 
   /// Recarga datos desde DB manteniendo filtros activos.
+  ///
+  /// Pull-to-refresh / retry. Muestra loading (skeleton) mientras carga.
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final repo = ref.read(calculationRepositoryProvider);
-      _materialLabels = await repo.materialLabelsByCalcId();
-      _all = await repo.listItems();
-      return _applyFilters();
-    });
+    await _reload();
+  }
+
+  /// Recarga silenciosa: actualiza `_all` y el state sin pasar por loading.
+  ///
+  /// Para el shell al entrar a la pestaña Historial: el stream de drift ya
+  /// mantiene la lista viva; esto es un safety-net barato sin skeleton flash.
+  Future<void> refreshQuiet() async {
+    await _reload();
   }
 
   /// Cambia el flag `isSold` de una cotizacion.
@@ -184,8 +223,10 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
 
   Future<void> _reload() async {
     final repo = ref.read(calculationRepositoryProvider);
-    _materialLabels = await repo.materialLabelsByCalcId();
     _all = await repo.listItems();
+    if (_materialLabelsLoaded) {
+      _materialLabels = await repo.materialLabelsByCalcId();
+    }
     state = AsyncValue.data(_applyFilters());
   }
 
@@ -265,3 +306,13 @@ final calculationsNotifierProvider =
     AsyncNotifierProvider<CalculationsNotifier, List<CalculationListItem>>(
       CalculationsNotifier.new,
     );
+
+/// Ultimo parcial (borrador de guardado rapido) persistido en DB.
+///
+/// Home lo usa para ofrecer "Continuar" aunque el draft de sesion
+/// (SharedPreferences) se perdio o se limpio: si quedo un `isPartial`
+/// en la tabla, el usuario debe poder retomarlo.
+final latestPartialProvider = FutureProvider<Calculation?>((ref) {
+  final repo = ref.watch(calculationRepositoryProvider);
+  return repo.latestPartial();
+});

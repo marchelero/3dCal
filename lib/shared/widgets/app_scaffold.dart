@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_radii.dart';
+import '../../features/calculation/presentation/notifiers/calculations_notifier.dart';
 import '../../l10n/app_locale.dart';
 
 /// Shell responsive que envuelve las 4 destinations principales del shell
@@ -73,8 +74,19 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   void didUpdateWidget(AppScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_prevIndex != widget.navigationShell.currentIndex) {
-      _prevIndex = widget.navigationShell.currentIndex;
+      final index = widget.navigationShell.currentIndex;
+      _prevIndex = index;
       _fadeCtrl.forward(from: 0);
+      // Al entrar a la pestaña de Historial (indice 1), safety-net silencioso.
+      // El autosave normal ya mantiene la lista viva via drift watchItems();
+      // refreshQuiet evita el skeleton flash que causaba invalidate+loading.
+      if (index == 1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.read(calculationsNotifierProvider.notifier).refreshQuiet();
+          }
+        });
+      }
     }
   }
 

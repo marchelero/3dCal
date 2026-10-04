@@ -155,6 +155,17 @@ class AppDatabase extends _$AppDatabase {
         // v15→v16: flag de modo Advanced. Sin el, una cotizacion Advanced de
         // un solo material se restauraba como Express (mats.length > 1).
         await m.addColumn(calculations, calculations.isAdvanced);
+        // Data migration: las filas v15- no tenian el flag. Una cotizacion con
+        // 2+ materiales era necesariamente Advanced (el modo se inferia por la
+        // cantidad), asi que se marca. Sin esto, al dejar de usar el fallback
+        // `mats.length > 1`, esas filas se reusarian como Express y perderian
+        // sus materiales. Las de 1 material quedan Express (mismo resultado
+        // que la inferencia vieja).
+        await m.database.customStatement(
+          'UPDATE calculations SET is_advanced = 1 WHERE id IN '
+          '(SELECT calculation_id FROM calculation_materials '
+          'GROUP BY calculation_id HAVING COUNT(*) > 1)',
+        );
       }
       if (from < 15) {
         // v14→v15: tiempo propio por material (Advanced multi-material).
