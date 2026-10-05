@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -104,12 +106,32 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
     // AsyncValue.loading (evita el skeleton flash en cada autosave).
     final sub = repo.watchItems().listen((items) {
       _all = items;
+      if (_materialLabelsLoaded) {
+        // MED-10 (auditoría 2026-10-04): la cache de labels de material se
+        // cargaba UNA sola vez (`_ensureMaterialLabels`) y este listener no
+        // la refrescaba → una cotización recién guardada NO se encontraba
+        // por material en la búsqueda hasta que toggleSold/delete/duplicate
+        // dispararan `_reload()`. Marca dirty y re-emite con labels frescos.
+        _materialLabelsLoaded = false;
+        unawaited(_refreshMaterialLabels());
+      }
       state = AsyncValue.data(_applyFilters());
     });
     ref.onDispose(sub.cancel);
 
     _all = await repo.listItems();
     return _applyFilters();
+  }
+
+  /// Recarga los labels de materiales (cache de búsqueda) y re-emite el
+  /// estado. La llama el listener de drift cuando cambia la tabla (MED-10).
+  Future<void> _refreshMaterialLabels() async {
+    final repo = ref.read(calculationRepositoryProvider);
+    final labels = await repo.materialLabelsByCalcId();
+    if (!ref.mounted) return;
+    _materialLabels = labels;
+    _materialLabelsLoaded = true;
+    state = AsyncValue.data(_applyFilters());
   }
 
   /// Carga los labels de materiales solo si hay busqueda activa.
@@ -122,16 +144,20 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
 
   /// Busca cotizaciones cuyo nombre de pieza, cliente o material contenga
   /// [query]. Vacio restaura la lista completa.
-  void search(String query) {
+  ///
+  /// `Future<void>` (y no `void`): la carga lazy de labels de material es
+  /// async; los Llamadores de UI pueden ignorar el future, pero los TESTS
+  /// necesitan await para observar el resultado refinado de forma
+  /// determinista (previously: race que hacia flakys los tests de search).
+  Future<void> search(String query) async {
     _searchQuery = query.trim().toLowerCase();
     if (_searchQuery.isNotEmpty && !_materialLabelsLoaded) {
       // Pinta ya con lo que hay (pieza/cliente) y refina cuando lleguen
       // los labels de material.
       state = AsyncValue.data(_applyFilters());
-      _ensureMaterialLabels().then((_) {
-        if (!ref.mounted) return;
-        state = AsyncValue.data(_applyFilters());
-      });
+      await _ensureMaterialLabels();
+      if (!ref.mounted) return;
+      state = AsyncValue.data(_applyFilters());
       return;
     }
     state = AsyncValue.data(_applyFilters());
@@ -224,8 +250,14 @@ class CalculationsNotifier extends AsyncNotifier<List<CalculationListItem>> {
   Future<void> _reload() async {
     final repo = ref.read(calculationRepositoryProvider);
     _all = await repo.listItems();
+    // Guard anti-UnmountedRefException (test roto pre-existente heredado de
+    // la migración Riverpod 3): el provider puede disponerse (cambio de tab
+    // en el shell) mientras el await de drift sigue en vuelo; escribir
+    // `state` despues lanza y contamina el test/sesion siguiente.
+    if (!ref.mounted) return;
     if (_materialLabelsLoaded) {
       _materialLabels = await repo.materialLabelsByCalcId();
+      if (!ref.mounted) return;
     }
     state = AsyncValue.data(_applyFilters());
   }

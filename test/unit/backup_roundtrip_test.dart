@@ -139,6 +139,31 @@ void main() {
     },
   );
 
+  test(
+    'R2-MED-06/07: backup pre-v17 sin printMinutes/modos usa defaults',
+    () async {
+      // Simula un backup anterior a v17: no trae modelingMode/postprocMode/
+      // extraMode (el fixture ya no los incluye) y ahora tampoco printMinutes.
+      final json = validBackupJson();
+      final row = (json['calculations'] as List).single as Map<String, dynamic>;
+      row.remove('printMinutes');
+      expect(row.containsKey('modelingMode'), isFalse);
+
+      final result = await backup.restoreFromJson(jsonEncode(json));
+      expect(
+        result,
+        isEmpty,
+        reason: 'printMinutes ausente NO debe abortar el restore (MED-07)',
+      );
+
+      final calc = (await db.select(db.calculations).get()).single;
+      expect(calc.printMinutes, 0, reason: 'default de columna (MED-07)');
+      expect(calc.modelingMode, 'auto', reason: 'default de columna (MED-06)');
+      expect(calc.postprocMode, 'auto', reason: 'default de columna (MED-06)');
+      expect(calc.extraMode, 'off', reason: 'default de columna (MED-06)');
+    },
+  );
+
   test('round-trip: catalogo y snapshots preservan campos nuevos', () async {
     final json = jsonEncode(validBackupJson());
 

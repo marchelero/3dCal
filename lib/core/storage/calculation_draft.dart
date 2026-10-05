@@ -19,6 +19,9 @@ class CalculationDraft {
     this.clientName = '',
     this.isAdvanced = false,
     this.materials = const [],
+    // MED-07 fix (auditoría 2026-10-04): el draft de sesion no guardaba la
+    // cantidad del lote; al reabrir la app un lote de 12 u volvía a 1 u.
+    this.quantity = 1,
     this.extraLaborRate = '',
     this.extraPostProcessRate = '',
     this.extraFailureRate = '',
@@ -44,6 +47,9 @@ class CalculationDraft {
       filamentLabel: json['filamentLabel'] as String? ?? '',
       clientName: json['clientName'] as String? ?? '',
       isAdvanced: json['isAdvanced'] as bool? ?? false,
+      // MED-07: tolerante — drafts escritos por versiones previas no traen
+      // la clave; caen al default 1 sin tumbar la restauracion.
+      quantity: _toIntPositive(json['quantity']),
       materials:
           (json['materials'] as List?)
               ?.map((e) => MaterialDraft.fromJson(e as Map<String, dynamic>))
@@ -72,6 +78,16 @@ class CalculationDraft {
     return 0;
   }
 
+  /// Cantidad del lote desde JSON tolerante: Missing/invalido/<1 -> 1.
+  static int _toIntPositive(Object? v) {
+    if (v is num) return v.toInt() < 1 ? 1 : v.toInt();
+    if (v is String) {
+      final n = int.tryParse(v);
+      return (n == null || n < 1) ? 1 : n;
+    }
+    return 1;
+  }
+
   final String weight;
   final String printHours;
   final String printMinutes;
@@ -83,6 +99,9 @@ class CalculationDraft {
   final String clientName;
   final bool isAdvanced;
   final List<MaterialDraft> materials;
+
+  /// Cantidad del lote (>= 1). MED-07 fix.
+  final int quantity;
 
   // === F1: OTROS ===
   final String extraLaborRate;
@@ -115,6 +134,7 @@ class CalculationDraft {
     'filamentLabel': filamentLabel,
     'clientName': clientName,
     'isAdvanced': isAdvanced,
+    'quantity': quantity,
     'materials': materials.map((m) => m.toJson()).toList(),
     'extraLaborRate': extraLaborRate,
     'extraPostProcessRate': extraPostProcessRate,

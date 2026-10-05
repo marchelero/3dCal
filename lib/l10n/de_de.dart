@@ -210,6 +210,8 @@ class DeImpl implements AppStrings {
   String get settingsMinimumChargeHelper =>
       'Angebote unter diesem Betrag werden automatisch angepasst';
   @override
+  String get settingsMinimumChargeRange => 'Bereich: 0-100000';
+  @override
   String get settingsMarkupOnMaterials =>
       'Materialaufschlag für Verschnitt (%)';
   @override
@@ -711,6 +713,8 @@ class DeImpl implements AppStrings {
   @override
   String get quoteImageRemove => 'Entfernen';
   @override
+  String get quoteImageAddPiece => '+ Bild';
+  @override
   String get quoteImageTooLarge =>
       'Das Bild überschreitet 5 MB und wurde nicht angehängt.';
   @override
@@ -756,6 +760,15 @@ class DeImpl implements AppStrings {
       'Wird in neuen Angeboten verwendet. Nur ein Filament kann Standard sein.';
   @override
   String get filamentNewTooltip => 'Neues Filament';
+  @override
+  String filamentFreeLimitTooltip(int limit) =>
+      'Free-Limit ($limit Filamente)';
+  @override
+  String filamentFreeLimitHint(int current, int limit) =>
+      '$current/$limit Filamente — für mehr Pro freischalten';
+  @override
+  String filamentFreeLimitSnack(int limit) =>
+      'Free-Limit: $limit Filamente. Pro freischalten, um mehr hinzuzufügen.';
   @override
   String get filamentDeleteTitle => 'Filament löschen';
   @override
@@ -906,7 +919,6 @@ class DeImpl implements AppStrings {
     'Menge',
     'Gesamt',
     'Verkauft',
-    'Materialien',
     'Stunden',
     'Rabatt',
     'LosRabatt%',

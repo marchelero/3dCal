@@ -16,6 +16,7 @@ import '../../../../core/money/currency_formatter.dart';
 import '../../../../core/money/currency_settings_provider.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/storage/calculation_draft.dart';
+import '../../../../core/storage/draft_storage.dart';
 import '../../../../core/storage/draft_storage_providers.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -452,6 +453,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final s = ref.read(calculatorNotifierProvider);
     return CalculationDraft(
       isAdvanced: s.mode == CalculatorMode.advanced,
+      // MED-07 fix: la cantidad del lote sobrevive al cierre de la app.
+      quantity: s.quantity,
       materials: s.materials
           .map(
             (m) => MaterialDraft(
@@ -524,7 +527,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (_formIsEmpty) return;
       ref
           .read(sharedPreferencesProvider)
-          .setString('form_draft', _buildSessionDraft().encode());
+          .setString(DraftStorage.key, _buildSessionDraft().encode());
     } catch (_) {
       // Silenciar: si falla, el debounce async cubrirá el caso normal.
     }
@@ -567,7 +570,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     final materials = _partialMaterialInputs(state);
     try {
       final repo = ref.read(calculationRepositoryProvider);
-      final companion = CalculatorNotifier.stateToPartialDto(state);
+      final companion = _partialDtoWithRates(state);
       // Upsert sobre el parcial activo (mismo id) para no crear uno nuevo
       // por cada guardado. Al editar un borrador, el id ES el del prefill
       // (el provider se reseteo al entrar en modo edicion).
@@ -598,6 +601,19 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   int? get _partialTargetId => _editingDraft
       ? widget.prefillCalc!.id
       : ref.read(currentPartialIdProvider);
+
+  /// DTO del parcial con tasas reales cuando `ref` sigue vivo; en la salida
+  /// por dispose (ref invalido) degrada al dto legacy sin tasas (0 =
+  /// fallback Settings al recomprar, comportamiento pre-fix).
+  CalculationsCompanion _partialDtoWithRates(CalculatorState s) {
+    try {
+      return ref
+          .read(calculatorNotifierProvider.notifier)
+          .buildPartialDto(s);
+    } catch (_) {
+      return CalculatorNotifier.stateToPartialDto(s);
+    }
+  }
 
   /// Persiste el parcial AHORA (fire-and-forget), pensado para ejecutarse
   /// antes de salir de la pagina.
@@ -660,7 +676,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     // borrarian los materiales que ya estaban guardados. En Express sin peso
     // pasa lo mismo (la fila quedaria sin su material implicito).
     if (materials.isEmpty && existingId != null) return;
-    final companion = CalculatorNotifier.stateToPartialDto(state);
+    final companion = _partialDtoWithRates(state);
     try {
       final id = await repo.savePartial(
         companion,

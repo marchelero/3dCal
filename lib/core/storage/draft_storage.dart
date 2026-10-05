@@ -1,4 +1,4 @@
-// ignore_for_file: public_member_api_docs
+﻿// ignore_for_file: public_member_api_docs
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'calculation_draft.dart';
@@ -11,24 +11,28 @@ import 'calculation_draft.dart';
 class DraftStorage {
   DraftStorage(this._prefs);
 
-  static const _key = 'form_draft';
+  /// Clave de prefs del draft. **Publica** (LOW-17 fix): el write sincronico
+  /// de `dispose()` en la pagina usa esta misma constante â€” antes duplicaba
+  /// el literal `'form_draft'` y cualquier cambio de clave hubiera driftado
+  /// en silencio.
+  static const key = 'form_draft';
 
   final SharedPreferences _prefs;
 
   /// Carga el draft o `null` si no existe / no parsea.
   Future<CalculationDraft?> load() async {
-    final raw = _prefs.getString(_key);
+    final raw = _prefs.getString(key);
     if (raw == null) return null;
     return CalculationDraft.tryDecode(raw);
   }
 
   /// Persiste el draft. Reemplaza el valor anterior.
   Future<void> save(CalculationDraft draft) async {
-    await _prefs.setString(_key, draft.encode());
+    await _prefs.setString(key, draft.encode());
   }
 
   /// Limpia el draft (ej: al guardar la cotizacion exitosamente).
   Future<void> clear() async {
-    await _prefs.remove(_key);
+    await _prefs.remove(key);
   }
 }

@@ -34,14 +34,29 @@ import '../../../../shared/widgets/partial_save_badge.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
+import '../../../settings/domain/discount_tier.dart';
 import '../../../settings/domain/settings.dart';
 import '../../../settings/presentation/notifiers/settings_notifier.dart';
+import '../../domain/batch_discount_resolver.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_output.dart';
+import '../../domain/lot_totals.dart';
 import '../notifiers/calculations_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/quote_image_template.dart';
 import '../widgets/report_variant_selector.dart';
+
+/// Cifras del lote resueltas por [_DetailState._lotFigures]: fuente unica
+/// del hero, el desglose, la imagen y el PDF del detalle (HIGH-01/02,
+/// MED-10 de la auditoria 2026-10-04).
+typedef _LotFigures =
+    ({
+      Decimal unitTotal,
+      Decimal batchPct,
+      Decimal batchAmount,
+      Decimal lotTotal,
+      Decimal manualAmount,
+    });
 
 /// Detalle de una cotizacion guardada (readonly).
 ///
@@ -168,7 +183,8 @@ class _DetailState extends ConsumerState<_Detail> {
 
   /// Genera el PDF de la cotizacion y abre el menu de compartir (mail,
   /// WhatsApp, etc.). Distinto de "Imprimir": mismo PDF, pero aca se envia
-  /// a otra app en vez de ir a la impresora. Requiere PRO.
+  /// a otra app en vez de ir a la impresora. Gratis (PRD SC6); en Free sale
+  /// con branding "3dCalc".
   Future<void> _handleSharePdf() async {
     if (_isBusy) return;
     setState(() => _isBusy = true);
@@ -193,6 +209,13 @@ class _DetailState extends ConsumerState<_Detail> {
         (Decimal sum, m) => sum + _money(m.weightGrams),
       );
       final timedMaterials = _pdfMaterialBreakdown(materials, result.breakdown);
+      // HIGH-01/MED-10: mismo calculo de lote que la pantalla.
+      final lot = _lotFigures(
+        calc: calc,
+        settings: settings,
+        tiers: _currentTiers(),
+        unitOutput: result.output,
+      );
 
       await shareQuotePdf(
         isPro: ref.read(isProProvider),
@@ -219,19 +242,12 @@ class _DetailState extends ConsumerState<_Detail> {
         materialMetaBreakdown: timedMaterials,
         quantity: _quantity,
         totalGrams: totalGrams,
-        batchDiscountPct: calc.batchDiscountPercent != null
-            ? Decimal.tryParse(calc.batchDiscountPercent!)
+        batchDiscountPct: lot.batchPct > Decimal.zero ? lot.batchPct : null,
+        batchDiscountAmount: lot.batchAmount > Decimal.zero
+            ? lot.batchAmount
             : null,
-        batchDiscountAmount: calc.batchDiscountAmount != null
-            ? Decimal.tryParse(calc.batchDiscountAmount!)
-            : null,
-        lotTotal:
-            result.output.totalPrice * Decimal.fromInt(_quantity) -
-            (calc.batchDiscountAmount != null
-                ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
-                : Decimal.zero),
-        manualDiscountAmount: result.output.discountAmount *
-            Decimal.fromInt(_quantity),
+        lotTotal: lot.lotTotal,
+        manualDiscountAmount: lot.manualAmount,
         rateAudit: result.rateAudit,
       );
     } catch (e) {
@@ -267,6 +283,13 @@ class _DetailState extends ConsumerState<_Detail> {
         Decimal.zero,
         (Decimal sum, m) => sum + _money(m.weightGrams),
       );
+      // HIGH-01/MED-10: mismo calculo de lote que la pantalla.
+      final lot = _lotFigures(
+        calc: calc,
+        settings: settings,
+        tiers: _currentTiers(),
+        unitOutput: result.output,
+      );
       final pdfBytes = await buildQuotePdfBytes(
         isPro: ref.read(isProProvider),
         output: result.output,
@@ -295,19 +318,12 @@ class _DetailState extends ConsumerState<_Detail> {
         ),
         quantity: _quantity,
         totalGrams: totalGrams,
-        batchDiscountPct: calc.batchDiscountPercent != null
-            ? Decimal.tryParse(calc.batchDiscountPercent!)
+        batchDiscountPct: lot.batchPct > Decimal.zero ? lot.batchPct : null,
+        batchDiscountAmount: lot.batchAmount > Decimal.zero
+            ? lot.batchAmount
             : null,
-        batchDiscountAmount: calc.batchDiscountAmount != null
-            ? Decimal.tryParse(calc.batchDiscountAmount!)
-            : null,
-        lotTotal:
-            result.output.totalPrice * Decimal.fromInt(_quantity) -
-            (calc.batchDiscountAmount != null
-                ? Decimal.tryParse(calc.batchDiscountAmount!) ?? Decimal.zero
-                : Decimal.zero),
-        manualDiscountAmount: result.output.discountAmount *
-            Decimal.fromInt(_quantity),
+        lotTotal: lot.lotTotal,
+        manualDiscountAmount: lot.manualAmount,
         rateAudit: result.rateAudit,
       );
       await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
@@ -352,6 +368,63 @@ class _DetailState extends ConsumerState<_Detail> {
 
   // === Build ===
 
+  /// Numeros del lote para la cantidad mostrada (HIGH-01/MED-10).
+  ///
+  /// Con la cantidad ORIGINAL guardada usa el monto de escalón persistido
+  /// (fidelidad al historial). Con cantidad editada (solo Pro) resuelve el
+  /// escalón vigente para la nueva N sobre los costos base snapshot — el
+  /// descuento guardado de otra cantidad ya no aplica.
+  _LotFigures _lotFigures({
+    required Calculation calc,
+    required Settings settings,
+    required List<DiscountTier> tiers,
+    required CalculationOutput? unitOutput,
+  }) {
+    final n = _quantity < 1 ? 1 : _quantity;
+    final qtyD = Decimal.fromInt(n);
+    final unitTotal = _money(calc.totalPriceSnapshot);
+    final savedQty = calc.quantity < 1 ? 1 : calc.quantity;
+    final Decimal batchPct;
+    final Decimal batchAmount;
+    if (n == savedQty) {
+      batchAmount = LotTotals.parseBatchAmount(calc.batchDiscountAmount);
+      batchPct =
+          Decimal.tryParse(calc.batchDiscountPercent ?? '') ?? Decimal.zero;
+    } else {
+      final tier = BatchDiscountResolver.resolve(quantity: n, tiers: tiers);
+      batchPct = tier?.percent ?? Decimal.zero;
+      batchAmount = LotTotals.batchAmount(
+        base: _money(calc.baseCostSnapshot),
+        failure: _money(calc.failureCostSnapshot),
+        markup: _money(calc.markupCostSnapshot),
+        pct: batchPct,
+        quantity: n,
+      );
+    }
+    // HIGH-03: el piso usa el snapshot real (filas F2+); las viejas (0)
+    // caen al Settings actual, misma politica que `resolveRates`.
+    final minimumCharge = calc.minimumChargeSnapshot > 0
+        ? _money(calc.minimumChargeSnapshot)
+        : settings.minimumCharge;
+    final lotTotal = LotTotals.total(
+      unitTotal: unitTotal,
+      quantity: n,
+      batchDiscount: batchAmount,
+      minimumCharge: minimumCharge,
+    );
+    return (
+      unitTotal: unitTotal,
+      batchPct: batchPct,
+      batchAmount: batchAmount,
+      lotTotal: lotTotal,
+      manualAmount: (unitOutput?.discountAmount ?? Decimal.zero) * qtyD,
+    );
+  }
+
+  /// Tiers vigentes para [_lotFigures] (sync con Settings → escalones).
+  List<DiscountTier> _currentTiers() =>
+      ref.read(discountTiersProvider).value ?? const <DiscountTier>[];
+
   @override
   Widget build(BuildContext context) {
     final calc = widget.calc;
@@ -369,8 +442,18 @@ class _DetailState extends ConsumerState<_Detail> {
 
     final qtyD = Decimal.fromInt(_quantity);
     // Valores UNITARIOS guardados como snapshot (fieles al historial).
-    final unitTotal = _money(calc.totalPriceSnapshot);
-    final effectiveTotal = unitTotal * qtyD;
+    // HIGH-01 fix (auditoria 2026-10-04): el TOTAL efectivo resta el
+    // descuento mayorista del lote (y re-resuelve el escalon si la
+    // cantidad fue editada) — antes mostraba `unit x qty` inflado vs la
+    // calculadora en vivo y el PDF.
+    final lot = _lotFigures(
+      calc: calc,
+      settings: settings,
+      tiers: ref.watch(discountTiersProvider).value ?? const <DiscountTier>[],
+      unitOutput: result?.output,
+    );
+    final unitTotal = lot.unitTotal;
+    final effectiveTotal = lot.lotTotal;
     final materialUnit = _money(calc.materialCostSnapshot);
     final electricUnit = _money(calc.electricCostSnapshot);
     final amortizationUnit = _money(calc.amortizationCostSnapshot);
@@ -529,6 +612,16 @@ class _DetailState extends ConsumerState<_Detail> {
                         color: color.primary,
                         emphasis: true,
                       ),
+                      // HIGH-01 fix: fila del escalon mayorista (antes el
+                      // desglose "sumaba" al total inflado sin mostrarla).
+                      if (lot.batchAmount > Decimal.zero)
+                        _Row(
+                          label: EsBO.calcDetailBatchDiscount(
+                            lot.batchPct.toDouble().round(),
+                          ),
+                          value: '-${formatCurrency(lot.batchAmount, currency)}',
+                          color: color.error,
+                        ),
                       if (discountUnit > Decimal.zero)
                         _Row(
                           label:
@@ -576,7 +669,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),
-                _reportCard(calc, materials, result, currency, settings),
+                _reportCard(calc, materials, result, currency, settings, lot),
                 SizedBox(
                   height: AppSpacing.lg + MediaQuery.of(context).padding.bottom,
                 ),
@@ -662,8 +755,19 @@ class _DetailState extends ConsumerState<_Detail> {
                   suffixText: 'u.',
                 ),
                 onChanged: (val) {
-                  final parsed = int.tryParse(val) ?? 1;
+                  final parsed = int.tryParse(val);
+                  if (parsed == null) return; // texto intermedio ("", "0x")
                   final clamped = parsed.clamp(1, kMaxQuantity);
+                  if (clamped == _quantity) return;
+                  // MED-10 fix (auditoria 2026-10-04): el gate Pro estaba en
+                  // los botones +/- pero no en el teclado; un Free tipeaba
+                  // "10" y veia total x10. Se rechaza la edicion y se
+                  // re-sincroniza el controller con la cantidad guardada.
+                  if (!isPro) {
+                    _quantityCtrl.text = '$_quantity';
+                    context.push('/paywall');
+                    return;
+                  }
                   setState(() => _quantity = clamped);
                 },
               ),
@@ -740,6 +844,7 @@ class _DetailState extends ConsumerState<_Detail> {
     result,
     WorldCurrency currency,
     Settings settings,
+    _LotFigures lot,
   ) {
     return SectionCard(
       icon: Icons.picture_as_pdf_outlined,
@@ -786,12 +891,19 @@ class _DetailState extends ConsumerState<_Detail> {
                   currency: currency,
                   quantity: _quantity,
                   pieceImageBytes: calc.pieceImageBlob,
-                  batchDiscountPct: calc.batchDiscountPercent != null
-                      ? Decimal.tryParse(calc.batchDiscountPercent!)
+                  // HIGH-02 fix (auditoria 2026-10-04): antes no se pasaba
+                  // `lotTotal` ni `manualDiscountAmount` y el template
+                  // reconstruia Subtotal/Total inflados (sumaba un escalon
+                  // que nunca habia restado). Ahora recibe los MISMOS
+                  // numeros que la pantalla y el PDF (_lotFigures).
+                  batchDiscountPct: lot.batchPct > Decimal.zero
+                      ? lot.batchPct
                       : null,
-                  batchDiscountAmount: calc.batchDiscountAmount != null
-                      ? Decimal.tryParse(calc.batchDiscountAmount!)
+                  batchDiscountAmount: lot.batchAmount > Decimal.zero
+                      ? lot.batchAmount
                       : null,
+                  lotTotal: lot.lotTotal,
+                  manualDiscountAmount: lot.manualAmount,
                 ),
               ),
             ),
@@ -808,15 +920,14 @@ class _DetailState extends ConsumerState<_Detail> {
                   icon: Icons.picture_as_pdf_rounded,
                   label: EsBO.detailActionShareReport,
                   isBusy: _isBusy,
+                  // HIGH-04 fix (auditoria 2026-10-04): el PRD de monetizacion
+                  // (SC6 + matriz de features) dice "Export PDF disponible en
+                  // FREE (con branding 3dCalc)". El gate de Pro aca
+                  // contradecia la PRD y era inconsistente con la calculadora
+                  // (result_sheet) y con "Imprimir" (sin gate). Se quita.
                   onPressed: _isBusy
                       ? null
-                      : () {
-                          if (!ref.read(isProProvider)) {
-                            unawaited(context.push('/paywall'));
-                          } else {
-                            unawaited(_handleSharePdf());
-                          }
-                        },
+                      : () => unawaited(_handleSharePdf()),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1633,6 +1744,11 @@ _recomputeOutput(
     fallbackProfitBase: settings.profitBase,
     fallbackPrinterWatts: printer?.averageWatts ?? 0,
     quantity: qty,
+    // HIGH-03 fix (auditoria 2026-10-04): el piso de cargo minimo tambien se
+    // aplica en la ruta snapshot (snapshot real > 0 gana; filas viejas caen
+    // al Settings actual, misma politica que las demas tasas).
+    minimumChargeSnapshot: calc.minimumChargeSnapshot,
+    fallbackMinimumCharge: settings.minimumCharge,
     // v17: overrides per-cotizacion. Filas pre-v17 tienen los defaults que
     // reproducen el calculo legacy; filas v17+ honran los modos guardados.
     modelingModeRaw: calc.modelingMode,

@@ -764,7 +764,8 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                   if (_pieceImageBytes == null)
                     TextButton.icon(
                       icon: const Icon(Icons.add_a_photo_rounded, size: 18),
-                      label: const Text('+ imagen'),
+                      // MED-11 fix (auditoria 2026-10-04): estaba fijo en espanol.
+                      label: Text(EsBO.quoteImageAddPiece),
                       onPressed: _isBusy ? null : _handlePickFromDialog,
                     )
                   else ...[

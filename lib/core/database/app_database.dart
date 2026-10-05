@@ -151,6 +151,29 @@ class AppDatabase extends _$AppDatabase {
         // is_partial = false (comportamiento identico al actual).
         await m.addColumn(calculations, calculations.isPartial);
       }
+      if (from < 15) {
+        // v14→v15: tiempo propio por material (Advanced multi-material).
+        // Antes el tiempo de cada material no se persistia: reusar o editar
+        // una cotizacion volvia al tiempo global, perdiendo el desglose.
+        // Aditiva: registros viejos quedan NULL (= false = tiempo global),
+        // comportamiento identico al actual.
+        //
+        // LOW-15 fix (auditoria 2026-10-04): este bloque estaba DESPUES del
+        // `from < 16` (orden invertido vs el numero de version). Hoy son
+        // aditivas e independientes, pero el orden invertido es una trampa
+        // para mantenibilidad: cualquier migracion futura que dependa del
+        // orden de version se escribiria mal mirando el codigo. Orden
+        // numerico estricto de aqui en mas.
+        await m.addColumn(calculationMaterials, calculationMaterials.useOwnTime);
+        await m.addColumn(
+          calculationMaterials,
+          calculationMaterials.materialHours,
+        );
+        await m.addColumn(
+          calculationMaterials,
+          calculationMaterials.materialMinutes,
+        );
+      }
       if (from < 16) {
         // v15→v16: flag de modo Advanced. Sin el, una cotizacion Advanced de
         // un solo material se restauraba como Express (mats.length > 1).
@@ -165,22 +188,6 @@ class AppDatabase extends _$AppDatabase {
           'UPDATE calculations SET is_advanced = 1 WHERE id IN '
           '(SELECT calculation_id FROM calculation_materials '
           'GROUP BY calculation_id HAVING COUNT(*) > 1)',
-        );
-      }
-      if (from < 15) {
-        // v14→v15: tiempo propio por material (Advanced multi-material).
-        // Antes el tiempo de cada material no se persistia: reusar o editar
-        // una cotizacion volvia al tiempo global, perdiendo el desglose.
-        // Aditiva: registros viejos quedan NULL (= false = tiempo global),
-        // comportamiento identico al actual.
-        await m.addColumn(calculationMaterials, calculationMaterials.useOwnTime);
-        await m.addColumn(
-          calculationMaterials,
-          calculationMaterials.materialHours,
-        );
-        await m.addColumn(
-          calculationMaterials,
-          calculationMaterials.materialMinutes,
         );
       }
       if (from < 17) {

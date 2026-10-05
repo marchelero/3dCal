@@ -141,6 +141,8 @@ class EsBO {
       _impl.settingsMinimumCharge(symbol);
   static String get settingsMinimumChargeHelper =>
       _impl.settingsMinimumChargeHelper;
+  static String get settingsMinimumChargeRange =>
+      _impl.settingsMinimumChargeRange;
   static String get settingsMarkupOnMaterials =>
       _impl.settingsMarkupOnMaterials;
   static String get settingsMarkupOnMaterialsHelper =>
@@ -430,6 +432,7 @@ class EsBO {
   static String get quoteImageCamera => _impl.quoteImageCamera;
   static String get quoteImageChange => _impl.quoteImageChange;
   static String get quoteImageRemove => _impl.quoteImageRemove;
+  static String get quoteImageAddPiece => _impl.quoteImageAddPiece;
   static String get quoteImageTooLarge => _impl.quoteImageTooLarge;
   static String get quoteImageInvalidFormat => _impl.quoteImageInvalidFormat;
   static String get quoteImageError => _impl.quoteImageError;
@@ -454,6 +457,12 @@ class EsBO {
   static String get filamentDefaultToggle => _impl.filamentDefaultToggle;
   static String get filamentDefaultSubtitle => _impl.filamentDefaultSubtitle;
   static String get filamentNewTooltip => _impl.filamentNewTooltip;
+  static String filamentFreeLimitTooltip(int limit) =>
+      _impl.filamentFreeLimitTooltip(limit);
+  static String filamentFreeLimitHint(int current, int limit) =>
+      _impl.filamentFreeLimitHint(current, limit);
+  static String filamentFreeLimitSnack(int limit) =>
+      _impl.filamentFreeLimitSnack(limit);
   static String get filamentDeleteTitle => _impl.filamentDeleteTitle;
   static String get filamentErrorSave => _impl.filamentErrorSave;
   static String get filamentMustBePositive => _impl.filamentMustBePositive;
@@ -1130,6 +1139,8 @@ class EsImpl implements AppStrings {
   String get settingsMinimumChargeHelper =>
       'Cotizaciones por debajo de este monto se ajustan automaticamente';
   @override
+  String get settingsMinimumChargeRange => 'Rango: 0-100000';
+  @override
   String get settingsMarkupOnMaterials => 'Margen por desperdicio (%)';
   @override
   String get settingsMarkupOnMaterialsHelper =>
@@ -1628,6 +1639,8 @@ class EsImpl implements AppStrings {
   @override
   String get quoteImageRemove => 'Quitar';
   @override
+  String get quoteImageAddPiece => '+ imagen';
+  @override
   String get quoteImageTooLarge => 'La imagen supera los 5 MB y no se adjuntó.';
   @override
   String get quoteImageInvalidFormat =>
@@ -1672,6 +1685,15 @@ class EsImpl implements AppStrings {
       'Se usará en nuevas cotizaciones. Solo un filamento puede ser predeterminado.';
   @override
   String get filamentNewTooltip => 'Nuevo filamento';
+  @override
+  String filamentFreeLimitTooltip(int limit) =>
+      'Límite Free ($limit filamentos)';
+  @override
+  String filamentFreeLimitHint(int current, int limit) =>
+      '$current/$limit filamentos — desbloquea Pro para más';
+  @override
+  String filamentFreeLimitSnack(int limit) =>
+      'Límite de $limit filamentos en modo Free. Desbloquea Pro para agregar más.';
   @override
   String get filamentDeleteTitle => 'Eliminar filamento';
   @override
@@ -1822,7 +1844,6 @@ class EsImpl implements AppStrings {
     'Cantidad',
     'Total',
     'Vendido',
-    'Materiales',
     'Horas',
     'Descuento',
     'DescLote%',

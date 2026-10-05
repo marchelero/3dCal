@@ -637,7 +637,7 @@ void main() {
       },
     );
 
-    test('timeout respeta el override efectivo Pro', () async {
+    test('timeout respata el override efectivo Pro', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final prefs = await SharedPreferences.getInstance();
       final repo = _FakeEntitlementRepository()..blockGetActive();
@@ -656,6 +656,40 @@ void main() {
 
       final resolvedIsProProvider = FutureProvider<bool>(resolveIsPro);
       expect(await container.read(resolvedIsProProvider.future), isTrue);
+    });
+
+    test('R2-MED-08: error del notifier con la CACHE en Pro NO degrada', () async {
+      // El notifier queda en error (storage/parse falló) mientras la cache
+      // previa dice Pro. Sin el fix, el catch de resolveIsPro devolvía
+      // isPro=false (el state en error no expone data) y el usuario Pro
+      // perdía la exportación PDF hasta un retry exitoso.
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _FakeEntitlementRepository()
+        ..getActiveError = StateError('storage unavailable');
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          entitlementRepositoryProvider.overrideWithValue(repo),
+          paymentServiceProvider.overrideWithValue(_FakePaymentService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // Control: cache vacía → el fallback cae a Free (comportamiento
+      // pre-existente que no debe cambiar).
+      final cold = FutureProvider<bool>(resolveIsPro);
+      expect(await container.read(cold.future), isFalse);
+
+      // Ahora la cache dice Pro (boot anterior / compra) pero el notifier
+      // sigue en error: el fallback debe respetar la cache.
+      await prefs.setBool(kIsProKey, true);
+      final warm = FutureProvider<bool>(resolveIsPro);
+      expect(
+        await container.read(warm.future),
+        isTrue,
+        reason: 'MED-08: el error degrada a la CACHE, no a Free',
+      );
     });
 
     test('error usa false como fallback efectivo por defecto', () async {

@@ -320,6 +320,12 @@ class CalculationEngine {
     String extraCostModeRaw = 'off',
     double extraCostPct = 0,
     double extraCostFixed = 0,
+    // HIGH-03 fix (auditoría 2026-10-04): el piso de cargo mínimo también debe
+    // aplicarse en la ruta snapshot. Política idéntica a las demás tasas:
+    // snapshot > 0 gana; si no, `fallbackMinimumCharge` (Settings actual).
+    // Null/0 = comportamiento histórico (sin piso) para filas viejas.
+    double minimumChargeSnapshot = 0,
+    Decimal? fallbackMinimumCharge,
   }) {
     if (materials.isEmpty && materialCostSnapshot <= 0) return null;
     final qty = quantity < 1 ? 1 : quantity;
@@ -426,7 +432,18 @@ class CalculationEngine {
     final discountOnTotalFinal = discountPct > Decimal.zero
         ? (totalFinal * discountPct / pctDivisor).toDecimal()
         : Decimal.zero;
-    final totalPrice = totalFinal - discountOnTotalFinal;
+    // HIGH-03 fix: piso de cargo mínimo idéntico a `compute` (por unidad,
+    // ANTES del escalado ×N; el escalón de lote se resta después del piso
+    // en LotTotals, igual que el composer live).
+    final minimumChargeResolved = minimumChargeSnapshot > 0
+        ? Decimal.parse(minimumChargeSnapshot.toStringAsFixed(2))
+        : (fallbackMinimumCharge ?? Decimal.zero);
+    final totalAfterDiscount = totalFinal - discountOnTotalFinal;
+    final totalPrice =
+        minimumChargeResolved > Decimal.zero &&
+            totalAfterDiscount < minimumChargeResolved
+        ? minimumChargeResolved
+        : totalAfterDiscount;
 
     return CalculationOutput(
       materialCost: materialCost * qtyD,

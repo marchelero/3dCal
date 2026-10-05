@@ -1,4 +1,4 @@
-// ignore_for_file: public_member_api_docs
+﻿// ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +20,7 @@ import '../../../../../shared/widgets/filament_color_palette.dart';
 import '../../../../../shared/widgets/skeleton_widget.dart';
 import '../notifiers/filaments_notifier.dart';
 
-/// Límite de filamentos para usuarios Free.
+/// LÃ­mite de filamentos para usuarios Free.
 const int _kFreeFilamentLimit = 5;
 
 /// Catalogo de filamentos con busqueda y cards.
@@ -56,7 +56,8 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
           if (atLimit)
             IconButton(
               icon: const Icon(Icons.add),
-              tooltip: 'Límite Free ($_kFreeFilamentLimit filamentos)',
+              // MED-11 fix (auditoria 2026-10-04): tooltip traducible.
+              tooltip: EsBO.filamentFreeLimitTooltip(_kFreeFilamentLimit),
               onPressed: () => _showLimitSnack(context),
             )
           else
@@ -69,7 +70,7 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
       ),
       body: Column(
         children: [
-          // ── Search field ──
+          // â”€â”€ Search field â”€â”€
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg,
@@ -97,7 +98,7 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
               onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
             ),
           ),
-          // ── List ──
+          // â”€â”€ List â”€â”€
           Expanded(
             child: async.when(
               loading: () => const ListPageSkeleton(),
@@ -155,8 +156,7 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
       ..showSnackBar(
         AppSnackBar.info(
           context,
-          'Límite de $_kFreeFilamentLimit filamentos en modo Free. '
-          'Desbloquea Pro para agregar más.',
+          EsBO.filamentFreeLimitSnack(_kFreeFilamentLimit),
         ),
       );
   }
@@ -175,16 +175,16 @@ class _FilamentTile extends ConsumerWidget {
     final price = filament.pricePerBobbin.toStringAsFixed(2);
     final grams = filament.gramsPerBobbin.toStringAsFixed(0);
     final brand = filament.brand;
-    final base = '${currency.symbol} $price  ·  $grams g';
+    final base = '${currency.symbol} $price  Â·  $grams g';
     // Subtitulo: si hay color, anade el nombre legible entre parentesis
     // (solo cuando el hex matchea la paleta; los custom hex no muestran
     // nombre para evitar inventar un label).
     final colorName = _localizedColorName(filament.color);
     final subtitle = colorName == null
-        ? (brand == null || brand.isEmpty ? base : '$brand  ·  $base')
+        ? (brand == null || brand.isEmpty ? base : '$brand  Â·  $base')
         : (brand == null || brand.isEmpty
-              ? '$base  · $colorName'
-              : '$brand  ·  $base  · $colorName');
+              ? '$base  Â· $colorName'
+              : '$brand  Â·  $base  Â· $colorName');
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),

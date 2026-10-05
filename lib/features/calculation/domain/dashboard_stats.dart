@@ -131,7 +131,10 @@ final dashboardStatsProvider = FutureProvider.autoDispose
       // primero y se esperan despues, para no encadenar sus latencias.
       final quotedF = repo.totalQuoted(since: since);
       final soldF = repo.totalSold(since: since);
-      final countAllF = repo.countAll(since: since);
+      // MED-04: conteos del dashboard INCLUYEN borradores (misma universo
+      // que las SUMs totalQuoted/totalSold); el cap Free sigue en
+      // `repo.countAll` (excluye borradores).
+      final countAllF = repo.countAllIncludingDrafts(since: since);
       final countSoldF = repo.countSold(since: since);
       final profitQuotedF = repo.totalProfitQuoted(since: since);
       final profitSoldF = repo.totalProfitSold(since: since);

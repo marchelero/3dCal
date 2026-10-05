@@ -153,15 +153,54 @@ class _PrintSettingsBody extends ConsumerWidget {
                     }
                     final n = Decimal.tryParse(v.trim().replaceAll(',', '.'));
                     if (n == null) return EsBO.commonInvalidNumber;
-                    if (n < Decimal.zero || n > Decimal.parse('5.00')) {
-                      return EsBO.settingsKwhRateRange;
-                    }
+                    if (n < Decimal.zero) return EsBO.commonInvalidNumber;
                     return null;
                   },
                   onSave: (v) {
                     ref
                         .read(settingsNotifierProvider.notifier)
                         .updateKwhRate(v);
+                    _showSavedSnack(context);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // ── Piso de precio: Cargo mínimo (HIGH-03 fix) ──
+                GroupLabel(
+                  icon: Icons.low_priority_rounded,
+                  title: EsBO.settingsMinimumCharge(currency.symbol),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                StatParamTile(
+                  icon: Icons.anchor_rounded,
+                  title: EsBO.settingsMinimumCharge(currency.symbol),
+                  helper: EsBO.settingsMinimumChargeHelper,
+                  accent: color.secondary,
+                  initialValue: settings.minimumCharge == Decimal.zero
+                      ? ''
+                      : settings.minimumCharge.toString(),
+                  allowDecimals: true,
+                  sliderMin: 0,
+                  sliderMax: 500,
+                  sliderDivisions: 100,
+                  suffix: currency.symbol,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return EsBO.commonRequired;
+                    }
+                    final n = Decimal.tryParse(v.trim().replaceAll(',', '.'));
+                    if (n == null) return EsBO.commonInvalidNumber;
+                    if (n < Decimal.zero || n > Decimal.fromInt(100000)) {
+                      // MED-09: era settingsKwhRateRange ("Rango: 0.10-5.00"),
+                      // el rango de la tarifa kWh — mensaje sin sentido aqui.
+                      return EsBO.settingsMinimumChargeRange;
+                    }
+                    return null;
+                  },
+                  onSave: (v) {
+                    ref
+                        .read(settingsNotifierProvider.notifier)
+                        .updateMinimumCharge(v);
                     _showSavedSnack(context);
                   },
                 ),

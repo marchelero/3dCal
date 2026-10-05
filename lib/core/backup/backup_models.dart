@@ -223,7 +223,10 @@ class BackupData {
         _checkNumber(row, key, 'Cotizacion #$id', errors);
       }
       _checkBool(row, 'isSold', 'Cotizacion #$id', errors);
-      _checkInt(row, 'printMinutes', 'Cotizacion #$id', errors);
+      // MED-07 (auditoría 2026-10-04): `printMinutes` es opcional — los
+      // backups anteriores a schema 4 no la traen; con `_checkInt` el
+      // restore completo se abortaba con el error genérico.
+      _checkOptionalInt(row, 'printMinutes', 'Cotizacion #$id', errors);
       // v14/v16. Opcionales: los backups previos a esas versiones no las
       // traen y el import aplica el default (false).
       _checkOptionalBool(row, 'isPartial', 'Cotizacion #$id', errors);
@@ -427,6 +430,21 @@ class BackupData {
     List<String> errors,
   ) {
     final v = row[key];
+    if (v is! int || v < 0) {
+      errors.add('$label: $key invalido ($v)');
+    }
+  }
+
+  /// Como [_checkInt] pero tolera la ausencia de la key (backups viejos).
+  /// El import aplica el default de columna (`printMinutes` → 0).
+  static void _checkOptionalInt(
+    Map<String, dynamic> row,
+    String key,
+    String label,
+    List<String> errors,
+  ) {
+    final v = row[key];
+    if (v == null) return;
     if (v is! int || v < 0) {
       errors.add('$label: $key invalido ($v)');
     }

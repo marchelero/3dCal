@@ -493,14 +493,17 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
 
     final buf = StringBuffer();
     // Header (localized via csvExportHeader; column order MUST stay in sync
-    // with the writer below).
+    // with the writer below — 13 columnas, ver assert del writer).
     buf.writeln(EsBO.csvExportHeader.join(','));
     // Rows (valores efectivos = unitario x cantidad)
     for (final c in calcs) {
       final date = DateFormat('yyyy-MM-dd HH:mm').format(c.createdAt.toLocal());
       final piece = _escapeCsv(c.pieceName ?? '');
       final client = _escapeCsv(c.clientName ?? '');
-      final total = formatRaw(c.totalPriceSnapshot * c.quantity);
+      // HIGH-01 fix: total NETO del lote (unitario × cantidad menos el
+      // descuento mayorista), misma fuente que lista/hero/dashboard via
+      // `CalculationListItem.effectiveTotal`.
+      final total = formatRaw(c.effectiveTotal.toDouble());
       final sold = c.isSold ? EsBO.csvValueYes : EsBO.csvValueNo;
       final hours = (c.totalHours * c.quantity).toStringAsFixed(2);
       final discount = c.discountPercentage.toStringAsFixed(1);
@@ -513,10 +516,31 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
       final matCost = formatRaw(c.materialCostSnapshot * c.quantity);
       final elect = formatRaw(c.electricCostSnapshot * c.quantity);
       final profit = formatRaw(c.profitAmountSnapshot * c.quantity);
-      buf.writeln(
-        '$date,$piece,$client,${c.quantity},$total,$sold,$hours,$discount,'
-        '$batchPct,$batchAmt,$matCost,$elect,$profit',
+      final cells = <String>[
+        date,
+        piece,
+        client,
+        '${c.quantity}',
+        total,
+        sold,
+        hours,
+        discount,
+        batchPct,
+        batchAmt,
+        matCost,
+        elect,
+        profit,
+      ];
+      // Guardia de regresión (HIGH-01): el writer y `csvExportHeader` deben
+      // tener el MISMO número de columnas — antes el header traía una
+      // columna "Materiales" que el writer nunca emitía y TODAS las celdas
+      // quedaban corridas una posición a partir de ahí.
+      assert(
+        cells.length == EsBO.csvExportHeader.length,
+        'CSV desalineado: ${cells.length} columnas vs '
+        'header ${EsBO.csvExportHeader.length}',
       );
+      buf.writeln(cells.join(','));
     }
 
     final bytes = Uint8List.fromList(utf8.encode(buf.toString()));
@@ -530,9 +554,13 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     );
   }
 
-  /// Formatea double sin separadores de miles (raw para CSV).
+  /// Formatea double sin separadores de miles y lo escapa para CSV.
+  ///
+  /// HIGH-01: al convertir `.` → `,` el valor queda con la MISMA coma que
+  /// usa el separador de columnas; sin `_escapeCsv` (que lo envuelve en
+  /// comillas) la celda partiría la fila en 2 campos.
   static String formatRaw(double v) =>
-      v.toStringAsFixed(2).replaceAll('.', ',');
+      _escapeCsv(v.toStringAsFixed(2).replaceAll('.', ','));
 
   /// Escapa string para CSV (envuelve en quotes si contiene coma o quote).
   static String _escapeCsv(String s) {

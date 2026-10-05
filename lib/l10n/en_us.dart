@@ -208,6 +208,8 @@ class EnImpl implements AppStrings {
   String get settingsMinimumChargeHelper =>
       'Quotes below this amount are automatically adjusted';
   @override
+  String get settingsMinimumChargeRange => 'Range: 0-100000';
+  @override
   String get settingsMarkupOnMaterials => 'Waste markup (%)';
   @override
   String get settingsMarkupOnMaterialsHelper =>
@@ -699,6 +701,8 @@ class EnImpl implements AppStrings {
   @override
   String get quoteImageRemove => 'Remove';
   @override
+  String get quoteImageAddPiece => '+ image';
+  @override
   String get quoteImageTooLarge => 'Image exceeds 5 MB and was not attached.';
   @override
   String get quoteImageInvalidFormat =>
@@ -743,6 +747,15 @@ class EnImpl implements AppStrings {
       'Will be used in new quotations. Only one filament can be default.';
   @override
   String get filamentNewTooltip => 'New filament';
+  @override
+  String filamentFreeLimitTooltip(int limit) =>
+      'Free limit ($limit filaments)';
+  @override
+  String filamentFreeLimitHint(int current, int limit) =>
+      '$current/$limit filaments — unlock Pro for more';
+  @override
+  String filamentFreeLimitSnack(int limit) =>
+      'Free mode limit: $limit filaments. Unlock Pro to add more.';
   @override
   String get filamentDeleteTitle => 'Delete filament';
   @override
@@ -893,7 +906,6 @@ class EnImpl implements AppStrings {
     'Quantity',
     'Total',
     'Sold',
-    'Materials',
     'Hours',
     'Discount',
     'LotDisc%',

@@ -209,6 +209,8 @@ class PtBrImpl implements AppStrings {
   String get settingsMinimumChargeHelper =>
       'Orçamentos abaixo desse valor são ajustados automaticamente';
   @override
+  String get settingsMinimumChargeRange => 'Faixa: 0-100000';
+  @override
   String get settingsMarkupOnMaterials => 'Margem de desperdício (%)';
   @override
   String get settingsMarkupOnMaterialsHelper =>
@@ -714,6 +716,8 @@ class PtBrImpl implements AppStrings {
   @override
   String get quoteImageRemove => 'Remover';
   @override
+  String get quoteImageAddPiece => '+ imagem';
+  @override
   String get quoteImageTooLarge => 'A imagem excede 5 MB e não foi anexada.';
   @override
   String get quoteImageInvalidFormat =>
@@ -758,6 +762,15 @@ class PtBrImpl implements AppStrings {
       'Será usado em novos orçamentos. Apenas um filamento pode ser padrão.';
   @override
   String get filamentNewTooltip => 'Novo filamento';
+  @override
+  String filamentFreeLimitTooltip(int limit) =>
+      'Limite Free ($limit filamentos)';
+  @override
+  String filamentFreeLimitHint(int current, int limit) =>
+      '$current/$limit filamentos — desbloqueie o Pro para mais';
+  @override
+  String filamentFreeLimitSnack(int limit) =>
+      'Limite do modo Free: $limit filamentos. Desbloqueie o Pro para adicionar mais.';
   @override
   String get filamentDeleteTitle => 'Excluir filamento';
   @override
@@ -1564,7 +1577,6 @@ Podemos atualizar, suspender ou remover recursos. Para dúvidas, contate marchel
     'Quantidade',
     'Total',
     'Vendido',
-    'Materiais',
     'Horas',
     'Desconto',
     'DescLote%',

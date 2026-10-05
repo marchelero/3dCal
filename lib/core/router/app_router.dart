@@ -135,7 +135,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/paywall',
-      redirect: (context, state) => kIsWeb ? '/settings' : null,
+      // HIGH-04 fix (auditoria 2026-10-04): en web el paywall no tiene flujo
+      // de compra; antes redirigìa a /settings SIN explicacion (el usuario
+      // veia "me fui solo a Ajustes"). El query `from=paywall` hace que
+      // SettingsPage muestre un SnackBar aclarando el motivo.
+      redirect: (context, state) => kIsWeb ? '/settings?from=paywall' : null,
       pageBuilder: (context, state) => _slideRight(const PaywallPage()),
     ),
     GoRoute(
@@ -148,26 +152,40 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) =>
           _slideRight(const LegalDocumentPage(type: LegalDocumentType.terms)),
     ),
+    // MED-09 fix (auditoria 2026-10-04): `state.extra` NO viaja en la URL,
+    // asi que un refresh/deep-link en web lo deja en null. Un `as` pelado
+    // ahi lanzaba TypeError DENTRO del pageBuilder (fuera de errorBuilder,
+    // que solo cubre rutas no matcheables) = pantalla blanca. Se resuelve
+    // con type-checks: sin extra valido se degrada a una pagina util.
     GoRoute(
       path: '/calculator/prefill',
       pageBuilder: (context, state) {
-        final calc = state.extra as Calculation;
-        return _slideRight(CalculatorPage(prefillCalc: calc));
+        final calc = state.extra;
+        return calc is Calculation
+            ? _slideRight(CalculatorPage(prefillCalc: calc))
+            : _slideRight(const CalculatorPage());
       },
     ),
     GoRoute(
       path: '/calculator/edit',
       pageBuilder: (context, state) {
-        final calc = state.extra as Calculation;
+        final calc = state.extra;
         // Mismo prefill que "Reusar", pero en modo edicion: al guardar
         // actualiza esta fila en vez de crear una nueva.
-        return _slideRight(CalculatorPage(prefillCalc: calc, editMode: true));
+        return calc is Calculation
+            ? _slideRight(
+                CalculatorPage(prefillCalc: calc, editMode: true),
+              )
+            : _slideRight(const CalculatorPage());
       },
     ),
     GoRoute(
       path: '/history/:id',
       pageBuilder: (context, state) {
-        final id = int.parse(state.pathParameters['id']!);
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null) {
+          return _slideRight(const _RouterErrorPage());
+        }
         return _slideRight(CalculationDetailPage(calcId: id));
       },
     ),
@@ -189,8 +207,12 @@ final appRouter = GoRouter(
         GoRoute(
           path: ':id',
           pageBuilder: (context, state) {
-            final f = state.extra as Filament;
-            return _slideRight(FilamentFormPage(existing: f));
+            // MED-09: sin `extra` (refresh/deep-link) no se puede editar
+            // la fila -> pagina de error clara en vez de blanca.
+            final f = state.extra;
+            return f is Filament
+                ? _slideRight(FilamentFormPage(existing: f))
+                : _slideRight(const _RouterErrorPage());
           },
         ),
       ],
@@ -206,8 +228,11 @@ final appRouter = GoRouter(
         GoRoute(
           path: ':id',
           pageBuilder: (context, state) {
-            final p = state.extra as PrinterProfile;
-            return _slideRight(PrinterFormPage(existing: p));
+            // MED-09: idem filamentos.
+            final p = state.extra;
+            return p is PrinterProfile
+                ? _slideRight(PrinterFormPage(existing: p))
+                : _slideRight(const _RouterErrorPage());
           },
         ),
       ],

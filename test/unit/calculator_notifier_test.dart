@@ -504,8 +504,13 @@ void main() {
         n.setFilamentGrams('1000');
         await n.save(pieceName: 'Test');
 
-        // Al releer el notifier (despues del invalidate), ve la nueva cotizacion.
-        final after = await container.read(calculationsNotifierProvider.future);
+        // `save()` ya NO invalida el provider: el stream `watchItems()` de
+        // drift mantiene el historial vivo (comment in save()). `ref.invalidate`
+        // + `provider.future` leia el build CACHEADO (lista vacia) porque el
+        // stream emite despues del await — determinista solo con refreshQuiet.
+        final history = container.read(calculationsNotifierProvider.notifier);
+        await history.refreshQuiet();
+        final after = container.read(calculationsNotifierProvider).value!;
         expect(after, hasLength(1));
         expect(after.first.pieceName, 'Test');
       },

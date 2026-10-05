@@ -2,9 +2,11 @@
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/database/app_database.dart';
 import '../domain/entities/calculation_output.dart';
 import '../domain/entities/material_input.dart';
+import '../domain/lot_totals.dart';
 import '../domain/monthly_totals.dart';
 
 /// Fila de material para persistir en el guardado parcial.
@@ -58,6 +60,8 @@ class CalculationListItem {
     required this.hasImage,
     this.batchDiscountPercent,
     this.batchDiscountAmount,
+    this.minimumChargeSnapshot = 0,
+    this.fallbackMinimumCharge = 0,
   });
 
   final int id;
@@ -81,15 +85,45 @@ class CalculationListItem {
   /// Monto del descuento mayorista (snapshot).
   final String? batchDiscountAmount;
 
-  /// Total efectivo de la cotizacion: `totalPriceSnapshot` (normalizado a 2
-  /// decimales, ver doc de precision monetaria de este archivo) x `quantity`,
-  /// con `quantity < 1` tratada como 1 unidad.
+  /// Cargo minimo vigente al momento del guardado (snapshot; 0 = filas
+  /// pre-F2 que nunca persistieron tasa real).
+  final double minimumChargeSnapshot;
+
+  /// Fallback del cargo minimo para filas cuyo snapshot es 0 (legacy).
+  ///
+  /// HIGH-03 fix (auditoría 2026-10-04): el detalle/PDF ya usaban
+  /// `snapshot > 0 ? snapshot : Settings.minimumCharge`; aquí y en
+  /// [_effectiveTotalSqlExpr] se aplicaba solo el snapshot, así que una fila
+  /// legacy mostraba DOS totales distintos (tarjeta/CSV/dashboard vs
+  /// hero/PDF). Misma política que `resolveRates`: el snapshot real gana;
+  /// 0 = fila vieja y cae al valor actual de Settings (tabla `settings`,
+  /// key `minimum_charge`), inyectado por [CalculationRepository.watchItems]
+  /// y por la subquery del SQL.
+  final double fallbackMinimumCharge;
+
+  /// Total efectivo de la cotizacion: precio unitario snapshot × cantidad
+  /// MENOS el descuento mayorista del lote, con piso de `minimumCharge × N`
+  /// (con `quantity < 1` tratada como 1 unidad).
+  ///
+  /// **HIGH-01 fix (auditoría 2026-10-04)**: antes devolvía solo
+  /// `unit × qty`, inflando historial/CSV/dashboard respecto de la
+  /// calculadora en vivo y del PDF (que sí restan el escalón). La fórmula
+  /// vive ahora en [LotTotals.total] — fuente única compartida con el
+  /// detalle, la imagen y el SQL del dashboard.
   ///
   /// Dinero es SIEMPRE [Decimal]; el `double` es solo la frontera de
   /// persistencia de drift.
   Decimal get effectiveTotal {
     final unit = Decimal.parse(totalPriceSnapshot.toStringAsFixed(2));
-    return unit * Decimal.fromInt(quantity < 1 ? 1 : quantity);
+    final floor = minimumChargeSnapshot > 0
+        ? minimumChargeSnapshot
+        : fallbackMinimumCharge;
+    return LotTotals.total(
+      unitTotal: unit,
+      quantity: quantity,
+      batchDiscount: LotTotals.parseBatchAmount(batchDiscountAmount),
+      minimumCharge: Decimal.parse(floor.toStringAsFixed(2)),
+    );
   }
 }
 
@@ -121,6 +155,20 @@ class CalculationDraft {
     this.extraCostMode = 'fixed',
     this.extraCostValue = 0,
     this.extraCostLabel = '',
+    // === F2 fix (auditoría 2026-10-04): snapshot REAL de las tasas que el
+    // motor usó al calcular. Null = no persistir (filas legacy y tests que
+    // no las proveen conservan el comportamiento viejo: 0 → fallback a
+    // Settings en la recompra del detalle). ===
+    this.kwhRate,
+    this.profitBase,
+    this.laborRate,
+    this.postProcessRate,
+    this.failureRate,
+    this.markupOnMaterials,
+    this.minimumCharge,
+    this.printerId,
+    this.printerName,
+    this.printerWatts,
   });
 
   final List<MaterialInput> materials;
@@ -189,6 +237,20 @@ class CalculationDraft {
 
   /// Texto libre de los extras ("2 argollas M3"). No afecta el calculo.
   final String extraCostLabel;
+
+  // === F2: tasas resueltas al momento del calculo (ver doc del ctor). ===
+  final Decimal? kwhRate;
+  final Decimal? profitBase;
+  final Decimal? laborRate;
+  final Decimal? postProcessRate;
+  final Decimal? failureRate;
+  final Decimal? markupOnMaterials;
+  final Decimal? minimumCharge;
+
+  /// Identidad de la impresora USADA (no la activa al reabrir — MED-06).
+  final int? printerId;
+  final String? printerName;
+  final int? printerWatts;
 }
 
 /// CRUD + queries de cotizaciones.
@@ -224,13 +286,15 @@ class CalculationRepository {
   /// Filtro que excluye plantillas **y borradores** (`isPartial`).
   ///
   /// Se usa SOLO donde un borrador no debe contar: el **cap free**
-  /// ([_countCalculations]) y las ventas ([countSold]). Un borrador es una
+  /// ([_countCalculations] sin `includeDrafts`). Un borrador es una
   /// cotizacion a medio hacer: no debe consumir el cap (si no, el guardado
-  /// real falla) ni contar como venta.
+  /// real falla).
   ///
-  /// El HISTORIAL ([listItems], [listAll], [search]) y el detalle ([getById])
-  /// usan [excludeTemplatesFilter] a proposito: el usuario quiere ver y
-  /// retomar sus borradores.
+  /// **MED-04**: `countSold`/`countAllIncludingDrafts` y `topClients` NO lo
+  /// usan — el dashboard cuenta borradores en TODAS las métricas (decisión
+  /// del dueño). El HISTORIAL ([listItems], [listAll], [search]) y el
+  /// detalle ([getById]) usan [excludeTemplatesFilter] a proposito: el
+  /// usuario quiere ver y retomar sus borradores.
   Expression<bool> excludeDraftsAndTemplatesFilter() =>
       _db.calculations.isTemplate.equals(false) &
       _db.calculations.isPartial.equals(false);
@@ -321,19 +385,32 @@ class CalculationRepository {
   /// cambiarlos.
   CalculationsCompanion _snapshotColumns(CalculationDraft draft) {
     final o = draft.output;
+    // F2 fix: las tasas se persisten con el valor REAL resuelto por el motor
+    // (antes: siempre 0 → `resolveRates` caía invariablemente a los Settings
+    // actuales y cambiar Ajustes reescribía el desglose de cotizaciones
+    // viejas sin tocar el Total). Null (filas legacy/tests) conserva el
+    // viejo 0 = "usar fallback Settings".
+    double? r(Decimal? d) => d?.toDouble();
+    // Piso aplicado: 1 si el cargo mínimo subió el precio final (flag
+    // histórico de la columna `minimum_charge_applied_snapshot`).
+    final mc = draft.minimumCharge ?? Decimal.zero;
+    final floorApplied =
+        mc > Decimal.zero && (o.totalFinal - o.discountAmount) < mc
+        ? 1.0
+        : 0.0;
     return CalculationsCompanion(
       pieceName: Value(draft.pieceName),
       clientName: Value(draft.clientName),
       notes: Value(draft.notes),
       conditions: Value(draft.conditions),
-      printerId: const Value(null),
-      printerNameSnapshot: const Value(null),
-      printerWattsSnapshot: const Value(0),
+      printerId: Value(draft.printerId),
+      printerNameSnapshot: Value(draft.printerName),
+      printerWattsSnapshot: Value((draft.printerWatts ?? 0).toDouble()),
       totalHours: Value(draft.totalHours.toDouble()),
       printMinutes: Value(draft.printMinutes),
       discountPercentage: Value(draft.discountPercentage.toDouble()),
-      kwhRateSnapshot: const Value(0),
-      profitBaseSnapshot: const Value(0),
+      kwhRateSnapshot: Value(r(draft.kwhRate) ?? 0),
+      profitBaseSnapshot: Value(r(draft.profitBase) ?? 0),
       materialCostSnapshot: Value(o.materialCost.toDouble()),
       electricCostSnapshot: Value(o.electricCost.toDouble()),
       amortizationCostSnapshot: Value(o.amortizationCost.toDouble()),
@@ -343,15 +420,15 @@ class CalculationRepository {
       failureCostSnapshot: Value(o.failureCost.toDouble()),
       markupCostSnapshot: Value(o.markupCost.toDouble()),
       profitAmountSnapshot: Value(o.profitAmount.toDouble()),
-      minimumChargeAppliedSnapshot: const Value(0),
+      minimumChargeAppliedSnapshot: Value(floorApplied),
       effectiveTotalSnapshot: Value(o.totalFinal.toDouble()),
       totalPriceSnapshot: Value(o.totalPrice.toDouble()),
       quantity: Value(draft.quantity < 1 ? 1 : draft.quantity),
-      laborRateSnapshot: const Value(0),
-      postProcessRateSnapshot: const Value(0),
-      failureRateSnapshot: const Value(0),
-      minimumChargeSnapshot: const Value(0),
-      markupOnMaterialsSnapshot: const Value(0),
+      laborRateSnapshot: Value(r(draft.laborRate) ?? 0),
+      postProcessRateSnapshot: Value(r(draft.postProcessRate) ?? 0),
+      failureRateSnapshot: Value(r(draft.failureRate) ?? 0),
+      minimumChargeSnapshot: Value(r(draft.minimumCharge) ?? 0),
+      markupOnMaterialsSnapshot: Value(r(draft.markupOnMaterials) ?? 0),
       isAdvanced: Value(draft.isAdvanced),
       pieceImageBlob: Value(draft.pieceImageBytes),
       batchDiscountPercent: Value(draft.batchDiscountPercent?.toString()),
@@ -521,6 +598,11 @@ class CalculationRepository {
             effectiveTotalSnapshot: source.effectiveTotalSnapshot,
             totalPriceSnapshot: source.totalPriceSnapshot,
             quantity: Value(source.quantity),
+            // HIGH-02 fix (auditoría 2026-10-04): duplicar debe arrastrar el
+            // escalón mayorista; sin estas 2 columnas la copia de un lote
+            // N>1 perdia el descuento y `effectiveTotal` inflaba el total.
+            batchDiscountPercent: Value(source.batchDiscountPercent),
+            batchDiscountAmount: Value(source.batchDiscountAmount),
             laborRateSnapshot: source.laborRateSnapshot,
             postProcessRateSnapshot: source.postProcessRateSnapshot,
             failureRateSnapshot: source.failureRateSnapshot,
@@ -611,33 +693,52 @@ class CalculationRepository {
             hasImage,
             t.batchDiscountPercent,
             t.batchDiscountAmount,
+            t.minimumChargeSnapshot,
           ])
           ..where(excludeTemplatesFilter())
           ..orderBy([OrderingTerm.desc(t.createdAt)]))
         .watch()
-        .map(
-          (rows) => [
-            for (final r in rows)
-              CalculationListItem(
-                id: r.read(t.id)!,
-                createdAt: r.read(t.createdAt)!,
-                pieceName: r.read(t.pieceName),
-                clientName: r.read(t.clientName),
-                quantity: r.read(t.quantity)!,
-                totalHours: r.read(t.totalHours)!,
-                discountPercentage: r.read(t.discountPercentage)!,
-                isSold: r.read(t.isSold)!,
-                isPartial: r.read(t.isPartial) ?? false,
-                materialCostSnapshot: r.read(t.materialCostSnapshot)!,
-                electricCostSnapshot: r.read(t.electricCostSnapshot)!,
-                profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
-                totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
-                hasImage: r.read(hasImage) ?? false,
-                batchDiscountPercent: r.read(t.batchDiscountPercent),
-                batchDiscountAmount: r.read(t.batchDiscountAmount),
-              ),
-          ],
+        .asyncMap(
+          (rows) async {
+            final fallback = await _minimumChargeFallback();
+            return [
+              for (final r in rows)
+                CalculationListItem(
+                  id: r.read(t.id)!,
+                  createdAt: r.read(t.createdAt)!,
+                  pieceName: r.read(t.pieceName),
+                  clientName: r.read(t.clientName),
+                  quantity: r.read(t.quantity)!,
+                  totalHours: r.read(t.totalHours)!,
+                  discountPercentage: r.read(t.discountPercentage)!,
+                  isSold: r.read(t.isSold)!,
+                  isPartial: r.read(t.isPartial) ?? false,
+                  materialCostSnapshot: r.read(t.materialCostSnapshot)!,
+                  electricCostSnapshot: r.read(t.electricCostSnapshot)!,
+                  profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
+                  totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
+                  hasImage: r.read(hasImage) ?? false,
+                  batchDiscountPercent: r.read(t.batchDiscountPercent),
+                  batchDiscountAmount: r.read(t.batchDiscountAmount),
+                  minimumChargeSnapshot: r.read(t.minimumChargeSnapshot) ?? 0,
+                  fallbackMinimumCharge: fallback,
+                ),
+            ];
+          },
         );
+  }
+
+  /// Cargo minimo vigente (tabla `settings`, key `minimum_charge`) como
+  /// `double`, o 0 si no existe/no parsea.
+  ///
+  /// Es el fallback para filas legacy con `minimumChargeSnapshot == 0`;
+  /// ver [CalculationListItem.fallbackMinimumCharge] (HIGH-03).
+  Future<double> _minimumChargeFallback() async {
+    final row = await (_db.select(_db.settingsTable)
+          ..where((s) => s.key.equals(SettingsKeys.minimumCharge)))
+        .getSingleOrNull();
+    if (row == null) return 0;
+    return double.tryParse(row.value) ?? 0;
   }
 
   /// Obtiene una cotizacion completa (incluido el BLOB de imagen) por id.
@@ -814,25 +915,53 @@ class CalculationRepository {
     return (_db.delete(_db.calculations)..where((c) => c.id.equals(id))).go();
   }
 
-  /// Total cotizado efectivo (suma `totalPriceSnapshot * quantity` de todas
-  /// las cotizaciones, excluye plantillas). Opcionalmente filtrado por rango
-  /// (`created_at`).
+  /// Expresión SQL del TOTAL EFECTIVO de una fila, espejo exacto de
+  /// `LotTotals.total`: `max(unit × qty − batch, minimumCharge × qty)`.
+  ///
+  /// **HIGH-01 fix (auditoría 2026-10-04)**: antes las SUMs usaban
+  /// `total_price_snapshot * quantity`, que ignora el descuento mayorista
+  /// persistido en `batch_discount_amount` — el dashboard sumaba montos que
+  /// la calculadora y el PDF nunca cobraron.
+  ///
+  /// **HIGH-03 fix**: el piso resuelve `snapshot > 0 ? snapshot : Settings`
+  /// (subquery [_minChargeFallbackSql]), MISMA política que
+  /// `CalculationListItem.effectiveTotal` y que `_lotFigures` del detalle —
+  /// antes el SQL usaba solo el snapshot y las filas legacy (0) salían sin
+  /// piso mientras el detalle/PDF lo aplicaban: dos totales por fila.
+  static const String _effectiveTotalSqlExpr =
+      'MAX(total_price_snapshot * quantity '
+      '- COALESCE(CAST(batch_discount_amount AS REAL), 0), '
+      'COALESCE(NULLIF(COALESCE(minimum_charge_snapshot, 0), 0), '
+      '$_minChargeFallbackSql) * quantity)';
+
+  /// Cargo minimo vigente desde la tabla `settings` (key `minimum_charge`),
+  /// como REAL. 0 si la fila no existe o el valor no parsea.
+  ///
+  /// Nota: `"key"` va entre comillas dobles porque `key` puede chocar con
+  /// palabras reservadas del dialecto SQL del host.
+  static const String _minChargeFallbackSql =
+      "COALESCE((SELECT CAST(value AS REAL) FROM settings "
+      "WHERE \"key\" = 'minimum_charge'), 0)";
+
+  /// Total cotizado efectivo (suma `max(unit × qty − lote, minCharge × qty)`
+  /// de todas las cotizaciones, excluye plantillas). Opcionalmente filtrado
+  /// por rango (`created_at`).
   Future<Decimal> totalQuoted({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(total_price_snapshot * quantity), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
+          'SELECT COALESCE(SUM($_effectiveTotalSqlExpr), 0) AS total FROM calculations WHERE is_template = 0${_sinceSql(since)}',
           variables: _sinceVariables(since),
         )
         .getSingle();
     return Decimal.parse(result.read<double>('total').toStringAsFixed(2));
   }
 
-  /// Total ganado efectivo (`totalPriceSnapshot * quantity` donde
-  /// isSold=true, excluye plantillas). Opcionalmente filtrado por rango.
+  /// Total ganado efectivo (total efectivo donde isSold=true, excluye
+  /// plantillas). Opcionalmente filtrado por rango.
   Future<Decimal> totalSold({DateTime? since}) async {
     final result = await _db
         .customSelect(
-          'SELECT COALESCE(SUM(total_price_snapshot * quantity), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
+          'SELECT COALESCE(SUM($_effectiveTotalSqlExpr), 0) AS total FROM calculations WHERE is_sold = 1 AND is_template = 0${_sinceSql(since)}',
           variables: _sinceVariables(since),
         )
         .getSingle();
@@ -870,32 +999,53 @@ class CalculationRepository {
   }
 
   /// Cantidad de cotizaciones vendidas (excluye plantillas).
+  ///
+  /// **MED-04 (auditoría 2026-10-04)**: incluye borradores — el numerador de
+  /// las SUMs del dashboard (`totalSold`) ya los contaba y el dueño decidió
+  /// que los borradores cuentan en TODAS las métricas del dashboard; con el
+  /// filtro viejo la tasa de conversión quedaba con numerador y denominador
+  /// de universos distintos.
   Future<int> countSold({DateTime? since}) async {
     final result =
         await (_db.selectOnly(_db.calculations)
               ..addColumns([_db.calculations.id.count()])
               ..where(
                 _db.calculations.isSold.equals(true) &
-                    excludeDraftsAndTemplatesFilter() &
+                    excludeTemplatesFilter() &
                     _sinceExpression(since),
               ))
             .getSingle();
     return result.read(_db.calculations.id.count()) ?? 0;
   }
 
-  /// Cantidad total de cotizaciones (excluye plantillas).
+  /// Cantidad total de cotizaciones para el **cap Free** (excluye plantillas
+  /// Y borradores — un borrador no consume cupo; ver [excludeDraftsAndTemplatesFilter]).
+  ///
+  /// Para el dashboard usar [countAllIncludingDrafts] (MED-04).
   Future<int> countAll({DateTime? since}) async {
     return _countCalculations(since: since);
   }
 
-  Future<int> _countCalculations({DateTime? since}) async {
+  /// Cantidad total de cotizaciones para el **dashboard** (excluye
+  /// plantillas, INCLUYE borradores — decisión del dueño: los borradores
+  /// cuentan en TODAS las métricas; MED-04).
+  ///
+  /// Así `avgTicketQuoted = totalQuoted / countAllIncludingDrafts` divide
+  /// dos sumas del mismo universo y la tasa de conversión usa el mismo
+  /// denominador que `totalSold`.
+  Future<int> countAllIncludingDrafts({DateTime? since}) async {
+    return _countCalculations(since: since, includeDrafts: true);
+  }
+
+  Future<int> _countCalculations({DateTime? since, bool includeDrafts = false}) async {
     final countExpression = _db.calculations.id.count();
+    final filter = includeDrafts
+        ? excludeTemplatesFilter()
+        : excludeDraftsAndTemplatesFilter();
     final result =
         await (_db.selectOnly(_db.calculations)
               ..addColumns([countExpression])
-              ..where(
-                excludeDraftsAndTemplatesFilter() & _sinceExpression(since),
-              ))
+              ..where(filter & _sinceExpression(since)))
             .getSingle();
     return result.read(countExpression) ?? 0;
   }
@@ -907,8 +1057,8 @@ class CalculationRepository {
   Future<List<MonthlyTotal>> monthlyTotals({DateTime? since}) async {
     final rows = await _db.customSelect('''
       SELECT COALESCE(strftime('%Y-%m', created_at), 'desconocido') AS month,
-             COALESCE(SUM(total_price_snapshot * quantity), 0) AS quoted,
-             COALESCE(SUM(CASE WHEN is_sold = 1 THEN total_price_snapshot * quantity ELSE 0 END), 0) AS sold
+             COALESCE(SUM($_effectiveTotalSqlExpr), 0) AS quoted,
+             COALESCE(SUM(CASE WHEN is_sold = 1 THEN $_effectiveTotalSqlExpr ELSE 0 END), 0) AS sold
       FROM calculations
       WHERE created_at IS NOT NULL AND is_template = 0${_sinceSql(since)}
       GROUP BY month
@@ -954,17 +1104,17 @@ class CalculationRepository {
   }
 
   /// Top clientes por total cotizado (excluye plantillas y nombres
-  /// vacios). Pro analytics.
+  /// vacios; INCLUYE borradores — MED-04, misma universo que las SUMs del
+  /// dashboard). Pro analytics.
   Future<List<TopClient>> topClients({int limit = 5, DateTime? since}) async {
     final rows = await _db
         .customSelect(
           '''
       SELECT client_name AS label,
-             COALESCE(SUM(total_price_snapshot * quantity), 0) AS total,
+             COALESCE(SUM($_effectiveTotalSqlExpr), 0) AS total,
              COUNT(*) AS cnt
       FROM calculations
       WHERE is_template = 0
-        AND is_partial = 0
         AND client_name IS NOT NULL
         AND client_name != ''${_sinceSql(since)}
       GROUP BY client_name

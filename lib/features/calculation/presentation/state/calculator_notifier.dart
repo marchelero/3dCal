@@ -338,6 +338,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         weight: draft.weight,
         filamentPrice: draft.filamentPrice,
         filamentGrams: draft.filamentGrams,
+        // MED-07 fix (auditoría 2026-10-04): la cantidad del lote también
+        // sobrevive al cierre de la app. Con el default 1, un lote de 12 u
+        // volvía a cotizar como 1 u sin aviso.
+        quantity: draft.quantity < 1 ? 1 : draft.quantity,
         materials: draft.materials
             .map(
               (m) => MaterialRow(
@@ -636,6 +640,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     Uint8List? pieceImageBytes,
   }) {
     final input = _buildInput(state);
+    final printer = ref.read(activePrinterProvider);
     return CalculationDraft(
       materials: input.materials,
       totalHours: input.totalHours,
@@ -649,6 +654,20 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       filamentLabel: state.filamentLabel,
       isAdvanced: state.mode == CalculatorMode.advanced,
       quantity: state.quantity,
+      // F2 fix (auditoría 2026-10-04): persistir las tasas REALES que el
+      // motor usó (antes se escribían 0 y `resolveRates` caía siempre a los
+      // Settings actuales: cambiar Ajustes reescribía el desglose de
+      // cotizaciones viejas sin tocar el Total).
+      kwhRate: input.kwhRate,
+      profitBase: input.profitBase,
+      laborRate: input.laborRate,
+      postProcessRate: input.postProcessRate,
+      failureRate: input.failureRate,
+      markupOnMaterials: input.markupOnMaterials,
+      minimumCharge: input.minimumCharge,
+      printerId: printer?.id,
+      printerName: printer?.name,
+      printerWatts: printer?.averageWatts,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
           : (pieceName == null || pieceName.trim().isEmpty
@@ -685,6 +704,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     if (!state.isValid || state.output == null) return null;
     final repo = ref.read(calculationRepositoryProvider);
     final input = _buildInput(state);
+    final printer = ref.read(activePrinterProvider);
     final draft = CalculationDraft(
       materials: input.materials,
       totalHours: input.totalHours,
@@ -698,6 +718,17 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       filamentLabel: state.filamentLabel,
       isAdvanced: state.mode == CalculatorMode.advanced,
       quantity: state.quantity,
+      // F2: las plantillas también snapshotan sus tasas reales.
+      kwhRate: input.kwhRate,
+      profitBase: input.profitBase,
+      laborRate: input.laborRate,
+      postProcessRate: input.postProcessRate,
+      failureRate: input.failureRate,
+      markupOnMaterials: input.markupOnMaterials,
+      minimumCharge: input.minimumCharge,
+      printerId: printer?.id,
+      printerName: printer?.name,
+      printerWatts: printer?.averageWatts,
       pieceName: (state.label.trim().isNotEmpty)
           ? state.label.trim()
           : (pieceName == null || pieceName.trim().isEmpty
@@ -886,9 +917,15 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
           label: matLabel,
           weightGrams: CalculatorState.parseDecimal(s.weight)!,
           pricePerBobbin: CalculatorState.parseDecimal(s.filamentPrice)!,
-          gramsPerBobbin:
-              CalculatorState.parseDecimal(s.filamentGrams) ??
-              Decimal.fromInt(1000),
+          // MED-08 fix (auditoría 2026-10-04): "0" o negativos se tratan
+          // como "sin dato" -> default 1000 g. Antes `?? 1000` no cubría
+          // Decimal(0): el assert de MaterialInput reventaba en debug (y el
+          // catch de _recompute lo silenciaba) o, en release, el guard del
+          // motor dejaba el costo de material en 0 = cotización regalada.
+          gramsPerBobbin: _positiveOr(
+            CalculatorState.parseDecimal(s.filamentGrams),
+            Decimal.fromInt(1000),
+          ),
         ),
       );
     } else {
@@ -956,18 +993,58 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// si estan vacios van ausentes y NO pisan lo que ya tenga la fila en DB.
   /// Antes iban siempre `Value('')` y borraban el nombre al editar un
   /// borrador que ya tenia pieza asignada.
-  static CalculationsCompanion stateToPartialDto(CalculatorState state) {
+  /// DTO del autoguardado parcial con las TASAS REALES del momento.
+  ///
+  /// Llamado por la página cuando `ref` sigue vivo. Si el form no está
+  /// completo (input no construible) o la lectura falla, degrada al dto
+  /// legacy (tasas 0 = fallback Settings al recomprar), igual que antes.
+  CalculationsCompanion buildPartialDto(CalculatorState s) {
+    CalculationInput? input;
+    if (s.isValid && s.output != null) {
+      try {
+        input = _buildInput(s);
+      } catch (_) {
+        input = null;
+      }
+    }
+    final printer = ref.read(activePrinterProvider);
+    return stateToPartialDto(
+      s,
+      input: input,
+      printerId: printer?.id,
+      printerName: printer?.name,
+      printerWatts: printer?.averageWatts,
+    );
+  }
+
+  static CalculationsCompanion stateToPartialDto(
+    CalculatorState state, {
+    CalculationInput? input,
+    int? printerId,
+    String? printerName,
+    int? printerWatts,
+  }) {
     final o = state.output;
     final label = state.label.trim();
+    // F2 fix (auditoría 2026-10-04): el parcial persiste las tasas reales que
+    // se leyeron de Settings/impresora (si el caller las pasó). Null input
+    // (form aún inválido) => 0 = comportamiento legacy.
+    double rd(Decimal? d) => (d ?? Decimal.zero).toDouble();
     return CalculationsCompanion(
       createdAt: Value(DateTime.now()),
       pieceName: label.isNotEmpty ? Value(label) : const Value.absent(),
       clientName: const Value.absent(),
       notes: const Value.absent(),
       conditions: const Value.absent(),
-      printerId: const Value.absent(),
-      printerNameSnapshot: const Value.absent(),
-      printerWattsSnapshot: Value(state.output != null ? 0 : 0),
+      // Sin impresora resuelta = `absent` (no borrar la que ya tenía la fila
+      // del parcial en una pasada anterior).
+      printerId: printerId == null ? const Value.absent() : Value(printerId),
+      printerNameSnapshot: printerName == null
+          ? const Value.absent()
+          : Value(printerName),
+      printerWattsSnapshot: printerWatts == null
+          ? const Value.absent()
+          : Value(printerWatts.toDouble()),
       totalHours: Value(state.totalHoursDecimal?.toDouble() ?? 0),
       printMinutes: Value(
         CalculatorState.parseDecimal(state.printMinutes)?.toBigInt().toInt() ??
@@ -976,8 +1053,8 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       discountPercentage: Value(
         CalculatorState.parseDecimal(state.discountPct)?.toDouble() ?? 0,
       ),
-      kwhRateSnapshot: const Value(0),
-      profitBaseSnapshot: const Value(0),
+      kwhRateSnapshot: Value(rd(input?.kwhRate)),
+      profitBaseSnapshot: Value(rd(input?.profitBase)),
       quantity: Value(state.quantity),
       isSold: const Value(false),
       isTemplate: const Value(false),
@@ -992,17 +1069,30 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       failureCostSnapshot: Value(o?.failureCost.toDouble() ?? 0),
       markupCostSnapshot: Value(o?.markupCost.toDouble() ?? 0),
       profitAmountSnapshot: Value(o?.profitAmount.toDouble() ?? 0),
-      minimumChargeAppliedSnapshot: const Value(0),
+      minimumChargeAppliedSnapshot: Value(
+        input != null &&
+            o != null &&
+            input.minimumCharge > Decimal.zero &&
+            (o.totalFinal - o.discountAmount) < input.minimumCharge
+        ? 1
+        : 0,
+      ),
       effectiveTotalSnapshot: Value(o?.totalFinal.toDouble() ?? 0),
       totalPriceSnapshot: Value(o?.totalPrice.toDouble() ?? 0),
-      laborRateSnapshot: const Value(0),
-      postProcessRateSnapshot: const Value(0),
-      failureRateSnapshot: const Value(0),
-      minimumChargeSnapshot: const Value(0),
-      markupOnMaterialsSnapshot: const Value(0),
+      laborRateSnapshot: Value(rd(input?.laborRate)),
+      postProcessRateSnapshot: Value(rd(input?.postProcessRate)),
+      failureRateSnapshot: Value(rd(input?.failureRate)),
+      minimumChargeSnapshot: Value(rd(input?.minimumCharge)),
+      markupOnMaterialsSnapshot: Value(rd(input?.markupOnMaterials)),
       pieceImageBlob: const Value.absent(),
-      batchDiscountPercent: const Value.absent(),
-      batchDiscountAmount: const Value.absent(),
+      // MED-05 (auditoría 2026-10-04): el escalón mayorista se guardaba en
+      // `save()` pero NO en el autoguardado — un borrador con N>1 aparecía
+      // en lista/Home/Continuar y en el dashboard como unit×N sin descuento.
+      // `batchDiscountAmount` es no-nullable en el state (0 = sin escalón),
+      // igual que en `save()` → Value('0') es correcto; el percent va null
+      // explícito cuando no hay tier (misma semántica que `_insert`).
+      batchDiscountPercent: Value(state.batchAppliedPercent?.toString()),
+      batchDiscountAmount: Value(state.batchDiscountAmount.toString()),
       // === v17: persistir los 3 overrides per-cotizacion ===
       modelingMode: Value(state.modelingMode),
       modelingValue: Value(
@@ -1037,6 +1127,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// Texto vacio, invalido o con coma decimal -> 0.
   static double _textToDouble(String v) =>
       double.tryParse(v.trim().replaceAll(',', '.')) ?? 0;
+
+  /// MED-08 fix: null O <= 0 -> [fallback]. `parseDecimal` devuelve Decimal(0)
+  /// (no null) para "0", y el `??` de la version anterior no lo capturaba.
+  static Decimal _positiveOr(Decimal? v, Decimal fallback) =>
+      (v == null || v <= Decimal.zero) ? fallback : v;
 
   /// Deja el modo en una de las 2 opciones que el switch expone.
   ///

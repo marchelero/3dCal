@@ -107,6 +107,9 @@ abstract class AppStrings {
   String get settingsFailureRateHelper;
   String settingsMinimumCharge(String symbol);
   String get settingsMinimumChargeHelper;
+  /// Rango valido del campo Cargo minimo (0..100000) — MED-09: antes
+  /// reutilizaba `settingsKwhRateRange` ("Rango: 0.10-5.00").
+  String get settingsMinimumChargeRange;
   String get settingsMarkupOnMaterials;
   String get settingsMarkupOnMaterialsHelper;
 
@@ -491,6 +494,9 @@ abstract class AppStrings {
   /// "Quitar" / "Remove".
   String get quoteImageRemove;
 
+  /// "+ imagen" — CTA de la preview del reporte sin foto aun (MED-11 fix).
+  String get quoteImageAddPiece;
+
   /// Imagen > 5 MB y no se adjuntó.
   String get quoteImageTooLarge;
 
@@ -526,6 +532,16 @@ abstract class AppStrings {
   String get filamentGramsHelper;
   String get filamentDefaultToggle;
   String get filamentDefaultSubtitle;
+
+  // === Límite Free del catálogo de filamentos (MED-11 fix) ===
+  /// Tooltip del FAB bloqueado: "Límite Free (N filamentos)".
+  String filamentFreeLimitTooltip(int limit);
+
+  /// Hint inline del selector: "X/N filamentos — desbloquea Pro para más".
+  String filamentFreeLimitHint(int current, int limit);
+
+  /// SnackBar al tocar el FAB bloqueado.
+  String filamentFreeLimitSnack(int limit);
   String get filamentNewTooltip;
   String get filamentDeleteTitle;
   String get filamentErrorSave;

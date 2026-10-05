@@ -42,9 +42,44 @@ import '../widgets/settings_widgets.dart';
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
+  /// Filtro para no repetir la explicacion del redirect `/paywall` en cada
+  /// rebuild de la pagina (HIGH-04 fix). Se resetea por sesion de app.
+  static bool _paywallNoticeShown = false;
+
+  /// Lee `?from=` de la ruta activa via GoRouter. `GoRouterState.of` LANZA
+  /// si el arbol no tiene GoRouter (pagina bombeada sola en tests): se
+  /// degrada a null sin romper el render.
+  static String? _paywallOrigin(BuildContext context) {
+    try {
+      return GoRouterState.of(context).uri.queryParameters['from'];
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(localeProvider);
+    // HIGH-04 fix (auditoria 2026-10-04): en web /paywall redirige a
+    // /settings?from=paywall porque no existe flujo de compra. Se explica el
+    // destino con un SnackBar (antes el redirect era silencioso y parecia
+    // un salto sin motivo).
+    //
+    // `GoRouterState.of` throws cuando la pagina se bombea fuera de un
+    // GoRouter (tests unitarios con MaterialApp suelto): se envuelve en
+    // try/catch y se degrada a "sin query".
+    final from = _paywallOrigin(context);
+    if (from == 'paywall' && !_paywallNoticeShown) {
+      _paywallNoticeShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            AppSnackBar.info(context, EsBO.paywallUnavailable),
+          );
+      });
+    }
     final asyncSettings = ref.watch(settingsNotifierProvider);
     return Scaffold(
       body: SafeArea(

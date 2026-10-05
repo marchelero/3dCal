@@ -77,7 +77,17 @@ final isProProvider = Provider<bool>((ref) {
 /// durante una recuperación de almacenamiento. El timeout evita que la
 /// operación se cuelgue; el provider efectivo conserva overrides como el Pro
 /// web y, por defecto, mantiene el fallback Free fail-safe de móvil.
+///
+/// **MED-08 (auditoría 2026-10-04)**: en timeout/error se degrada a la CACHE
+/// (`entitlementCacheProvider.isPro`, la misma que lee `build()` sincrónico)
+/// || `isProProvider`. Antes devolvía solo `isProProvider`, que es `false`
+/// mientras `build()` siga cargando → un Pro con DB lenta > 1 s quedaba
+/// bloqueado por el cap Free con el mensaje "mejora a Pro".
 Future<bool> resolveIsPro(Ref ref) async {
+  // Fallback degradado: cache local (último estado conocido) o el estado
+  // ya cargado del notifier. false solo si NINGUNO dice Pro (fail-safe).
+  bool degradedToCache() =>
+      ref.read(entitlementCacheProvider).isPro || ref.read(isProProvider);
   bool isPro;
   try {
     await ref
@@ -90,11 +100,11 @@ Future<bool> resolveIsPro(Ref ref) async {
     // BUG-D: caso esperado — DB lenta / plataforma offline. Se degrada a la
     // cache local sin ruido en logs.
     debugPrint('[Entitlement] resolveIsPro timeout — degradando a cache');
-    return ref.read(isProProvider);
+    return degradedToCache();
   } catch (e, st) {
     // BUG-D: fallo inesperado (ej: error de DB). Misma degradacion funcional
     debugPrint('[Entitlement] resolveIsPro inesperado: $e\n$st');
-    return ref.read(isProProvider);
+    return degradedToCache();
   }
-return isPro;
+  return isPro;
 }

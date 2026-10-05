@@ -104,12 +104,13 @@ Future<Filament?> showFilamentSelectorDialog(
         ? _FreeLimitHint(
             current: filaments.length,
             limit: kFreeFilamentLimit,
-            label: 'filamentos',
           )
         : ListTile(
             leading: const Icon(Icons.add_rounded),
-            title: const Text('Crear nuevo'),
-            subtitle: const Text('Agregar al catálogo'),
+            // MED-11 fix (auditoria 2026-10-04): estaba hardcodeado en
+            // espanol; ahora usa las claves l10n existentes.
+            title: Text(EsBO.commonCreateNew),
+            subtitle: Text(EsBO.commonAddToCatalog),
             onTap: () {
               Navigator.of(context).pop(); // cerrar dialog
               context.push('/settings/filaments/new');
@@ -123,12 +124,10 @@ class _FreeLimitHint extends StatelessWidget {
   const _FreeLimitHint({
     required this.current,
     required this.limit,
-    required this.label,
   });
 
   final int current;
   final int limit;
-  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +153,7 @@ class _FreeLimitHint extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              '$current/$limit $label — desbloquea Pro para más',
+              EsBO.filamentFreeLimitHint(current, limit),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: cs.onTertiaryContainer,
               ),

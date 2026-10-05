@@ -1,4 +1,4 @@
-// ignore_for_file: public_member_api_docs
+﻿// ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -118,7 +118,7 @@ void main() {
         );
         await notifier.refresh();
 
-        notifier.search('pla+');
+        await notifier.search('pla+');
 
         expect(pieces(), ['Pieza sin pista']);
       },
@@ -131,11 +131,35 @@ void main() {
       await seedCalculation(db, piece: 'pzabeta');
       await notifier.refresh();
 
-      notifier.search('alpha');
+      await notifier.search('alpha');
       expect(pieces(), ['pzaalpha']);
 
-      notifier.search('');
+      await notifier.search('');
       expect(pieces(), hasLength(2));
+    });
+
+    test('R2-MED-10: ver lo recién guardado sin repetir search()', () async {
+      await seedCalculation(db, piece: 'Vieja', material: 'PLA+');
+      await notifier.refresh();
+      await notifier.search('pla+'); // carga la cache de labels de material
+      expect(pieces(), ['Vieja']);
+
+      // Guarda otra con el MISMO material. 'Recien guardada' no matchea por
+      // pieza ni cliente: solo los labels de material la traen al filtro.
+      await seedCalculation(db, piece: 'Recien guardada', material: 'PLA+');
+
+      // El listener de drift debe refrescar la cache de labels en vuelo;
+      // antes del fix quedaba stale y el item jamás aparecía en la búsqueda.
+      final deadline = DateTime.now().add(const Duration(seconds: 2));
+      while (DateTime.now().isBefore(deadline) &&
+          !pieces().contains('Recien guardada')) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(
+        pieces(),
+        contains('Recien guardada'),
+        reason: 'MED-10: los labels de material deben refrescarse al guardar',
+      );
     });
   });
 
@@ -358,7 +382,7 @@ void main() {
       );
       await notifier.refresh();
 
-      notifier.search('pla+');
+      await notifier.search('pla+');
       notifier.setSoldFilter(true);
       notifier.setClientFilter('juan');
       notifier.setDateRange(

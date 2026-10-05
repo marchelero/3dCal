@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs
 
+import 'dart:async';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
@@ -21,5 +22,9 @@ Future<void> downloadImage(Uint8List imageBytes, String filename) async {
     ..href = url
     ..download = filename
     ..click();
-  web.URL.revokeObjectURL(url);
+  // LOW-16 fix (auditoria 2026-10-04): `revokeObjectURL` sincrono justo
+  // despues de `click()` compite con el inicio de la descarga y la cancela
+  // en Safari/Firefox. Se difiere unos segundos: la descarga ya arranco y
+  // la memoria igual se libera.
+  Timer(const Duration(seconds: 10), () => web.URL.revokeObjectURL(url));
 }

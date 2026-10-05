@@ -205,6 +205,8 @@ class FrImpl implements AppStrings {
   String get settingsMinimumChargeHelper =>
       'Les devis d’un montant inférieur sont automatiquement ajustés';
   @override
+  String get settingsMinimumChargeRange => 'Plage : 0-100000';
+  @override
   String get settingsMarkupOnMaterials => 'Majoration liée aux déchets (%)';
   @override
   String get settingsMarkupOnMaterialsHelper =>
@@ -681,6 +683,8 @@ class FrImpl implements AppStrings {
   @override
   String get quoteImageRemove => 'Supprimer';
   @override
+  String get quoteImageAddPiece => '+ image';
+  @override
   String get quoteImageTooLarge =>
       'L’image dépasse 5 Mo et n’a pas été jointe.';
   @override
@@ -726,6 +730,15 @@ class FrImpl implements AppStrings {
       'Utilisé dans les nouveaux devis. Un seul filament peut être par défaut.';
   @override
   String get filamentNewTooltip => 'Nouveau filament';
+  @override
+  String filamentFreeLimitTooltip(int limit) =>
+      'Limite Free ($limit filaments)';
+  @override
+  String filamentFreeLimitHint(int current, int limit) =>
+      '$current/$limit filaments — débloquez Pro pour plus';
+  @override
+  String filamentFreeLimitSnack(int limit) =>
+      'Limite du mode Free : $limit filaments. Débloquez Pro pour en ajouter plus.';
   @override
   String get filamentDeleteTitle => 'Supprimer le filament';
   @override
@@ -874,7 +887,6 @@ class FrImpl implements AppStrings {
     'Quantité',
     'Total',
     'Vendu',
-    'Matériaux',
     'Heures',
     'Remise',
     'RemiseLot%',

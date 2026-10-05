@@ -356,7 +356,9 @@ class BackupService {
                 (row['printerWattsSnapshot'] as num).toDouble(),
               ),
               totalHours: Value((row['totalHours'] as num).toDouble()),
-              printMinutes: Value(row['printMinutes'] as int),
+              // MED-07: opcional en backups previos a schema 4 → default 0
+              // (misma semántica que el default de columna).
+              printMinutes: Value(row['printMinutes'] as int? ?? 0),
               discountPercentage: Value(
                 (row['discountPercentage'] as num).toDouble(),
               ),
@@ -432,17 +434,19 @@ class BackupService {
               batchDiscountAmount: Value(row['batchDiscountAmount'] as String?),
               pieceImageBlob: Value(_decodePieceImage(row)),
               // v17: los 3 costos de servicio. Un backup viejo no trae las
-              // keys -> caen al default ('fixed' + 0), que es el estado
-              // neutro. Un backup nuevo las restaura tal cual.
-              modelingMode: Value(row['modelingMode'] as String? ?? 'fixed'),
+              // keys -> caen a los defaults de COLUMNAS ('auto'/'auto'/'off'),
+              // que reproducen la fórmula legacy (cobro según horas/material).
+              // MED-06: antes caían a 'fixed' y el motor pasaba a cobrar 0
+              // por modelado/postproceso, desalineando el desglose del PDF.
+              modelingMode: Value(row['modelingMode'] as String? ?? 'auto'),
               modelingValue: Value(
                 (row['modelingValue'] as num?)?.toDouble() ?? 0,
               ),
-              postprocMode: Value(row['postprocMode'] as String? ?? 'fixed'),
+              postprocMode: Value(row['postprocMode'] as String? ?? 'auto'),
               postprocValue: Value(
                 (row['postprocValue'] as num?)?.toDouble() ?? 0,
               ),
-              extraMode: Value(row['extraMode'] as String? ?? 'fixed'),
+              extraMode: Value(row['extraMode'] as String? ?? 'off'),
               extraValue: Value((row['extraValue'] as num?)?.toDouble() ?? 0),
               extraLabel: Value(row['extraLabel'] as String? ?? ''),
             ),
