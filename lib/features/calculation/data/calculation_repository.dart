@@ -655,14 +655,23 @@ class CalculationRepository {
   /// Lo usa Home para ofrecer "Continuar" cuando el usuario dejo un
   /// borrador a medias que quedo `isPartial` en DB (incluso si el draft
   /// de sesion en SharedPreferences se perdio o se limpio).
-  Future<Calculation?> latestPartial() {
+  Future<Calculation?> latestPartial() => watchLatestPartial().first;
+
+  /// Stream reactivo de [latestPartial]: re-emite cuando cambia la tabla
+  /// `calculations` (drift invalidacion automatica).
+  ///
+  /// Preferir esta API en providers que quieran auto-refresh sin
+  /// `ref.invalidate` manual: un `FutureProvider` cacheaba el valor viejo
+  /// y Home mostraba un parcial desactualizado tras el autosave.
+  Stream<Calculation?> watchLatestPartial() {
     return (_db.select(_db.calculations)
           ..where(
             (c) => c.isPartial.equals(true) & excludeTemplatesFilter(),
           )
           ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])
           ..limit(1))
-        .getSingleOrNull();
+        .watch()
+        .map((rows) => rows.isEmpty ? null : rows.first);
   }
 
   /// Stream reactivo de [getById]: re-emite cuando cambia ESA fila.

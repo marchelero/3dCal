@@ -366,4 +366,58 @@ void main() {
       expect(latest, isNull);
     });
   });
+
+  group('watchLatestPartial', () {
+    test('emite null cuando no hay parciales', () async {
+      await expectLater(repo.watchLatestPartial(), emitsInOrder([null]));
+    });
+
+    test('re-emite al insertar un parcial (sin invalidate manual)', () async {
+      // Pattern: asignar el future del matcher, disparar el trigger, await.
+      // El stream emite el estado actual (null) y luego el nuevo parcial.
+      final future = expectLater(
+        repo.watchLatestPartial(),
+        emitsInOrder([
+          null,
+          predicate<Calculation>((c) => c.pieceName == 'Uno'),
+        ]),
+      );
+      await repo.savePartial(_partial(pieceName: 'Uno'));
+      await future;
+    });
+
+    test('re-emite al actualizar un parcial por id (autosave)', () async {
+      final id = await repo.savePartial(_partial(pieceName: 'Viejo'));
+      await repo.savePartial(_partial(pieceName: 'Otro', createdAt: DateTime(2026, 9, 28, 13, 0)));
+      final existing = await repo.getById(id);
+
+      final future = expectLater(
+        repo.watchLatestPartial(),
+        emitsThrough(
+          predicate<Calculation>((c) => c.id == id && c.pieceName == 'Editado'),
+        ),
+      );
+      await repo.updatePartial(
+        id,
+        existing!.toCompanion(true).copyWith(pieceName: const Value('Editado')),
+      );
+      await future;
+    });
+
+    test('re-emite al borrar el parcial mas reciente', () async {
+      await repo.savePartial(_partial(pieceName: 'Primero'));
+      final id = await repo.savePartial(
+        _partial(pieceName: 'Segundo', createdAt: DateTime(2026, 9, 28, 11, 0)),
+      );
+
+      final future = expectLater(
+        repo.watchLatestPartial(),
+        emitsThrough(
+          predicate<Calculation>((c) => c.pieceName == 'Primero'),
+        ),
+      );
+      await repo.deletePartial(id);
+      await future;
+    });
+  });
 }

@@ -312,7 +312,12 @@ final calculationsNotifierProvider =
 /// Home lo usa para ofrecer "Continuar" aunque el draft de sesion
 /// (SharedPreferences) se perdio o se limpio: si quedo un `isPartial`
 /// en la tabla, el usuario debe poder retomarlo.
-final latestPartialProvider = FutureProvider<Calculation?>((ref) {
+///
+/// **Reactivo**: [StreamProvider] suscribe a
+/// [CalculationRepository.watchLatestPartial], asi que el banner se
+/// actualiza solo al autosave/descartar un borrador, sin `ref.invalidate`
+/// manual (antes era un `FutureProvider` que cacheaba el valor viejo).
+final latestPartialProvider = StreamProvider<Calculation?>((ref) {
   final repo = ref.watch(calculationRepositoryProvider);
-  return repo.latestPartial();
+  return repo.watchLatestPartial();
 });

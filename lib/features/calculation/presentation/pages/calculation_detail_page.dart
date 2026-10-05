@@ -59,7 +59,22 @@ class CalculationDetailPage extends ConsumerWidget {
     final calcAsync = ref.watch(_calculationByIdProvider(calcId));
 
     return Scaffold(
-      appBar: AppBar(title: Text(EsBO.calcDetailTitle)),
+      appBar: AppBar(
+        title: Text(EsBO.calcDetailTitle),
+        // Editar disponible para TODA cotizacion (borradora o definitiva).
+        // Antes solo el banner de borrador tenia boton Editar, asi que una
+        // cotizacion ya guardada no se podia editar desde el detalle.
+        actions: [
+          if (calcAsync.value != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: EsBO.calcEditAction,
+              onPressed: () => unawaited(
+                context.push('/calculator/edit', extra: calcAsync.value),
+              ),
+            ),
+        ],
+      ),
       body: calcAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorView(

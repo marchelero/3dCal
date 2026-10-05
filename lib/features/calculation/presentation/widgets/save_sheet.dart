@@ -20,18 +20,40 @@ class SaveResult {
 
 /// Bottom sheet para guardar una cotizacion.
 class SaveSheet extends StatefulWidget {
-  const SaveSheet({super.key, this.recentClients = const []});
+  const SaveSheet({
+    super.key,
+    this.recentClients = const [],
+    this.initialClientName,
+    this.initialNotes,
+    this.initialConditions,
+  });
   final List<String> recentClients;
+
+  /// Valores ya guardados de la cotizacion que se edita. Se precargan en los
+  /// campos para que "Editar" no deje el formulario vacio ni pierda el nombre
+  /// del cliente al re-guardar (bug: el cliente se borraba porque el campo
+  /// vacio se escribia como NULL sobre la fila existente).
+  final String? initialClientName;
+  final String? initialNotes;
+  final String? initialConditions;
 
   @override
   State<SaveSheet> createState() => SaveSheetState();
 }
 
 class SaveSheetState extends State<SaveSheet> {
-  final _clientCtrl = TextEditingController();
-  final _notesCtrl = TextEditingController();
-  final _conditionsCtrl = TextEditingController();
+  late final TextEditingController _clientCtrl;
+  late final TextEditingController _notesCtrl;
+  late final TextEditingController _conditionsCtrl;
   bool _saveAsTemplate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _clientCtrl = TextEditingController(text: widget.initialClientName);
+    _notesCtrl = TextEditingController(text: widget.initialNotes);
+    _conditionsCtrl = TextEditingController(text: widget.initialConditions);
+  }
 
   @override
   void dispose() {

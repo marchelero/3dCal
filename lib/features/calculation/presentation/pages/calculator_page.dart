@@ -33,7 +33,6 @@ import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../../settings/domain/discount_tier.dart';
 import '../../data/calculation_repository.dart'
     show CalculationRepository, DraftMaterialInput;
-import '../notifiers/calculations_notifier.dart' show latestPartialProvider;
 import '../state/calculator_notifier.dart';
 import '../state/calculator_state.dart';
 import '../widgets/calculator_bottom_bar.dart';
@@ -252,10 +251,11 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       if (widget.newMode) {
         await ref.read(draftStorageProvider).clear();
         if (!mounted) return;
-        // Invalidar el banner "Continuar" en Home (draftStatusProvider +
-        // latestPartialProvider: el parcial rapido en DB).
+        // Refrescar el banner "Continuar" en Home: draftStatusProvider
+        // (draft de sesion en SharedPreferences) no es reactivo y se
+        // invalida a mano. latestPartialProvider ya es StreamProvider y se
+        // actualiza solo con cada escritura a la tabla.
         ref.invalidate(draftStatusProvider);
-        ref.invalidate(latestPartialProvider);
         // Nueva cotizacion: soltar el puntero al parcial anterior. El
         // borrador viejo queda en el historial (retomable), pero esta sesion
         // arranca con identidad nueva.
@@ -1160,7 +1160,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (sheetCtx) => SaveSheet(recentClients: recentClients),
+      builder: (sheetCtx) => SaveSheet(
+        recentClients: recentClients,
+        // Editar una cotizacion existente: precargar cliente/notas/condiciones
+        // para no dejar el form vacio ni perder el cliente al re-guardar.
+        initialClientName: widget.prefillCalc?.clientName,
+        initialNotes: widget.prefillCalc?.notes,
+        initialConditions: widget.prefillCalc?.conditions,
+      ),
     );
     if (result == null || !mounted) return;
     // Editar DEFINITIVA (fila real ya guardada) vs editar BORRADOR (aun no
@@ -1426,6 +1433,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop || _allowPop) return;
         await _persistPartialSync();
+        // Cancelar el debounce pendiente (ver nota en el boton X).
+        _partialSaveTimer?.cancel();
         if (!mounted) return;
         // El historial se refresca solo via drift watchItems() (el write
         // del parcial dispara el stream). No hace falta invalidate manual.
@@ -1446,6 +1455,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
               // Persistir el parcial pendiente ANTES de salir y ESPERARLO:
               // fire-and-forget se perdia al desmontarse el arbol (web).
               await _persistPartialSync();
+              // Cancelar el debounce pendiente: si el usuario sale dentro de
+              // la ventana de 1.5s, el timer quedaba vivo tras el pop (un
+              // `Timer is still pending` en tests y un guardado tardio).
+              _partialSaveTimer?.cancel();
               if (!context.mounted) return;
               // El historial se refresca solo via drift watchItems().
               setState(() => _allowPop = true);
