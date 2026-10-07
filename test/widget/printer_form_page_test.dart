@@ -170,6 +170,13 @@ void main() {
         find.widgetWithText(TextField, 'Costo (Bs)'),
         '3500',
       );
+      // El selector auto-carga la vida util del catalogo (Ender-3 V2 = 5000h,
+      // printer_catalog_selector.dart:303); el escenario F5 es "costo SIN
+      // vida util" -> limpiar el campo antes de validar.
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Vida útil (horas)'),
+        '',
+      );
       await tester.pump();
 
       await tester.tap(find.text('Guardar'));

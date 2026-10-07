@@ -3,7 +3,7 @@
 ///
 /// Fuente: research web 2026-09-09 (specs oficiales + mediciones publicadas;
 /// valores extrapolados marcados con [PrinterModelSpec.isEstimated]).
-/// 29 marcas / 174 modelos. Capa domain: sin dependencias Flutter (testeable
+/// 30 marcas / 209 modelos. Capa domain: sin dependencias Flutter (testeable
 /// puro, unit tests sin WidgetTester).
 library;
 
@@ -119,8 +119,8 @@ const List<PrinterBrandSpec> kPrinterCatalog = [
     PrinterModelSpec('Ender-3 V3 Plus', 350, usefulLifeHours: 6000),
     PrinterModelSpec('Ender-3 V3 SE', 120, isEstimated: true, usefulLifeHours: 5000),
     PrinterModelSpec('Ender-5', 140, isEstimated: true, usefulLifeHours: 5000),
-    PrinterModelSpec('Ender-5 S1', 170, isEstimated: true, usefulLifeHours: 5000),
     PrinterModelSpec('Ender-5 Max', 200, isEstimated: true, usefulLifeHours: 5000),
+    PrinterModelSpec('Ender-5 S1', 170, isEstimated: true, usefulLifeHours: 5000),
     PrinterModelSpec('Ender-6', 160, isEstimated: true, usefulLifeHours: 5000),
     PrinterModelSpec('Halot Mage', 90, isEstimated: true, usefulLifeHours: 5000),
     PrinterModelSpec('Halot Mage Pro', 110, isEstimated: true, usefulLifeHours: 5000),
@@ -285,9 +285,9 @@ const List<PrinterBrandSpec> kPrinterCatalog = [
     PrinterModelSpec('XY-3 Pro', 160, isEstimated: true, usefulLifeHours: 5000),
   ]),
   PrinterBrandSpec('Two Trees', [
+    PrinterModelSpec('Bluer', 150, isEstimated: true, usefulLifeHours: 5000),
     PrinterModelSpec('Sapphire Plus', 170, isEstimated: true, usefulLifeHours: 5000),
     PrinterModelSpec('Sapphire Pro', 150, isEstimated: true, usefulLifeHours: 5000),
-    PrinterModelSpec('Bluer', 150, isEstimated: true, usefulLifeHours: 5000),
   ]),
   PrinterBrandSpec('Ultimaker', [
     PrinterModelSpec('Ultimaker 2+', 140, isEstimated: true, usefulLifeHours: 8000),

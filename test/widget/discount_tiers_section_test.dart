@@ -98,7 +98,7 @@ void main() {
       await tester.tap(find.textContaining('Agregar'));
       await tester.pumpAndSettle();
 
-      final percentField = find.widgetWithText(TextFormField, 'Descuento');
+      final percentField = find.widgetWithText(TextFormField, 'Descuento (%)');
       await tester.enterText(percentField, '0');
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
@@ -117,7 +117,7 @@ void main() {
       await tester.tap(find.textContaining('Agregar'));
       await tester.pumpAndSettle();
 
-      final percentField = find.widgetWithText(TextFormField, 'Descuento');
+      final percentField = find.widgetWithText(TextFormField, 'Descuento (%)');
       await tester.enterText(percentField, '101');
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();

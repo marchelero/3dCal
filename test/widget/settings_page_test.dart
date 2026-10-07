@@ -13,6 +13,7 @@ import 'package:tresdcal/features/entitlement/data/entitlement_repository.dart';
 import 'package:tresdcal/features/entitlement/data/payment_service.dart';
 import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
 import 'package:tresdcal/features/settings/presentation/notifiers/settings_notifier.dart';
+import 'package:tresdcal/features/settings/presentation/pages/print_settings_page.dart';
 import 'package:tresdcal/features/settings/presentation/pages/settings_page.dart';
 import 'package:tresdcal/l10n/de_de.dart';
 import 'package:tresdcal/l10n/en_us.dart';
@@ -42,6 +43,33 @@ Future<ProviderContainer> _pumpPage(WidgetTester tester) async {
     UncontrolledProviderScope(
       container: container,
       child: const MaterialApp(home: SettingsPage()),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return container;
+}
+
+/// Helper: monta [PrintSettingsPage] (pagina `/print`). Desde la
+/// reorganizacion de settings, Ganancia base + tiles de catalogos
+/// (Filamentos/Impresoras) viven aqui, no en [SettingsPage].
+Future<ProviderContainer> _pumpPrintSettings(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
+  addTearDown(() async {
+    container.dispose();
+    await db.close();
+  });
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: PrintSettingsPage()),
     ),
   );
   await tester.pumpAndSettle();
@@ -190,8 +218,8 @@ void main() {
         findsOneWidget,
       ); // _SettingsSection usa toUpperCase
       expect(find.text('Nombre de la empresa'), findsOneWidget);
-      expect(find.text('Filamentos'), findsOneWidget);
-      expect(find.text('Impresoras'), findsOneWidget);
+      // Filamentos/Impresoras migraron a PrintSettingsPage (/print); la
+      // presencia + navegacion la cubre el test AC-9.1 mas abajo.
       expect(find.textContaining('Privacidad'), findsAtLeast(1));
     });
 
@@ -202,7 +230,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      await _pumpPage(tester);
+      await _pumpPrintSettings(tester);
 
       // El tooltip de ayuda del tile de Ganancia base (puede haber otros
       // iconos info en la pagina — filtramos por el tooltip localizado).
@@ -222,22 +250,19 @@ void main() {
     testWidgets('auto-save on blur: editar profit base persiste el cambio', (
       tester,
     ) async {
-      final container = await _pumpPage(tester);
+      // Ganancia base vive en PrintSettingsPage (/print) desde la
+      // reorganizacion de settings.
+      final container = await _pumpPrintSettings(tester);
 
       // _AutoSaveField usa NumericInputField -> TextField (no TextFormField
-      // porque validator=null). El valor inicial 0 sale de settings.profitBase
-      // y se muestra VACIO (el campo 0 = "aun no configurado").
-      final profitField = find.widgetWithText(TextField, '0');
-      if (profitField.evaluate().isEmpty) {
-        // Profit 0 → campo vacio; localizamos el input por su label.
-        final profitInput = find.widgetWithText(
-          NumericInputField,
-          EsBO.settingsProfitBase,
-        );
-        await tester.enterText(profitInput, '350');
-      } else {
-        await tester.enterText(profitField, '350');
-      }
+      // porque validator=null). Buscar SIEMPRE por label: otros campos de la
+      // pagina (p.ej. kWh) pueden mostrar '0' y capturarian el enterText.
+      final profitInput = find.widgetWithText(
+        NumericInputField,
+        EsBO.settingsProfitBase,
+      );
+      expect(profitInput, findsOneWidget);
+      await tester.enterText(profitInput, '350');
       await tester.pumpAndSettle();
       // Blur para disparar el listener.
       tester.binding.focusManager.primaryFocus?.unfocus();
@@ -271,11 +296,12 @@ void main() {
         await db.close();
       });
 
-      // Mini app con GoRouter porque SettingsPage usa context.push.
+      // Mini app con GoRouter porque PrintSettingsPage usa context.push.
+      // El tile "Filamentos" vive en /print desde la reorganizacion.
       final router = GoRouter(
-        initialLocation: '/settings',
+        initialLocation: '/print',
         routes: [
-          GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+          GoRoute(path: '/print', builder: (_, _) => const PrintSettingsPage()),
           GoRoute(
             path: '/settings/filaments',
             builder: (_, _) => const FilamentsPage(),

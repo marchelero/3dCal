@@ -55,8 +55,11 @@ void main() {
       expect(dto.isSold.value, isFalse);
       expect(dto.isTemplate.value, isFalse);
       expect(dto.quantity.value, 3);
-      expect(dto.pieceName.value, '');
-      expect(dto.clientName.value, '');
+      // Contrato post-f40dda3: el label mapea a pieceName (no '' fijo);
+      // clientName va absent — CalculatorState no tiene fuente de cliente y
+      // el autosave nunca debe pisar el cliente ya guardado en la fila.
+      expect(dto.pieceName.value, 'Vaso');
+      expect(dto.clientName.present, isFalse);
       expect(dto.discountPercentage.value, closeTo(10, 0.01));
       expect(dto.totalHours.value, closeTo(2.5, 0.01));
       expect(dto.printMinutes.value, 30);
@@ -80,6 +83,7 @@ void main() {
       final dto = CalculatorNotifier.stateToPartialDto(state);
 
       expect(dto.isPartial.value, isTrue);
+      expect(dto.pieceName.present, isFalse); // label vacío -> absent
       expect(dto.totalPriceSnapshot.value, isNotNull);
       expect(dto.materialCostSnapshot.value, isNotNull);
     });

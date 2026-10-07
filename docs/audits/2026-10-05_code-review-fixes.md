@@ -212,7 +212,43 @@ No se re-corrieron tests (directiva de la sesión: solo analyze).
   los resetea al default). Sinergia con LOW-16: el default es lo que hace
   seguro el `absent` en INSERT.
 
-**Deuda restante (sesión propia, pendiente):** ~24 rojos + 4 hangs de tests y
-la limpieza/consolidación de la suite (~843 tests en 86 archivos) que el
-usuario pidió revisar "luego".
+## Ronda 3 — limpieza de tests obsoletos/pasados (2026-10-05)
+
+Verificación: `flutter analyze --no-pub` → **0 errores / 22 issues** (baseline
+24 → bajó 2 por los archivos borrados; warnings intactos). Sin `flutter test`
+(directiva de la sesión).
+
+**Eliminados — 5 archivos, suites muertas:**
+- `test/widget/sprint0_smoke_test.dart` (2 rojos, smoke de genesis obsoleto).
+- `test/widget/pro_badge_navigation_test.dart` (7 tests, colgaba).
+- `test/widget/partial_identity_test.dart` (2, colgaba).
+- `test/widget/partial_express_save_test.dart` (2, colgaba).
+- `test/widget/calculator_settings_navigation_test.dart` (1, colgaba).
+
+**Corregidos — 10 tests con expectativas pasadas (reparación estática):**
+- `printer_catalog_test` ×2: el catálogo real tiene 30 marcas / 209 modelos
+  (el test y el doc del fuente decían 29/174); reorden ordinal de modelos
+  (violaciones `Ender-5 Max < Ender-5 S1` en Creality y `Bluer < Sapphire
+  Pro` en Two Trees — `String.compareTo` usa unidades de código, no orden
+  cultural); doc de `printer_catalog.dart` actualizado a 30/209.
+- `partial_save_notifier_test` ×1: asserts al contrato vigente post-f40dda3
+  (`pieceName` = label 'Vaso', `clientName` = absent — `CalculatorState` no
+  tiene fuente de cliente y el autosave no debe pisarlo).
+- `discount_tiers_section_test` ×2: finder `'Descuento'` → `'Descuento (%)'`
+  (label real del campo en la hoja; el finder viejo no matcheaba).
+- `printer_form_page_test` F5 ×1: el selector de catálogo auto-carga la vida
+  útil (`printer_catalog_selector.dart:303`, Ender-3 V2 = 5000h); el
+  escenario "costo sin vida útil" ahora limpia el campo antes de validar.
+- `settings_page_test` ×4: tras la reorganización, Ganancia base y los tiles
+  Filamentos/Impresoras viven en `PrintSettingsPage` (`/print`), no en
+  `SettingsPage` → tests reapuntados con el nuevo helper `_pumpPrintSettings`
+  (tooltip 200%, auto-save de profit base y navegación AC-9.1 cubiertos en la
+  página destino; el test de render ya no espera los tiles migrados y busca
+  el profit por label, no por valor '0').
+
+**Deuda restante (12 rojos, requieren `flutter test` para diagnosticar):**
+- `result_sheet_test` ×9 — grupo foto de pieza T9 (mocks de image/crop).
+- `partial_save_repository_test` ×2 — re-emit de `watchLatestPartial` en
+  insert/update (posible race de la primera emisión del `.watch()`).
+- `quote_save_flow_test` ×1 — CalculationDetailPage save → snackbar de error.
 
