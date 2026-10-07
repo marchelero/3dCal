@@ -38,7 +38,7 @@ import 'package:tresdcal/l10n/es_bo.dart';
 class _FakeEntitlementRepository implements EntitlementRepository {
   Entitlement? _active;
 
-  void seedActive(Entitlement? e) => _active = e;
+  set active(Entitlement? e) => _active = e;
 
   @override
   Future<Entitlement?> getActive() async => _active;
@@ -84,15 +84,13 @@ Future<ProviderContainer> _makeContainer({
   required SharedPreferences prefs,
 }) async {
   final repo = _FakeEntitlementRepository();
-  repo.seedActive(
-    Entitlement(
-      id: 1,
-      source: kSourceLifetimePurchase,
-      productId: kProProductId,
-      purchasedAt: DateTime.utc(2026, 1, 1),
-      validatedAt: DateTime.utc(2026, 1, 1),
-      isActive: true,
-    ),
+  repo.active = Entitlement(
+    id: 1,
+    source: kSourceLifetimePurchase,
+    productId: kProProductId,
+    purchasedAt: DateTime.utc(2026, 1, 1),
+    validatedAt: DateTime.utc(2026, 1, 1),
+    isActive: true,
   );
   final container = ProviderContainer(
     overrides: [

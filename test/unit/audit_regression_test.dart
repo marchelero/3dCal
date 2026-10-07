@@ -128,7 +128,7 @@ void main() {
     }) {
       return CalculationEngine.computeFromSnapshot(
         materials: const <MaterialSnapshot>[],
-        materialCostSnapshot: 100.0,
+        materialCostSnapshot: 100,
         totalHours: 0,
         printerWattsSnapshot: 0,
         kwhRateSnapshot: 0,
@@ -375,7 +375,7 @@ void main() {
         pieceName: const Value('Borrador'),
         clientName: Value(client),
         printerWattsSnapshot: const Value(0),
-        totalHours: const Value(2.0),
+        totalHours: const Value(2),
         printMinutes: const Value(30),
         discountPercentage: const Value(0),
         kwhRateSnapshot: const Value(0),

@@ -23,7 +23,6 @@ import 'package:tresdcal/features/calculation/presentation/pages/calculations_li
 import 'package:tresdcal/features/entitlement/data/entitlement_repository.dart';
 import 'package:tresdcal/features/entitlement/data/payment_service.dart';
 import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
-import 'package:tresdcal/l10n/en_us.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
 
 /// Widget tests del export CSV del historial.

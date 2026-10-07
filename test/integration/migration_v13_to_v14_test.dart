@@ -39,8 +39,8 @@ void _seedV13Schema(Database rawDb) {
     )
   ''');
   rawDb.execute(
-    "INSERT INTO filaments (name, brand, price_per_bobbin, grams_per_bobbin, "
-    "is_default, created_at, color) "
+    'INSERT INTO filaments (name, brand, price_per_bobbin, grams_per_bobbin, '
+    'is_default, created_at, color) '
     "VALUES ('PLA Negro', 'eSun', 150.0, 1000.0, 1, 1234567890, '#000000')",
   );
 
@@ -186,7 +186,7 @@ void main() {
 
       final cols = await db
           .customSelect(
-            "SELECT name, type, \"notnull\" AS isNotNull, \"pk\" AS isPrimaryKey "
+            'SELECT name, type, "notnull" AS isNotNull, "pk" AS isPrimaryKey '
             "FROM pragma_table_info('calculations')",
           )
           .get();

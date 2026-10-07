@@ -29,7 +29,7 @@ class _FakeCalculationsNotifier extends CalculationsNotifier {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> _pumpPage(WidgetTester tester) async {
+  Future<void> pumpPage(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -53,7 +53,7 @@ void main() {
   testWidgets(
     'Header contains ProActiveBadge, version, privacy and lock icon',
     (tester) async {
-      await _pumpPage(tester);
+      await pumpPage(tester);
 
       expect(find.byType(ProActiveBadge), findsOneWidget);
       expect(find.textContaining('v$kAppVersion'), findsOneWidget);

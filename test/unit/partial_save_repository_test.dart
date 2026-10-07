@@ -1,6 +1,6 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
-import 'package:drift/drift.dart' show Variable, Value;
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tresdcal/core/constants/app_constants.dart';
@@ -36,7 +36,7 @@ void main() {
     await db.close();
   });
 
-  CalculationsCompanion _partial({
+  CalculationsCompanion partial({
     DateTime? createdAt,
     String? pieceName,
     int? quantity,
@@ -50,7 +50,7 @@ void main() {
       printerId: const Value.absent(),
       printerNameSnapshot: const Value.absent(),
       printerWattsSnapshot: const Value(0),
-      totalHours: const Value(2.0),
+      totalHours: const Value(2),
       printMinutes: const Value(30),
       discountPercentage: const Value(0),
       kwhRateSnapshot: const Value(0),
@@ -85,7 +85,7 @@ void main() {
   group('savePartial', () {
     test('bucket nuevo → insert (devuelve id nuevo)', () async {
       final ts = DateTime(2026, 9, 28, 12, 0);
-      final id = await repo.savePartial(_partial(createdAt: ts));
+      final id = await repo.savePartial(partial(createdAt: ts));
 
       expect(id, greaterThan(0));
       final row = await db.customSelect(
@@ -102,10 +102,10 @@ void main() {
         () async {
       final ts = DateTime(2026, 9, 28, 12, 5);
       final id1 = await repo.savePartial(
-        _partial(createdAt: ts, pieceName: 'Vaso'),
+        partial(createdAt: ts, pieceName: 'Vaso'),
       );
       final id2 = await repo.savePartial(
-        _partial(createdAt: ts, pieceName: 'Vaso 2'),
+        partial(createdAt: ts, pieceName: 'Vaso 2'),
       );
 
       expect(id2, isNot(equals(id1)), reason: 'sin existingId = insert nuevo');
@@ -118,10 +118,10 @@ void main() {
     test('existingId → update (no duplicado, conserva createdAt)', () async {
       final ts = DateTime(2026, 9, 28, 12, 5);
       final id1 = await repo.savePartial(
-        _partial(createdAt: ts, pieceName: 'Vaso'),
+        partial(createdAt: ts, pieceName: 'Vaso'),
       );
       final id2 = await repo.savePartial(
-        _partial(createdAt: ts.add(const Duration(minutes: 3)), pieceName: 'Vaso actualizado'),
+        partial(createdAt: ts.add(const Duration(minutes: 3)), pieceName: 'Vaso actualizado'),
         existingId: id1,
       );
 
@@ -146,7 +146,7 @@ void main() {
     test('existingId conserva pieceName/clientName si el patch los trae ausentes', () async {
       final ts = DateTime(2026, 9, 28, 12, 10);
       final id = await repo.savePartial(
-        _partial(createdAt: ts, pieceName: 'Taza'),
+        partial(createdAt: ts, pieceName: 'Taza'),
       );
       // Patch tipico del autosave: nombres absentes, totales nuevos.
       await repo.savePartial(
@@ -172,7 +172,7 @@ void main() {
   group('deletePartial', () {
     test('elimina un parcial por id', () async {
       final ts = DateTime(2026, 9, 28, 13, 0);
-      final id = await repo.savePartial(_partial(createdAt: ts));
+      final id = await repo.savePartial(partial(createdAt: ts));
       await repo.deletePartial(id);
 
       final row = await db.customSelect(
@@ -194,7 +194,7 @@ void main() {
     test('persiste los materiales del parcial (no se perdian al reusar)', () async {
       final ts = DateTime(2026, 9, 28, 16, 0);
       final id = await repo.savePartial(
-        _partial(createdAt: ts),
+        partial(createdAt: ts),
         materials: [mat('PLA', 120), mat('ABS', 80)],
       );
 
@@ -206,11 +206,11 @@ void main() {
     test('upsert con existingId reemplaza (no duplica) materiales', () async {
       final ts = DateTime(2026, 9, 28, 16, 30);
       final id1 = await repo.savePartial(
-        _partial(createdAt: ts),
+        partial(createdAt: ts),
         materials: [mat('PLA', 120), mat('ABS', 80)],
       );
       final id2 = await repo.savePartial(
-        _partial(createdAt: ts),
+        partial(createdAt: ts),
         materials: [mat('PLA', 100)],
         existingId: id1,
       );
@@ -224,7 +224,7 @@ void main() {
     test('borrar el parcial borra tambien sus materiales', () async {
       final ts = DateTime(2026, 9, 28, 17, 0);
       final id = await repo.savePartial(
-        _partial(createdAt: ts),
+        partial(createdAt: ts),
         materials: [mat('PLA', 120)],
       );
       expect((await repo.materialsOf(id)).length, 1);
@@ -240,14 +240,14 @@ void main() {
 
     test('express (sin materiales) no rompe', () async {
       final id = await repo.savePartial(
-        _partial(createdAt: DateTime(2026, 9, 28, 18, 0)),
+        partial(createdAt: DateTime(2026, 9, 28, 18, 0)),
       );
       expect(await repo.materialsOf(id), isEmpty);
     });
 
     test('persiste el desglose de tiempo propio por material (v15)', () async {
       final id = await repo.savePartial(
-        _partial(createdAt: DateTime(2026, 9, 28, 19, 0)),
+        partial(createdAt: DateTime(2026, 9, 28, 19, 0)),
         materials: [
           DraftMaterialInput(
             label: 'PLA',
@@ -282,11 +282,11 @@ void main() {
     test('el upsert con existingId actualiza el desglose viejo en vez de duplicarlo', () async {
       final ts = DateTime(2026, 9, 28, 20, 0);
       final id1 = await repo.savePartial(
-        _partial(createdAt: ts),
+        partial(createdAt: ts),
         materials: [mat('PLA', 120)],
       );
       final id2 = await repo.savePartial(
-        _partial(createdAt: ts),
+        partial(createdAt: ts),
         materials: [
           DraftMaterialInput(
             label: 'PLA',
@@ -312,7 +312,7 @@ void main() {
   group('borradores (partial): visibles en historial, fuera del cap', () {
     /// Crear un borrador via savePartial.
     Future<int> seedDraft(int minute) =>
-        repo.savePartial(_partial(createdAt: DateTime(2026, 10, 3, 12, minute)));
+        repo.savePartial(partial(createdAt: DateTime(2026, 10, 3, 12, minute)));
 
     test('countAll excluye borradores (no consumen el cap free)', () async {
       await seedDraft(0);
@@ -360,10 +360,10 @@ void main() {
       final ts2 = DateTime(2026, 9, 28, 14, 0, 50);
       final tsOutside = DateTime(2026, 9, 28, 14, 2, 0);
 
-      await repo.savePartial(_partial(createdAt: ts1, pieceName: 'Primero'));
-      await repo.savePartial(_partial(createdAt: ts2, pieceName: 'Segundo'));
+      await repo.savePartial(partial(createdAt: ts1, pieceName: 'Primero'));
+      await repo.savePartial(partial(createdAt: ts2, pieceName: 'Segundo'));
       await repo.savePartial(
-        _partial(createdAt: tsOutside, pieceName: 'Fuera'),
+        partial(createdAt: tsOutside, pieceName: 'Fuera'),
       );
 
       final latest = await repo.findLatestPartialForMinute(bucket);
@@ -395,7 +395,7 @@ void main() {
       await _until(() => events.isNotEmpty, why: 'emision inicial (null)');
       expect(events, [null], reason: 'con tabla vacia el stream emite null');
 
-      await repo.savePartial(_partial(pieceName: 'Uno'));
+      await repo.savePartial(partial(pieceName: 'Uno'));
       await _until(
         () => events.length >= 2,
         why: 're-emision con el parcial insertado',
@@ -411,9 +411,9 @@ void main() {
       // actualiza el borrador actual (el latest). Con la fecha default del
       // helper (12:00) el latest era 'Otro' y el matcher jamas se cumplia.
       final id = await repo.savePartial(
-        _partial(pieceName: 'Viejo', createdAt: DateTime(2026, 9, 28, 14, 0)),
+        partial(pieceName: 'Viejo', createdAt: DateTime(2026, 9, 28, 14, 0)),
       );
-      await repo.savePartial(_partial(pieceName: 'Otro', createdAt: DateTime(2026, 9, 28, 13, 0)));
+      await repo.savePartial(partial(pieceName: 'Otro', createdAt: DateTime(2026, 9, 28, 13, 0)));
       final existing = await repo.getById(id);
 
       final future = expectLater(
@@ -430,11 +430,11 @@ void main() {
     });
 
     test('re-emite al borrar el parcial mas reciente', () async {
-      await repo.savePartial(_partial(pieceName: 'Primero')); // 12:00
+      await repo.savePartial(partial(pieceName: 'Primero')); // 12:00
       // 'Segundo' 13:00 = latest (antes era 11:00 y el primer evento ya era
       // 'Primero': el matcher se cumplia sin llegar a probar la re-emision).
       final id = await repo.savePartial(
-        _partial(pieceName: 'Segundo', createdAt: DateTime(2026, 9, 28, 13, 0)),
+        partial(pieceName: 'Segundo', createdAt: DateTime(2026, 9, 28, 13, 0)),
       );
 
       final future = expectLater(

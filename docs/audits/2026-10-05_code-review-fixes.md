@@ -278,3 +278,26 @@ Ejecución real con `flutter test` (directiva levantada por el usuario):
 `flutter analyze --no-pub` → 0 errores / 22 issues (2 warnings de imports sin
 usar preexistentes).
 
+## Ronda 5 — lint al cero y sqlite3 pinneado (2026-10-07)
+
+- `dart fix --apply`: **21 fixes en 12 archivos** (unused_import ×2 en
+  `calculations_list_page_test`/`router_guards_test`,
+  no_leading_underscores_for_local_identifiers ×4,
+  prefer_single_quotes, unnecessary_lambdas ×2, combinators_ordering, eol,
+  etc.).
+- Manuales: `lot_lines_test.dart` — `seedActive()` solo asignaba propiedad →
+  setter `set active(...)` + caller actualizado; `migration_v16_to_v17_test.dart`
+  — newline final.
+- **`flutter analyze --no-pub` → `No issues found!`** (0 errores / 0 warnings /
+  0 infos — primera vez en el proyecto; antes 22 issues).
+- `pubspec.yaml`: apareció `sqlite3: any` en dev_dependencies (no atribuible a
+  comandos de la sesión; los 10 tests de migración importan `package:sqlite3`
+  directo). Con decisión del usuario → **`sqlite3: ^3.5.2`** (versión resuelta
+  del lock) + `flutter pub get`.
+- Verificación final: `flutter test` → **`+833: All tests passed!`** y
+  `flutter analyze` → **No issues found!** con el pin aplicado.
+
+Estado: HIGH ✅ · MED ✅ · 7 LOW ✅ · limpieza ✅ · 12 rojos ✅ · lint ✅ ·
+suite 833/833 ✅ · analyze 0 issues ✅.
+
+

@@ -131,7 +131,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/calculator/new',
-      pageBuilder: (_, __) => _slideRight(const CalculatorPage(newMode: true)),
+      pageBuilder: (_, _) => _slideRight(const CalculatorPage(newMode: true)),
     ),
     GoRoute(
       path: '/paywall',

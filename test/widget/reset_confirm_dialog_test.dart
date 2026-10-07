@@ -20,7 +20,7 @@ import 'package:tresdcal/l10n/es_bo.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> _pumpPage(WidgetTester tester) async {
+  Future<void> pumpPage(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -37,7 +37,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> _unmount(WidgetTester tester) async {
+  Future<void> unmount(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 50));
     final error = tester.takeException();
@@ -50,7 +50,7 @@ void main() {
     testWidgets(
       'tap Reset con contenido - form se resetea directamente',
       (tester) async {
-        await _pumpPage(tester);
+        await pumpPage(tester);
 
         await tester.enterText(
           find.widgetWithText(TextField, 'Peso'),
@@ -67,21 +67,21 @@ void main() {
 
         expect(find.widgetWithText(TextField, '100'), findsNothing);
 
-        await _unmount(tester);
+        await unmount(tester);
       },
     );
 
     testWidgets(
       'tap Reset sin contenido - reset silencioso',
       (tester) async {
-        await _pumpPage(tester);
+        await pumpPage(tester);
 
         await tester.tap(find.byTooltip(EsBO.calcActionReset));
         await tester.pumpAndSettle();
 
         expect(find.textContaining('Completa peso'), findsWidgets);
 
-        await _unmount(tester);
+        await unmount(tester);
       },
     );
   });

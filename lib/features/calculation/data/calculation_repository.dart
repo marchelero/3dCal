@@ -942,7 +942,7 @@ class CalculationRepository {
   /// Nota: `"key"` va entre comillas dobles porque `key` puede chocar con
   /// palabras reservadas del dialecto SQL del host.
   static const String _minChargeFallbackSql =
-      "COALESCE((SELECT CAST(value AS REAL) FROM settings "
+      'COALESCE((SELECT CAST(value AS REAL) FROM settings '
       "WHERE \"key\" = 'minimum_charge'), 0)";
 
   /// Total cotizado efectivo (suma `max(unit × qty − lote, minCharge × qty)`

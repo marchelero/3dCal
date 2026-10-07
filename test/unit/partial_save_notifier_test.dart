@@ -11,7 +11,7 @@ void main() {
     test('devuelve false con state invalido (initial)', () {
       final container = ProviderContainer(
         overrides: [
-          calculatorNotifierProvider.overrideWith(() => _StubNotifier()),
+          calculatorNotifierProvider.overrideWith(_StubNotifier.new),
         ],
       );
       addTearDown(container.dispose);
@@ -23,7 +23,7 @@ void main() {
     test('devuelve true con state valido (output != null)', () {
       final container = ProviderContainer(
         overrides: [
-          calculatorNotifierProvider.overrideWith(() => _ValidNotifier()),
+          calculatorNotifierProvider.overrideWith(_ValidNotifier.new),
         ],
       );
       addTearDown(container.dispose);

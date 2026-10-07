@@ -24,7 +24,7 @@ Future<int> _seedDefinitiveWithMaterial(AppDatabase db, String pieceName) async 
           createdAt: Value(DateTime(2026, 10, 4, 10, 0)),
           pieceName: Value(pieceName),
           clientName: const Value('Cliente X'),
-          totalHours: const Value(2.0),
+          totalHours: const Value(2),
           printMinutes: const Value(30),
           discountPercentage: const Value(0),
           kwhRateSnapshot: const Value(0),
@@ -117,7 +117,7 @@ void main() {
     }
 
     // 1) La DB debe tener 2 filas.
-    final items = (await tester.runAsync(() => repo.listItems()))!;
+    final items = (await tester.runAsync(repo.listItems))!;
     final drafts = items.where((c) => c.isPartial).toList();
     print('DB: items=${items.length} drafts=${drafts.length}');
 
@@ -188,7 +188,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    final items = (await tester.runAsync(() => repo.listItems()))!;
+    final items = (await tester.runAsync(repo.listItems))!;
     final drafts = items.where((c) => c.isPartial).toList();
     final historyItems = (await tester.runAsync(() => repo.watchItems().first))!;
     print('BACK: db=${items.length} drafts=${drafts.length} '
