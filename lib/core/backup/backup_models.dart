@@ -168,6 +168,11 @@ class BackupData {
   /// Cubre: identidad de la app, version de formato, version de schema,
   /// limites de filas por coleccion, tipos de campos por fila, duplicados
   /// de IDs e integridad referencial (materiales -> cotizaciones).
+  ///
+  /// LOW-14: el mensaje retornado es SOLO diagnóstico (debugPrint) — la UI
+  /// nunca lo muestra. `BackupService.restoreFromJson` lo convierte en
+  /// `BackupErrorCodes.invalidData` y `settings_page` lo traduce con
+  /// `EsBO.settingsBackupImportInvalidFile`.
   String? validate() {
     if (appName != kBackupAppName) {
       return 'Archivo no reconocido: appName="$appName"';
@@ -531,16 +536,8 @@ class BackupSummary {
   /// Cantidad de escalones de descuento por cantidad en el backup.
   final int discountTierCount;
 
-  /// Describe el resumen en formato legible.
-  String describe() {
-    final parts = <String>[];
-    if (filamentCount > 0) parts.add('$filamentCount filamentos');
-    if (printerCount > 0) parts.add('$printerCount impresoras');
-    if (calculationCount > 0) parts.add('$calculationCount cotizaciones');
-    if (discountTierCount > 0) {
-      parts.add('$discountTierCount escalones de descuento');
-    }
-    if (parts.isEmpty) return 'Sin datos';
-    return parts.join(', ');
-  }
+  // LOW-14: `describe()` (resumen legible en español, "N filamentos, M
+  // impresoras…") se movió a l10n como `EsBO.settingsBackupImportSummary`
+  // — solo lo consumía el diálogo de confirmación de importación de
+  // settings_page y ahí debía respetar el locale activo.
 }

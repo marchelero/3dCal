@@ -129,6 +129,7 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear_rounded, size: 18),
+                        tooltip: EsBO.commonClearSearch,
                         onPressed: () {
                           _searchCtrl.clear();
                           notifier.search('');

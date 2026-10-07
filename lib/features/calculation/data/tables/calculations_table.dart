@@ -96,22 +96,31 @@ class Calculations extends Table {
   RealColumn get electricCostSnapshot => real()();
   RealColumn get amortizationCostSnapshot =>
       real().withDefault(const Constant(0))();
-  RealColumn get laborCostSnapshot => real()();
-  RealColumn get postProcessCostSnapshot => real()();
+  RealColumn get laborCostSnapshot => real().withDefault(const Constant(0))();
+  RealColumn get postProcessCostSnapshot => real().withDefault(const Constant(0))();
   RealColumn get baseCostSnapshot => real()();
-  RealColumn get failureCostSnapshot => real()();
-  RealColumn get markupCostSnapshot => real()();
+  RealColumn get failureCostSnapshot => real().withDefault(const Constant(0))();
+  RealColumn get markupCostSnapshot => real().withDefault(const Constant(0))();
   RealColumn get profitAmountSnapshot => real()();
-  RealColumn get minimumChargeAppliedSnapshot => real()();
-  RealColumn get effectiveTotalSnapshot => real()();
+  RealColumn get minimumChargeAppliedSnapshot => real().withDefault(const Constant(0))();
+
+  /// TOTAL efectivo al momento de guardar (v3, LOW-15).
+  ///
+  /// WRITE-ONLY: la columna solo se Escribe (stateToPartialDto, repository)
+  /// o se copia al duplicar la fila; no se lee en ninguna query de negocio.
+  /// Pese al nombre, el valor persistido es el total ANTES del descuento
+  /// Candidata a retirada en una proxima migracion (drop column); mientras
+  /// tanto conserva default 0 y su valor historico sin interpretarlo.
+  RealColumn get effectiveTotalSnapshot =>
+      real().withDefault(const Constant(0))();
   RealColumn get totalPriceSnapshot => real()();
 
   /// Snapshots de settings (F1) al momento de guardar.
-  RealColumn get laborRateSnapshot => real()();
-  RealColumn get postProcessRateSnapshot => real()();
-  RealColumn get failureRateSnapshot => real()();
-  RealColumn get minimumChargeSnapshot => real()();
-  RealColumn get markupOnMaterialsSnapshot => real()();
+  RealColumn get laborRateSnapshot => real().withDefault(const Constant(0))();
+  RealColumn get postProcessRateSnapshot => real().withDefault(const Constant(0))();
+  RealColumn get failureRateSnapshot => real().withDefault(const Constant(0))();
+  RealColumn get minimumChargeSnapshot => real().withDefault(const Constant(0))();
+  RealColumn get markupOnMaterialsSnapshot => real().withDefault(const Constant(0))();
 
   /// Foto de la pieza persistida (F2, v9). BLOB JPEG downscaled (max 1200px
   /// lado mayor, calidad 85) para no inflar la DB. `null` en cotizaciones

@@ -21,6 +21,8 @@ class DeImpl implements AppStrings {
   @override
   String get commonApply => 'Anwenden';
   @override
+  String get commonClearSearch => 'Suche löschen';
+  @override
   String get commonDelete => 'Löschen';
   @override
   String get commonRetry => 'Erneut versuchen';
@@ -287,6 +289,22 @@ class DeImpl implements AppStrings {
   @override
   String get settingsBackupExportError =>
       'Fehler beim Exportieren der Sicherung';
+
+  @override
+  String settingsBackupImportSummary(
+    int calcs,
+    int filaments,
+    int printers,
+    int tiers,
+  ) {
+    final parts = <String>[];
+    if (filaments > 0) parts.add('$filaments Filamente');
+    if (printers > 0) parts.add('$printers Drucker');
+    if (calcs > 0) parts.add('$calcs Angebote');
+    if (tiers > 0) parts.add('$tiers Rabattstufen');
+    if (parts.isEmpty) return 'Keine Daten';
+    return parts.join(', ');
+  }
 
   @override
   String settingsBackupImportSuccess(int calcs, int filaments, int printers) =>

@@ -176,6 +176,16 @@ abstract class AppStrings {
   /// Mensaje de exito al importar backup.
   String settingsBackupImportSuccess(int calcs, int filaments, int printers);
 
+  /// Resumen del diálogo de confirmación de importación (LOW-14):
+  /// solo se incluyen los conteos > 0, en orden filamentos/impresoras/
+  /// cotizaciones/escalones; `Sin datos` cuando todo es 0.
+  String settingsBackupImportSummary(
+    int calcs,
+    int filaments,
+    int printers,
+    int tiers,
+  );
+
   /// Mensaje de error al importar backup.
   String get settingsBackupImportError;
 
@@ -1410,6 +1420,9 @@ abstract class AppStrings {
 
   /// "Aplicar" / "Apply".
   String get commonApply;
+
+  /// Tooltip del IconButton que limpia la busqueda (screen reader).
+  String get commonClearSearch;
 
   // Nombres de la paleta de filamentos (17 entradas).
   String get colorNameRed;

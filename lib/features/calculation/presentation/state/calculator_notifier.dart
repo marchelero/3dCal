@@ -1027,9 +1027,19 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final o = state.output;
     final label = state.label.trim();
     // F2 fix (auditoría 2026-10-04): el parcial persiste las tasas reales que
-    // se leyeron de Settings/impresora (si el caller las pasó). Null input
-    // (form aún inválido) => 0 = comportamiento legacy.
+    // se leyeron de Settings/impresora (si el caller las pasó).
+    // LOW-16 fix (auditoría 2026-10-05): si NO hay input resuelto (form
+    // inválido o dispose), las tasas van `absent` en vez de Value(0):
+    //  - en UPDATE conservan las tasas reales que el borrador ya tenía
+    //    (antes el autosave de salida las pisaba con 0 y al reabrir el
+    //    form cargaba 0 en vez de las tasas de Settings);
+    //  - en INSERT caen al default de columna (0) — migraión v2→v3 añadió
+    //    DEFAULT 0 a las 11 columnas F1 (LOW-17), así que NOT NULL no truena.
+    // Con input != null el valor null de un campo concreto sí persiste 0
+    // (significa "setting sin configurar").
     double rd(Decimal? d) => (d ?? Decimal.zero).toDouble();
+    Value<double> rateSnap(Decimal? v) =>
+        input == null ? const Value.absent() : Value(rd(v));
     return CalculationsCompanion(
       createdAt: Value(DateTime.now()),
       pieceName: label.isNotEmpty ? Value(label) : const Value.absent(),
@@ -1053,8 +1063,8 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       discountPercentage: Value(
         CalculatorState.parseDecimal(state.discountPct)?.toDouble() ?? 0,
       ),
-      kwhRateSnapshot: Value(rd(input?.kwhRate)),
-      profitBaseSnapshot: Value(rd(input?.profitBase)),
+      kwhRateSnapshot: rateSnap(input?.kwhRate),
+      profitBaseSnapshot: rateSnap(input?.profitBase),
       quantity: Value(state.quantity),
       isSold: const Value(false),
       isTemplate: const Value(false),
@@ -1079,11 +1089,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       ),
       effectiveTotalSnapshot: Value(o?.totalFinal.toDouble() ?? 0),
       totalPriceSnapshot: Value(o?.totalPrice.toDouble() ?? 0),
-      laborRateSnapshot: Value(rd(input?.laborRate)),
-      postProcessRateSnapshot: Value(rd(input?.postProcessRate)),
-      failureRateSnapshot: Value(rd(input?.failureRate)),
-      minimumChargeSnapshot: Value(rd(input?.minimumCharge)),
-      markupOnMaterialsSnapshot: Value(rd(input?.markupOnMaterials)),
+      laborRateSnapshot: rateSnap(input?.laborRate),
+      postProcessRateSnapshot: rateSnap(input?.postProcessRate),
+      failureRateSnapshot: rateSnap(input?.failureRate),
+      minimumChargeSnapshot: rateSnap(input?.minimumCharge),
+      markupOnMaterialsSnapshot: rateSnap(input?.markupOnMaterials),
       pieceImageBlob: const Value.absent(),
       // MED-05 (auditoría 2026-10-04): el escalón mayorista se guardaba en
       // `save()` pero NO en el autoguardado — un borrador con N>1 aparecía

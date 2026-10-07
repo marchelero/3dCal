@@ -880,6 +880,7 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                         suffixIcon: _query.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear),
+                                tooltip: EsBO.commonClearSearch,
                                 onPressed: () {
                                   _ctrl.clear();
                                   setState(() => _query = '');
@@ -1099,10 +1100,11 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
     // BackupService.import para no duplicar la regla).
     final sizeError = BackupService.validateFileSize(file);
     if (sizeError != null) {
+      debugPrint('[Backup] validateFileSize devolvió: $sizeError');
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(AppSnackBar.error(sizeError));
+        ..showSnackBar(AppSnackBar.error(_backupErrorText(sizeError)));
       return;
     }
 
@@ -1141,10 +1143,15 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
 
     final error = backup.validate();
     if (error != null) {
+      // LOW-14: el detalle de validate() es diagnóstico (solo log); al
+      // usuario se le muestra el mensaje localizado genérico.
+      debugPrint('[Backup] validate rechazó: $error');
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(AppSnackBar.error(error));
+        ..showSnackBar(
+          AppSnackBar.error(EsBO.settingsBackupImportInvalidFile),
+        );
       return;
     }
 
@@ -1170,7 +1177,14 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
       builder: (dialogContext) => AlertDialog(
         title: Text(EsBO.settingsBackupImportConfirmTitle),
         content: Text(
-          EsBO.settingsBackupImportConfirmBody(backup.summary.describe()),
+          EsBO.settingsBackupImportConfirmBody(
+            EsBO.settingsBackupImportSummary(
+              backup.summary.calculationCount,
+              backup.summary.filamentCount,
+              backup.summary.printerCount,
+              backup.summary.discountTierCount,
+            ),
+          ),
         ),
         actions: [
           TextButton(
@@ -1224,14 +1238,26 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
             ),
           );
       } else {
+        debugPrint('[Backup] restore devolvió código: $importResult');
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(AppSnackBar.error(importResult));
+          ..showSnackBar(AppSnackBar.error(_backupErrorText(importResult)));
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
   }
+
+  /// LOW-14: traduce los códigos de error de backup (`BackupErrorCodes`)
+  /// a mensajes localizados con el locale activo. Los códigos desconocidos
+  /// caen al mensaje genérico de error de importación.
+  String _backupErrorText(String code) => switch (code) {
+    BackupErrorCodes.sizeTooLarge => EsBO.settingsBackupImportSizeError,
+    BackupErrorCodes.futureVersion => EsBO.settingsBackupImportFutureVersion,
+    BackupErrorCodes.invalidFile ||
+    BackupErrorCodes.invalidData => EsBO.settingsBackupImportInvalidFile,
+    _ => EsBO.settingsBackupImportError,
+  };
 
   @override
   Widget build(BuildContext context) {

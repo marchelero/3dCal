@@ -1404,7 +1404,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _postProcessCostSnapshotMeta =
       const VerificationMeta('postProcessCostSnapshot');
@@ -1415,7 +1416,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _baseCostSnapshotMeta = const VerificationMeta(
     'baseCostSnapshot',
@@ -1437,7 +1439,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _markupCostSnapshotMeta =
       const VerificationMeta('markupCostSnapshot');
@@ -1448,7 +1451,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _profitAmountSnapshotMeta =
       const VerificationMeta('profitAmountSnapshot');
@@ -1470,7 +1474,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _effectiveTotalSnapshotMeta =
       const VerificationMeta('effectiveTotalSnapshot');
@@ -1481,7 +1486,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _totalPriceSnapshotMeta =
       const VerificationMeta('totalPriceSnapshot');
@@ -1504,7 +1510,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _postProcessRateSnapshotMeta =
       const VerificationMeta('postProcessRateSnapshot');
@@ -1515,7 +1522,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _failureRateSnapshotMeta =
       const VerificationMeta('failureRateSnapshot');
@@ -1526,7 +1534,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _minimumChargeSnapshotMeta =
       const VerificationMeta('minimumChargeSnapshot');
@@ -1537,7 +1546,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _markupOnMaterialsSnapshotMeta =
       const VerificationMeta('markupOnMaterialsSnapshot');
@@ -1548,7 +1558,8 @@ class $CalculationsTable extends Calculations
         aliasedName,
         false,
         type: DriftSqlType.double,
-        requiredDuringInsert: true,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
       );
   static const VerificationMeta _pieceImageBlobMeta = const VerificationMeta(
     'pieceImageBlob',
@@ -1907,8 +1918,6 @@ class $CalculationsTable extends Calculations
           _laborCostSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_laborCostSnapshotMeta);
     }
     if (data.containsKey('post_process_cost_snapshot')) {
       context.handle(
@@ -1918,8 +1927,6 @@ class $CalculationsTable extends Calculations
           _postProcessCostSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_postProcessCostSnapshotMeta);
     }
     if (data.containsKey('base_cost_snapshot')) {
       context.handle(
@@ -1940,8 +1947,6 @@ class $CalculationsTable extends Calculations
           _failureCostSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_failureCostSnapshotMeta);
     }
     if (data.containsKey('markup_cost_snapshot')) {
       context.handle(
@@ -1951,8 +1956,6 @@ class $CalculationsTable extends Calculations
           _markupCostSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_markupCostSnapshotMeta);
     }
     if (data.containsKey('profit_amount_snapshot')) {
       context.handle(
@@ -1973,8 +1976,6 @@ class $CalculationsTable extends Calculations
           _minimumChargeAppliedSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_minimumChargeAppliedSnapshotMeta);
     }
     if (data.containsKey('effective_total_snapshot')) {
       context.handle(
@@ -1984,8 +1985,6 @@ class $CalculationsTable extends Calculations
           _effectiveTotalSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_effectiveTotalSnapshotMeta);
     }
     if (data.containsKey('total_price_snapshot')) {
       context.handle(
@@ -2006,8 +2005,6 @@ class $CalculationsTable extends Calculations
           _laborRateSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_laborRateSnapshotMeta);
     }
     if (data.containsKey('post_process_rate_snapshot')) {
       context.handle(
@@ -2017,8 +2014,6 @@ class $CalculationsTable extends Calculations
           _postProcessRateSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_postProcessRateSnapshotMeta);
     }
     if (data.containsKey('failure_rate_snapshot')) {
       context.handle(
@@ -2028,8 +2023,6 @@ class $CalculationsTable extends Calculations
           _failureRateSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_failureRateSnapshotMeta);
     }
     if (data.containsKey('minimum_charge_snapshot')) {
       context.handle(
@@ -2039,8 +2032,6 @@ class $CalculationsTable extends Calculations
           _minimumChargeSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_minimumChargeSnapshotMeta);
     }
     if (data.containsKey('markup_on_materials_snapshot')) {
       context.handle(
@@ -2050,8 +2041,6 @@ class $CalculationsTable extends Calculations
           _markupOnMaterialsSnapshotMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_markupOnMaterialsSnapshotMeta);
     }
     if (data.containsKey('piece_image_blob')) {
       context.handle(
@@ -2426,6 +2415,14 @@ class Calculation extends DataClass implements Insertable<Calculation> {
   final double markupCostSnapshot;
   final double profitAmountSnapshot;
   final double minimumChargeAppliedSnapshot;
+
+  /// TOTAL efectivo al momento de guardar (v3, LOW-15).
+  ///
+  /// WRITE-ONLY: la columna solo se Escribe (stateToPartialDto, repository)
+  /// o se copia al duplicar la fila; no se lee en ninguna query de negocio.
+  /// Pese al nombre, el valor persistido es el total ANTES del descuento
+  /// Candidata a retirada en una proxima migracion (drop column); mientras
+  /// tanto conserva default 0 y su valor historico sin interpretarlo.
   final double effectiveTotalSnapshot;
   final double totalPriceSnapshot;
 
@@ -3352,20 +3349,20 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
     required double materialCostSnapshot,
     required double electricCostSnapshot,
     this.amortizationCostSnapshot = const Value.absent(),
-    required double laborCostSnapshot,
-    required double postProcessCostSnapshot,
+    this.laborCostSnapshot = const Value.absent(),
+    this.postProcessCostSnapshot = const Value.absent(),
     required double baseCostSnapshot,
-    required double failureCostSnapshot,
-    required double markupCostSnapshot,
+    this.failureCostSnapshot = const Value.absent(),
+    this.markupCostSnapshot = const Value.absent(),
     required double profitAmountSnapshot,
-    required double minimumChargeAppliedSnapshot,
-    required double effectiveTotalSnapshot,
+    this.minimumChargeAppliedSnapshot = const Value.absent(),
+    this.effectiveTotalSnapshot = const Value.absent(),
     required double totalPriceSnapshot,
-    required double laborRateSnapshot,
-    required double postProcessRateSnapshot,
-    required double failureRateSnapshot,
-    required double minimumChargeSnapshot,
-    required double markupOnMaterialsSnapshot,
+    this.laborRateSnapshot = const Value.absent(),
+    this.postProcessRateSnapshot = const Value.absent(),
+    this.failureRateSnapshot = const Value.absent(),
+    this.minimumChargeSnapshot = const Value.absent(),
+    this.markupOnMaterialsSnapshot = const Value.absent(),
     this.pieceImageBlob = const Value.absent(),
     this.batchDiscountPercent = const Value.absent(),
     this.batchDiscountAmount = const Value.absent(),
@@ -3383,20 +3380,9 @@ class CalculationsCompanion extends UpdateCompanion<Calculation> {
        profitBaseSnapshot = Value(profitBaseSnapshot),
        materialCostSnapshot = Value(materialCostSnapshot),
        electricCostSnapshot = Value(electricCostSnapshot),
-       laborCostSnapshot = Value(laborCostSnapshot),
-       postProcessCostSnapshot = Value(postProcessCostSnapshot),
        baseCostSnapshot = Value(baseCostSnapshot),
-       failureCostSnapshot = Value(failureCostSnapshot),
-       markupCostSnapshot = Value(markupCostSnapshot),
        profitAmountSnapshot = Value(profitAmountSnapshot),
-       minimumChargeAppliedSnapshot = Value(minimumChargeAppliedSnapshot),
-       effectiveTotalSnapshot = Value(effectiveTotalSnapshot),
-       totalPriceSnapshot = Value(totalPriceSnapshot),
-       laborRateSnapshot = Value(laborRateSnapshot),
-       postProcessRateSnapshot = Value(postProcessRateSnapshot),
-       failureRateSnapshot = Value(failureRateSnapshot),
-       minimumChargeSnapshot = Value(minimumChargeSnapshot),
-       markupOnMaterialsSnapshot = Value(markupOnMaterialsSnapshot);
+       totalPriceSnapshot = Value(totalPriceSnapshot);
   static Insertable<Calculation> custom({
     Expression<int>? id,
     Expression<DateTime>? createdAt,
@@ -6254,20 +6240,20 @@ typedef $$CalculationsTableCreateCompanionBuilder =
       required double materialCostSnapshot,
       required double electricCostSnapshot,
       Value<double> amortizationCostSnapshot,
-      required double laborCostSnapshot,
-      required double postProcessCostSnapshot,
+      Value<double> laborCostSnapshot,
+      Value<double> postProcessCostSnapshot,
       required double baseCostSnapshot,
-      required double failureCostSnapshot,
-      required double markupCostSnapshot,
+      Value<double> failureCostSnapshot,
+      Value<double> markupCostSnapshot,
       required double profitAmountSnapshot,
-      required double minimumChargeAppliedSnapshot,
-      required double effectiveTotalSnapshot,
+      Value<double> minimumChargeAppliedSnapshot,
+      Value<double> effectiveTotalSnapshot,
       required double totalPriceSnapshot,
-      required double laborRateSnapshot,
-      required double postProcessRateSnapshot,
-      required double failureRateSnapshot,
-      required double minimumChargeSnapshot,
-      required double markupOnMaterialsSnapshot,
+      Value<double> laborRateSnapshot,
+      Value<double> postProcessRateSnapshot,
+      Value<double> failureRateSnapshot,
+      Value<double> minimumChargeSnapshot,
+      Value<double> markupOnMaterialsSnapshot,
       Value<Uint8List?> pieceImageBlob,
       Value<String?> batchDiscountPercent,
       Value<String?> batchDiscountAmount,
@@ -7261,20 +7247,21 @@ class $$CalculationsTableTableManager
                 required double materialCostSnapshot,
                 required double electricCostSnapshot,
                 Value<double> amortizationCostSnapshot = const Value.absent(),
-                required double laborCostSnapshot,
-                required double postProcessCostSnapshot,
+                Value<double> laborCostSnapshot = const Value.absent(),
+                Value<double> postProcessCostSnapshot = const Value.absent(),
                 required double baseCostSnapshot,
-                required double failureCostSnapshot,
-                required double markupCostSnapshot,
+                Value<double> failureCostSnapshot = const Value.absent(),
+                Value<double> markupCostSnapshot = const Value.absent(),
                 required double profitAmountSnapshot,
-                required double minimumChargeAppliedSnapshot,
-                required double effectiveTotalSnapshot,
+                Value<double> minimumChargeAppliedSnapshot =
+                    const Value.absent(),
+                Value<double> effectiveTotalSnapshot = const Value.absent(),
                 required double totalPriceSnapshot,
-                required double laborRateSnapshot,
-                required double postProcessRateSnapshot,
-                required double failureRateSnapshot,
-                required double minimumChargeSnapshot,
-                required double markupOnMaterialsSnapshot,
+                Value<double> laborRateSnapshot = const Value.absent(),
+                Value<double> postProcessRateSnapshot = const Value.absent(),
+                Value<double> failureRateSnapshot = const Value.absent(),
+                Value<double> minimumChargeSnapshot = const Value.absent(),
+                Value<double> markupOnMaterialsSnapshot = const Value.absent(),
                 Value<Uint8List?> pieceImageBlob = const Value.absent(),
                 Value<String?> batchDiscountPercent = const Value.absent(),
                 Value<String?> batchDiscountAmount = const Value.absent(),

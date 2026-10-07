@@ -113,3 +113,106 @@ MED-05 (autoguardado no persiste el escalón mayorista), LOW-16 (fallback del DT
 pisa tasas con 0 explícito), LOW-17 (migración v2→v3 `NOT NULL` sin `DEFAULT`),
 más los LOW de tooltips/i18n de backup. Los 26+1 tests rojos son deuda previa.
 
+## Ronda 2 — los 7 MED resueltos (2026-10-05)
+
+Reafirmada la decisión F4 (borradores cuentan en TODAS las métricas del
+dashboard; solo `countAll` del cap Free los excluye):
+
+- **MED-04 (dashboard vs borradores)** — `calculation_repository.dart`:
+  `countSold()` ahora usa `excludeTemplatesFilter()` (incluye borradores: el
+  numerador de `totalSold` ya los contaba); nuevo
+  `countAllIncludingDrafts({since})` usado por `dashboard_stats.dart`
+  (`avgTicketQuoted` divide universos iguales); `countAll()` conserva la
+  semántica de cap Free; `topClients` sin `AND is_partial = 0`.
+  (`recentClientNames` NO se tocó: es diálogo de guardado, no dashboard.)
+- **MED-05 (autosave sin escalón)** — `stateToPartialDto` escribe
+  `batchDiscountPercent: Value(state.batchAppliedPercent?.toString())` y
+  `batchDiscountAmount: Value(state.batchDiscountAmount.toString())`
+  (null explícito cuando no hay tier ≠ campo ausente en el upsert).
+- **MED-06 (backup perdía los modos)** — restore v17 con claves ausentes →
+  `?? 'auto'` (modelingMode/postprocMode) y `?? 'off'` (extraMode); respeta
+  los defaults de columna (`calculations_table.dart:142/149/157`).
+- **MED-07 (printMinutes abortaba restore)** — `_checkOptionalInt` en
+  `backup_models.dart`; el insert usa `row['printMinutes'] as int? ?? 0`.
+- **MED-08 (Pro caía a Free con storage lento/caído)** — `resolveIsPro`
+  degrada a la CACHE (`entitlementCacheProvider.isPro || isProProvider`) en
+  TimeoutException Y en catch. **Detalle posterior**: `degradedToCache` envió
+  la lectura del cache en try/catch — en contextos sin override de
+  `sharedPreferencesProvider` (tests) el cache lanza `UnimplementedError` y el
+  error escapaba del catch rompiendo 12 tests de `calculator_notifier`; ahora
+  degrada solo al notifier en ese caso (misma semántica pre-fix, fail-safe).
+- **MED-09 (string hardcodeado)** — clave `settingsMinimumChargeRange` en
+  `app_strings.dart` + los 5 impls ("Range/Faixa/Plage/Bereich: 0-100000");
+  `print_settings_page.dart:194` la usa en el validator.
+- **MED-10 (labels de material stale)** — el listener de drift en
+  `calculations_notifier.dart` marca `_materialLabelsLoaded = false` y
+  refresca con `unawaited(_refreshMaterialLabels())` (guard `ref.mounted`):
+  buscar por material encuentra lo recién guardado sin repetir `search()`.
+
+**Tests de regresión MED (nuevos, verdes):** `audit_regression_test` +5
+(3 × MED-04: cap vs dashboard / countSold con borrador vendido / topClients;
+2 × MED-05: persiste percent+amount, null explícito) · `backup_roundtrip_test`
++1 (MED-06/07: backup pre-v17 sin printMinutes/modos → restore ok + defaults)
+· `calculations_notifier_test` +1 (MED-10) · `entitlement_service_test` +1
+(MED-08: notifier en error + cache Pro → true; diseño con
+`getActiveError`, no `blockGetActive` — con cache Pro el build retorna Pro al
+instante y no ejercita el fallback) · `l10n_parity` cubre MED-09 por paridad
+genérica.
+
+**Verificación final (corrida completa, excluidos los 4 archivos con hang):**
+`flutter analyze` **0 errores** (24 issues pre-existentes) · unit+integration
+**+617 −14** · widget **+194 −10** · **cero rojos nuevos**: los 24 rojos son
+los diagnosticados (result_sheet ×9, printer_catalog ×2, partial_save ×3,
+discount_tiers ×2, settings_page ×4, sprint0 ×2 —mismo bug de Timer pending
+del hallazgo #12—, quote_save_flow ×1, printer_form_page ×1) + 4 hangs de
+deuda. Nota: los 12 rojos que aparecieron en `calculator_notifier` durante la
+corrida eran del MED-08 (ver arriba) y quedaron en verde (56/56).
+
+## Ronda 2 — los 7 LOW resueltos (2026-10-05, posterior)
+
+Verificación: `flutter analyze --no-pub` **0 errores / 24 issues = baseline**.
+No se re-corrieron tests (directiva de la sesión: solo analyze).
+
+- **LOW-11 (valor monetario se salía de la fila)** — `money_row.dart`: label en
+  `Flexible(maxLines: 1, ellipsis)` + valor envuelto en `FittedBox(scaleDown)`.
+- **LOW-12 (monto largo en `_Row` del detalle)** — `calculation_detail_page.dart`:
+  valor monetario en `Flexible(child: FittedBox(scaleDown))`.
+- **LOW-13 (IconButtons sin tooltip)** — clave `commonClearSearch` en
+  `app_strings.dart` + los 5 impls ("Limpiar búsqueda / Clear search / Limpar
+  busca / Effacer la recherche / Suche löschen") y `tooltip:` en los 4 clear
+  buttons (calculations_list_page, settings_page, filaments_page,
+  printers_page).
+- **LOW-14 (errores de backup hardcodeados en ES)** — nuevo `BackupErrorCodes`
+  (6 códigos ASCII: `size_too_large`, `invalid_file`, `read_failed`,
+  `invalid_data`, `future_version`, `restore_failed`) en `backup_service.dart`;
+  todos los `return '...'` con mensaje en español ahora devuelven códigos y
+  mandan el detalle a `debugPrint`; `settings_page` los traduce con
+  `_backupErrorText()` → `EsBO.settingsBackupImport{SizeError, InvalidFile,
+  FutureVersion, Error}`; el detalle de `BackupData.validate()` (español) quedó
+  como diagnóstico de log — el snackbar muestra el genérico localizado; y
+  `BackupSummary.describe()` se movió a l10n como
+  `settingsBackupImportSummary(calcs, filaments, printers, tiers)` (5 impls,
+  mismo orden y textos que `describe()` para no cambiar el diálogo es-BO).
+- **LOW-15 (`effectiveTotalSnapshot` write-only / nombre contradictorio)** —
+  documentado en la columna: escribe `totalFinal` pre-descuento y no se lee en
+  ninguna query de negocio (solo se copia al duplicar); candidata a drop en una
+  migración futura.
+- **LOW-16 (tasas pisadas con 0 sin input)** — `stateToPartialDto` usa
+  `rateSnap()`: con `input == null` las 7 tasas van `Value.absent()` (en UPDATE
+  conservan las tasas reales del borrador; en INSERT caen al default 0). El
+  autosave de salida ya no borra las tasas de un borrador.
+- **LOW-17 (migración v2→v3 agregaba 11 columnas NOT NULL sin DEFAULT)** — las
+  11 columnas F1 de `calculations_table.dart` ahora tienen
+  `withDefault(Constant(0))`; `build_runner` regeneró `app_database.g.dart`, de
+  modo que el `m.addColumn` de la migración emite `DEFAULT 0`. Efecto en
+  callers: el `.insert()` de drift pasa a aceptar `Value<double>` para columnas
+  con default → adaptados 44 call sites de tests (`backup_roundtrip` ×22,
+  `migration_v5_to_v6` ×11, `migration_v8_to_v9` ×11) y el `duplicate()` del
+  repository ahora copia con `Value(source.x)` (arrastra los valores reales, no
+  los resetea al default). Sinergia con LOW-16: el default es lo que hace
+  seguro el `absent` en INSERT.
+
+**Deuda restante (sesión propia, pendiente):** ~24 rojos + 4 hangs de tests y
+la limpieza/consolidación de la suite (~843 tests en 86 archivos) que el
+usuario pidió revisar "luego".
+

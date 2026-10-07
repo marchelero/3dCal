@@ -194,6 +194,13 @@ class EsBO {
     int filaments,
     int printers,
   ) => _impl.settingsBackupImportSuccess(calcs, filaments, printers);
+
+  static String settingsBackupImportSummary(
+    int calcs,
+    int filaments,
+    int printers,
+    int tiers,
+  ) => _impl.settingsBackupImportSummary(calcs, filaments, printers, tiers);
   static String get settingsBackupImportError =>
       _impl.settingsBackupImportError;
   static String get settingsBackupImportConfirmTitle =>
@@ -908,6 +915,7 @@ class EsBO {
   static String get colorNameWhite => _impl.colorNameWhite;
 
   static String get commonApply => _impl.commonApply;
+static String get commonClearSearch => _impl.commonClearSearch;
 
   static String get printerErrorLoad => _impl.printerErrorLoad;
   static String printerNoResults(String query) => _impl.printerNoResults(query);
@@ -950,6 +958,8 @@ class EsImpl implements AppStrings {
   String get commonCancel => 'Cancelar';
   @override
   String get commonApply => 'Aplicar';
+  @override
+  String get commonClearSearch => 'Limpiar búsqueda';
   @override
   String get commonDelete => 'Eliminar';
   @override
@@ -1214,6 +1224,22 @@ class EsImpl implements AppStrings {
 
   @override
   String get settingsBackupExportError => 'Error al exportar el backup';
+
+  @override
+  String settingsBackupImportSummary(
+    int calcs,
+    int filaments,
+    int printers,
+    int tiers,
+  ) {
+    final parts = <String>[];
+    if (filaments > 0) parts.add('$filaments filamentos');
+    if (printers > 0) parts.add('$printers impresoras');
+    if (calcs > 0) parts.add('$calcs cotizaciones');
+    if (tiers > 0) parts.add('$tiers escalones de descuento');
+    if (parts.isEmpty) return 'Sin datos';
+    return parts.join(', ');
+  }
 
   @override
   String settingsBackupImportSuccess(int calcs, int filaments, int printers) =>

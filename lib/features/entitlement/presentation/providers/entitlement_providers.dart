@@ -84,10 +84,22 @@ final isProProvider = Provider<bool>((ref) {
 /// mientras `build()` siga cargando → un Pro con DB lenta > 1 s quedaba
 /// bloqueado por el cap Free con el mensaje "mejora a Pro".
 Future<bool> resolveIsPro(Ref ref) async {
-  // Fallback degradado: cache local (último estado conocido) o el estado
+  // Fallback degradado: cache local (�ltimo estado conocido) o el estado
   // ya cargado del notifier. false solo si NINGUNO dice Pro (fail-safe).
-  bool degradedToCache() =>
-      ref.read(entitlementCacheProvider).isPro || ref.read(isProProvider);
+  //
+  // El read del cache va protegido: en tests (o contextos) sin override de
+  // `sharedPreferencesProvider`, `entitlementCacheProvider` lanza
+  // UnimplementedError y ese error escaparA-a del catch → la operaciA3n
+  // protegida fallara en vez de degradar. En ese caso se usa solo el
+  // notifier (misma semAntica pre-MED-08, fail-safe Free).
+  bool degradedToCache() {
+    try {
+      if (ref.read(entitlementCacheProvider).isPro) return true;
+    } on Object {
+      // SP no disponible en este contexto → siguiente fallback.
+    }
+    return ref.read(isProProvider);
+  }
   bool isPro;
   try {
     await ref

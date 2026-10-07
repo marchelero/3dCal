@@ -21,6 +21,8 @@ class PtBrImpl implements AppStrings {
   @override
   String get commonApply => 'Aplicar';
   @override
+  String get commonClearSearch => 'Limpar busca';
+  @override
   String get commonCreateNew => 'Criar novo';
   @override
   String get commonAddToCatalog => 'Adicionar ao catálogo';
@@ -284,6 +286,22 @@ class PtBrImpl implements AppStrings {
 
   @override
   String get settingsBackupExportError => 'Erro ao exportar o backup';
+
+  @override
+  String settingsBackupImportSummary(
+    int calcs,
+    int filaments,
+    int printers,
+    int tiers,
+  ) {
+    final parts = <String>[];
+    if (filaments > 0) parts.add('$filaments filamentos');
+    if (printers > 0) parts.add('$printers impressoras');
+    if (calcs > 0) parts.add('$calcs orçamentos');
+    if (tiers > 0) parts.add('$tiers faixas de desconto');
+    if (parts.isEmpty) return 'Sem dados';
+    return parts.join(', ');
+  }
 
   @override
   String settingsBackupImportSuccess(int calcs, int filaments, int printers) =>

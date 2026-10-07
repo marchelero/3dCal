@@ -21,6 +21,8 @@ class EnImpl implements AppStrings {
   @override
   String get commonApply => 'Apply';
   @override
+  String get commonClearSearch => 'Clear search';
+  @override
   String get commonDelete => 'Delete';
   @override
   String get commonRetry => 'Retry';
@@ -281,6 +283,22 @@ class EnImpl implements AppStrings {
 
   @override
   String get settingsBackupExportError => 'Error exporting backup';
+
+  @override
+  String settingsBackupImportSummary(
+    int calcs,
+    int filaments,
+    int printers,
+    int tiers,
+  ) {
+    final parts = <String>[];
+    if (filaments > 0) parts.add('$filaments filaments');
+    if (printers > 0) parts.add('$printers printers');
+    if (calcs > 0) parts.add('$calcs quotes');
+    if (tiers > 0) parts.add('$tiers discount tiers');
+    if (parts.isEmpty) return 'No data';
+    return parts.join(', ');
+  }
 
   @override
   String settingsBackupImportSuccess(int calcs, int filaments, int printers) =>

@@ -33,22 +33,33 @@ class MoneyRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        // LOW-11: con labels largos (de_DE "Durchschnittlicher Auftragswert
+        // (kalkuliert)") ambos Text desbordaban el Row — el label ahora
+        // trunca con ellipsis y el valor se escala sin crecer.
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
-        Text(
-          value,
-          // M2: cifras monetarias usan JetBrains Mono + tabular para
-          // alineacion perfecta en columnas. La familia base sigue siendo
-          // Inter (heredada del textTheme), solo override en el TextStyle.
-          style: GoogleFonts.jetBrainsMono(
-            textStyle: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-              color: color,
-              fontFeatures: const [FontFeature.tabularFigures()],
+        const SizedBox(width: 8),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            // M2: cifras monetarias usan JetBrains Mono + tabular para
+            // alineacion perfecta en columnas. La familia base sigue siendo
+            // Inter (heredada del textTheme), solo override en el TextStyle.
+            style: GoogleFonts.jetBrainsMono(
+              textStyle: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+                color: color,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
         ),

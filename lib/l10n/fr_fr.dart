@@ -17,6 +17,8 @@ class FrImpl implements AppStrings {
   @override
   String get commonApply => 'Appliquer';
   @override
+  String get commonClearSearch => 'Effacer la recherche';
+  @override
   String get commonDelete => 'Supprimer';
   @override
   String get commonRetry => 'Réessayer';
@@ -271,6 +273,22 @@ class FrImpl implements AppStrings {
   @override
   String get settingsBackupExportError =>
       'Erreur lors de l’exportation de la sauvegarde';
+  @override
+  String settingsBackupImportSummary(
+    int calcs,
+    int filaments,
+    int printers,
+    int tiers,
+  ) {
+    final parts = <String>[];
+    if (filaments > 0) parts.add('$filaments filaments');
+    if (printers > 0) parts.add('$printers imprimantes');
+    if (calcs > 0) parts.add('$calcs devis');
+    if (tiers > 0) parts.add('$tiers paliers de remise');
+    if (parts.isEmpty) return 'Aucune donnée';
+    return parts.join(', ');
+  }
+
   @override
   String settingsBackupImportSuccess(int calcs, int filaments, int printers) =>
       'Sauvegarde restaurée : $calcs devis, $filaments filaments, $printers imprimantes';

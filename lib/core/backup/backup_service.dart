@@ -29,6 +29,32 @@ import 'backup_models.dart';
 /// Extension de archivo para backups.
 const String kBackupExtension = '3dcal';
 
+/// Códigos de error de importación de backup (LOW-14).
+///
+/// El servicio devuelve SIEMPRE un código ASCII estable (nunca un mensaje
+/// en español) para que la UI lo traduzca con el locale activo (EsBO en
+/// `settings_page`). El detalle diagnóstico (tamaños, versiones, filas
+/// inválidas) va a `debugPrint` y jamás se muestra al usuario.
+abstract final class BackupErrorCodes {
+  /// El archivo supera `kBackupMaxFileBytes`.
+  static const sizeTooLarge = 'size_too_large';
+
+  /// JSON malformado o estructura que no es un backup.
+  static const invalidFile = 'invalid_file';
+
+  /// No se pudo leer el archivo (I/O).
+  static const readFailed = 'read_failed';
+
+  /// `BackupData.validate()` rechazó filas/columnas (detalle en log).
+  static const invalidData = 'invalid_data';
+
+  /// El backup es de un schema más nuevo que la app.
+  static const futureVersion = 'future_version';
+
+  /// La transacción de restore falló (rollback total; datos intactos).
+  static const restoreFailed = 'restore_failed';
+}
+
 /// Nombre base del archivo de backup.
 String _backupFileName() {
   final now = DateTime.now().toUtc();
@@ -140,21 +166,21 @@ class BackupService {
   /// Valida que un archivo seleccionado no supere el tamaño máximo del
   /// backup, ANTES de cargarlo a memoria.
   ///
-  /// Retorna null si es valido, o un mensaje de error si el archivo es
-  /// demasiado grande. Revisa el tamaño reportado por el picker y, cuando
-  /// hay path, el tamaño real en disco.
+  /// Retorna null si es valido, o [BackupErrorCodes.sizeTooLarge] si el
+  /// archivo es demasiado grande. Revisa el tamaño reportado por el picker
+  /// y, cuando hay path, el tamaño real en disco.
   static String? validateFileSize(PlatformFile file) {
     final size = file.lengthSync();
     if (size != null && size > kBackupMaxFileBytes) {
-      return 'El archivo de backup supera el tamaño permitido '
-          '(${_formatBytes(kBackupMaxFileBytes)}).';
+      debugPrint('[Backup] picker size $size B > $kBackupMaxFileBytes B');
+      return BackupErrorCodes.sizeTooLarge;
     }
     final path = file.path;
     if (path != null) {
       try {
         if (File(path).lengthSync() > kBackupMaxFileBytes) {
-          return 'El archivo de backup supera el tamaño permitido '
-              '(${_formatBytes(kBackupMaxFileBytes)}).';
+          debugPrint('[Backup] disk size > $kBackupMaxFileBytes B');
+          return BackupErrorCodes.sizeTooLarge;
         }
       } on FileSystemException {
         // No se puede stat el archivo; se dejara pasar y la lectura fallara
@@ -166,8 +192,8 @@ class BackupService {
 
   /// Permite al usuario seleccionar un archivo de backup y lo restaura.
   ///
-  /// Retorna null si el usuario cancelo, o un mensaje de error si fallo.
-  /// Retorna string vacio si fue exitoso.
+  /// Retorna null si el usuario cancelo, un código de
+  /// [BackupErrorCodes] si fallo, o string vacio si fue exitoso.
   Future<String?> import() async {
     try {
       // Seleccionar archivo (lista vacia = usuario cancelo)
@@ -195,30 +221,33 @@ class BackupService {
       if (path != null) {
         final f = File(path);
         if (f.lengthSync() > kBackupMaxFileBytes) {
-          return 'El archivo de backup supera el tamaño permitido.';
+          debugPrint('[Backup] path size > $kBackupMaxFileBytes B');
+          return BackupErrorCodes.sizeTooLarge;
         }
         content = await f.readAsString();
       } else {
         final bytes = await file.readAsBytes();
         if (bytes.lengthInBytes > kBackupMaxFileBytes) {
-          return 'El archivo de backup supera el tamaño permitido.';
+          debugPrint('[Backup] bytes size > $kBackupMaxFileBytes B');
+          return BackupErrorCodes.sizeTooLarge;
         }
         content = utf8.decode(bytes);
       }
 
       return await restoreFromJson(content);
     } on FormatException {
-      return 'El archivo seleccionado no es un backup valido.';
+      return BackupErrorCodes.invalidFile;
     } catch (e) {
       debugPrint('[Backup] import fallo: $e');
-      return 'No se pudo leer el archivo seleccionado.';
+      return BackupErrorCodes.readFailed;
     }
   }
 
   /// Restaura datos desde un string JSON.
   ///
-  /// Retorna null si el usuario cancelo (validacion fallo), o un mensaje
-  /// de error. Retorna string vacio si fue exitoso.
+  /// Retorna null si el usuario cancelo (validacion fallo), un código de
+  /// [BackupErrorCodes] si fallo, o string vacio si fue exitoso. La UI
+  /// traduce los códigos con el locale activo (LOW-14).
   ///
   /// **Seguridad**: el restore corre dentro de una transaccion Drift: si
   /// cualquier insert falla a mitad de camino, TODA la operacion se revierte
@@ -228,33 +257,41 @@ class BackupService {
     try {
       // Limite de tamaño sobre el contenido ya deserializado.
       if (jsonContent.length > kBackupMaxFileBytes) {
-        return 'El archivo de backup supera el tamaño permitido '
-            '(${_formatBytes(kBackupMaxFileBytes)}).';
+        debugPrint(
+          '[Backup] content length ${jsonContent.length} > '
+          '$kBackupMaxFileBytes B',
+        );
+        return BackupErrorCodes.sizeTooLarge;
       }
 
       final Object? raw;
       try {
         raw = jsonDecode(jsonContent);
       } on FormatException {
-        return 'El archivo seleccionado no es un backup valido.';
+        return BackupErrorCodes.invalidFile;
       }
       if (raw is! Map<String, dynamic>) {
-        return 'El archivo seleccionado no es un backup valido.';
+        return BackupErrorCodes.invalidFile;
       }
       final backup = BackupData.fromJson(raw);
 
       // Validar estructura, tipos, duplicados y referencias.
       final error = backup.validate();
       if (error != null) {
-        return error;
+        // LOW-14: el detalle en español es solo diagnóstico (log); la UI
+        // muestra un mensaje localizado a partir de este código.
+        debugPrint('[Backup] validate rechazó: $error');
+        return BackupErrorCodes.invalidData;
       }
 
       // Rechazar backups de un schema FUTURO (no sabemos migrar hacia atras).
       // Backups de schema anterior son aceptables: la app migra hacia adelante.
       if (backup.schemaVersion > _db.schemaVersion) {
-        return 'Backup de version futura incompatible (schema '
-            '${backup.schemaVersion}; la app soporta hasta '
-            '${_db.schemaVersion}). Actualiza la app e intenta de nuevo.';
+        debugPrint(
+          '[Backup] schema futuro: ${backup.schemaVersion} > '
+          '${_db.schemaVersion}',
+        );
+        return BackupErrorCodes.futureVersion;
       }
 
       // Restaurar en transaccion (atomica: fallo parcial => rollback total)
@@ -271,18 +308,8 @@ class BackupService {
       return ''; // Exito
     } catch (e) {
       debugPrint('[Backup] restoreFromJson fallo: $e');
-      return 'No se pudo restaurar el backup. Tus datos actuales no '
-          'fueron modificados.';
+      return BackupErrorCodes.restoreFailed;
     }
-  }
-
-  /// Formatea bytes a una unidad legible (KB/MB).
-  static String _formatBytes(int bytes) {
-    if (bytes >= 1024 * 1024) {
-      final mb = bytes / (1024 * 1024);
-      return '${mb.toStringAsFixed(0)} MB';
-    }
-    return '${(bytes / 1024).toStringAsFixed(0)} KB';
   }
 
   /// Borra toda la data actual (excepto entitlements).

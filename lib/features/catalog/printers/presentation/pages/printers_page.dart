@@ -85,6 +85,7 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
+                        tooltip: EsBO.commonClearSearch,
                         onPressed: () {
                           _searchCtrl.clear();
                           setState(() => _searchQuery = '');

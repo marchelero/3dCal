@@ -1627,17 +1627,25 @@ class _Row extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          Text(
-            value,
-            style: GoogleFonts.jetBrainsMono(
-              textStyle: (big
-                      ? theme.textTheme.titleLarge
-                      : theme.textTheme.bodyMedium)
-                  ?.copyWith(
-                    fontWeight: big ? FontWeight.bold : FontWeight.w600,
-                    color: color ?? theme.colorScheme.onSurface,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+          // LOW-12: el valor monetario sin protección — montos de 19+
+          // caracteres desbordaban la fila en pantallas angostas.
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                style: GoogleFonts.jetBrainsMono(
+                  textStyle: (big
+                          ? theme.textTheme.titleLarge
+                          : theme.textTheme.bodyMedium)
+                      ?.copyWith(
+                        fontWeight: big ? FontWeight.bold : FontWeight.w600,
+                        color: color ?? theme.colorScheme.onSurface,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                ),
+              ),
             ),
           ),
         ],

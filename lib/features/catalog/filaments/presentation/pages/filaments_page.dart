@@ -88,6 +88,7 @@ class _FilamentsPageState extends ConsumerState<FilamentsPage> {
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
+                        tooltip: EsBO.commonClearSearch,
                         onPressed: () {
                           _searchCtrl.clear();
                           setState(() => _searchQuery = '');

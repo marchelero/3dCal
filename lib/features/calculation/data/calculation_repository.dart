@@ -1,4 +1,4 @@
-﻿// ignore_for_file: public_member_api_docs
+// ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart';
 
@@ -588,14 +588,16 @@ class CalculationRepository {
             materialCostSnapshot: source.materialCostSnapshot,
             electricCostSnapshot: source.electricCostSnapshot,
             amortizationCostSnapshot: Value(source.amortizationCostSnapshot),
-            laborCostSnapshot: source.laborCostSnapshot,
-            postProcessCostSnapshot: source.postProcessCostSnapshot,
+            laborCostSnapshot: Value(source.laborCostSnapshot),
+            postProcessCostSnapshot: Value(source.postProcessCostSnapshot),
             baseCostSnapshot: source.baseCostSnapshot,
-            failureCostSnapshot: source.failureCostSnapshot,
-            markupCostSnapshot: source.markupCostSnapshot,
+            failureCostSnapshot: Value(source.failureCostSnapshot),
+            markupCostSnapshot: Value(source.markupCostSnapshot),
             profitAmountSnapshot: source.profitAmountSnapshot,
-            minimumChargeAppliedSnapshot: source.minimumChargeAppliedSnapshot,
-            effectiveTotalSnapshot: source.effectiveTotalSnapshot,
+            minimumChargeAppliedSnapshot: Value(
+              source.minimumChargeAppliedSnapshot,
+            ),
+            effectiveTotalSnapshot: Value(source.effectiveTotalSnapshot),
             totalPriceSnapshot: source.totalPriceSnapshot,
             quantity: Value(source.quantity),
             // HIGH-02 fix (auditoría 2026-10-04): duplicar debe arrastrar el
@@ -603,11 +605,11 @@ class CalculationRepository {
             // N>1 perdia el descuento y `effectiveTotal` inflaba el total.
             batchDiscountPercent: Value(source.batchDiscountPercent),
             batchDiscountAmount: Value(source.batchDiscountAmount),
-            laborRateSnapshot: source.laborRateSnapshot,
-            postProcessRateSnapshot: source.postProcessRateSnapshot,
-            failureRateSnapshot: source.failureRateSnapshot,
-            minimumChargeSnapshot: source.minimumChargeSnapshot,
-            markupOnMaterialsSnapshot: source.markupOnMaterialsSnapshot,
+            laborRateSnapshot: Value(source.laborRateSnapshot),
+            postProcessRateSnapshot: Value(source.postProcessRateSnapshot),
+            failureRateSnapshot: Value(source.failureRateSnapshot),
+            minimumChargeSnapshot: Value(source.minimumChargeSnapshot),
+            markupOnMaterialsSnapshot: Value(source.markupOnMaterialsSnapshot),
             pieceImageBlob: Value(source.pieceImageBlob),
             // v17: duplicar una cotizacion debe arrastrar los 3 costos de
             // servicio, no reiniciarlos a los defaults de columna.
