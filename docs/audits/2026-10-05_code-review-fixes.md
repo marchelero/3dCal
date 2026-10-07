@@ -226,11 +226,14 @@ Verificación: `flutter analyze --no-pub` → **0 errores / 22 issues** (baselin
 - `test/widget/calculator_settings_navigation_test.dart` (1, colgaba).
 
 **Corregidos — 10 tests con expectativas pasadas (reparación estática):**
-- `printer_catalog_test` ×2: el catálogo real tiene 30 marcas / 209 modelos
-  (el test y el doc del fuente decían 29/174); reorden ordinal de modelos
-  (violaciones `Ender-5 Max < Ender-5 S1` en Creality y `Bluer < Sapphire
-  Pro` en Two Trees — `String.compareTo` usa unidades de código, no orden
-  cultural); doc de `printer_catalog.dart` actualizado a 30/209.
+- `printer_catalog_test` ×2: el catálogo real tiene **29 marcas / 208
+  modelos** (el test decía 174 modelos — la marca 29 no cambió; el primer
+  intento de actualizar a "30/209" sobre-correcto contó también las
+  declaraciones de clase `PrinterBrandSpec(`/`PrinterModelSpec(` en el
+  regex); reorden ordinal de modelos (violaciones `Ender-5 Max < Ender-5 S1`
+  en Creality y `Bluer < Sapphire Pro` en Two Trees — `String.compareTo` usa
+  unidades de código, no orden cultural); doc de `printer_catalog.dart`
+  actualizado a 29/208.
 - `partial_save_notifier_test` ×1: asserts al contrato vigente post-f40dda3
   (`pieceName` = label 'Vaso', `clientName` = absent — `CalculatorState` no
   tiene fuente de cliente y el autosave no debe pisarlo).
@@ -246,9 +249,32 @@ Verificación: `flutter analyze --no-pub` → **0 errores / 22 issues** (baselin
   página destino; el test de render ya no espera los tiles migrados y busca
   el profit por label, no por valor '0').
 
-**Deuda restante (12 rojos, requieren `flutter test` para diagnosticar):**
-- `result_sheet_test` ×9 — grupo foto de pieza T9 (mocks de image/crop).
-- `partial_save_repository_test` ×2 — re-emit de `watchLatestPartial` en
-  insert/update (posible race de la primera emisión del `.watch()`).
-- `quote_save_flow_test` ×1 — CalculationDetailPage save → snackbar de error.
+## Ronda 4 — los últimos 12 rojos resueltos (directiva de test levantada)
+
+Ejecución real con `flutter test` (directiva levantada por el usuario):
+
+- `partial_save_repository_test` ×2 — diagnóstico en runtime: (a) el
+  `emitsInOrder([null, ...])` perdía el null por race de la primera query del
+  `.watch()` contra el insert → reescrito con secuencia determinista
+  (suscribir → esperar emisión inicial → insertar → esperar re-emisión, con
+  helper `_until` con timeout de 5s); (b) el update testeaba el id equivocado:
+  `_partial` usa fecha fija `2026-09-28 12:00`, así que 'Otro' (13:00) era el
+  latest y el matcher del id:1 jamás se cumplía → 'Viejo' ahora es 14:00
+  (latest real, como en el autosave). Bonus: el test de borrado pasaba "de
+  rebote" (primer evento ya satisfacía el matcher) → 'Segundo' ahora es 13:00
+  para probar la re-emisión real. **20/20 verdes.**
+- `quote_save_flow_test` ×1 — `Bad state: No element` en `_tapSaveImage`:
+  el botón del detalle usa `_DetailActionButton` → `Tooltip(message: label)`
+  con label `EsBO.commonSaveImage` ('Guardar img'); el finder duro
+  `byTooltip('Guardar imagen')` quedó obsoleto → `byTooltip(EsBO.commonSaveImage)`.
+- `result_sheet_test` ×9 (grupo foto T9) — el control de agregar cambió de
+  `quoteImageAdd` ('Agregar imagen') a `quoteImageAddPiece` ('+ imagen',
+  `result_sheet.dart:768`) → 9 finders actualizados. **26/26 verdes.**
+- `printer_catalog_test` — corrección final 29/208 (ver nota arriba), **10/10
+  verdes**.
+
+**Resultado: `flutter test` completo → `+833: All tests passed!`**
+(0 rojos, 0 colgados; suite limpia por primera vez en la sesión).
+`flutter analyze --no-pub` → 0 errores / 22 issues (2 warnings de imports sin
+usar preexistentes).
 

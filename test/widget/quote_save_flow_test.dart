@@ -134,7 +134,10 @@ Future<void> _tapShareAndSaveButton(WidgetTester tester) async {
 /// captura + save completen. Reusa la logica de scroll de
 /// [_tapShareAndSaveButton] con el tooltip del detalle.
 Future<void> _tapSaveImage(WidgetTester tester, Finder expected) async {
-  final saveBtn = find.byTooltip('Guardar imagen');
+  // El boton del detalle usa _DetailActionButton → Tooltip(message: label)
+  // con label = EsBO.commonSaveImage ('Guardar img'); el texto duro
+  // 'Guardar imagen' quedo obsoleto tras la renombrar a l10n.
+  final saveBtn = find.byTooltip(EsBO.commonSaveImage);
   if (saveBtn.evaluate().isEmpty) {
     await tester.scrollUntilVisible(
       saveBtn,

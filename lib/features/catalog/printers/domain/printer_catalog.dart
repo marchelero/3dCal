@@ -3,7 +3,7 @@
 ///
 /// Fuente: research web 2026-09-09 (specs oficiales + mediciones publicadas;
 /// valores extrapolados marcados con [PrinterModelSpec.isEstimated]).
-/// 30 marcas / 209 modelos. Capa domain: sin dependencias Flutter (testeable
+/// 29 marcas / 208 modelos. Capa domain: sin dependencias Flutter (testeable
 /// puro, unit tests sin WidgetTester).
 library;
 

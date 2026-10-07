@@ -8,6 +8,17 @@ import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/features/calculation/data/calculation_repository.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 
+/// Espera hasta que [cond] sea true (max 5s); falla si se agota el tiempo.
+Future<void> _until(bool Function() cond, {String why = 'condicion'}) async {
+  final sw = Stopwatch()..start();
+  while (!cond()) {
+    if (sw.elapsed > const Duration(seconds: 5)) {
+      fail('timeout esperando: $why');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
+
 /// Unit tests para los metodos de guardado parcial en [CalculationRepository]:
 /// - savePartial (insert + update/upsert)
 /// - deletePartial
@@ -373,21 +384,35 @@ void main() {
     });
 
     test('re-emite al insertar un parcial (sin invalidate manual)', () async {
-      // Pattern: asignar el future del matcher, disparar el trigger, await.
-      // El stream emite el estado actual (null) y luego el nuevo parcial.
-      final future = expectLater(
-        repo.watchLatestPartial(),
-        emitsInOrder([
-          null,
-          predicate<Calculation>((c) => c.pieceName == 'Uno'),
-        ]),
-      );
+      // Secuencia determinista: suscribir, esperar la emisión inicial (null
+      // con tabla vacía) y SOLO DESPUES insertar. Con expectLater corrido en
+      // paralelo, la primera query del .watch() podia ejecutarse despues del
+      // insert y el primer evento ya era el parcial (race: emitsInOrder
+      // esperaba null y nunca lo veia).
+      final events = <Calculation?>[];
+      final sub = repo.watchLatestPartial().listen(events.add);
+
+      await _until(() => events.isNotEmpty, why: 'emision inicial (null)');
+      expect(events, [null], reason: 'con tabla vacia el stream emite null');
+
       await repo.savePartial(_partial(pieceName: 'Uno'));
-      await future;
+      await _until(
+        () => events.length >= 2,
+        why: 're-emision con el parcial insertado',
+      );
+      expect(events.last?.pieceName, 'Uno');
+
+      await sub.cancel();
     });
 
     test('re-emite al actualizar un parcial por id (autosave)', () async {
-      final id = await repo.savePartial(_partial(pieceName: 'Viejo'));
+      // 'Viejo' debe ser el mas reciente (14:00 > 'Otro' 13:00): el stream
+      // emite SIEMPRE la fila mas nueva por createdAt, y el autosave
+      // actualiza el borrador actual (el latest). Con la fecha default del
+      // helper (12:00) el latest era 'Otro' y el matcher jamas se cumplia.
+      final id = await repo.savePartial(
+        _partial(pieceName: 'Viejo', createdAt: DateTime(2026, 9, 28, 14, 0)),
+      );
       await repo.savePartial(_partial(pieceName: 'Otro', createdAt: DateTime(2026, 9, 28, 13, 0)));
       final existing = await repo.getById(id);
 
@@ -405,9 +430,11 @@ void main() {
     });
 
     test('re-emite al borrar el parcial mas reciente', () async {
-      await repo.savePartial(_partial(pieceName: 'Primero'));
+      await repo.savePartial(_partial(pieceName: 'Primero')); // 12:00
+      // 'Segundo' 13:00 = latest (antes era 11:00 y el primer evento ya era
+      // 'Primero': el matcher se cumplia sin llegar a probar la re-emision).
       final id = await repo.savePartial(
-        _partial(pieceName: 'Segundo', createdAt: DateTime(2026, 9, 28, 11, 0)),
+        _partial(pieceName: 'Segundo', createdAt: DateTime(2026, 9, 28, 13, 0)),
       );
 
       final future = expectLater(

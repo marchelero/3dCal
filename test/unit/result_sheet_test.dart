@@ -427,9 +427,9 @@ void main() {
     /// imagen con el engine real (instantiateImageCodec).
     Future<void> attachFromGallery(WidgetTester tester) async {
       await tester.runAsync(() async {
-        await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
+        await tester.ensureVisible(find.text(EsBO.quoteImageAddPiece));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(EsBO.quoteImageAdd));
+        await tester.tap(find.text(EsBO.quoteImageAddPiece));
         await tester.pumpAndSettle();
         await tester.tap(find.text(EsBO.quoteImageGallery));
         await tester.pumpAndSettle();
@@ -445,9 +445,9 @@ void main() {
         );
         await pumpSheet(tester);
 
-        await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
+        await tester.ensureVisible(find.text(EsBO.quoteImageAddPiece));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(EsBO.quoteImageAdd));
+        await tester.tap(find.text(EsBO.quoteImageAddPiece));
         await tester.pumpAndSettle();
 
         expect(find.text(EsBO.quoteImageGallery), findsOneWidget);
@@ -464,9 +464,9 @@ void main() {
       );
       await pumpSheet(tester);
 
-      await tester.ensureVisible(find.text(EsBO.quoteImageAdd));
+      await tester.ensureVisible(find.text(EsBO.quoteImageAddPiece));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(EsBO.quoteImageAdd));
+      await tester.tap(find.text(EsBO.quoteImageAddPiece));
       await tester.pumpAndSettle();
 
       expect(find.text(EsBO.quoteImageGallery), findsOneWidget);
@@ -487,7 +487,7 @@ void main() {
       // El control muta a Cambiar/Quitar (RF5).
       expect(find.text(EsBO.quoteImageChange), findsOneWidget);
       expect(find.text(EsBO.quoteImageRemove), findsOneWidget);
-      expect(find.text(EsBO.quoteImageAdd), findsNothing);
+      expect(find.text(EsBO.quoteImageAddPiece), findsNothing);
     });
 
     testWidgets('SC5: Quitar remueve preview y restaura "Agregar imagen"', (
@@ -506,7 +506,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(heroKey), findsNothing);
-      expect(find.text(EsBO.quoteImageAdd), findsOneWidget);
+      expect(find.text(EsBO.quoteImageAddPiece), findsOneWidget);
     });
 
     testWidgets('SC6: imagen no decodificable → snackbar error y sin preview', (
@@ -537,7 +537,7 @@ void main() {
 
       // Sin preview: el control sigue en "Agregar imagen", sin snackbar.
       expect(find.byKey(heroKey), findsNothing);
-      expect(find.text(EsBO.quoteImageAdd), findsOneWidget);
+      expect(find.text(EsBO.quoteImageAddPiece), findsOneWidget);
       expect(find.text(EsBO.quoteImageError), findsNothing);
     });
 

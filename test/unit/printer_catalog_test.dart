@@ -4,13 +4,13 @@ import 'package:tresdcal/features/catalog/printers/domain/printer_catalog.dart';
 
 void main() {
   group('kPrinterCatalog (integridad)', () {
-    test('contiene exactamente 30 marcas y 209 modelos', () {
-      expect(kPrinterCatalog, hasLength(30));
+    test('contiene exactamente 29 marcas y 208 modelos', () {
+      expect(kPrinterCatalog, hasLength(29));
       final totalModels = kPrinterCatalog.fold<int>(
         0,
         (acc, b) => acc + b.models.length,
       );
-      expect(totalModels, 209);
+      expect(totalModels, 208);
     });
 
     test('cada marca tiene >= 1 modelo y watts >= 0', () {
