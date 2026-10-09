@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:decimal/decimal.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -976,10 +976,20 @@ class _DetailState extends ConsumerState<_Detail> {
       message: EsBO.calcDetailDeleteConfirm,
     );
     if (!confirm || !mounted) return;
-    await ref
-        .read(calculationsNotifierProvider.notifier)
-        .delete(widget.calc.id);
-    if (mounted) context.pop();
+    try {
+      await ref
+          .read(calculationsNotifierProvider.notifier)
+          .delete(widget.calc.id);
+      if (mounted) context.pop();
+    } catch (e) {
+      // Sin esto el `unawaited(_handleDelete())` del footer se tragaba el
+      // error: el usuario tocaba "Eliminar", no pasaba nada y no volvia.
+      debugPrint('Quote delete failed: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(EsBO.commonErrorGeneric));
+    }
   }
 
   /// Alterna vendida/pendiente e invalida el provider del detalle.

@@ -20,6 +20,8 @@
 /// vinculado a la cuenta del store, no a los datos locales del usuario.
 library;
 
+import 'package:decimal/decimal.dart';
+
 /// Version actual del formato de backup. Incrementar si cambia la estructura.
 const int kBackupFormatVersion = 1;
 
@@ -325,8 +327,8 @@ class BackupData {
       } else if (!tierIds.add(id)) {
         errors.add('DiscountTier #$id: id duplicado ($id)');
       }
-      _checkInt(row, 'minQty', 'DiscountTier #$id', errors);
-      _checkString(row, 'percent', 'DiscountTier #$id', errors);
+      _checkMinQty(row, 'minQty', 'DiscountTier #$id', errors);
+      _checkPercent(row, 'percent', 'DiscountTier #$id', errors);
       _checkInt(row, 'sortOrder', 'DiscountTier #$id', errors);
     }
 
@@ -452,6 +454,42 @@ class BackupData {
     if (v == null) return;
     if (v is! int || v < 0) {
       errors.add('$label: $key invalido ($v)');
+    }
+  }
+
+  /// `minQty` de un escalon de descuento: entero >= 1 (un lote de 0 no existe).
+  static void _checkMinQty(
+    Map<String, dynamic> row,
+    String key,
+    String label,
+    List<String> errors,
+  ) {
+    final v = row[key];
+    if (v is! int || v < 1) {
+      errors.add('$label: $key invalido ($v)');
+    }
+  }
+
+  /// Porcentaje persistido como TEXT decimal: debe parsear a [Decimal] y caer
+  /// en (0, 100]. Sin esto un backup con `"abc"` reventaba `Decimal.parse` al
+  /// leer los tiers (FormatException en `watchAll`) y uno con `"99999"`
+  /// trucaba los totales al aplicar el descuento.
+  static void _checkPercent(
+    Map<String, dynamic> row,
+    String key,
+    String label,
+    List<String> errors,
+  ) {
+    final v = row[key];
+    if (v is! String) {
+      errors.add('$label: $key invalido');
+      return;
+    }
+    final parsed = Decimal.tryParse(v);
+    if (parsed == null ||
+        parsed <= Decimal.zero ||
+        parsed > Decimal.fromInt(100)) {
+      errors.add('$label: $key fuera de rango (0-100]');
     }
   }
 

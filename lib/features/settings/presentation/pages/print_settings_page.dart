@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
@@ -116,12 +118,14 @@ class _PrintSettingsBody extends ConsumerWidget {
                     }
                     return null;
                   },
-                  onSave: (v) {
-                    ref
-                        .read(settingsNotifierProvider.notifier)
-                        .updateProfitBase(v);
-                    _showSavedSnack(context);
-                  },
+                  onSave: (v) => unawaited(
+                    _persistAndNotify(
+                      context,
+                      () => ref
+                          .read(settingsNotifierProvider.notifier)
+                          .updateProfitBase(v),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
@@ -156,12 +160,14 @@ class _PrintSettingsBody extends ConsumerWidget {
                     if (n < Decimal.zero) return EsBO.commonInvalidNumber;
                     return null;
                   },
-                  onSave: (v) {
-                    ref
-                        .read(settingsNotifierProvider.notifier)
-                        .updateKwhRate(v);
-                    _showSavedSnack(context);
-                  },
+                  onSave: (v) => unawaited(
+                    _persistAndNotify(
+                      context,
+                      () => ref
+                          .read(settingsNotifierProvider.notifier)
+                          .updateKwhRate(v),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
@@ -197,12 +203,14 @@ class _PrintSettingsBody extends ConsumerWidget {
                     }
                     return null;
                   },
-                  onSave: (v) {
-                    ref
-                        .read(settingsNotifierProvider.notifier)
-                        .updateMinimumCharge(v);
-                    _showSavedSnack(context);
-                  },
+                  onSave: (v) => unawaited(
+                    _persistAndNotify(
+                      context,
+                      () => ref
+                          .read(settingsNotifierProvider.notifier)
+                          .updateMinimumCharge(v),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
@@ -291,6 +299,27 @@ void _showSavedSnack(BuildContext context) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(AppSnackBar.success(EsBO.settingsSaved));
+}
+
+/// Ejecuta [action] y muestra el snackbar de exito SOLO si la persistencia
+/// termina bien; si falla, muestra un error generico en vez de mentir con
+/// "Guardado" (y evita tragarse el error async). Reemplaza el patron
+/// `unawaited(updateX(...)); _showSavedSnack()`.
+Future<void> _persistAndNotify(
+  BuildContext context,
+  Future<void> Function() action,
+) async {
+  try {
+    await action();
+    if (!context.mounted) return;
+    _showSavedSnack(context);
+  } catch (e) {
+    debugPrint('[PrintSettings] persist fallo: $e');
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(AppSnackBar.error(EsBO.commonErrorGeneric));
+  }
 }
 
 // ─────────────────────────────────────────────────

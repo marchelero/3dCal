@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'core/constants/app_constants.dart';
 import 'core/storage/draft_storage_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/dashboard/presentation/providers/dashboard_entitlement_provider.dart';
@@ -43,11 +44,15 @@ Future<void> main() async {
     dashboardIsProProvider.overrideWith((ref) => ref.watch(isProProvider)),
   ];
 
-  if (kIsWeb) {
+  if (kIsWeb && kWebUnlockAll) {
     // Q-Web: la web queda 100% free — todos los gates abiertos (advanced,
     // history cap, CSV, dashboard charts). No hay store/paywall en web:
     // isProProvider siempre `true`. El override propaga al dashboard via
     // dashboardIsProProvider (wiring de arriba).
+    //
+    // El flag kWebUnlockAll hace explicito el bypass (antes era silencioso):
+    // un deploy web que deba quedar Free pasa
+    // `--dart-define=WEB_UNLOCK_ALL=false`.
     overrides.add(isProProvider.overrideWithValue(true));
   }
 

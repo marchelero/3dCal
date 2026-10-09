@@ -139,6 +139,16 @@ const double kLockedOpacity = 0.6;
 /// Configurar el mismo ID en RevenueCat + Google Play Console.
 const String kProProductId = 'tresdcal_pro_lifetime';
 
+/// Flag de build: en Web (donde RevenueCat no existe y no hay paywall),
+/// fuerza Pro para que los gates no dejen features inaccesibles sin via de
+/// compra. Default `true` (comportamiento historico). Override explicito con
+/// `--dart-define=WEB_UNLOCK_ALL=false` para un deploy web que deba quedar
+/// Free. Nunca afecta mobile/desktop (solo se consulta bajo `kIsWeb`).
+const bool kWebUnlockAll = bool.fromEnvironment(
+  'WEB_UNLOCK_ALL',
+  defaultValue: true,
+);
+
 /// Precio displayed del unlock one-time (USD).
 /// Solo referencial para UI; el precio real lo define la store.
 const double kProPriceUsd = 4.99;

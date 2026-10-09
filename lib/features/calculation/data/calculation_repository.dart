@@ -1220,25 +1220,32 @@ class CalculationRepository {
     CalculationsCompanion companion, {
     List<DraftMaterialInput> materials = const [],
     int? existingId,
-  }) async {
-    final int id;
-    if (existingId != null) {
-      // Verificar que la fila sigue existiendo (pudo borrarse desde otra
-      // pantalla). Si ya no esta, cae a insert.
-      final exists = await (_db.select(_db.calculations)
-            ..where((t) => t.id.equals(existingId)))
-          .getSingleOrNull();
-      if (exists != null) {
-        await updatePartial(existingId, companion);
-        id = existingId;
+  }) {
+    // Transaccional: el exists-check + update/insert + reemplazo de materiales
+    // deben ser atomicos. Sin esto, un autosave concurrente (los paths de
+    // autosave se disparan desde un timer y desde dispose/back) podia dejar la
+    // cotizacion con los materiales a medio reemplazar. [deletePartial], justo
+    // abajo, ya usa el mismo patron.
+    return _db.transaction(() async {
+      final int id;
+      if (existingId != null) {
+        // Verificar que la fila sigue existiendo (pudo borrarse desde otra
+        // pantalla). Si ya no esta, cae a insert.
+        final exists = await (_db.select(_db.calculations)
+              ..where((t) => t.id.equals(existingId)))
+            .getSingleOrNull();
+        if (exists != null) {
+          await updatePartial(existingId, companion);
+          id = existingId;
+        } else {
+          id = await _db.into(_db.calculations).insert(companion);
+        }
       } else {
         id = await _db.into(_db.calculations).insert(companion);
       }
-    } else {
-      id = await _db.into(_db.calculations).insert(companion);
-    }
-    await _replaceMaterials(id, materials);
-    return id;
+      await _replaceMaterials(id, materials);
+      return id;
+    });
   }
 
   /// Reemplaza todas las filas de material de una cotizacion.

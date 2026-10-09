@@ -153,12 +153,14 @@ class _SettingsBody extends ConsumerWidget {
                   children: [
                     _CompanyNameField(
                       initialValue: settings.companyName,
-                      onSave: (value) {
-                        ref
-                            .read(settingsNotifierProvider.notifier)
-                            .updateCompanyName(value);
-                        _showSavedSnack(context);
-                      },
+                      onSave: (value) => unawaited(
+                        _persistAndNotify(
+                          context,
+                          () => ref
+                              .read(settingsNotifierProvider.notifier)
+                              .updateCompanyName(value),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _LogoPicker(currentLogoBase64: settings.companyLogoBase64),
@@ -284,6 +286,27 @@ void _showSavedSnack(BuildContext context) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(AppSnackBar.success(EsBO.settingsSaved));
+}
+
+/// Ejecuta [action] y muestra el snackbar de exito SOLO si la persistencia
+/// termina bien; si falla, muestra un error generico en vez de mentir con
+/// "Guardado" (y evita tragarse el error async). Reemplaza el patron
+/// `unawaited(updateX(...)); _showSavedSnack()`.
+Future<void> _persistAndNotify(
+  BuildContext context,
+  Future<void> Function() action,
+) async {
+  try {
+    await action();
+    if (!context.mounted) return;
+    _showSavedSnack(context);
+  } catch (e) {
+    debugPrint('[Settings] persist fallo: $e');
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(AppSnackBar.error(EsBO.commonErrorGeneric));
+  }
 }
 
 // ─────────────────────────────────────────────────
@@ -602,10 +625,11 @@ class _LogoPicker extends ConsumerWidget {
       final bytes = await image.readAsBytes();
       final base64 = base64Encode(bytes);
       if (!context.mounted) return;
-      unawaited(
-        ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64),
+      await _persistAndNotify(
+        context,
+        () =>
+            ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64),
       );
-      _showSavedSnack(context);
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
@@ -615,16 +639,10 @@ class _LogoPicker extends ConsumerWidget {
   }
 
   Future<void> _removeLogo(BuildContext context, WidgetRef ref) async {
-    unawaited(
-      ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(null),
+    await _persistAndNotify(
+      context,
+      () => ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(null),
     );
-    _showSavedSnack(context);
-  }
-
-  void _showSavedSnack(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(AppSnackBar.success(EsBO.settingsSaved));
   }
 
   /// SnackBar del gate. Llamado en los botones de pick/remove cuando
@@ -806,12 +824,12 @@ class _CurrencyPicker extends ConsumerWidget {
       builder: (_) => _CurrencySearchDialog(initial: current),
     );
     if (selected != null && context.mounted) {
-      unawaited(
-        ref
+      await _persistAndNotify(
+        context,
+        () => ref
             .read(settingsNotifierProvider.notifier)
             .updateCurrency(selected.code),
       );
-      _showSavedSnack(context);
     }
   }
 }

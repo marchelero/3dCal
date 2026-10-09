@@ -182,5 +182,50 @@ void main() {
       final json = validJson()..['settings'] = <Map<String, dynamic>>[];
       expect(BackupData.fromJson(json).validate(), isNull);
     });
+
+    Map<String, dynamic> tierJson({
+      Object id = 't1',
+      Object minQty = 10,
+      Object percent = '5',
+      Object sortOrder = 0,
+    }) => {
+      'id': id,
+      'minQty': minQty,
+      'percent': percent,
+      'sortOrder': sortOrder,
+    };
+
+    test('escalon de descuento valido es aceptado', () {
+      final json = validJson()..['discountTiers'] = [tierJson()];
+      expect(BackupData.fromJson(json).validate(), isNull);
+    });
+
+    test('percent no numerico es rechazado (antes reventaba al leer)', () {
+      final json = validJson()
+        ..['discountTiers'] = [tierJson(percent: 'abc')];
+      final error = BackupData.fromJson(json).validate();
+      expect(error, contains('percent fuera de rango'));
+    });
+
+    test('percent fuera de (0,100] es rechazado', () {
+      final json = validJson()
+        ..['discountTiers'] = [tierJson(percent: '99999')];
+      expect(BackupData.fromJson(json).validate(), isNotNull);
+
+      final zero = validJson()
+        ..['discountTiers'] = [tierJson(percent: '0')];
+      expect(BackupData.fromJson(zero).validate(), isNotNull);
+    });
+
+    test('percent con tipo no String es rechazado', () {
+      final json = validJson()..['discountTiers'] = [tierJson(percent: 5)];
+      expect(BackupData.fromJson(json).validate(), isNotNull);
+    });
+
+    test('minQty menor que 1 es rechazado', () {
+      final json = validJson()..['discountTiers'] = [tierJson(minQty: 0)];
+      final error = BackupData.fromJson(json).validate();
+      expect(error, contains('minQty invalido'));
+    });
   });
 }

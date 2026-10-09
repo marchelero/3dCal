@@ -891,6 +891,17 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
                                     border: OutlineInputBorder(),
                                   ),
                                   onChanged: (val) {
+                                    // Gate Pro: mismo criterio que los botones
+                                    // +/-. Sin esto un usuario Free podia
+                                    // teclear la cantidad en el campo y
+                                    // saltarse el paywall (los +/- si lo
+                                    // bloqueaban).
+                                    if (locked) {
+                                      _quantityCtrl.text = '$_quantity';
+                                      Navigator.of(ctx).pop();
+                                      GoRouter.of(ctx).push('/paywall');
+                                      return;
+                                    }
                                     final parsed = int.tryParse(val) ?? 1;
                                     final clamped = parsed.clamp(
                                       1,

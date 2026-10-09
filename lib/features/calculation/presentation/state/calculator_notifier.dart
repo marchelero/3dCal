@@ -740,6 +740,17 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       isTemplate: true,
       batchDiscountPercent: state.batchAppliedPercent,
       batchDiscountAmount: state.batchDiscountAmount,
+      // v17: sin estos campos la plantilla se guardaba con los defaults del
+      // draft (mode 'fixed' / valor 0) y al reusarla el usuario perdia el
+      // modo % / fijo de modelado, postprocesado y extras que habia
+      // configurado. El guardado normal (stateToPartialDto) ya los incluye.
+      modelingMode: _normalizeServiceMode(state.modelingMode),
+      modelingValue: _textToDouble(state.modelingValue),
+      postprocMode: _normalizeServiceMode(state.postprocMode),
+      postprocValue: _textToDouble(state.postprocValue),
+      extraCostMode: _normalizeServiceMode(state.extraCostMode),
+      extraCostValue: _textToDouble(state.extraCostValue),
+      extraCostLabel: state.extraCostLabel,
     );
     final id = await repo.createTemplate(draft);
     // Plantillas no viven en el historial (isTemplate=true); el stream de
@@ -811,7 +822,12 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         failureRate: input.failureRate,
         markupOnMaterials: input.markupOnMaterials,
         profitBase: input.profitBase,
-        amortizationCost: input.amortizationPerHour ?? Decimal.zero,
+        // El contrato de [ResolvedRates.amortizationCost] es el costo
+        // ACUMULADO (Bs), no la tarifa por hora. Antes se pasaba
+        // `input.amortizationPerHour` (Bs/h) y [PdfRateAudit.fromRates] volvia
+        // a dividir por `totalHours` para mostrar "Bs/h": la fila de
+        // amortizacion del PDF/PNG quedaba dividida por horas de mas.
+        amortizationCost: output.amortizationCost,
       );
 
       return next.copyWith(
