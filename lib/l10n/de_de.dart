@@ -22,6 +22,16 @@ class DeImpl implements AppStrings {
   String get commonApply => 'Anwenden';
   @override
   String get commonClearSearch => 'Suche löschen';
+
+  @override
+  String get calcQuantityDecrease => 'Menge verringern';
+
+  @override
+  String get calcQuantityIncrease => 'Menge erhöhen';
+
+  @override
+  String get commonClose => 'Schließen';
+
   @override
   String get commonDelete => 'Löschen';
   @override
@@ -339,6 +349,12 @@ class DeImpl implements AppStrings {
   String get settingsBackupImportFutureVersion =>
       'Dieses Backup wurde mit einer zukünftigen Version der App erstellt. '
       'Aktualisiere 3dCalc und versuche es erneut.';
+
+  @override
+  String get settingsBackupImportSignatureMismatch =>
+      'Die Signatur des Backups stimmt nicht: Die Datei wurde verändert oder '
+      'ist beschädigt. Verwende eine Originaldatei, die von der App '
+      'exportiert wurde.';
 
   @override
   String get settingsBackupLockedBody => 'Backups sind eine Pro-Funktion.';

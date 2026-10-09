@@ -18,6 +18,16 @@ class FrImpl implements AppStrings {
   String get commonApply => 'Appliquer';
   @override
   String get commonClearSearch => 'Effacer la recherche';
+
+  @override
+  String get calcQuantityDecrease => 'Diminuer la quantité';
+
+  @override
+  String get calcQuantityIncrease => 'Augmenter la quantité';
+
+  @override
+  String get commonClose => 'Fermer';
+
   @override
   String get commonDelete => 'Supprimer';
   @override
@@ -317,6 +327,12 @@ class FrImpl implements AppStrings {
   String get settingsBackupImportFutureVersion =>
       'Cette sauvegarde a été créée avec une version future de l\'application. '
       'Mettez à jour 3dCalc et réessayez.';
+
+  @override
+  String get settingsBackupImportSignatureMismatch =>
+      'La signature de la sauvegarde ne correspond pas : le fichier a été '
+      'modifié ou est corrompu. Utilisez un fichier original exporté par '
+      'l\'application.';
 
   @override
   String get settingsBackupLockedBody =>

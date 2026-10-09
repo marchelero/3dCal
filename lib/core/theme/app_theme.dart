@@ -48,7 +48,9 @@ class AppTheme {
   /// Verde sello de exito ("cobrado").
   /// Azul medio (celeste-azul, elección del usuario 2026-09): feedback de
   /// éxito. Reemplaza al verde #1F6E43 que el usuario consideraba "horrible".
-  static const Color blueSuccess = Color(0xFF1E88E5);
+  /// T2-3 a11y: #1E88E5 daba 3.68:1 con texto blanco en los snacks (< AA 4.5);
+  /// #1769C0 da 5.50:1 manteniendo el mismo azul.
+  static const Color blueSuccess = Color(0xFF1769C0);
 
   /// Rojo sello de error ("revisar").
   static const Color redError = Color(0xFFB3261E);
@@ -109,7 +111,10 @@ class AppTheme {
     final desk = isLight ? const Color(0xFFDFE6F0) : const Color(0xFF0A101C);
     final paper = isLight ? const Color(0xFFF7F9FC) : const Color(0xFF111B2C);
     final ink = isLight ? const Color(0xFF1C2431) : const Color(0xFFE6EEF9);
-    final inkSoft = isLight ? const Color(0xFF5A6B85) : const Color(0xFF9FB2CC);
+    // T2-3 a11y: inkSoft claro de #5A6B85 (4.26:1 sobre surfaceContainerHighest,
+  // < AA 4.5) a #52627C (4.86:1); outline claro de #7C8CA3 (2.82:1 sobre
+  // surfaceContainerHigh, < 3:1 de componente UI) a #75859C (3.10:1).
+  final inkSoft = isLight ? const Color(0xFF52627C) : const Color(0xFF9FB2CC);
     final paperEdge = isLight
         ? const Color(0xFFC4CFE0)
         : const Color(0xFF2A3A55);
@@ -129,7 +134,7 @@ class AppTheme {
           surface: paper,
           onSurface: ink,
           onSurfaceVariant: inkSoft,
-          outline: isLight ? const Color(0xFF7C8CA3) : const Color(0xFF8FA3BF),
+          outline: isLight ? const Color(0xFF75859C) : const Color(0xFF8FA3BF),
           outlineVariant: paperEdge,
           surfaceContainerLowest: isLight
               ? const Color(0xFFFFFFFF)

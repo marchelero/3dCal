@@ -884,6 +884,8 @@ class _CurrencySearchDialogState extends State<_CurrencySearchDialog> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.close),
+                    // T2-5 (a11y): icon-only sin nombre accesible antes.
+                    tooltip: EsBO.commonClose,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -1272,6 +1274,9 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
   String _backupErrorText(String code) => switch (code) {
     BackupErrorCodes.sizeTooLarge => EsBO.settingsBackupImportSizeError,
     BackupErrorCodes.futureVersion => EsBO.settingsBackupImportFutureVersion,
+    // T2-2 (SEC-03): firma HMAC invalida = archivo alterado/corrupto.
+    BackupErrorCodes.signatureMismatch =>
+      EsBO.settingsBackupImportSignatureMismatch,
     BackupErrorCodes.invalidFile ||
     BackupErrorCodes.invalidData => EsBO.settingsBackupImportInvalidFile,
     _ => EsBO.settingsBackupImportError,

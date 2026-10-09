@@ -22,6 +22,16 @@ class EnImpl implements AppStrings {
   String get commonApply => 'Apply';
   @override
   String get commonClearSearch => 'Clear search';
+
+  @override
+  String get calcQuantityDecrease => 'Decrease quantity';
+
+  @override
+  String get calcQuantityIncrease => 'Increase quantity';
+
+  @override
+  String get commonClose => 'Close';
+
   @override
   String get commonDelete => 'Delete';
   @override
@@ -332,6 +342,11 @@ class EnImpl implements AppStrings {
   String get settingsBackupImportFutureVersion =>
       'This backup was created with a future version of the app. '
       'Update 3dCalc and try again.';
+
+  @override
+  String get settingsBackupImportSignatureMismatch =>
+      'The backup signature does not match: the file was modified or is '
+      'corrupted. Use an original file exported from the app.';
 
   @override
   String get settingsBackupLockedBody => 'Backups are a Pro feature.';

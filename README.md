@@ -2,26 +2,29 @@
 
 Calculadora de precios para impresiones 3D. **100% local, mobile + web, sin backend.**
 
-Stack: Flutter 3.x · Dart 3.12 · drift 2.x (SQLite) · Riverpod 2.x · fl_chart 0.68 · go_router 14 · decimal.
+Stack: Flutter 3.47 · Dart 3.13 · drift 2.x (SQLite) · Riverpod 3.x · fl_chart 1.x · go_router 17 · decimal · crypto (HMAC de backups).
 
 ## Status
 
-**MVP 1.0.0** — 9 sprints completados. `flutter analyze` 0 issues, `flutter test` 118/118, `flutter build web --release` exitoso.
+**v0.6.0+13** en desarrollo activo (auditoría + hardening). `flutter analyze` 0 issues, `flutter test` 970/970.
 
 Features:
-- Cotizacion express (1 material) y avanzado (multi-material con animacion).
-- Catalogo de filamentos e impresoras con default toggle.
-- Historial de cotizaciones con snapshot de materiales (sobrevive a deletes).
+- Cotizacion express (1 material) y avanzado (multi-material), motor con `decimal` (nunca `double`).
+- Lotes/mayorista: descuento por escalones de cantidad (tiered) + totales de lote.
+- Catalogo de filamentos e impresoras con default toggle; plantillas de cotizacion.
+- Historial con snapshot de materiales (sobrevive a deletes) + toggle vendido + export CSV.
 - Dashboard con bar chart Cotizado vs Ganado + conversion%.
-- Settings con profit base, kWh rate, genericos.
-- Draft recovery (cierre accidental restaura form).
-- Dark mode auto (ThemeMode.system).
-- Responsive: NavigationBar en mobile/tablet, NavigationRail en web desktop.
+- Export PDF + imagen de cotizacion, share por plataforma.
+- Pro (RevenueCat): paywall, gates de features, deteccion de refund/revocacion en boot.
+- Backup/restore local con firma HMAC-SHA256 (detecta archivos alterados).
+- i18n: es_BO (default), en_US, de_DE, fr_FR, pt_BR. Moneda BOB hardcoded.
+- Draft recovery, dark mode auto, responsive (NavigationBar/NavigationRail).
+- A11y: contraste WCAG AA verificado por test + text-scale 1.5× sin overflow.
 
 ## Requisitos
 
-- Flutter 3.22+ (estable)
-- Dart 3.12+
+- Flutter 3.47+ (estable)
+- Dart 3.13+
 - Chrome (opcional, para dev web)
 - Android SDK (opcional, para APK)
 - iOS toolchain (opcional, para iOS)
@@ -91,9 +94,9 @@ flutter build ios --release
 ## Arquitectura
 
 - **Clean Architecture lite**: `lib/features/<feature>/{data,domain,presentation}/`.
-- **Riverpod 2.x** para estado. `AsyncNotifier` para fetch, `Notifier` para estado local.
+- **Riverpod 3.x** para estado (inyeccion manual, sin codegen). `AsyncNotifier` para fetch, `Notifier` para estado local.
 - **drift 2.x** para SQLite cross-platform (NativeDatabase en mobile, WasmDatabase en web).
-- **go_router 14** con `StatefulShellRoute` para tabs (Inicio / Historial / Dashboard / Ajustes) + rutas full-screen (calculator, detail, form).
+- **go_router 17** con `StatefulShellRoute` para tabs (Inicio / Historial / Dashboard / Ajustes) + rutas full-screen (calculator, detail, form).
 - **decimal package** obligatorio en calculos monetarios (nunca `double`).
 - **Material 3** con seed color deep purple + light/dark themes automaticos.
 
@@ -104,28 +107,32 @@ lib/
   main.dart                    # bootstrap async (SharedPreferences) + ProviderScope
   app.dart                     # MaterialApp.router + themes
   core/
+    backup/                    # export/import JSON + firma HMAC-SHA256
     constants/                 # kDefaultKwhRate, etc
+    database/                  # AppDatabase (drift, schema v17)
     money/                     # Decimal helpers, BOB formatter
-    theme/                     # AppTheme.light/dark
-    database/                  # AppDatabase (drift)
-    storage/                   # DraftStorage (SharedPreferences)
     router/                    # app_router (go_router config)
+    storage/                   # DraftStorage (SharedPreferences)
+    theme/                     # AppTheme.light/dark + tokens
   features/
-    calculation/               # motor + Home + Calculator + History
+    calculation/               # motor + Home + Calculator + History + detail
     catalog/                   # filaments + printers
     dashboard/                 # bar chart + stats
+    entitlement/               # Pro: RevenueCat, paywall, revocacion
+    legal/                     # privacy / terms
+    onboarding/                # initial config + idioma
     settings/                  # page + notifier + domain
+    splash/
+  l10n/                        # AppStrings + es_bo/en_us/de_de/fr_fr/pt_br
   shared/
-    widgets/                   # LoadingView / ErrorView / EmptyView / AppScaffold
-    l10n/                      # es_bo.dart
+    widgets/                   # LoadingView / ErrorView / AppScaffold / StatTile
 test/
-  unit/                        # motor + repos
-  widget/                      # pages + drafts
-  integration/                 # (Sprint 9)
+  unit/                        # motor + repos + backup + a11y (contraste)
+  widget/                      # pages + drafts + text-scale 1.5×
 docs/
   prds/                        # requirements
-  plans/                       # implementation plan
-  reports/                     # sprint reports
+  reports/                     # verificacion
+  sessions/                    # snapshots de sesion (LATEST.md)
 ```
 
 ## Decisiones tecnicas
@@ -133,7 +140,7 @@ docs/
 - **Flutter only** (web + mobile = mismo codebase).
 - **drift** en lugar de Isar (Isar no compila en web).
 - **Decimal package** obligatorio en motor de calculo (prohibido `double`).
-- **Riverpod 2.x** para inyeccion de dependencias + estado.
+- **Riverpod 3.x** para inyeccion de dependencias + estado (manual, sin codegen).
 - **go_router** con `StatefulShellRoute` para tabs + rutas full-screen. Datos no serializables via `state.extra`.
 - **Draft recovery** via SharedPreferences con debounce 500ms en save.
 - **Historial snapshot**: cada cotizacion guarda `materialLabelSnapshot` + `materialPricePerGramSnapshot` para sobrevivir deletes de filamentos.
@@ -141,9 +148,10 @@ docs/
 
 ## Documentacion
 
-- **PRD**: [`docs/prds/2026-07-13_2206-3dcal-app.prd.md`](docs/prds/2026-07-13_2206-3dcal-app.prd.md) — requisitos ejecutables.
-- **Plan**: [`docs/plans/2026-07-13_2206-3dcal-app.plan.md`](docs/plans/2026-07-13_2206-3dcal-app.plan.md) — 9 sprints.
-- **Reports**: [`docs/reports/`](docs/reports/) — trazabilidad sprint por sprint.
+- **Project context**: [`docs/PROJECT.md`](docs/PROJECT.md) — stack, convenciones, non-negotiables.
+- **PRD**: [`docs/prds/`](docs/prds/) — requisitos ejecutables.
+- **Reports**: [`docs/reports/`](docs/reports/) — verificacion por ronda.
+- **Sesiones**: [`docs/sessions/LATEST.md`](docs/sessions/LATEST.md) — ultimo snapshot.
 - **CHANGELOG**: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Convenciones

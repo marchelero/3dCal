@@ -217,6 +217,8 @@ class EsBO {
       _impl.settingsBackupImportInvalidFile;
   static String get settingsBackupImportFutureVersion =>
       _impl.settingsBackupImportFutureVersion;
+  static String get settingsBackupImportSignatureMismatch =>
+      _impl.settingsBackupImportSignatureMismatch;
   static String get settingsBackupLockedBody => _impl.settingsBackupLockedBody;
 
   // === Dashboard ===
@@ -915,7 +917,10 @@ class EsBO {
   static String get colorNameWhite => _impl.colorNameWhite;
 
   static String get commonApply => _impl.commonApply;
-static String get commonClearSearch => _impl.commonClearSearch;
+  static String get commonClearSearch => _impl.commonClearSearch;
+  static String get calcQuantityDecrease => _impl.calcQuantityDecrease;
+  static String get calcQuantityIncrease => _impl.calcQuantityIncrease;
+  static String get commonClose => _impl.commonClose;
 
   static String get printerErrorLoad => _impl.printerErrorLoad;
   static String printerNoResults(String query) => _impl.printerNoResults(query);
@@ -960,6 +965,16 @@ class EsImpl implements AppStrings {
   String get commonApply => 'Aplicar';
   @override
   String get commonClearSearch => 'Limpiar búsqueda';
+
+  @override
+  String get calcQuantityDecrease => 'Disminuir cantidad';
+
+  @override
+  String get calcQuantityIncrease => 'Aumentar cantidad';
+
+  @override
+  String get commonClose => 'Cerrar';
+
   @override
   String get commonDelete => 'Eliminar';
   @override
@@ -1273,6 +1288,11 @@ class EsImpl implements AppStrings {
   String get settingsBackupImportFutureVersion =>
       'Este backup fue creado con una versión futura de la app. '
       'Actualiza 3dCalc e intenta de nuevo.';
+
+  @override
+  String get settingsBackupImportSignatureMismatch =>
+      'La firma del backup no coincide: el archivo fue modificado o está '
+      'corrupto. Usa un archivo original exportado por la app.';
 
   @override
   String get settingsBackupLockedBody =>

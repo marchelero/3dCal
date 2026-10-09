@@ -339,4 +339,78 @@ void main() {
     final finalState = container.read(entitlementNotifierProvider).value;
     expect(finalState, isA<EntitlementPro>());
   });
+
+  // ── T2-1 (SEC-01): el camino Free del boot TAMBIEN consulta la store ──
+
+  test('boot cache Free + store dice ACTIVO (compra en otro dispositivo / '
+      'reinstalacion) → se hidrata Pro sin tocar "Restaurar"', () async {
+    await setupContainer(); // cache vacio + repo sin fila = Free
+    paymentService.setStoreProActive(true);
+
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementFree>(), reason: 'Primer frame = Free.');
+
+    await _waitForAsync();
+
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(
+      finalState,
+      isA<EntitlementPro>(),
+      reason: 'La store es la fuente de verdad: Pro activo → hidratacion.',
+    );
+    expect(container.read(isProProvider), isTrue);
+    expect(
+      paymentService.storeCheckCalls,
+      1,
+      reason: 'El camino Free debe consultar la store una vez por boot.',
+    );
+    expect(
+      repo.saveCalls,
+      1,
+      reason: 'La hidratacion persiste la fila activa en la DB local.',
+    );
+    expect(prefs.getBool(kIsProKey), isTrue, reason: 'Cache hidratada.');
+    expect(
+      paymentService.restoreCalls,
+      0,
+      reason: 'Con respuesta de la store no aplica el legacy restore.',
+    );
+  });
+
+  test('boot cache Free + store dice INACTIVO → sigue Free sin writes', () async {
+    await setupContainer();
+    paymentService.setStoreProActive(false);
+
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementFree>());
+
+    await _waitForAsync();
+
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(finalState, isA<EntitlementFree>());
+    expect(repo.saveCalls, 0);
+    expect(repo.clearCalls, 0, reason: 'Nada que limpiar: ya era Free.');
+    expect(prefs.getBool(kIsProKey), isNull);
+    expect(paymentService.restoreCalls, 0);
+  });
+
+  test('boot cache Free + store null (offline/web) → sigue Free, '
+      'SIN disparar restore() en cada boot', () async {
+    await setupContainer();
+    paymentService.setStoreProActive(null);
+
+    final state = await container.read(entitlementNotifierProvider.future);
+    expect(state, isA<EntitlementFree>());
+
+    await _waitForAsync();
+
+    final finalState = container.read(entitlementNotifierProvider).value;
+    expect(finalState, isA<EntitlementFree>());
+    expect(
+      paymentService.restoreCalls,
+      0,
+      reason: 'Un Free sin cache no debe re-validar nada (sin ruido).',
+    );
+    expect(repo.saveCalls, 0);
+  });
 }

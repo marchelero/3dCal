@@ -9,17 +9,19 @@
 - **Description**: Calculadora reactiva de precios para impresiones 3D con calculo multi-material, catalogo local de filamentos e impresoras, historial y dashboard de ganancias reales vs cotizadas. 100% offline, sin auth, sin backend.
 
 ## Stack
-- **Language**: Dart (3.x, null safety estricto)
-- **Framework**: Flutter (3.22+ estable, soporte web + mobile desde mismo codebase)
+- **Language**: Dart (3.13, null safety estricto; sdk constraint `^3.12.0`)
+- **Framework**: Flutter (3.47+ estable, soporte web + mobile desde mismo codebase)
 - **Runtime / Build**: Flutter SDK + MaterialApp 3 / Cupertino segun plataforma
 - **Package manager**: pub (pubspec.yaml)
-- **State management**: Riverpod 2.x (codegen) — NO setState en vistas dinamicas
-- **Database**: drift 2.x (SQLite cross-platform — Isar NO anda en web, drift es la unica opcion seria para paridad total)
+- **State management**: Riverpod 3.x (inyeccion manual, sin codegen — no hay `@riverpod` en lib/). NO setState en vistas dinamicas
+- **Database**: drift 2.x (SQLite cross-platform — Isar NO anda en web, drift es la unica opcion seria para paridad total). schemaVersion 17
 - **Money math**: paquete `decimal` (prohibido `double` en motor de calculo)
 - **Charts**: `fl_chart` (bar chart dashboard)
-- **i18n**: es_BO por default, BOB hardcoded
+- **Payments**: `purchases_flutter` (RevenueCat) — paywall Pro, gates, revocacion en boot
+- **i18n**: 5 locales (es_BO default, en_US, de_DE, fr_FR, pt_BR); moneda BOB hardcoded
+- **Backup**: JSON local + firma HMAC-SHA256 (`crypto`, clave por dispositivo)
 - **Deployment**: web = build estatico; mobile = debug APK / eventual store
-- **Test**: flutter_test + integration_test
+- **Test**: flutter_test (unit + widget)
 
 ## Conventions
 - Idiomas: espanol en UI, comentarios tecnicos en espanol. Codigo (variables, funciones) en ingles.
@@ -31,29 +33,35 @@
 ## Directory Layout
 ```
 lib/
-  main.dart                    # bootstrap + ProviderScope
-  app.dart                     # MaterialApp + router
+  main.dart                    # bootstrap async (SharedPreferences) + ProviderScope
+  app.dart                     # MaterialApp.router + themes
   core/
+    backup/                    # export/import JSON + firma HMAC-SHA256
+    constants/                 # kDefaultKwhRate, etc
+    database/                  # AppDatabase (drift, schema v17)
     money/                     # decimal helpers, formatters BOB
-    constants/                 # kBobElectricityRate, kDefaultProfitBase
-    theme/                     # Material 3 themes
+    router/                    # app_router (go_router)
+    storage/                   # DraftStorage (SharedPreferences)
+    theme/                     # AppTheme.light/dark + tokens
   features/
-    calculation/
-      domain/                  # CalculationEngine, entities puras
-      data/                    # drift DAOs, repos
-      presentation/            # pages, widgets, notifiers
+    calculation/               # motor + Home + Calculator + History + detail
     catalog/
       filaments/               # CRUD filamentos
       printers/                # CRUD impresoras
-    history/                   # lista cronologica + isSold toggle
     dashboard/                 # chart ganancias reales vs cotizadas
+    entitlement/               # Pro: RevenueCat, paywall, revocacion
+    legal/                     # privacy / terms
+    onboarding/                # initial config + idioma
     settings/                  # params globales
+    splash/
+  l10n/                        # AppStrings + es_bo/en_us/de_de/fr_fr/pt_br
   shared/
-    widgets/                   # design-system primitives (StatTile, SectionCard, MoneyRow, etc)
+    widgets/                   # design-system primitives (StatTile, SectionCard, etc)
 test/
-  unit/                        # motor de calculo
-  widget/                      # componentes
-  integration/                 # flows
+  unit/                        # motor, repos, backup (HMAC), contraste WCAG
+  widget/                      # pages + drafts + text-scale 1.5×
+docs/
+  prds/ reports/ sessions/     # requisitos / verificacion / snapshots
 ```
 
 ## License
@@ -77,7 +85,9 @@ unspecified (a definir por el usuario — sugerir MIT para codigo abierto)
 ```
 - Drift reemplaza Isar (justificada: Isar v3 no compila en Flutter Web).
   Migrar a Isar v4 cuando estabilice web es opcion futura, NO MVP.
-- Riverpod 2.x con codegen (`@riverpod`) para reducir boilerplate.
+- Riverpod 3.x con inyeccion manual (`riverpod_annotation` esta en el
+  pubspec pero NO se usa en lib/ — sin `@riverpod`). Notifier/AsyncNotifier
+  para estado de negocio; setState solo para UI local efimero (ver Non-Negotiables).
 - Calculation Engine es clase pura sin dependencias de Flutter — testeable
   sin WidgetTester.
 - drift genera DAOs tipados. Embedded lists se modelan con tablas

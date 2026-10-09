@@ -38,9 +38,9 @@ Precio exacto, desglosado y defendible **al instante, sin internet**, en el bols
 - Paywall RevenueCat (Pro).
 - Export: PDF + imagen de cotización (quote_image_template), share por plataforma.
 - Parámetros: mano de obra, post-procesado, tasa de falla, markup, descuento, mínimos.
-- i18n: es_BO default; moneda BOB hardcoded; multi-currency WIP.
-- Técnico: Flutter 3.x, Riverpod 2.x codegen (prohibido setState en vistas dinámicas), drift SQLite (web: IndexedDB), `decimal` para dinero (prohibido double en el motor), fl_chart.
-- Sin backend, sin auth, sin cloud sync. Cero red.
+- i18n: 5 locales (es_BO default, en_US, de_DE, fr_FR, pt_BR); moneda BOB hardcoded; multi-currency WIP.
+- Técnico: Flutter 3.47, Riverpod 3.x (manual, sin codegen; prohibido setState en vistas dinámicas), drift SQLite v17 (web: IndexedDB), `decimal` para dinero (prohibido double en el motor), fl_chart, go_router 17, backup local con firma HMAC-SHA256.
+- Sin backend propio, sin auth, sin cloud sync. Red mínima: RevenueCat (entitlements Pro) + share nativo del SO.
 
 ## Brand Commitments
 

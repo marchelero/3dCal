@@ -114,7 +114,51 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
         validatedAt: active.validatedAt,
       );
     }
+    // T2-1 (SEC-01): el camino Free TAMBIEN consulta la store. Una compra
+    // hecha en otro dispositivo o una reinstalacion no deben dejar al
+    // usuario en Free eterno (hacia aca solo salia con "Restaurar" a mano).
+    // Fire-and-forget, idem camino Pro: no bloquea el primer frame.
+    unawaited(_hydrateProFromStoreIfActive());
     return const EntitlementFree();
+  }
+
+  /// T2-1 (SEC-01): hidrata Pro desde la store cuando el boot local llego a
+  /// Free y la store dice que `pro` esta activo.
+  ///
+  /// - `storeActive == true` → [activate] (fila + cache + state Pro).
+  /// - `storeActive == false` → no-op (ya somos Free, no hay nada que bajar).
+  /// - `storeActive == null` (offline / web / SDK no configurado) → no-op
+  ///   intencional: a diferencia del camino Pro, un Free no tiene cache
+  ///   stale que re-validar ni fila que refrescar, y disparar el legacy
+  ///   `restore()` en cada boot Free (especialmente en web) seria ruido.
+  ///
+  /// Race guards: si mientras consulta la store llega una purchase/restore
+  /// (state ya Pro), no se vuelve a activar.
+  Future<void> _hydrateProFromStoreIfActive() async {
+    try {
+      final storeActive = await ref
+          .read(paymentServiceProvider)
+          .isProActiveOnStore();
+
+      if (storeActive != true) return;
+
+      // El build puede seguir en vuelo (la respuesta llego "instantanea",
+      // p.ej. fakes en tests): cede un tick para que el state emitido
+      // (EntitlementFree) sea visible a los guards de abajo.
+      if (state.value == null) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      if (state.value is EntitlementPro) return;
+
+      final activated = await activate(source: kSourceLifetimePurchase);
+      if (!activated) {
+        debugPrint(
+          '[Entitlement] boot Free: store activo pero hidratacion local fallo',
+        );
+      }
+    } catch (e) {
+      debugPrint('[Entitlement] boot Free: store hydrate fallo: $e');
+    }
   }
 
   /// Escucha revocaciones del entitlement (refund/cancel detectado por

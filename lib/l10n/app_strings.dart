@@ -210,6 +210,9 @@ abstract class AppStrings {
   /// Backup de una version futura de la app.
   String get settingsBackupImportFutureVersion;
 
+  /// La firma HMAC del backup no coincide (archivo alterado/corrupto).
+  String get settingsBackupImportSignatureMismatch;
+
   /// Backups (exportar/importar) son una funcion Pro.
   String get settingsBackupLockedBody;
 
@@ -1423,6 +1426,15 @@ abstract class AppStrings {
 
   /// Tooltip del IconButton que limpia la busqueda (screen reader).
   String get commonClearSearch;
+
+  /// T2-5 (a11y): nombre accesible del botón − del stepper de cantidad.
+  String get calcQuantityDecrease;
+
+  /// T2-5 (a11y): nombre accesible del botón + del stepper de cantidad.
+  String get calcQuantityIncrease;
+
+  /// T2-5 (a11y): nombre accesible del botón cerrar de diálogos (icon-only).
+  String get commonClose;
 
   // Nombres de la paleta de filamentos (17 entradas).
   String get colorNameRed;

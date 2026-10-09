@@ -25,6 +25,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../l10n/es_bo.dart';
 import '../database/app_database.dart';
 import 'backup_models.dart';
+import 'backup_signature.dart';
 
 /// Extension de archivo para backups.
 const String kBackupExtension = '3dcal';
@@ -53,6 +54,10 @@ abstract final class BackupErrorCodes {
 
   /// La transacción de restore falló (rollback total; datos intactos).
   static const restoreFailed = 'restore_failed';
+
+  /// T2-2 (SEC-03): la firma HMAC del envoltorio no coincide con el
+  /// payload → el archivo fue alterado (o corrompido) fuera de la app.
+  static const signatureMismatch = 'signature_mismatch';
 }
 
 /// Nombre base del archivo de backup.
@@ -75,11 +80,13 @@ class BackupService {
 
   /// Exporta toda la data a un archivo JSON y lo comparte.
   ///
+  /// T2-2 (SEC-03): el JSON exportado va en un envoltorio firmado
+  /// (`{backup, signature}`) con HMAC-SHA256 — ver [buildExportJsonForTest].
+  ///
   /// Retorna el nombre del archivo generado.
   /// Lanza la excepcion si falla (para mostrar el error real al usuario).
   Future<String> export() async {
-    final data = await _collectAllData();
-    final json = jsonEncode(data.toJson());
+    final json = await buildExportJsonForTest();
     final fileName = _backupFileName();
 
     // XFile.fromData funciona en TODAS las plataformas (web, movil, desktop)
@@ -98,6 +105,33 @@ class BackupService {
     );
 
     return fileName;
+  }
+
+  /// Construye el string JSON firmado que [export] comparte (T2-2 / SEC-03).
+  ///
+  /// Envolvente:
+  ///
+  /// ```json
+  /// { "backup": { ...BackupData... }, "signature": "hex-hmac", "deviceId": "hex-id" }
+  /// ```
+  ///
+  /// La firma es HMAC-SHA256 de `jsonEncode(backup)` con la clave por
+  /// dispositivo de [BackupSignature] (se crea en el primer uso).
+  /// `deviceId` permite al import distinguir "mismo dispositivo"
+  /// (verificable → rechaza alteraciones) de "otro dispositivo" (no
+  /// verificable → acepta, restauración cross-device). El `BackupData`
+  /// anidado NO cambia: el schema del contenido es identico al de los
+  /// backups legacy, que el import sigue aceptando sin firma.
+  @visibleForTesting
+  Future<String> buildExportJsonForTest() async {
+    final data = await _collectAllData();
+    final payload = data.toJson();
+    final signature = await BackupSignature.signPayload(payload);
+    return jsonEncode(<String, dynamic>{
+      'backup': payload,
+      'signature': signature,
+      'deviceId': await BackupSignature.getOrCreateInstallId(),
+    });
   }
 
   /// Recolecta toda la data de la base de datos.
@@ -273,7 +307,58 @@ class BackupService {
       if (raw is! Map<String, dynamic>) {
         return BackupErrorCodes.invalidFile;
       }
-      final backup = BackupData.fromJson(raw);
+
+      // T2-2 (SEC-03): resuelve el envoltorio firmado.
+      // - `{backup, signature}` → verifica HMAC; mismatch = alterado.
+      // - `{backup, ...}` sin firma → se acepta con aviso (legacy raro).
+      // - objeto `BackupData` crudo (sin clave `backup`) → backup legacy
+      //   pre-T2-2, se acepta con aviso: no romper la migracion de usuarios.
+      final Map<String, dynamic> payload;
+      if (raw.containsKey('backup')) {
+        final inner = raw['backup'];
+        if (inner is! Map<String, dynamic>) {
+          return BackupErrorCodes.invalidFile;
+        }
+        payload = inner;
+        final signature = raw['signature'];
+        if (signature != null && signature is! String) {
+          return BackupErrorCodes.invalidFile;
+        }
+        if (signature is String) {
+          // La firma solo es verificable con la clave del MISMO dispositivo.
+          // Un backup de OTRO dispositivo (deviceId distinto o ausente con
+          // clave ajena) no es alterable-vs-local: se acepta como
+          // restauración cross-device (el caso de uso principal de backup).
+          final deviceId = raw['deviceId'];
+          final isLocalDevice =
+              deviceId is String &&
+              deviceId == await BackupSignature.getOrCreateInstallId();
+          if (isLocalDevice) {
+            final expected = await BackupSignature.signPayload(payload);
+            if (!BackupSignature.constantTimeEquals(expected, signature)) {
+              debugPrint(
+                '[Backup] firma HMAC no coincide en el MISMO dispositivo '
+                '→ archivo alterado/corrupto',
+              );
+              return BackupErrorCodes.signatureMismatch;
+            }
+          } else {
+            debugPrint(
+              '[Backup] firma de OTRO dispositivo (o sin deviceId) — no '
+              'verificable localmente, aceptando (restauracion cross-device).',
+            );
+          }
+        } else {
+          debugPrint(
+            '[Backup] envoltorio sin firma — aceptando (legacy). '
+            'Nota: un archivo que se quire sin firma pasa este filtro.',
+          );
+        }
+      } else {
+        debugPrint('[Backup] backup legacy sin firma — aceptando (pre-T2-2).');
+        payload = raw;
+      }
+      final backup = BackupData.fromJson(payload);
 
       // Validar estructura, tipos, duplicados y referencias.
       final error = backup.validate();

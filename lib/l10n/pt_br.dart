@@ -22,6 +22,16 @@ class PtBrImpl implements AppStrings {
   String get commonApply => 'Aplicar';
   @override
   String get commonClearSearch => 'Limpar busca';
+
+  @override
+  String get calcQuantityDecrease => 'Diminuir quantidade';
+
+  @override
+  String get calcQuantityIncrease => 'Aumentar quantidade';
+
+  @override
+  String get commonClose => 'Fechar';
+
   @override
   String get commonCreateNew => 'Criar novo';
   @override
@@ -335,6 +345,11 @@ class PtBrImpl implements AppStrings {
   String get settingsBackupImportFutureVersion =>
       'Este backup foi criado com uma versão futura do aplicativo. '
       'Atualize o 3dCalc e tente novamente.';
+
+  @override
+  String get settingsBackupImportSignatureMismatch =>
+      'A assinatura do backup não corresponde: o arquivo foi modificado ou '
+      'está corrompido. Use um arquivo original exportado pelo app.';
 
   @override
   String get settingsBackupLockedBody => 'Fazer backups é um recurso Pro.';
