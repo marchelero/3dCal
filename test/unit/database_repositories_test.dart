@@ -6,6 +6,7 @@ import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/features/calculation/data/calculation_repository.dart';
 import 'package:tresdcal/features/calculation/domain/calculation_engine.dart';
 import 'package:tresdcal/features/calculation/domain/entities/calculation_input.dart';
+import 'package:tresdcal/features/calculation/domain/entities/calculation_output.dart';
 import 'package:tresdcal/features/calculation/domain/entities/material_input.dart';
 import 'package:tresdcal/features/catalog/filaments/data/filament_repository.dart';
 import 'package:tresdcal/features/catalog/printers/data/printer_repository.dart';
@@ -354,55 +355,71 @@ void main() {
       expect(copy.pieceImageBlob, equals(photo));
     });
 
-    test(
-      'F5: create persiste amortizationCostSnapshot y duplicate lo copia',
-      () async {
-        final materials = [
-          MaterialInput(
-            label: 'PLA',
-            weightGrams: _d('100'),
-            pricePerBobbin: _d('150'),
-            gramsPerBobbin: _d('1000'),
-          ),
-        ];
-        final input = CalculationInput(
+    test('F5: el motor excluye la amortizacion; create/duplicate siguen '
+        'persistiendo el snapshot (filas legacy)', () async {
+      final materials = [
+        MaterialInput(
+          label: 'PLA',
+          weightGrams: _d('100'),
+          pricePerBobbin: _d('150'),
+          gramsPerBobbin: _d('1000'),
+        ),
+      ];
+      final input = CalculationInput(
+        materials: materials,
+        totalHours: _d('2'),
+        discountPercentage: Decimal.zero,
+        printerWatts: 0,
+        kwhRate: Decimal.zero,
+        profitBase: Decimal.zero,
+        laborRate: Decimal.zero,
+        postProcessRate: Decimal.zero,
+        failureRate: Decimal.zero,
+        markupOnMaterials: Decimal.zero,
+        amortizationPerHour: _d('0.875'),
+      );
+      final output = CalculationEngine.compute(input);
+      // Regla F5: la amortizacion (0.875 * 2h = 1.75) ya NO entra en el
+      // costo ni en el output, asi que lo que se persiste es 0.
+      expect(output.amortizationCost, Decimal.zero);
+
+      // Filas legacy / datos importados pueden traer snapshot > 0: la
+      // persistencia de la columna y el duplicate no cambian.
+      final legacy = CalculationOutput(
+        materialCost: output.materialCost,
+        electricCost: output.electricCost,
+        amortizationCost: _d('1.75'),
+        laborCost: output.laborCost,
+        postProcessCost: output.postProcessCost,
+        baseCost: output.baseCost,
+        failureCost: output.failureCost,
+        costWithFailure: output.costWithFailure,
+        markupCost: output.markupCost,
+        totalBeforeProfit: output.totalBeforeProfit,
+        profitAmount: output.profitAmount,
+        totalFinal: output.totalFinal,
+        discountAmount: output.discountAmount,
+        totalPrice: output.totalPrice,
+      );
+
+      final id = await calculations.create(
+        CalculationDraft(
           materials: materials,
           totalHours: _d('2'),
           discountPercentage: Decimal.zero,
-          printerWatts: 0,
-          kwhRate: Decimal.zero,
-          profitBase: Decimal.zero,
-          laborRate: Decimal.zero,
-          postProcessRate: Decimal.zero,
-          failureRate: Decimal.zero,
-          markupOnMaterials: Decimal.zero,
-          amortizationPerHour: _d('0.875'),
-        );
-        final output = CalculationEngine.compute(input);
-        // Amortizacion = 0.875 * 2h = 1.75.
-        expect(output.amortizationCost, _d('1.75'));
+          output: legacy,
+          pieceName: 'Con amortizacion',
+        ),
+      );
+      final calc = (await calculations.listAll()).firstWhere((c) => c.id == id);
+      expect(calc.amortizationCostSnapshot, closeTo(1.75, 0.0001));
 
-        final id = await calculations.create(
-          CalculationDraft(
-            materials: materials,
-            totalHours: _d('2'),
-            discountPercentage: Decimal.zero,
-            output: output,
-            pieceName: 'Con amortizacion',
-          ),
-        );
-        final calc = (await calculations.listAll()).firstWhere(
-          (c) => c.id == id,
-        );
-        expect(calc.amortizationCostSnapshot, closeTo(1.75, 0.0001));
-
-        final copyId = await calculations.duplicate(id);
-        final copy = (await calculations.listAll()).firstWhere(
-          (c) => c.id == copyId,
-        );
-        expect(copy.amortizationCostSnapshot, closeTo(1.75, 0.0001));
-      },
-    );
+      final copyId = await calculations.duplicate(id);
+      final copy = (await calculations.listAll()).firstWhere(
+        (c) => c.id == copyId,
+      );
+      expect(copy.amortizationCostSnapshot, closeTo(1.75, 0.0001));
+    });
 
     test('createTemplate sin foto deja pieceImageBlob null (F2)', () async {
       final id = await calculations.createTemplate(_simpleDraft('Plantilla'));

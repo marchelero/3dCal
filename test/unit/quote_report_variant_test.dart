@@ -231,7 +231,9 @@ void main() {
       expect(rates.markupOnMaterials, _d(9));
       expect(rates.profitBase, _d(150));
       expect(rates.printerWatts, 180);
-      expect(rates.amortizationCost, _d(20));
+      // F5: el snapshot de amortizacion se ignora — queda en 0 para que
+      // ninguna ruta derive un monto de amortizacion de filas viejas.
+      expect(rates.amortizationCost, Decimal.zero);
     });
 
     test('snapshot == 0 (legacy) cae al fallback de Settings', () {
@@ -361,7 +363,7 @@ void main() {
       expect(audit.markupOverCostPct, _d(100));
     });
 
-    test('amortizacion por hora = amortCost / horas', () {
+    test('la amortizacion NO entra al audit (F5 fuera de los reportes)', () {
       final audit = PdfRateAudit.fromRates(
         rates: rates,
         profitAmount: _d(100),
@@ -369,7 +371,8 @@ void main() {
         totalFinal: _d(300),
         totalHours: _d(4),
       );
-      expect(audit.amortizationPerHour, _d(2.5));
+      // Aunque el caller pase amortizacion, el reporte no la recibe.
+      expect(audit.amortizationPerHour, isNull);
     });
 
     test('CA-45: denominador 0 NO produce NaN/Infinity', () {
@@ -392,8 +395,8 @@ void main() {
       );
       expect(
         audit.amortizationPerHour,
-        Decimal.zero,
-        reason: 'Sin horas no hay base para amortizar por hora.',
+        isNull,
+        reason: 'F5: la amortizacion no se reporta, ni siquiera sin horas.',
       );
     });
 

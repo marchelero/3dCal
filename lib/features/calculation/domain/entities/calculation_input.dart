@@ -10,7 +10,7 @@ import 'material_input.dart';
 ///   `materialCost * rate / 100` para postprocesado).
 /// - [serviceCostOff] (solo extras): no se cobra nada.
 /// - [serviceCostPct]: el campo se calcula como porcentaje sobre `coreBase`
-///   (material + electric + amort).
+///   (material + electric).
 /// - [serviceCostFixed]: el campo se cobra como monto fijo en moneda local.
 class ServiceCostMode {
   const ServiceCostMode._(this.value);
@@ -65,7 +65,9 @@ class ServiceCostMode {
 ///   desde el notifier y tienen defaults a 0 (sin efecto).
 ///
 /// Formula completa (v17):
-///   coreBase = material + electric + amort
+///   coreBase = material + electric
+///   (F5 amortizacion EXCLUIDA del costo: no afecta el total ni los
+///    reportes; purchaseCost/usefulLifeHours son solo datos de catalogo)
 ///   modelado = resolveService(modelingMode, coreBase, modelingRate,
 ///               modelingFixedAmount, hours, laborRate)
 ///   postProc = resolveService(postprocMode, coreBase, postprocRate,

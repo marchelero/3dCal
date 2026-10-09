@@ -65,13 +65,11 @@ class PdfRateAudit {
       markupOnMaterials: rates.markupOnMaterials,
       profitBase: rates.profitBase,
       totalHours: totalHours,
-      // Amortizacion por hora = costo de amortizacion / horas. Se deja en 0
-      // cuando no hay horas (no hay base sobre la que dividir).
-      amortizationPerHour: totalHours > Decimal.zero
-          ? (rates.amortizationCost / totalHours).toDecimal(
-              scaleOnInfinitePrecision: 6,
-            )
-          : Decimal.zero,
+      // F5: la amortizacion de la impresora no forma parte de los reportes.
+      // Se deja en null (ademas de forzar `rates.amortizationCost` a 0 en
+      // `CalculationEngine.resolveRates`) para que ninguna variante pueda
+      // imprimir una fila/hora de amortizacion.
+      amortizationPerHour: null,
       // Margen (sobre precio de venta) = ganancia / precio final. Es el
       // porcentaje del precio que es ganancia pura; siempre < 100%. `null` si
       // el precio es 0 para no imprimir NaN/Infinity.
@@ -84,9 +82,9 @@ class PdfRateAudit {
         denominator: totalFinal,
       ),
       // Recargo sobre costo = (totalFinal - costoBase) / costoBase. Mide cuanto
-      // crece el costo base (material + luz + amort + modelado + postproc +
-      // extras) hasta el precio final, incorporando tambien falla y
-      // desperdicio. Coincide con `profitBase` solo cuando ambos son 0.
+      // crece el costo base (material + luz + modelado + postproc + extras)
+      // hasta el precio final, incorporando tambien falla y desperdicio.
+      // Coincide con `profitBase` solo cuando ambos son 0.
       markupOverCostPct: baseCost > Decimal.zero
           ? _ratioPct(numerator: totalFinal - baseCost, denominator: baseCost)
           : null,
@@ -123,7 +121,10 @@ class PdfRateAudit {
   /// Tarifa de mano de obra por hora (BOB).
   final Decimal? laborRate;
 
-  /// Amortizacion de la impresora por hora (BOB). `0` = no se contabiliza.
+  /// Amortizacion de la impresora por hora (BOB).
+  ///
+  /// F5: siempre `null` — la amortizacion ya no aparece en ningun reporte
+  /// (PDF, imagen ni detalle). El campo se conserva por compatibilidad.
   final Decimal? amortizationPerHour;
 
   /// Tasa de post-procesado (% del costo de materiales).
@@ -193,7 +194,11 @@ class ResolvedRates {
   final Decimal markupOnMaterials;
   final Decimal profitBase;
 
-  /// Costo de amortizacion acumulado (ya escalado por cantidad, si aplica).
+  /// Costo de amortizacion acumulado.
+  ///
+  /// F5: siempre `Decimal.zero`. `CalculationEngine.resolveRates` ignora el
+  /// snapshot y [PdfRateAudit.fromRates] no lo propaga: la amortizacion
+  /// queda fuera de los reportes y fuera del costo.
   final Decimal amortizationCost;
 
   @override

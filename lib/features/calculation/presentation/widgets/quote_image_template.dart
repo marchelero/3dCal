@@ -807,7 +807,7 @@ class QuoteImageTemplate extends StatelessWidget {
             : '—',
       ),
       (EsBO.pdfRateLabor, perHour(audit.laborRate)),
-      (EsBO.pdfRateAmortization, perHour(audit.amortizationPerHour)),
+      // F5: sin fila de amortizacion — no es una tasa ni entra al costo.
       (
         EsBO.calcDetailPostProcess,
         audit.postProcessRate == null

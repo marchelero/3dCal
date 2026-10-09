@@ -41,7 +41,9 @@ class DetailSection extends StatelessWidget {
   final List<MaterialCostBreakdown> materialBreakdown;
   final Decimal electricCost;
 
-  /// Amortizacion de la impresora (F5). 0 = sin linea.
+  /// Amortizacion de la impresora (F5). Se conserva el campo por
+  /// compatibilidad, pero NO se muestra: la amortizacion queda fuera del
+  /// costo y de todos los reportes (expreso y avanzado).
   final Decimal amortizationCost;
 
   final Decimal laborCost;
@@ -72,7 +74,6 @@ class DetailSection extends StatelessWidget {
       color: tc.withValues(alpha: 0.8),
     );
     final hasExtras =
-        amortizationCost > Decimal.zero ||
         laborCost > Decimal.zero ||
         postProcessCost > Decimal.zero ||
         failureCost > Decimal.zero ||
@@ -98,13 +99,8 @@ class DetailSection extends StatelessWidget {
           s,
           tc: tc,
         ),
-        if (amortizationCost > Decimal.zero)
-          _dr(
-            EsBO.calcDetailAmortization,
-            formatCurrency(amortizationCost, currency),
-            s,
-            tc: tc,
-          ),
+        // F5: sin fila de amortizacion — la amortizacion de la impresora no
+        // entra en el costo ni en el desglose (expreso y avanzado).
         if (laborCost > Decimal.zero)
           _dr(
             EsBO.calcDetailModeling,

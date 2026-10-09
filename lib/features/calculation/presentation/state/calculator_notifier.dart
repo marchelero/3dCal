@@ -822,11 +822,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
         failureRate: input.failureRate,
         markupOnMaterials: input.markupOnMaterials,
         profitBase: input.profitBase,
-        // El contrato de [ResolvedRates.amortizationCost] es el costo
-        // ACUMULADO (Bs), no la tarifa por hora. Antes se pasaba
-        // `input.amortizationPerHour` (Bs/h) y [PdfRateAudit.fromRates] volvia
-        // a dividir por `totalHours` para mostrar "Bs/h": la fila de
-        // amortizacion del PDF/PNG quedaba dividida por horas de mas.
+        // F5: la amortizacion de la impresora queda fuera de las tasas y de
+        // los reportes. El motor la fuerza a 0 (ni live ni snapshot la
+        // cobran), asi que el campo queda en 0 sin romper el contrato de
+        // [ResolvedRates.amortizationCost].
         amortizationCost: output.amortizationCost,
       );
 
@@ -914,8 +913,10 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
     final settings = asyncSettings.value ?? Settings.defaults;
     final printer = ref.read(activePrinterProvider);
 
-    // F5: amortizacion de la impresora (costo fijo por hora). Null si la
-    // impresora no tiene costo/vida util configurados → linea ausente.
+    // F5: amortizacion informativa de la impresora (costo / vida util).
+    // Null si la impresora no tiene esos datos. El motor la IGNORA: no
+    // entra en el costo (express ni avanzado) ni en los reportes, pero se
+    // sigue pasando para que el input conserve el dato del catalogo.
     final amortizationPerHour = printer == null
         ? null
         : CalculationEngine.amortizationPerHour(

@@ -28,8 +28,7 @@ class MaterialSnapshot {
 /// ```
 /// materialCost   = Σ(weightGrams[i] * pricePerBobbin[i] / gramsPerBobbin[i])
 /// electricCost   = printerWatts * totalHours * kwhRate / 1000
-/// amortCost      = amortizationPerHour * totalHours
-/// coreBase       = materialCost + electricCost + amortCost
+/// coreBase       = materialCost + electricCost
 /// modelingCost   = resolveService(modelingMode, coreBase, modelingPct,
 ///                   modelingFixed, hours, laborRate)
 /// postProcCost   = resolveService(postprocMode, coreBase, postprocPct,
@@ -56,9 +55,10 @@ class MaterialSnapshot {
 ///
 /// **Equivalencia legacy**: con `modelingMode=auto`, `postprocMode=auto`,
 /// `extraCostMode=off`, y los campos pct/fixed en 0, el calculo produce
-/// los MISMOS numeros que la formula pre-v17 (con la excepcion de
-/// `amortCost` que ahora SI esta en `baseCost` para alinear con
-/// `computeFromSnapshot` — fix incidental del bug live vs snapshot).
+/// los MISMOS numeros que la formula pre-v17. La amortizacion de la
+/// impresora (F5) queda FUERA del costo en ambas rutas (live y snapshot),
+/// asi que tener o no precio de compra / vida util configurados no mueve
+/// el total.
 ///
 /// **Reglas de borde**:
 /// - Si no hay materiales, `materialCost = 0`.
@@ -80,8 +80,11 @@ class MaterialSnapshot {
 ///   Si el precio queda por debajo, sube a `minimumCharge`. Con
 ///   `minimumCharge = 0` no hay efecto.
 ///
-/// **Nota**: `amortizationPerHour` existe para estadisticas/depreciacion,
-/// pero NO se incluye en el costo de la cotizacion.
+/// **Nota**: `amortizationPerHour` existe solo como dato informativo del
+/// catalogo de impresora (estadisticas/depreciacion). NO entra en el costo
+/// de la cotizacion (express ni avanzado) y NO se imprime en ningun
+/// reporte (PDF, imagen ni detalle). El total es identico con o sin
+/// precio de compra / vida util configurados.
 ///
 /// **Precision**: todo en `Decimal`. Prohibido `double` en este archivo.
 class CalculationEngine {
@@ -95,10 +98,9 @@ class CalculationEngine {
   /// `costo / vida_util_horas`, escala interna 6. Retorna `null` si la vida
   /// util es <= 0 o el costo no es positivo.
   ///
-  /// v17: ahora SI entra en `coreBase` y por lo tanto en el costo de la
-  /// cotizacion (antes solo se usaba para metricas). El cambio alinea el
-  /// calculo live con `computeFromSnapshot` (que ya lo incluia en
-  /// `baseCost`) y evita la inconsistencia entre live y historial.
+  /// Solo informativa: el motor NO la usa en el costo de la cotizacion y
+  /// los reportes no la imprimen (F5 fuera de express/avanzado y de todo
+  /// desglose). Se conserva el helper para el catalogo de impresora.
   static Decimal? amortizationPerHour({
     required Decimal purchaseCost,
     required int usefulLifeHours,
@@ -123,19 +125,14 @@ class CalculationEngine {
               .toDecimal()
         : Decimal.zero;
 
-    // Amortizacion de impresora (costo por hora * horas). v17: ahora SI
-    // entra en `coreBase` para alinear con `computeFromSnapshot`. Antes el
-    // live ignoraba este termino en `baseCost` (mostraba 0 en la UI aunque
-    // `computeFromSnapshot` lo incluia), lo que producia dos totales
-    // distintos entre live e historial para la misma cotizacion.
-    final amortCost =
-        input.amortizationPerHour != null && input.totalHours > Decimal.zero
-        ? (input.amortizationPerHour! * input.totalHours)
-        : Decimal.zero;
-
+    // Amortizacion de impresora (F5): EXCLUIDA del costo. El precio de
+    // compra y la vida util del catalogo son solo informativos; el motor
+    // ignora `input.amortizationPerHour` para que express y avanzado
+    // cotizen exactamente igual con o sin esos datos.
+    //
     // coreBase = costo automatico (no decision del usuario). Es la base
     // sobre la que se calculan los 3 servicios en modo `pct`.
-    final coreBase = materialCost + electricCost + amortCost;
+    final coreBase = materialCost + electricCost;
 
     // === 3 campos de servicio con modo % / fijo ===
     //
@@ -214,7 +211,9 @@ class CalculationEngine {
     return CalculationOutput(
       materialCost: materialCost,
       electricCost: electricCost,
-      amortizationCost: amortCost,
+      // Siempre 0: la amortizacion no forma parte del costo ni de los
+      // reportes (regla F5).
+      amortizationCost: Decimal.zero,
       laborCost: modelingCost,
       postProcessCost: postProcCost,
       baseCost: baseCost,
@@ -301,6 +300,10 @@ class CalculationEngine {
     required double markupOnMaterialsSnapshot,
     required double profitBaseSnapshot,
     required double discountPercentage,
+    // Legacy: columna `amortization_cost_snapshot`. Se conserva el
+    // parametro por compatibilidad, pero el motor la IGNORA (F5 fuera del
+    // costo): filas viejas con snapshot > 0 abren con el mismo total que
+    // una impresora sin esos datos.
     double amortizationCostSnapshot = 0,
     required Decimal fallbackKwhRate,
     required Decimal fallbackLaborRate,
@@ -370,12 +373,13 @@ class CalculationEngine {
         ? (Decimal.fromInt(watts) * hours * kwhRate / kWhDivisor).toDecimal()
         : Decimal.zero;
 
-    // Amortizacion desde snapshot
-    final amortCost = rates.amortizationCost;
-
+    // Amortizacion (F5): EXCLUIDA del costo, igual que en [compute].
+    // Filas viejas con `amortizationCostSnapshot > 0` se recalculan sin
+    // ella para que el historial abra consistente con el live.
+    //
     // coreBase = costo automatico. Es la base sobre la que los 3 servicios
     // en modo pct calculan su monto.
-    final coreBase = materialCost + electricCost + amortCost;
+    final coreBase = materialCost + electricCost;
 
     // v17: 3 campos de servicio con modo % / fijo. Mismas reglas que
     // [compute]: `auto` replica la formula legacy; `pct`/`fixed` aplican
@@ -448,7 +452,9 @@ class CalculationEngine {
     return CalculationOutput(
       materialCost: materialCost * qtyD,
       electricCost: electricCost * qtyD,
-      amortizationCost: amortCost * qtyD,
+      // Siempre 0: la amortizacion no forma parte del costo ni de los
+      // reportes, ni siquiera para filas viejas con snapshot > 0 (F5).
+      amortizationCost: Decimal.zero,
       laborCost: modelingCost * qtyD,
       postProcessCost: postProcCost * qtyD,
       extrasCost: extrasCost * qtyD,
@@ -480,6 +486,11 @@ class CalculationEngine {
   ///
   /// **No escala por [quantity]**: los montos que dependen de la cantidad se
   /// escalan en [computeFromSnapshot].
+  ///
+  /// **Amortizacion (F5)**: [ResolvedRates.amortizationCost] queda siempre
+  /// en 0. El snapshot se acepta por compatibilidad pero se ignora, para
+  /// que ninguna ruta (detalle, PDF, imagen) pueda derivar un monto de
+  /// amortizacion a partir de filas viejas.
   static ResolvedRates resolveRates({
     required double kwhRateSnapshot,
     required double laborRateSnapshot,
@@ -519,9 +530,8 @@ class CalculationEngine {
       profitBase: profitBaseSnapshot > 0
           ? Decimal.parse(profitBaseSnapshot.toStringAsFixed(2))
           : fallbackProfitBase,
-      amortizationCost: amortizationCostSnapshot > 0
-          ? Decimal.parse(amortizationCostSnapshot.toStringAsFixed(2))
-          : Decimal.zero,
+      // F5: amortizacion fuera de las tasas resueltas (siempre 0).
+      amortizationCost: Decimal.zero,
     );
   }
 

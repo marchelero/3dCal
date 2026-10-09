@@ -322,15 +322,17 @@ void main() {
   });
 
   group('F5 amortizacion de impresora', () {
-    test('AC1: helper costo/vida util + linea en desglose y total', () {
-      // costo_hora = 3500 / 4000 = 0.875 (escala 6 interna).
+    test('AC1: helper costo/vida util existe pero NO entra en el costo', () {
+      // costo_hora = 3500 / 4000 = 0.875 (escala 6 interna). Solo
+      // informativa: ni el desglose ni el total la usan.
       final perHour = CalculationEngine.amortizationPerHour(
         purchaseCost: Decimal.fromInt(3500),
         usefulLifeHours: 4000,
       );
       expect(perHour, DecimalParse.fromString('0.875'));
 
-      // 2h de impresion → amortizacion = 0.875 * 2 = 1.75.
+      // 2h de impresion con amortizacion configurada → total IDENTICO al
+      // de una impresora sin precio de compra / vida util.
       final out = CalculationEngine.compute(
         _input(
           materials: [_material(weight: '100', pricePerBobbin: '120')],
@@ -340,23 +342,31 @@ void main() {
       );
       // materialCost = 100 * 120/1000 = 12
       expect(out.materialCost, DecimalParse.fromString('12'));
-      expect(out.amortizationCost, DecimalParse.fromString('1.75'));
-      // baseCost = 12 + 0 + 1.75 + 0 + 0 = 13.75
-      expect(out.baseCost, DecimalParse.fromString('13.75'));
-      // totalPrice = baseCost (profit 0, sin descuento) = 13.75
-      expect(out.totalPrice, DecimalParse.fromString('13.75'));
+      expect(out.amortizationCost, Decimal.zero);
+      // baseCost = 12 + 0 (sin amortizacion) + 0 + 0 = 12
+      expect(out.baseCost, DecimalParse.fromString('12'));
+      // totalPrice = baseCost (profit 0, sin descuento) = 12
+      expect(out.totalPrice, DecimalParse.fromString('12'));
     });
 
-    test('AC2: sin amortizationPerHour la linea es 0 y el total no cambia', () {
-      final out = CalculationEngine.compute(
+    test('AC2: total identico con y sin amortizacion configurada', () {
+      final conAmort = CalculationEngine.compute(
+        _input(
+          materials: [_material(weight: '100', pricePerBobbin: '120')],
+          totalHours: '2',
+          amortizationPerHour: '0.875',
+        ),
+      );
+      final sinAmort = CalculationEngine.compute(
         _input(
           materials: [_material(weight: '100', pricePerBobbin: '120')],
           totalHours: '2',
         ),
       );
-      expect(out.amortizationCost, Decimal.zero);
-      expect(out.baseCost, DecimalParse.fromString('12'));
-      expect(out.totalPrice, DecimalParse.fromString('12'));
+      expect(conAmort.amortizationCost, Decimal.zero);
+      expect(sinAmort.amortizationCost, Decimal.zero);
+      expect(conAmort.totalPrice, sinAmort.totalPrice);
+      expect(conAmort.totalPrice, DecimalParse.fromString('12'));
     });
 
     test(
@@ -384,7 +394,7 @@ void main() {
       expect(perHour, isNull);
     });
 
-    test('la amortizacion fluye por profit% (esta en baseCost)', () {
+    test('la amortizacion NO fluye por profit% (fuera de baseCost)', () {
       final out = CalculationEngine.compute(
         CalculationInput(
           materials: [_material(weight: '100', pricePerBobbin: '120')],
@@ -400,10 +410,10 @@ void main() {
           amortizationPerHour: DecimalParse.fromString('0.875'),
         ),
       );
-      // baseCost = 12 + 1.75 = 13.75; profit 200% = 27.5; total = 41.25
-      expect(out.amortizationCost, DecimalParse.fromString('1.75'));
-      expect(out.profitAmount, DecimalParse.fromString('27.5'));
-      expect(out.totalPrice, DecimalParse.fromString('41.25'));
+      // baseCost = 12 (amortizacion excluida); profit 200% = 24; total = 36
+      expect(out.amortizationCost, Decimal.zero);
+      expect(out.profitAmount, DecimalParse.fromString('24'));
+      expect(out.totalPrice, DecimalParse.fromString('36'));
     });
   });
 
@@ -581,31 +591,24 @@ void main() {
       },
     );
 
-    test(
-      'amortizacion SI entra en coreBase (fix live vs snapshot)',
-      () {
-        // v17: live y snapshot ahora SI la incluyen (antes live la omitia).
-        // Confirma que ammort en base produce sube el % del modelo.
-        final out = CalculationEngine.compute(
-          v17Input(
-            totalHours: '2',
-            amortizationPerHour: '0.875',
-            laborMode: 'pct',
-            laborPct: '50', // brackets + electricity + amort
-          ),
-        );
-        // electricCost = 0 (no watts)
-        // amort = 0.875 * 2 = 1.75
-        // coreBase = 15 + 0 + 1.75 = 16.75
-        // labor = 16.75 * 50 / 100 = 8.375
-        expect(out.amortizationCost, DecimalParse.fromString('1.75'));
-        expect(out.laborCost, DecimalParse.fromString('8.375'));
-        // baseCost = coreBase (16.75) + modeling (8.375) = 25.125
-        expect(
-          out.baseCost,
-          DecimalParse.fromString('25.125'),
-        );
-      },
-    );
+    test('amortizacion NO entra en coreBase (F5 fuera del costo)', () {
+      // El motor ignora `amortizationPerHour`: coreBase es solo material
+      // (+ luz, aqui 0), asi que el % del modelo se calcula sobre 15.
+      final out = CalculationEngine.compute(
+        v17Input(
+          totalHours: '2',
+          amortizationPerHour: '0.875',
+          laborMode: 'pct',
+          laborPct: '50', // brackets + electricity
+        ),
+      );
+      // electricCost = 0 (no watts); amortizacion excluida
+      // coreBase = 15 + 0 = 15
+      // labor = 15 * 50 / 100 = 7.5
+      expect(out.amortizationCost, Decimal.zero);
+      expect(out.laborCost, DecimalParse.fromString('7.5'));
+      // baseCost = coreBase (15) + modeling (7.5) = 22.5
+      expect(out.baseCost, DecimalParse.fromString('22.5'));
+    });
   });
 }

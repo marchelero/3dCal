@@ -623,7 +623,6 @@ Future<Uint8List> buildQuotePdfBytes({
   // Valores escalados para el desglose (unit x quantity).
   final dMaterialCost = output.materialCost * qtyD;
   final dElectricCost = output.electricCost * qtyD;
-  final dAmortizationCost = output.amortizationCost * qtyD;
   final dLaborCost = output.laborCost * qtyD;
   final dPostProcessCost = output.postProcessCost * qtyD;
   final dExtrasCost = output.extrasCost * qtyD;
@@ -881,12 +880,8 @@ Future<Uint8List> buildQuotePdfBytes({
               altBackground: true,
             ),
             _dataRow(EsBO.pdfElectricity, _fmt(dElectricCost, currency)),
-            if (output.amortizationCost > Decimal.zero)
-              _dataRow(
-                EsBO.calcDetailAmortization,
-                _fmt(dAmortizationCost, currency),
-                altBackground: true,
-              ),
+            // F5: la amortizacion de la impresora no se imprime en el
+            // desglose (ni afecta los montos).
             if (output.laborCost > Decimal.zero)
               _dataRow(EsBO.calcDetailModeling, _fmt(dLaborCost, currency)),
             if (output.postProcessCost > Decimal.zero)
@@ -996,11 +991,7 @@ Future<Uint8List> buildQuotePdfBytes({
           if (showRateSection) ...[
             _sectionHeader(EsBO.pdfRateAuditSection),
             pw.SizedBox(height: 8),
-            _buildRateAuditBlock(
-              audit: rateAudit,
-              currency: currency,
-              totalHours: totalHours,
-            ),
+            _buildRateAuditBlock(audit: rateAudit, totalHours: totalHours),
             pw.SizedBox(height: 14),
           ],
 
@@ -1320,12 +1311,9 @@ pw.Widget _statusChip({required bool isSold}) {
 /// montos, cualquier linea se puede recalcular a mano.
 pw.Widget _buildRateAuditBlock({
   required PdfRateAudit audit,
-  required WorldCurrency currency,
   required Decimal totalHours,
 }) {
   // Formatea un valor como "Bs. 25,00" o "25 %" segun corresponda.
-  String money(Decimal? v) => v == null ? '—' : formatCurrency(v, currency);
-
   String perHour(Decimal? v) => v == null || v <= Decimal.zero
       ? '—'
       : '${formatCurrencyNumber(v)} ${EsBO.pdfRatePerHour}';
@@ -1333,6 +1321,8 @@ pw.Widget _buildRateAuditBlock({
   String pct(Decimal? v) => v == null ? '—' : formatPercentage(v);
 
   // Marca "—" todo lo que no hay dato. Imprimir 0 seria mentir.
+  // F5: NO hay fila de amortizacion — la amortizacion de la impresora no
+  // es una tasa configurada ni forma parte del costo de la cotizacion.
   final rows = <(String, String)>[
     if (audit.printerName != null && audit.printerName!.isNotEmpty)
       (
@@ -1349,7 +1339,6 @@ pw.Widget _buildRateAuditBlock({
     ),
     (EsBO.pdfRateBillableHours, '${totalHours.toStringAsFixed(2)} h'),
     (EsBO.pdfRateLabor, perHour(audit.laborRate)),
-    (EsBO.pdfRateAmortization, perHour(audit.amortizationPerHour)),
     (EsBO.calcDetailPostProcess, pct(audit.postProcessRate)),
     (EsBO.calcDetailFailure, pct(audit.failureRate)),
     (EsBO.calcFieldWaste, pct(audit.markupOnMaterials)),
@@ -1385,19 +1374,6 @@ pw.Widget _buildRateAuditBlock({
                   ),
                 ),
               ],
-            ),
-          ),
-        // Referencia al monto de amortizacion: deja claro que la fila de
-        // arriba es un costo/hora derivado, no una tasa configurada.
-        if (audit.amortizationPerHour != null &&
-            audit.amortizationPerHour! > Decimal.zero)
-          pw.Container(
-            padding: const pw.EdgeInsets.fromLTRB(10, 4, 10, 4),
-            child: pw.Text(
-              '${EsBO.calcDetailAmortization}: ${money(audit.amortizationPerHour)} '
-              'x ${totalHours.toStringAsFixed(2)} h = '
-              '${formatCurrency(audit.amortizationPerHour! * totalHours, currency)}',
-              style: pw.TextStyle(fontSize: 8, color: _textMuted),
             ),
           ),
         // Leyenda: explica en una linea por que ganancia, margen y recargo son

@@ -6,10 +6,11 @@ import 'package:decimal/decimal.dart';
 /// Formula completa:
 ///   materialCost = Σ(weight * pricePerBobbin / gramsPerBobbin)
 ///   electricCost = printerWatts * totalHours * kwhRate / 1000
-///   amortizationCost = amortizationPerHour * totalHours
+///   amortizationCost = 0 (F5: la amortizacion de la impresora queda
+///     FUERA del costo y de los reportes; express y avanzado no la usan)
 ///   laborCost = totalHours * laborRate
 ///   postProcessCost = materialCost * postProcessRate / 100
-///   baseCost = materialCost + electricCost + amortizationCost + laborCost + postProcessCost
+///   baseCost = materialCost + electricCost + laborCost + postProcessCost
 ///   failureCost = baseCost * failureRate / 100
 ///   costWithFailure = baseCost + failureCost
 ///   markupCost = materialCost * markupOnMaterials / 100
@@ -70,7 +71,11 @@ class CalculationOutput {
   /// Costo de energia electrica (BOB).
   final Decimal electricCost;
 
-  /// Costo de amortizacion de la impresora (BOB). F5: costo fijo por hora.
+  /// Amortizacion de la impresora (BOB). F5.
+  ///
+  /// Siempre `Decimal.zero`: no entra en el costo de la cotizacion ni en
+  /// los reportes. El campo se conserva por compatibilidad (schema,
+  /// serializacion y filas viejas).
   final Decimal amortizationCost;
 
   /// Costo de mano de obra (BOB).
@@ -79,8 +84,8 @@ class CalculationOutput {
   /// Costo de post-procesado (BOB).
   final Decimal postProcessCost;
 
-  /// Costo base = materialCost + electricCost + amortizationCost
-  /// + laborCost + postProcessCost.
+  /// Costo base = materialCost + electricCost
+  /// + laborCost + postProcessCost (+ extras).
   final Decimal baseCost;
 
   /// Costo por tasa de falla (BOB).

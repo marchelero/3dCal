@@ -466,7 +466,6 @@ class _DetailState extends ConsumerState<_Detail> {
     final effectiveTotal = lot.lotTotal;
     final materialUnit = _money(calc.materialCostSnapshot);
     final electricUnit = _money(calc.electricCostSnapshot);
-    final amortizationUnit = _money(calc.amortizationCostSnapshot);
     final laborUnit = _money(calc.laborCostSnapshot);
     final postProcessUnit = _money(calc.postProcessCostSnapshot);
     final extrasUnit = result?.extrasCost ?? Decimal.zero;
@@ -575,14 +574,8 @@ class _DetailState extends ConsumerState<_Detail> {
                         label: EsBO.calcDetailEnergy,
                         value: formatCurrency(electricUnit * qtyD, currency),
                       ),
-                      if (amortizationUnit > Decimal.zero)
-                        _Row(
-                          label: EsBO.calcDetailAmortization,
-                          value: formatCurrency(
-                            amortizationUnit * qtyD,
-                            currency,
-                          ),
-                        ),
+                      // F5: sin fila de amortizacion — ni en el total ni en
+                      // el desglose, aunque el snapshot viejo sea > 0.
                       if (laborUnit > Decimal.zero)
                         _Row(
                           label: EsBO.calcDetailModeling,
