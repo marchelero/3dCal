@@ -35,11 +35,12 @@ Checklist para cumplimiento de Google Play Store (apps con IAP).
   - Google Play service account (JSON key)
   - Entitlement `pro` asociado al product `tresdcal_pro_lifetime`
   - Offering `default` con el package `lifetime`
-- [ ] **USER TASK**: Publicar Privacy Policy + Terms of Service en una URL publica
-  - Opciones recomendadas: GitHub Pages, Iubenda, PrivacyPolicies.com
+- [x] **USER TASK**: Publicar Privacy Policy en una URL publica (2026-10-09)
+  - Publicada en Google Sites: `https://sites.google.com/view/calc3dprivacy/p%C3%A1gina-principal`
   - URLs configuradas en `lib/core/constants/app_constants.dart`:
-    - `kPrivacyPolicyUrl` = `https://u3dcal.bo/privacy`
-    - `kTermsOfServiceUrl` = `https://u3dcal.bo/terms`
+    - `kPrivacyPolicyUrl` = `https://sites.google.com/view/calc3dprivacy/p%C3%A1gina-principal`
+    - `kTermsOfServiceUrl` = misma página (decisión del dueño 2026-10-09: aún no
+      existe página propia de Términos — crearla en el sitio y actualizar la constante)
 
 ## Compliance General
 

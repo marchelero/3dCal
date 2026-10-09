@@ -154,9 +154,12 @@ const bool kWebUnlockAll = bool.fromEnvironment(
 const double kProPriceUsd = 4.99;
 
 /// URL de Privacy Policy. Requerido por Play Store para apps con IAP.
-/// Reemplazar con la URL real antes de publicar.
-const String kPrivacyPolicyUrl = 'https://u3dcal.bo/privacy';
+/// Sitio Google Sites "calc3dprivacy" (verificado 2026-10-09, HTTP 200).
+const String kPrivacyPolicyUrl =
+    'https://sites.google.com/view/calc3dprivacy/p%C3%A1gina-principal';
 
 /// URL de Terms of Service. Requerido por Play Store para apps con IAP.
-/// Reemplazar con la URL real antes de publicar.
-const String kTermsOfServiceUrl = 'https://u3dcal.bo/terms';
+/// Decisión 2026-10-09: mientras no exista página propia de Términos, apunta
+/// a la misma página del sitio (contiene las políticas completas de la app).
+const String kTermsOfServiceUrl =
+    'https://sites.google.com/view/calc3dprivacy/p%C3%A1gina-principal';

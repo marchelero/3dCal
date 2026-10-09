@@ -102,6 +102,7 @@ app.*.map.json
 *.pem
 *.key
 *.keystore
+*.jks
 secrets.yaml
 .opencode/
 .agents/
