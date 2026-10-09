@@ -3,6 +3,7 @@ import 'package:decimal/decimal.dart';
 
 import '../../../features/settings/domain/discount_tier.dart';
 import 'entities/calculation_output.dart';
+import 'manual_discount.dart';
 
 /// Resultado de componer un lote.
 final class BatchLotResult {
@@ -68,8 +69,6 @@ final class BatchLotResult {
 class BatchLotComposer {
   const BatchLotComposer._();
 
-  static final Decimal _pct = Decimal.fromInt(100);
-
   /// Compone [quantity] unidades del [output] con el escalón [tier] (si
   /// aplica) y [manualDiscountPct] (% manual, misma base que el engine).
   ///
@@ -94,13 +93,11 @@ class BatchLotComposer {
 
     final batchDiscountAmount = appliedTier == null
         ? Decimal.zero
-        : _pctOf(subtotalImpression, appliedTier.percent);
+        : ManualDiscount.pctOf(subtotalImpression, appliedTier.percent);
 
     final totalFinalScaled = output.totalFinal * n;
     final manual = manualDiscountPct ?? Decimal.zero;
-    final manualDiscountAmount = manual > Decimal.zero
-        ? _pctOf(totalFinalScaled, manual)
-        : Decimal.zero;
+    final manualDiscountAmount = ManualDiscount.pctOf(totalFinalScaled, manual);
 
     final totalAfterDiscounts =
         totalFinalScaled - batchDiscountAmount - manualDiscountAmount;
@@ -117,10 +114,6 @@ class BatchLotComposer {
       appliedTier: appliedTier,
     );
   }
-
-  /// `amount × pct / 100`, redondeo defensivo ante precisión infinita.
-  static Decimal _pctOf(Decimal amount, Decimal pct) =>
-      (amount * pct / _pct).toDecimal(scaleOnInfinitePrecision: 6);
 
   /// División con escala defensiva: `a / b`.
   static Decimal _div(Decimal a, Decimal b) =>

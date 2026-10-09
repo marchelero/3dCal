@@ -17,6 +17,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../domain/entities/calculation_output.dart';
+import '../../domain/manual_discount.dart';
 import '../state/calculator_state.dart' show MaterialCostBreakdown;
 import 'detail_section.dart';
 
@@ -352,7 +353,7 @@ class QuoteImageTemplate extends StatelessWidget {
                     const SizedBox(height: 6),
                     _discountRow(
                       EsBO.quoteDiscountPct(int.parse(discountPct)),
-                      '-${formatCurrency(output.discountAmount * qty, currency)}',
+                      '-${formatCurrency(ManualDiscount.scaled(unitDiscountAmount: output.discountAmount, quantity: quantity), currency)}',
                       theme,
                       color.error,
                       bold: true,
@@ -682,7 +683,10 @@ class QuoteImageTemplate extends StatelessWidget {
         : unitPrice * qtyD;
     final effManual =
         manualDiscountAmount ??
-        (hasDiscount ? output.discountAmount * qtyD : Decimal.zero);
+        ManualDiscount.scaled(
+          unitDiscountAmount: output.discountAmount,
+          quantity: quantity,
+        );
     final effBatch = batchDiscountAmount ?? Decimal.zero;
     final subtotal = effTotal + effBatch + effManual;
     final hasBatch =

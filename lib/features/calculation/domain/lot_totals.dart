@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs
 import 'package:decimal/decimal.dart';
 
+import 'manual_discount.dart';
+
 /// Fuente ÚNICA del total efectivo de un lote desde valores UNITARIOS
 /// persistidos (historial, detalle, CSV, dashboard, imagen y PDF).
 ///
@@ -22,8 +24,6 @@ import 'package:decimal/decimal.dart';
 class LotTotals {
   const LotTotals._();
 
-  static final Decimal _pct = Decimal.fromInt(100);
-
   /// Descuento mayorista del lote: `pct × (base + failure + markup) × N / 100`.
   ///
   /// [base], [failure] y [markup] son los costos UNITARIOS snapshot.
@@ -38,8 +38,7 @@ class LotTotals {
     if (pct <= Decimal.zero) return Decimal.zero;
     final n = Decimal.fromInt(quantity < 1 ? 1 : quantity);
     final subtotalImpression = (base + failure + markup) * n;
-    return (subtotalImpression * pct / _pct)
-        .toDecimal(scaleOnInfinitePrecision: 6);
+    return ManualDiscount.pctOf(subtotalImpression, pct);
   }
 
   /// Total efectivo del lote: `max(unitTotal × N − batch, minimumCharge × N)`.

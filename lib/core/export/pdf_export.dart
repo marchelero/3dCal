@@ -35,6 +35,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -42,6 +43,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../features/calculation/domain/entities/calculation_output.dart';
+import '../../features/calculation/domain/manual_discount.dart';
 import '../../features/calculation/presentation/state/calculator_state.dart';
 import '../../l10n/es_bo.dart';
 import '../money/currency.dart';
@@ -599,10 +601,13 @@ Future<Uint8List> buildQuotePdfBytes({
       : unitPrice * qtyD;
 
   // Descuento manual escalado: manualDiscountAmount si viene del caller;
-  // si no, calcular desde output.discountAmount x qty.
+  // si no, se deriva del descuento UNITARIO del motor (fuente unica T1-3).
   final effectiveManualDiscount =
       manualDiscountAmount ??
-      (hasDiscount ? output.discountAmount * qtyD : Decimal.zero);
+      ManualDiscount.scaled(
+        unitDiscountAmount: output.discountAmount,
+        quantity: qty,
+      );
 
   // Subtotal antes de descuentos: effectiveTotal + batch + manual.
   // batchDiscountAmount ya viene escalado del caller (BatchLotComposer).
@@ -1109,6 +1114,24 @@ List<_MaterialRow> _resolveMaterialRows({
       .toList();
 }
 
+/// Decodifica el logo base64 del branding con guard y construye el
+/// `MemoryImage` de forma segura.
+///
+/// Dos fallos posibles: (1) `base64Decode` lanza si el texto no es base64
+/// valido; (2) `pw.MemoryImage` lanza si los bytes no son una imagen
+/// decodificable. Cualquiera de los dos hacia crashear TODA la exportacion a
+/// PDF. Ante error se omite el logo y el documento se genera igual (mejor sin
+/// logo que sin PDF).
+pw.MemoryImage? _tryDecodeLogoImage(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  try {
+    return pw.MemoryImage(base64Decode(raw));
+  } catch (e) {
+    debugPrint('[PdfExport] logo invalido (base64/imagen): $e');
+    return null;
+  }
+}
+
 /// Header del documento. Compacto desde la pagina 2 para no robarle espacio
 /// al contenido cuando el reporte se parte (cotizacion advanced con muchos
 /// materiales).
@@ -1123,6 +1146,7 @@ pw.Widget _buildHeader({
   final logoSize = isFirstPage ? 40.0 : 20.0;
   final titleSize = isFirstPage ? 22.0 : 12.0;
   final metaFontSize = isFirstPage ? 9.0 : 8.0;
+  final logoImage = _tryDecodeLogoImage(branding.logo);
 
   return pw.Container(
     child: pw.Column(
@@ -1137,15 +1161,12 @@ pw.Widget _buildHeader({
               child: pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  if (branding.logo != null)
+                  if (logoImage != null)
                     pw.Container(
                       width: logoSize,
                       height: logoSize,
                       margin: pw.EdgeInsets.only(right: isFirstPage ? 12 : 8),
-                      child: pw.Image(
-                        pw.MemoryImage(base64Decode(branding.logo!)),
-                        fit: pw.BoxFit.contain,
-                      ),
+                      child: pw.Image(logoImage, fit: pw.BoxFit.contain),
                     ),
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,

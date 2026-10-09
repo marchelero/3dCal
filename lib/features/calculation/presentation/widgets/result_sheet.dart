@@ -653,7 +653,6 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
     }
     final theme = Theme.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final meta = computeMeta(state);
 
     // La superficie visible para los SnackBars (F4) vive en [showResultSheet]
     // (ScaffoldMessenger + Scaffold como ancestros del contenido).
@@ -678,122 +677,29 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Bloque de titulo del plano
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.outlineVariant,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(AppRadii.sm),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        EsBO.calcSheetTitle.toUpperCase(),
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 2,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Container(
-                        height: 1,
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const _SheetTitleBlock(),
 
               // ── Quote Image Template (capturable ──
               // Este widget se captura como PNG. NO tiene elementos interactivos.
               // El toggle detail se renderiza fuera del RepaintBoundary.
-              RepaintBoundary(
-                key: _captureKey,
-                child: QuoteImageTemplate(
-                  output: output,
-                  label: state.label,
-                  discountPct:
-                      state.detailDiscountPct?.toStringAsFixed(0) ??
-                      state.discountPct,
-                  variant: state.reportVariant,
-                  detailMaterialBreakdown: state.detailMaterialBreakdown,
-                  detailElectricCost: state.detailElectricCost,
-                  detailAmortizationCost: state.detailAmortizationCost,
-                  detailLaborCost: state.detailLaborCost,
-                  detailPostProcessCost: state.detailPostProcessCost,
-                  // v17: Extras + label opcional.
-                  detailExtrasCost: state.detailExtrasCost,
-                  extraLabel: state.extraCostLabel,
-                  detailBaseCost: state.detailBaseCost,
-                  detailFailureCost: state.detailFailureCost,
-                  detailMarkupCost: state.detailMarkupCost,
-                  detailProfitAmount: state.detailProfitAmount,
-                  detailTotalFinal: state.detailTotalFinal,
-                  metaGrams: meta.grams,
-                  metaTime: meta.time,
-                  materialMetaBreakdown: toPdfMaterialMeta(
-                    meta,
-                    state.detailMaterialBreakdown,
-                  ),
-                  rateAudit: state.rateAudit,
-                  companyName: widget.companyName,
-                  companyLogoBase64: widget.companyLogoBase64,
-                  currency: widget.currency,
-                  pieceImageBytes: _pieceImageBytes,
-                  quantity: _quantity,
-                  batchDiscountPct: state.batchAppliedPercent,
-                  batchDiscountAmount: state.batchDiscountAmount,
-                  lotTotal: state.lotTotal,
-                  manualDiscountAmount: state.manualDiscountAmount,
-                ),
+              _CapturableQuote(
+                captureKey: _captureKey,
+                state: state,
+                companyName: widget.companyName,
+                companyLogoBase64: widget.companyLogoBase64,
+                currency: widget.currency,
+                pieceImageBytes: _pieceImageBytes,
+                quantity: _quantity,
               ),
 
               // ── Controles de preview: imagen + detalle (fuera del
               // RepaintBoundary, no salen en el PNG). Fila compacta horizontal.
               const SizedBox(height: AppSpacing.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Foto de pieza: Agregar/Cambiar/Quitar
-                  if (_pieceImageBytes == null)
-                    TextButton.icon(
-                      icon: const Icon(Icons.add_a_photo_rounded, size: 18),
-                      // MED-11 fix (auditoria 2026-10-04): estaba fijo en espanol.
-                      label: Text(EsBO.quoteImageAddPiece),
-                      onPressed: _isBusy ? null : _handlePickFromDialog,
-                    )
-                  else ...[
-                    TextButton.icon(
-                      icon: const Icon(Icons.swap_horiz_rounded, size: 18),
-                      label: Text(EsBO.quoteImageChange),
-                      onPressed: _isBusy ? null : _handlePickFromDialog,
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                      label: Text(EsBO.quoteImageRemove),
-                      style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.error,
-                      ),
-                      onPressed: _isBusy ? null : _handleRemoveImage,
-                    ),
-                  ],
-                  // Separador vertical
-                  if (_pieceImageBytes == null)
-                    Container(
-                      width: 1,
-                      height: 20,
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                      ),
-                      color: theme.colorScheme.outlineVariant,
-                    ),
-                ],
+              _PreviewControlsRow(
+                hasImage: _pieceImageBytes != null,
+                isBusy: _isBusy,
+                onPick: _handlePickFromDialog,
+                onRemove: _handleRemoveImage,
               ),
 
               // ── Variante del reporte ──
@@ -809,286 +715,25 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
 
               // ── Selector PRO de Cantidad (fuera del RepaintBoundary) ──
               const SizedBox(height: AppSpacing.sm),
-              Builder(
-                builder: (ctx) {
-                  // Consumer: reactivo — si el entitlement resuelve mientras
-                  // el sheet esta abierto, el gate se actualiza solo.
-                  return Consumer(
-                    builder: (ctx, ref, _) {
-                      final isPro = ref.watch(isProProvider);
-                      final entState = ref.watch(entitlementNotifierProvider);
-                      final locked = !entState.isLoading && !isPro;
-                      return Card(
-                        margin: EdgeInsets.zero,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: AppSpacing.sm,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.layers_rounded, size: 18),
-                                    const SizedBox(width: AppSpacing.xs),
-                                    Text(
-                                      EsBO.resultQuantityLabel,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    if (locked) ...[
-                                      const SizedBox(width: AppSpacing.xs),
-                                      ProBadge(
-                                        onTap: () =>
-                                            ProBadge.sheetAction(ctx, ref),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              IconButton.outlined(
-                                icon: const Icon(Icons.remove_rounded),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: _quantity > 1
-                                    ? () {
-                                        if (locked) {
-                                          Navigator.of(ctx).pop();
-                                          GoRouter.of(ctx).push('/paywall');
-                                        } else {
-                                          setState(() => _quantity--);
-                                          _quantityCtrl.text = '$_quantity';
-                                          ref
-                                              .read(
-                                                calculatorNotifierProvider
-                                                    .notifier,
-                                              )
-                                              .setQuantity(_quantity);
-                                        }
-                                      }
-                                    : null,
-                              ),
-                              SizedBox(
-                                width: 64,
-                                child: TextFormField(
-                                  key: const ValueKey('quantity_input'),
-                                  controller: _quantityCtrl,
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.center,
-                                  style: AppTheme.num(
-                                    theme.textTheme.titleMedium ??
-                                        const TextStyle(),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.xs,
-                                      vertical: AppSpacing.xs,
-                                    ),
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  onChanged: (val) {
-                                    // Gate Pro: mismo criterio que los botones
-                                    // +/-. Sin esto un usuario Free podia
-                                    // teclear la cantidad en el campo y
-                                    // saltarse el paywall (los +/- si lo
-                                    // bloqueaban).
-                                    if (locked) {
-                                      _quantityCtrl.text = '$_quantity';
-                                      Navigator.of(ctx).pop();
-                                      GoRouter.of(ctx).push('/paywall');
-                                      return;
-                                    }
-                                    final parsed = int.tryParse(val) ?? 1;
-                                    final clamped = parsed.clamp(
-                                      1,
-                                      kMaxQuantity,
-                                    );
-                                    setState(() => _quantity = clamped);
-                                    ref
-                                        .read(
-                                          calculatorNotifierProvider.notifier,
-                                        )
-                                        .setQuantity(clamped);
-                                  },
-                                ),
-                              ),
-                              IconButton.outlined(
-                                icon: const Icon(Icons.add_rounded),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () {
-                                  if (locked) {
-                                    Navigator.of(ctx).pop();
-                                    GoRouter.of(ctx).push('/paywall');
-                                  } else {
-                                    setState(() => _quantity++);
-                                    _quantityCtrl.text = '$_quantity';
-                                    ref
-                                        .read(
-                                          calculatorNotifierProvider.notifier,
-                                        )
-                                        .setQuantity(_quantity);
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
+              _QuantityCard(
+                quantity: _quantity,
+                controller: _quantityCtrl,
+                onDecrement: () {
+                  setState(() => _quantity--);
+                  _quantityCtrl.text = '$_quantity';
                 },
+                onIncrement: () {
+                  setState(() => _quantity++);
+                  _quantityCtrl.text = '$_quantity';
+                },
+                onTextChanged: (q) => setState(() => _quantity = q),
               ),
 
               // ── Tarjeta unificada: Descuentos + Total ──
-              // Solo muestra el desglose de batch cuando el detalle es
-              // visible. El input de descuento manual y el total siempre
-              // aparecen.
-              Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // ── Desglose de descuentos (solo si showDetail) ──
-                      if (state.reportVariant.showCostDetail &&
-                          state.showsBatchLine) ...[
-                        // Subtotal antes de descuentos
-                        _DetailRow(
-                          label: EsBO.calcSubtotal,
-                          value: formatCurrency(
-                            state.lotTotal +
-                                state.batchDiscountAmount +
-                                state.manualDiscountAmount,
-                            widget.currency,
-                          ),
-                          labelColor: theme.colorScheme.onSurfaceVariant,
-                          valueColor: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        // Descuento por cantidad
-                        _DetailRow(
-                          label: EsBO.calcDetailBatchDiscount(
-                            state.batchAppliedPercent?.toBigInt().toInt() ?? 0,
-                          ),
-                          value:
-                              '-${formatCurrency(state.batchDiscountAmount, widget.currency)}',
-                          icon: Icons.inventory_2_rounded,
-                          labelWeight: FontWeight.w600,
-                          valueColor: theme.colorScheme.error,
-                          valueWeight: FontWeight.w600,
-                        ),
-                        // Subtotal parcial: SOLO si hay descuento manual
-                        if (state.manualDiscountAmount > Decimal.zero) ...[
-                          const SizedBox(height: AppSpacing.xs),
-                          _DetailRow(
-                            label: EsBO.calcSubtotal,
-                            value: formatCurrency(
-                              state.lotTotal + state.manualDiscountAmount,
-                              widget.currency,
-                            ),
-                            labelColor: theme.colorScheme.onSurfaceVariant,
-                            valueColor: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ],
-                        const SizedBox(height: AppSpacing.xs),
-                        Divider(
-                          height: 1,
-                          color: theme.colorScheme.outlineVariant,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                      ],
-
-                      // ── Descuento manual (input editable) ──
-                      Row(
-                        children: [
-                          const Icon(Icons.local_offer_rounded, size: 18),
-                          const SizedBox(width: AppSpacing.xs),
-                          Expanded(
-                            child: Text(
-                              state.reportVariant.showCostDetail &&
-                                      state.showsBatchLine &&
-                                      (int.tryParse(widget.state.discountPct) ??
-                                              0) >
-                                          0
-                                  ? EsBO.calcDetailManualDiscount(
-                                      int.tryParse(widget.state.discountPct) ??
-                                          0,
-                                    )
-                                  : EsBO.calcLabelDiscount,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 80,
-                            child: TextFormField(
-                              initialValue:
-                                  (double.tryParse(
-                                            widget.state.discountPct,
-                                          )?.round() ??
-                                          0)
-                                      .toString(),
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.sm,
-                                  vertical: AppSpacing.xs,
-                                ),
-                                border: OutlineInputBorder(),
-                                suffixText: '%',
-                              ),
-                              onChanged: (val) {
-                                final parsed = int.tryParse(val) ?? 0;
-                                widget.onDiscountChanged(
-                                  parsed
-                                      .clamp(0, kMaxDiscountPercentage)
-                                      .toString(),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // ── Separador + Total final ──
-                      const SizedBox(height: AppSpacing.xs),
-                      Divider(
-                        height: 1,
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              EsBO.calcTotalFinal,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            formatCurrency(state.lotTotal, widget.currency),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              _DiscountTotalCard(
+                state: state,
+                currency: widget.currency,
+                onDiscountChanged: widget.onDiscountChanged,
               ),
 
               const SizedBox(height: AppSpacing.lg),
@@ -1123,6 +768,474 @@ class _ResultSheetContentState extends State<ResultSheetContent> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bloque de titulo del plano que encabeza el sheet de resultado.
+///
+/// Extraido de `_ResultSheetContentState.build` (T1-1) para reducir el god
+/// widget. Puramente presentacional: no depende del estado.
+class _SheetTitleBlock extends StatelessWidget {
+  const _SheetTitleBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              EsBO.calcSheetTitle.toUpperCase(),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              height: 1,
+              color: theme.colorScheme.outlineVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Reporte capturable como PNG (RepaintBoundary + [QuoteImageTemplate]).
+///
+/// Extraido de `_ResultSheetContentState.build` (T1-1). No tiene elementos
+/// interactivos: el resto de controles se renderiza FUERA del
+/// RepaintBoundary para que no salgan en la imagen.
+class _CapturableQuote extends StatelessWidget {
+  const _CapturableQuote({
+    required this.captureKey,
+    required this.state,
+    required this.companyName,
+    required this.companyLogoBase64,
+    required this.currency,
+    required this.pieceImageBytes,
+    required this.quantity,
+  });
+
+  final GlobalKey captureKey;
+  final CalculatorState state;
+  final String? companyName;
+  final String? companyLogoBase64;
+  final WorldCurrency currency;
+  final Uint8List? pieceImageBytes;
+  final int quantity;
+
+  @override
+  Widget build(BuildContext context) {
+    final output = state.output!;
+    final meta = computeMeta(state);
+    return RepaintBoundary(
+      key: captureKey,
+      child: QuoteImageTemplate(
+        output: output,
+        label: state.label,
+        discountPct:
+            state.detailDiscountPct?.toStringAsFixed(0) ?? state.discountPct,
+        variant: state.reportVariant,
+        detailMaterialBreakdown: state.detailMaterialBreakdown,
+        detailElectricCost: state.detailElectricCost,
+        detailAmortizationCost: state.detailAmortizationCost,
+        detailLaborCost: state.detailLaborCost,
+        detailPostProcessCost: state.detailPostProcessCost,
+        // v17: Extras + label opcional.
+        detailExtrasCost: state.detailExtrasCost,
+        extraLabel: state.extraCostLabel,
+        detailBaseCost: state.detailBaseCost,
+        detailFailureCost: state.detailFailureCost,
+        detailMarkupCost: state.detailMarkupCost,
+        detailProfitAmount: state.detailProfitAmount,
+        detailTotalFinal: state.detailTotalFinal,
+        metaGrams: meta.grams,
+        metaTime: meta.time,
+        materialMetaBreakdown: toPdfMaterialMeta(
+          meta,
+          state.detailMaterialBreakdown,
+        ),
+        rateAudit: state.rateAudit,
+        companyName: companyName,
+        companyLogoBase64: companyLogoBase64,
+        currency: currency,
+        pieceImageBytes: pieceImageBytes,
+        quantity: quantity,
+        batchDiscountPct: state.batchAppliedPercent,
+        batchDiscountAmount: state.batchDiscountAmount,
+        lotTotal: state.lotTotal,
+        manualDiscountAmount: state.manualDiscountAmount,
+      ),
+    );
+  }
+}
+
+/// Fila compacta de controles de preview de la foto de pieza.
+///
+/// Extraida de `_ResultSheetContentState.build` (T1-1). Fuera del
+/// RepaintBoundary para no aparecer en el PNG.
+class _PreviewControlsRow extends StatelessWidget {
+  const _PreviewControlsRow({
+    required this.hasImage,
+    required this.isBusy,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final bool hasImage;
+  final bool isBusy;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Foto de pieza: Agregar/Cambiar/Quitar
+        if (!hasImage)
+          TextButton.icon(
+            icon: const Icon(Icons.add_a_photo_rounded, size: 18),
+            // MED-11 fix (auditoria 2026-10-04): estaba fijo en espanol.
+            label: Text(EsBO.quoteImageAddPiece),
+            onPressed: isBusy ? null : onPick,
+          )
+        else ...[
+          TextButton.icon(
+            icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+            label: Text(EsBO.quoteImageChange),
+            onPressed: isBusy ? null : onPick,
+          ),
+          TextButton.icon(
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            label: Text(EsBO.quoteImageRemove),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+            ),
+            onPressed: isBusy ? null : onRemove,
+          ),
+        ],
+        // Separador vertical
+        if (!hasImage)
+          Container(
+            width: 1,
+            height: 20,
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            color: theme.colorScheme.outlineVariant,
+          ),
+      ],
+    );
+  }
+}
+
+/// Selector PRO de cantidad (lotes).
+///
+/// Extraido de `_ResultSheetContentState.build` (T1-1). Es [ConsumerWidget]
+/// para que el gate Pro se actualice solo si el entitlement resuelve mientras
+/// el sheet esta abierto. El estado de cantidad vive en el parent; este widget
+/// solo dispara callbacks ya gateados.
+class _QuantityCard extends ConsumerWidget {
+  const _QuantityCard({
+    required this.quantity,
+    required this.controller,
+    required this.onDecrement,
+    required this.onIncrement,
+    required this.onTextChanged,
+  });
+
+  final int quantity;
+  final TextEditingController controller;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
+  final ValueChanged<int> onTextChanged;
+
+  /// Gate Pro: cierra el sheet y lleva al paywall.
+  void _goPaywall(BuildContext context) {
+    Navigator.of(context).pop();
+    GoRouter.of(context).push('/paywall');
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isPro = ref.watch(isProProvider);
+    final entState = ref.watch(entitlementNotifierProvider);
+    final locked = !entState.isLoading && !isPro;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  const Icon(Icons.layers_rounded, size: 18),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    EsBO.resultQuantityLabel,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (locked) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    ProBadge(onTap: () => ProBadge.sheetAction(context, ref)),
+                  ],
+                ],
+              ),
+            ),
+            IconButton.outlined(
+              icon: const Icon(Icons.remove_rounded),
+              // T2-5 (a11y): nombre accesible para screen reader.
+              tooltip: EsBO.calcQuantityDecrease,
+              visualDensity: VisualDensity.compact,
+              onPressed: quantity > 1
+                  ? () {
+                      if (locked) {
+                        _goPaywall(context);
+                        return;
+                      }
+                      ref
+                          .read(calculatorNotifierProvider.notifier)
+                          .setQuantity(quantity - 1);
+                      onDecrement();
+                    }
+                  : null,
+            ),
+            SizedBox(
+              width: 64,
+              child: TextFormField(
+                key: const ValueKey('quantity_input'),
+                controller: controller,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: AppTheme.num(
+                  theme.textTheme.titleMedium ?? const TextStyle(),
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.xs,
+                  ),
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (val) {
+                  // Gate Pro: mismo criterio que los botones +/-. Sin esto un
+                  // usuario Free podia teclear la cantidad en el campo y
+                  // saltarse el paywall (los +/- si lo bloqueaban).
+                  if (locked) {
+                    controller.text = '$quantity';
+                    _goPaywall(context);
+                    return;
+                  }
+                  final parsed = int.tryParse(val) ?? 1;
+                  final clamped = parsed.clamp(1, kMaxQuantity);
+                  ref
+                      .read(calculatorNotifierProvider.notifier)
+                      .setQuantity(clamped);
+                  onTextChanged(clamped);
+                },
+              ),
+            ),
+            IconButton.outlined(
+              icon: const Icon(Icons.add_rounded),
+              // T2-5 (a11y): nombre accesible para screen reader.
+              tooltip: EsBO.calcQuantityIncrease,
+              visualDensity: VisualDensity.compact,
+              onPressed: () {
+                if (locked) {
+                  _goPaywall(context);
+                  return;
+                }
+                ref
+                    .read(calculatorNotifierProvider.notifier)
+                    .setQuantity(quantity + 1);
+                onIncrement();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tarjeta unificada de descuentos + total final.
+///
+/// Extraida de `_ResultSheetContentState.build` (T1-1). El desglose de batch
+/// solo aparece cuando el detalle es visible; el input de descuento manual y
+/// el total siempre.
+class _DiscountTotalCard extends StatelessWidget {
+  const _DiscountTotalCard({
+    required this.state,
+    required this.currency,
+    required this.onDiscountChanged,
+  });
+
+  final CalculatorState state;
+  final WorldCurrency currency;
+  final ValueChanged<String> onDiscountChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Desglose de descuentos (solo si showDetail) ──
+            if (state.reportVariant.showCostDetail &&
+                state.showsBatchLine) ...[
+              // Subtotal antes de descuentos
+              _DetailRow(
+                label: EsBO.calcSubtotal,
+                value: formatCurrency(
+                  state.lotTotal +
+                      state.batchDiscountAmount +
+                      state.manualDiscountAmount,
+                  currency,
+                ),
+                labelColor: theme.colorScheme.onSurfaceVariant,
+                valueColor: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              // Descuento por cantidad
+              _DetailRow(
+                label: EsBO.calcDetailBatchDiscount(
+                  state.batchAppliedPercent?.toBigInt().toInt() ?? 0,
+                ),
+                value:
+                    '-${formatCurrency(state.batchDiscountAmount, currency)}',
+                icon: Icons.inventory_2_rounded,
+                labelWeight: FontWeight.w600,
+                valueColor: theme.colorScheme.error,
+                valueWeight: FontWeight.w600,
+              ),
+              // Subtotal parcial: SOLO si hay descuento manual
+              if (state.manualDiscountAmount > Decimal.zero) ...[
+                const SizedBox(height: AppSpacing.xs),
+                _DetailRow(
+                  label: EsBO.calcSubtotal,
+                  value: formatCurrency(
+                    state.lotTotal + state.manualDiscountAmount,
+                    currency,
+                  ),
+                  labelColor: theme.colorScheme.onSurfaceVariant,
+                  valueColor: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xs),
+              Divider(
+                height: 1,
+                color: theme.colorScheme.outlineVariant,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+            ],
+
+            // ── Descuento manual (input editable) ──
+            Row(
+              children: [
+                const Icon(Icons.local_offer_rounded, size: 18),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    state.reportVariant.showCostDetail &&
+                            state.showsBatchLine &&
+                            (int.tryParse(state.discountPct) ?? 0) > 0
+                        ? EsBO.calcDetailManualDiscount(
+                            int.tryParse(state.discountPct) ?? 0,
+                          )
+                        : EsBO.calcLabelDiscount,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 80,
+                  child: TextFormField(
+                    initialValue:
+                        (double.tryParse(state.discountPct)?.round() ?? 0)
+                            .toString(),
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      border: OutlineInputBorder(),
+                      suffixText: '%',
+                    ),
+                    onChanged: (val) {
+                      final parsed = int.tryParse(val) ?? 0;
+                      onDiscountChanged(
+                        parsed.clamp(0, kMaxDiscountPercentage).toString(),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            // ── Separador + Total final ──
+            const SizedBox(height: AppSpacing.xs),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    EsBO.calcTotalFinal,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  formatCurrency(state.lotTotal, currency),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

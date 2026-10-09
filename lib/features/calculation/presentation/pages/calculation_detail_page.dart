@@ -41,8 +41,10 @@ import '../../domain/batch_discount_resolver.dart';
 import '../../domain/calculation_engine.dart';
 import '../../domain/entities/calculation_output.dart';
 import '../../domain/lot_totals.dart';
+import '../../domain/manual_discount.dart';
 import '../notifiers/calculations_notifier.dart';
 import '../state/calculator_state.dart';
+import '../state/detail_view_provider.dart';
 import '../widgets/quote_image_template.dart';
 import '../widgets/report_variant_selector.dart';
 
@@ -115,20 +117,24 @@ class _Detail extends ConsumerStatefulWidget {
 class _DetailState extends ConsumerState<_Detail> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isBusy = false;
+  late final TextEditingController _quantityCtrl;
 
-  /// Variante del reporte (pantalla, PDF, PNG e impresion) elegida para esta
-  /// cotizacion. Se deriva del modo guardado: el selector solo ofrece las 2
-  /// variantes del eje correspondiente.
-  late QuoteReportVariant _reportVariant = (widget.calc.isAdvanced
-      ? QuoteReportVariant.clientAdvanced
-      : QuoteReportVariant.clientSimple);
+  /// Estado de vista (variante de reporte + cantidad) en Riverpod (T1-2).
+  /// El provider es `autoDispose` y arranca en `null` (= sin editar): mientras
+  /// no haya edicion, se resuelven los valores guardados con
+  /// [initialDetailViewState]. [build] lo observa para reconstruir.
+  DetailViewState get _view =>
+      ref.read(detailViewProvider) ?? initialDetailViewState(widget.calc);
+  QuoteReportVariant get _reportVariant => _view.variant;
+  int get _quantity => _view.quantity;
 
-  /// Cantidad mostrada/editable (lotes). Arranca con la cantidad guardada para
-  /// que preview/export coincidan con lo saved.
-  late int _quantity = widget.calc.quantity < 1 ? 1 : widget.calc.quantity;
-  late final TextEditingController _quantityCtrl = TextEditingController(
-    text: '$_quantity',
-  );
+  @override
+  void initState() {
+    super.initState();
+    _quantityCtrl = TextEditingController(
+      text: '${initialDetailViewState(widget.calc).quantity}',
+    );
+  }
 
   @override
   void dispose() {
@@ -381,7 +387,6 @@ class _DetailState extends ConsumerState<_Detail> {
     required CalculationOutput? unitOutput,
   }) {
     final n = _quantity < 1 ? 1 : _quantity;
-    final qtyD = Decimal.fromInt(n);
     final unitTotal = _money(calc.totalPriceSnapshot);
     final savedQty = calc.quantity < 1 ? 1 : calc.quantity;
     final Decimal batchPct;
@@ -417,7 +422,10 @@ class _DetailState extends ConsumerState<_Detail> {
       batchPct: batchPct,
       batchAmount: batchAmount,
       lotTotal: lotTotal,
-      manualAmount: (unitOutput?.discountAmount ?? Decimal.zero) * qtyD,
+      manualAmount: ManualDiscount.scaled(
+        unitDiscountAmount: unitOutput?.discountAmount ?? Decimal.zero,
+        quantity: n,
+      ),
     );
   }
 
@@ -428,6 +436,8 @@ class _DetailState extends ConsumerState<_Detail> {
   @override
   Widget build(BuildContext context) {
     final calc = widget.calc;
+    // Observa el estado de vista (variante + cantidad) para reconstruir.
+    ref.watch(detailViewProvider);
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final materialsAsync = ref.watch(_materialsOfProvider(calc.id));
@@ -627,7 +637,7 @@ class _DetailState extends ConsumerState<_Detail> {
                           label:
                               '${EsBO.calcLabelDiscount} (${calc.discountPercentage.round()}%)',
                           value:
-                              '-${formatCurrency(discountUnit * qtyD, currency)}',
+                              '-${formatCurrency(lot.manualAmount, currency)}',
                           color: color.error,
                         ),
                       const SizedBox(height: AppSpacing.sm),
@@ -723,12 +733,16 @@ class _DetailState extends ConsumerState<_Detail> {
             ),
             IconButton.outlined(
               icon: const Icon(Icons.remove_rounded),
+              // T2-5 (a11y): nombre accesible para screen reader.
+              tooltip: EsBO.calcQuantityDecrease,
               onPressed: _quantity > 1
                   ? () {
                       if (!isPro) {
                         context.push('/paywall');
                       } else {
-                        setState(() => _quantity--);
+                        ref
+                            .read(detailViewProvider.notifier)
+                            .decrement(widget.calc);
                         _quantityCtrl.text = '$_quantity';
                       }
                     }
@@ -768,17 +782,23 @@ class _DetailState extends ConsumerState<_Detail> {
                     context.push('/paywall');
                     return;
                   }
-                  setState(() => _quantity = clamped);
+                  ref
+                      .read(detailViewProvider.notifier)
+                      .setQuantity(widget.calc, clamped);
                 },
               ),
             ),
             IconButton.outlined(
               icon: const Icon(Icons.add_rounded),
+              // T2-5 (a11y): nombre accesible para screen reader.
+              tooltip: EsBO.calcQuantityIncrease,
               onPressed: () {
                 if (!isPro) {
                   context.push('/paywall');
                 } else {
-                  setState(() => _quantity++);
+                  ref
+                      .read(detailViewProvider.notifier)
+                      .increment(widget.calc);
                   _quantityCtrl.text = '$_quantity';
                 }
               },
@@ -855,7 +875,9 @@ class _DetailState extends ConsumerState<_Detail> {
           ReportVariantSelector(
             selected: _reportVariant,
             isAdvanced: calc.isAdvanced,
-            onChanged: (v) => setState(() => _reportVariant = v),
+            onChanged: (v) => ref
+                .read(detailViewProvider.notifier)
+                .setVariant(widget.calc, v),
           ),
           if (result != null) ...[
             const SizedBox(height: AppSpacing.md),
