@@ -107,6 +107,7 @@ abstract class AppStrings {
   String get settingsFailureRateHelper;
   String settingsMinimumCharge(String symbol);
   String get settingsMinimumChargeHelper;
+
   /// Rango valido del campo Cargo minimo (0..100000) — MED-09: antes
   /// reutilizaba `settingsKwhRateRange` ("Rango: 0.10-5.00").
   String get settingsMinimumChargeRange;
@@ -215,6 +216,39 @@ abstract class AppStrings {
 
   /// Backups (exportar/importar) son una funcion Pro.
   String get settingsBackupLockedBody;
+
+  /// Aviso AC-006 (gap-remediation 2026-10-10): backup manual, sin sync
+  /// automatico, `.3dcal` sin cifrar; HMAC = verificacion de integridad.
+  String get settingsBackupDisclosure;
+
+  // ── Borrado local de datos de trabajo (AC-004 gap-remediation) ──
+
+  /// Titulo del GroupLabel de la seccion de borrado en Settings.
+  String get settingsWipeTitle;
+
+  /// Explicacion: que borra y que preserva.
+  String get settingsWipeHelper;
+
+  /// Label del boton que abre el dialogo de confirmacion.
+  String get settingsWipeAction;
+
+  /// Titulo del dialogo de confirmacion.
+  String get settingsWipeConfirmTitle;
+
+  /// Cuerpo del dialogo: alcance del borrado + no toca archivos exportados.
+  String get settingsWipeConfirmBody;
+
+  /// Boton destructivo del dialogo.
+  String get settingsWipeConfirmDelete;
+
+  /// Boton de cancelar del dialogo.
+  String get settingsWipeCancel;
+
+  /// Snackbar de exito tras el borrado.
+  String get settingsWipeSuccess;
+
+  /// Snackbar de error (el borrado fallo; nunca mostrar exito falso).
+  String get settingsWipeError;
 
   // === Dashboard ===
   String get dashboardTitle;
@@ -543,6 +577,7 @@ abstract class AppStrings {
   String get filamentPriceHelper;
   String get filamentGrams;
   String get filamentGramsHelper;
+  String get filamentGramsPositiveInteger;
   String get filamentDefaultToggle;
   String get filamentDefaultSubtitle;
 

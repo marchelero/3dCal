@@ -789,10 +789,7 @@ class _SheetTitleBlock extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant,
-            width: 1,
-          ),
+          border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
           borderRadius: BorderRadius.circular(AppRadii.sm),
         ),
         child: Column(
@@ -807,10 +804,7 @@ class _SheetTitleBlock extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            Container(
-              height: 1,
-              color: theme.colorScheme.outlineVariant,
-            ),
+            Container(height: 1, color: theme.colorScheme.outlineVariant),
           ],
         ),
       ),
@@ -1055,6 +1049,7 @@ class _QuantityCard extends ConsumerWidget {
                   }
                   final parsed = int.tryParse(val) ?? 1;
                   final clamped = parsed.clamp(1, kMaxQuantity);
+                  if (val != '$clamped') controller.text = '$clamped';
                   ref
                       .read(calculatorNotifierProvider.notifier)
                       .setQuantity(clamped);
@@ -1067,16 +1062,18 @@ class _QuantityCard extends ConsumerWidget {
               // T2-5 (a11y): nombre accesible para screen reader.
               tooltip: EsBO.calcQuantityIncrease,
               visualDensity: VisualDensity.compact,
-              onPressed: () {
-                if (locked) {
-                  _goPaywall(context);
-                  return;
-                }
-                ref
-                    .read(calculatorNotifierProvider.notifier)
-                    .setQuantity(quantity + 1);
-                onIncrement();
-              },
+              onPressed: quantity < kMaxQuantity
+                  ? () {
+                      if (locked) {
+                        _goPaywall(context);
+                        return;
+                      }
+                      ref
+                          .read(calculatorNotifierProvider.notifier)
+                          .setQuantity(quantity + 1);
+                      onIncrement();
+                    }
+                  : null,
             ),
           ],
         ),
@@ -1115,8 +1112,7 @@ class _DiscountTotalCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // ── Desglose de descuentos (solo si showDetail) ──
-            if (state.reportVariant.showCostDetail &&
-                state.showsBatchLine) ...[
+            if (state.reportVariant.showCostDetail && state.showsBatchLine) ...[
               // Subtotal antes de descuentos
               _DetailRow(
                 label: EsBO.calcSubtotal,
@@ -1156,10 +1152,7 @@ class _DiscountTotalCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: AppSpacing.xs),
-              Divider(
-                height: 1,
-                color: theme.colorScheme.outlineVariant,
-              ),
+              Divider(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: AppSpacing.xs),
             ],
 
@@ -1212,10 +1205,7 @@ class _DiscountTotalCard extends StatelessWidget {
 
             // ── Separador + Total final ──
             const SizedBox(height: AppSpacing.xs),
-            Divider(
-              height: 1,
-              color: theme.colorScheme.outlineVariant,
-            ),
+            Divider(height: 1, color: theme.colorScheme.outlineVariant),
             const SizedBox(height: AppSpacing.xs),
             Row(
               children: [

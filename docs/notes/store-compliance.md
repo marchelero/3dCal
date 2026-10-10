@@ -59,3 +59,22 @@ Checklist para cumplimiento de Google Play Store (apps con IAP).
 - [ ] Confirmar restore button funciona con compra real
 - [ ] Verificar privacy/terms links en dispositivo real (no emulador sin browser)
 - [ ] `flutter build apk --release` sin errores
+
+Checklist reproducible de los 4 flujos sandbox (compra, restore, cancelacion,
+revocacion/refund) en [`play-sandbox-checklist.md`](play-sandbox-checklist.md).
+
+## Acciones externas pendientes (requieren acceso del dueño)
+
+Estas tareas NO se pueden cerrar desde el codigo: requieren cuentas/consolas o
+contenido externos.
+
+- [ ] **Términos de Servicio separados**: hoy `kTermsOfServiceUrl` apunta a la
+  misma página que Privacy (`https://sites.google.com/view/calc3dprivacy/...`,
+  decisión 2026-10-09). Publicar una página propia de Términos en el sitio y
+  actualizar la constante (las URLs actuales se mantienen **intactas** hasta
+  entonces; no son placeholders rotos).
+- [ ] **Pegar Privacy + Terms URLs en el listing de Play Console** (ficha de la
+  app → `Seguridad de los datos` / `Política de privacidad`).
+- [ ] Completar sandbox reproducible: ver `play-sandbox-checklist.md` (requiere
+  track de prueba interna + licensed testers + RevenueCat).
+- [ ] Data Safety / audiencia / Families en Play Console (edad mínima 10 años).

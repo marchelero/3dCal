@@ -1,17 +1,23 @@
 // ignore_for_file: public_member_api_docs
+import 'package:decimal/decimal.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tresdcal/core/backup/backup_signature.dart';
+import 'package:tresdcal/core/constants/app_constants.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/storage/draft_storage.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filaments_page.dart';
 import 'package:tresdcal/features/entitlement/data/entitlement_repository.dart';
 import 'package:tresdcal/features/entitlement/data/payment_service.dart';
 import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
+import 'package:tresdcal/features/settings/data/settings_repository.dart';
 import 'package:tresdcal/features/settings/presentation/notifiers/settings_notifier.dart';
 import 'package:tresdcal/features/settings/presentation/pages/print_settings_page.dart';
 import 'package:tresdcal/features/settings/presentation/pages/settings_page.dart';
@@ -765,6 +771,288 @@ void main() {
       expect(find.textContaining(EsBO.settingsRestoreError), findsOneWidget);
       expect(find.text(EsBO.commonRetry), findsNothing);
       expect(find.text(EsBO.settingsRestoreEmpty), findsNothing);
+    });
+  });
+
+  group('AC-004 borrado local de datos (gap-remediation)', () {
+    /// Siembra trabajo (cotización + material + filamento + impresora +
+    /// entitlement Pro) y prefs de trabajo + prefs protegidas.
+    Future<void> seedWipeFixtures(
+      AppDatabase db,
+      SharedPreferences prefs,
+    ) async {
+      final settings = SettingsRepository(db);
+      await settings.setKwhRate(Decimal.parse('0.5'));
+      final id = await db
+          .into(db.calculations)
+          .insert(
+            CalculationsCompanion(
+              createdAt: Value(DateTime(2026, 10, 4, 10, 0)),
+              pieceName: const Value('Pieza A'),
+              clientName: const Value('Cliente X'),
+              totalHours: const Value(2),
+              printMinutes: const Value(30),
+              discountPercentage: const Value(0),
+              kwhRateSnapshot: const Value(0),
+              profitBaseSnapshot: const Value(0),
+              quantity: const Value(1),
+              isSold: const Value(false),
+              isTemplate: const Value(false),
+              isPartial: const Value(false),
+              isAdvanced: const Value(false),
+              materialCostSnapshot: const Value(10),
+              electricCostSnapshot: const Value(0),
+              amortizationCostSnapshot: const Value(0),
+              laborCostSnapshot: const Value(0),
+              postProcessCostSnapshot: const Value(0),
+              baseCostSnapshot: const Value(10),
+              failureCostSnapshot: const Value(0),
+              markupCostSnapshot: const Value(0),
+              profitAmountSnapshot: const Value(0),
+              minimumChargeAppliedSnapshot: const Value(0),
+              effectiveTotalSnapshot: const Value(10),
+              totalPriceSnapshot: const Value(10),
+              laborRateSnapshot: const Value(0),
+              postProcessRateSnapshot: const Value(0),
+              failureRateSnapshot: const Value(0),
+              minimumChargeSnapshot: const Value(0),
+              markupOnMaterialsSnapshot: const Value(0),
+            ),
+          );
+      await db
+          .into(db.calculationMaterials)
+          .insert(
+            CalculationMaterialsCompanion.insert(
+              calculationId: id,
+              label: 'PLA',
+              weightGrams: 50,
+              pricePerBobbinSnapshot: 100,
+              gramsPerBobbinSnapshot: 1000,
+            ),
+          );
+      await db
+          .into(db.filaments)
+          .insert(
+            FilamentsCompanion.insert(
+              name: 'PLA',
+              brand: const Value('Generic'),
+              pricePerBobbin: 100,
+              gramsPerBobbin: 1000,
+              isDefault: const Value(false),
+              createdAt: DateTime(2026, 10, 1),
+            ),
+          );
+      await db
+          .into(db.printers)
+          .insert(
+            PrintersCompanion.insert(
+              brand: const Value('Creality'),
+              name: 'Ender 3',
+              averageWatts: 150,
+              isDefault: const Value(false),
+              createdAt: DateTime(2026, 10, 1),
+            ),
+          );
+      await db
+          .into(db.entitlements)
+          .insert(
+            EntitlementsCompanion.insert(
+              source: kSourceLifetimePurchase,
+              productId: kProProductId,
+              purchasedAt: DateTime.utc(2026, 1, 1),
+            ),
+          );
+      // Prefs de trabajo (se borran).
+      await prefs.setBool(SettingsKeys.onboardingDone, true);
+      await prefs.setString(kActivePrinterIdPrefsKey, 'printer-1');
+      await prefs.setString(DraftStorage.key, '{"pieceName":"borrador"}');
+      // Prefs protegidas (deben sobrevivir).
+      await prefs.setString('locale', 'es');
+      await prefs.setString('theme_mode', 'light');
+      await prefs.setBool(kIsProKey, true);
+      await prefs.setString(kEntitlementSourceKey, 'lifetime');
+      await prefs.setString(kEntitlementValidatedAtKey, '2026-01-01');
+      await prefs.setString(kBackupHmacKeyPref, 'hmac-key');
+      await prefs.setString(kInstallIdPref, 'install-1');
+    }
+
+    Finder wipeButton() => find.text(EsBO.settingsWipeAction);
+
+    Future<void> scrollToWipe(WidgetTester tester) async {
+      final button = wipeButton();
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('cancelar en el diálogo no borra nada', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final container = await _pumpPage(tester);
+      final db = container.read(appDatabaseProvider);
+      final prefs = await SharedPreferences.getInstance();
+      await seedWipeFixtures(db, prefs);
+
+      await scrollToWipe(tester);
+      await tester.tap(wipeButton());
+      await tester.pumpAndSettle();
+      expect(
+        find.text(EsBO.settingsWipeConfirmTitle),
+        findsOneWidget,
+        reason: 'El botón debe abrir el diálogo de confirmación.',
+      );
+
+      await tester.tap(find.text(EsBO.settingsWipeCancel));
+      await tester.pumpAndSettle();
+
+      expect(find.text(EsBO.settingsWipeConfirmTitle), findsNothing);
+      expect(
+        await db.select(db.calculations).get().then((r) => r.length),
+        1,
+        reason: 'Cancelar no debe borrar cotizaciones.',
+      );
+      expect(
+        prefs.getBool(SettingsKeys.onboardingDone),
+        true,
+        reason: 'Cancelar no debe reiniciar onboarding.',
+      );
+      expect(prefs.getString(DraftStorage.key), isNotNull);
+    });
+
+    testWidgets(
+      'confirmar borra trabajo, preserva prefs y reinicia onboarding',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        final router = GoRouter(
+          initialLocation: '/settings',
+          routes: [
+            GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+            GoRoute(
+              path: '/language',
+              builder: (_, _) => const Scaffold(
+                body: Center(child: Text('LANGUAGE_STUB_AC4')),
+              ),
+            ),
+          ],
+        );
+        final container = ProviderContainer(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            isProProvider.overrideWith((ref) => true),
+          ],
+        );
+        addTearDown(() async {
+          router.dispose();
+          container.dispose();
+          await db.close();
+        });
+        await seedWipeFixtures(db, prefs);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await scrollToWipe(tester);
+        await tester.tap(wipeButton());
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(EsBO.settingsWipeConfirmDelete));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+
+        expect(
+          find.text(EsBO.settingsWipeSuccess),
+          findsOneWidget,
+          reason: 'Éxito del borrado debe mostrar snackbar localizado.',
+        );
+        await tester.pumpAndSettle();
+        expect(
+          router.routerDelegate.currentConfiguration.uri.toString(),
+          '/language',
+          reason: 'Tras borrar, onboarding debe reiniciarse en /language.',
+        );
+        expect(find.text('LANGUAGE_STUB_AC4'), findsOneWidget);
+
+        expect(
+          await db.select(db.calculations).get().then((r) => r.length),
+          0,
+          reason: 'Las cotizaciones deben borrarse.',
+        );
+        expect(
+          await db.select(db.calculationMaterials).get().then((r) => r.length),
+          0,
+        );
+        expect(await db.select(db.filaments).get().then((r) => r.length), 0);
+        expect(await db.select(db.printers).get().then((r) => r.length), 0);
+        expect(
+          await db.select(db.entitlements).get().then((r) => r.length),
+          1,
+          reason: 'El entitlement Pro sobrevive al borrado.',
+        );
+        expect(
+          prefs.getBool(SettingsKeys.onboardingDone),
+          isNull,
+          reason: 'onboarding_done se resetea.',
+        );
+        expect(prefs.getString(kActivePrinterIdPrefsKey), isNull);
+        expect(prefs.getString(DraftStorage.key), isNull);
+        // Protegidas:
+        expect(prefs.getString('locale'), 'es');
+        expect(prefs.getString('theme_mode'), 'light');
+        expect(prefs.getBool(kIsProKey), true);
+        expect(prefs.getString(kBackupHmacKeyPref), 'hmac-key');
+        expect(prefs.getString(kInstallIdPref), 'install-1');
+      },
+    );
+
+    testWidgets('fallo de DB nunca reporta éxito', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final container = await _pumpPage(tester);
+      final db = container.read(appDatabaseProvider);
+      final prefs = await SharedPreferences.getInstance();
+      await seedWipeFixtures(db, prefs);
+      await db.customStatement(
+        'CREATE TRIGGER fail_wipes BEFORE DELETE ON calculations '
+        "BEGIN SELECT RAISE(ABORT, 'boom'); END;",
+      );
+
+      await scrollToWipe(tester);
+      await tester.tap(wipeButton());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(EsBO.settingsWipeConfirmDelete));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(
+        find.text(EsBO.settingsWipeError),
+        findsOneWidget,
+        reason: 'Fallo del wipe debe mostrar error, no éxito.',
+      );
+      expect(find.text(EsBO.settingsWipeSuccess), findsNothing);
+      expect(
+        await db.select(db.calculations).get().then((r) => r.length),
+        1,
+        reason: 'Transacción fallida debe hacer rollback.',
+      );
+      expect(
+        prefs.getBool(SettingsKeys.onboardingDone),
+        true,
+        reason: 'Un wipe fallido no debe resetear onboarding.',
+      );
+      await tester.pumpAndSettle();
     });
   });
 }

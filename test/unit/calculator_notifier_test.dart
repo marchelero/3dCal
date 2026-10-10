@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
+import 'package:tresdcal/core/constants/app_constants.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/export/quote_report_variant.dart';
 import 'package:tresdcal/core/providers.dart';
@@ -208,6 +209,21 @@ void main() {
       container.read(calculatorNotifierProvider.notifier).setWeight('abc');
       expect(container.read(calculatorNotifierProvider).weight, 'abc');
       expect(container.read(calculatorNotifierProvider).output, isNull);
+    });
+
+    test('setQuantity limita el máximo y conserva el límite inferior', () {
+      final notifier = container.read(calculatorNotifierProvider.notifier);
+
+      notifier.setQuantity(kMaxQuantity);
+      notifier.setQuantity(kMaxQuantity + 1);
+      expect(container.read(calculatorNotifierProvider).quantity, kMaxQuantity);
+
+      notifier.setQuantity(0);
+      expect(container.read(calculatorNotifierProvider).quantity, kMaxQuantity);
+
+      notifier.reset();
+      notifier.setQuantity(0);
+      expect(container.read(calculatorNotifierProvider).quantity, 1);
     });
 
     test('output null si falta algun campo requerido', () {

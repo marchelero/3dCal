@@ -220,6 +220,17 @@ class EsBO {
   static String get settingsBackupImportSignatureMismatch =>
       _impl.settingsBackupImportSignatureMismatch;
   static String get settingsBackupLockedBody => _impl.settingsBackupLockedBody;
+  static String get settingsBackupDisclosure => _impl.settingsBackupDisclosure;
+  static String get settingsWipeTitle => _impl.settingsWipeTitle;
+  static String get settingsWipeHelper => _impl.settingsWipeHelper;
+  static String get settingsWipeAction => _impl.settingsWipeAction;
+  static String get settingsWipeConfirmTitle => _impl.settingsWipeConfirmTitle;
+  static String get settingsWipeConfirmBody => _impl.settingsWipeConfirmBody;
+  static String get settingsWipeConfirmDelete =>
+      _impl.settingsWipeConfirmDelete;
+  static String get settingsWipeCancel => _impl.settingsWipeCancel;
+  static String get settingsWipeSuccess => _impl.settingsWipeSuccess;
+  static String get settingsWipeError => _impl.settingsWipeError;
 
   // === Dashboard ===
   static String get dashboardTitle => _impl.dashboardTitle;
@@ -463,6 +474,8 @@ class EsBO {
   static String get filamentPriceHelper => _impl.filamentPriceHelper;
   static String get filamentGrams => _impl.filamentGrams;
   static String get filamentGramsHelper => _impl.filamentGramsHelper;
+  static String get filamentGramsPositiveInteger =>
+      _impl.filamentGramsPositiveInteger;
   static String get filamentDefaultToggle => _impl.filamentDefaultToggle;
   static String get filamentDefaultSubtitle => _impl.filamentDefaultSubtitle;
   static String get filamentNewTooltip => _impl.filamentNewTooltip;
@@ -1175,7 +1188,8 @@ class EsImpl implements AppStrings {
   String get settingsCurrency => 'Moneda';
   @override
   String get settingsCurrencyHelper =>
-      'Define la moneda que se muestra en precios, cotizaciones y dashboard. Sin conversion automatica.';
+      'Define la moneda que se muestra en precios, cotizaciones y dashboard. Sin '
+      'conversión automática y no usa tasas de cambio.';
 
   @override
   String get settingsCompany => 'Empresa';
@@ -1297,6 +1311,42 @@ class EsImpl implements AppStrings {
   @override
   String get settingsBackupLockedBody =>
       'Hacer copias de seguridad es una función Pro.';
+
+  @override
+  String get settingsBackupDisclosure =>
+      'El backup es manual: no se sincroniza automáticamente. El archivo .3dcal '
+      'exportado no está cifrado; la firma HMAC verifica que no fue alterado '
+      '(integridad), no protege su contenido.';
+
+  @override
+  String get settingsWipeTitle => 'Borrar datos de trabajo';
+  @override
+  String get settingsWipeHelper =>
+      'Borra en este dispositivo las cotizaciones (incluidos borradores y '
+      'plantillas), los catálogos, los ajustes de cálculo y el borrador de '
+      'sesión; elimina la impresora activa y vuelve a mostrar la configuración '
+      'inicial. Se conservan: idioma, tema, tu compra Pro, los datos de '
+      'integridad del backup y los archivos .3dcal que hayas exportado.';
+  @override
+  String get settingsWipeAction => 'Borrar datos';
+  @override
+  String get settingsWipeConfirmTitle => '¿Borrar todos los datos de trabajo?';
+  @override
+  String get settingsWipeConfirmBody =>
+      'Esta acción no se puede deshacer. Se borrarán en este dispositivo: '
+      'cotizaciones, borradores, plantillas, filamentos, impresoras, ajustes '
+      'de cálculo y descuentos por cantidad. La impresora activa se elimina y '
+      'deberás volver a configurar todo. Tus archivos .3dcal exportados fuera '
+      'de la app no se borran.';
+  @override
+  String get settingsWipeConfirmDelete => 'Borrar todo';
+  @override
+  String get settingsWipeCancel => 'Cancelar';
+  @override
+  String get settingsWipeSuccess => 'Datos de trabajo borrados';
+  @override
+  String get settingsWipeError =>
+      'No se pudieron borrar los datos. Inténtalo de nuevo.';
 
   @override
   String get dashboardTitle => 'Dashboard';
@@ -1724,6 +1774,9 @@ class EsImpl implements AppStrings {
   String get filamentGrams => 'Gramos por rollo';
   @override
   String get filamentGramsHelper => 'Tipico 1000';
+  @override
+  String get filamentGramsPositiveInteger =>
+      'Ingresa una cantidad de gramos entera y mayor que cero';
   @override
   String get filamentDefaultToggle => 'Marcar como default';
   @override

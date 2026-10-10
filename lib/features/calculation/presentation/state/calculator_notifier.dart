@@ -237,7 +237,7 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
   /// (`calculator_page`, `quote_image_template`) y al agregar queries.
   void setQuantity(int value) {
     if (value < 1) return;
-    state = _recompute(state.copyWith(quantity: value));
+    state = _recompute(state.copyWith(quantity: value.clamp(1, kMaxQuantity)));
   }
 
   // === Express material label ===
@@ -1098,11 +1098,11 @@ class CalculatorNotifier extends Notifier<CalculatorState> {
       profitAmountSnapshot: Value(o?.profitAmount.toDouble() ?? 0),
       minimumChargeAppliedSnapshot: Value(
         input != null &&
-            o != null &&
-            input.minimumCharge > Decimal.zero &&
-            (o.totalFinal - o.discountAmount) < input.minimumCharge
-        ? 1
-        : 0,
+                o != null &&
+                input.minimumCharge > Decimal.zero &&
+                (o.totalFinal - o.discountAmount) < input.minimumCharge
+            ? 1
+            : 0,
       ),
       effectiveTotalSnapshot: Value(o?.totalFinal.toDouble() ?? 0),
       totalPriceSnapshot: Value(o?.totalPrice.toDouble() ?? 0),

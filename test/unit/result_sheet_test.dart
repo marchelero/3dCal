@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:tresdcal/core/constants/app_constants.dart';
 import 'package:tresdcal/core/export/quote_report_variant.dart';
 import 'package:tresdcal/core/money/currency.dart';
 import 'package:tresdcal/core/share/quote_share.dart';
@@ -16,6 +17,7 @@ import 'package:tresdcal/features/calculation/presentation/widgets/calc_meta.dar
 import 'package:tresdcal/features/calculation/presentation/widgets/quote_image_template.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/report_variant_selector.dart';
 import 'package:tresdcal/features/calculation/presentation/widgets/result_sheet.dart';
+import 'package:tresdcal/features/entitlement/presentation/providers/entitlement_providers.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
 
 /// Fake del platform interface de image_picker: retorna [_image] en
@@ -53,6 +55,7 @@ class _FixedStateNotifier extends CalculatorNotifier {
 
 /// Helpers de rendering para que cada test sea declarativo.
 Widget _wrap(Widget child) => ProviderScope(
+  overrides: [isProProvider.overrideWithValue(true)],
   child: MaterialApp(home: Scaffold(body: child)),
 );
 
@@ -386,6 +389,41 @@ void main() {
       expect(finder, findsOneWidget);
       final btn = tester.widget<IconButton>(finder);
       expect(btn.onPressed, isNotNull);
+    });
+
+    testWidgets('cantidad máxima deshabilita + y entrada directa se limita', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          ResultSheetContent(
+            state: _validState().copyWith(quantity: kMaxQuantity),
+            isPro: false,
+            onSave: (_) {},
+            onReset: () {},
+            onVariantChanged: (_) {},
+            onDiscountChanged: (_) {},
+            currency: WorldCurrency.usd,
+          ),
+        ),
+      );
+
+      final plusButton = find.ancestor(
+        of: find.byTooltip(EsBO.calcQuantityIncrease),
+        matching: find.byType(IconButton),
+      );
+      expect(tester.widget<IconButton>(plusButton).onPressed, isNull);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('quantity_input')),
+        '${kMaxQuantity + 1}',
+      );
+      await tester.pump();
+
+      final quantityField = tester.widget<TextFormField>(
+        find.byKey(const ValueKey('quantity_input')),
+      );
+      expect(quantityField.controller!.text, '$kMaxQuantity');
     });
   });
 

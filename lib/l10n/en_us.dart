@@ -231,7 +231,8 @@ class EnImpl implements AppStrings {
   String get settingsCurrency => 'Currency';
   @override
   String get settingsCurrencyHelper =>
-      'Sets the currency shown in prices, quotes and dashboard. No automatic conversion.';
+      'Sets the currency shown in prices, quotes and dashboard. It never '
+      'converts amounts and no exchange rates are used.';
 
   @override
   String get settingsCompany => 'Company';
@@ -350,6 +351,41 @@ class EnImpl implements AppStrings {
 
   @override
   String get settingsBackupLockedBody => 'Backups are a Pro feature.';
+
+  @override
+  String get settingsBackupDisclosure =>
+      'Backup is manual: it is not synced automatically. The exported .3dcal '
+      'file is not encrypted; the HMAC signature verifies the file was not '
+      'altered (integrity), it does not protect its content.';
+
+  @override
+  String get settingsWipeTitle => 'Delete work data';
+  @override
+  String get settingsWipeHelper =>
+      'Erases on this device: quotes (including drafts and templates), '
+      'catalogs, calculation settings and the session draft; removes the '
+      'active printer and restarts the initial setup. Kept: language, theme, '
+      'your Pro purchase, backup integrity data and any .3dcal files you '
+      'exported.';
+  @override
+  String get settingsWipeAction => 'Delete data';
+  @override
+  String get settingsWipeConfirmTitle => 'Delete all work data?';
+  @override
+  String get settingsWipeConfirmBody =>
+      "This can't be undone. On this device: quotes, drafts, templates, "
+      'filaments, printers, calculation settings and quantity discounts will '
+      'be erased. The active printer is removed and you’ll need to set '
+      'everything up again. .3dcal files exported outside the app are not '
+      'deleted.';
+  @override
+  String get settingsWipeConfirmDelete => 'Delete everything';
+  @override
+  String get settingsWipeCancel => 'Cancel';
+  @override
+  String get settingsWipeSuccess => 'Work data deleted';
+  @override
+  String get settingsWipeError => 'Could not delete the data. Try again.';
 
   @override
   String get dashboardTitle => 'Dashboard';
@@ -774,6 +810,9 @@ class EnImpl implements AppStrings {
   @override
   String get filamentGramsHelper => 'Typically 1000';
   @override
+  String get filamentGramsPositiveInteger =>
+      'Enter a whole number of grams greater than zero';
+  @override
   String get filamentDefaultToggle => 'Set as default';
   @override
   String get filamentDefaultSubtitle =>
@@ -781,8 +820,7 @@ class EnImpl implements AppStrings {
   @override
   String get filamentNewTooltip => 'New filament';
   @override
-  String filamentFreeLimitTooltip(int limit) =>
-      'Free limit ($limit filaments)';
+  String filamentFreeLimitTooltip(int limit) => 'Free limit ($limit filaments)';
   @override
   String filamentFreeLimitHint(int current, int limit) =>
       '$current/$limit filaments — unlock Pro for more';
@@ -1040,8 +1078,8 @@ class EnImpl implements AppStrings {
       'We need it to calculate the energy cost of each print.';
   @override
   String get configFilamentSectionHelper =>
-      'If you have the spool handy, add it now. Otherwise, add it later from '
-      'Settings → Catalogs.';
+      'We need it to calculate the material cost of each piece. Add at least '
+      'one to start quoting.';
   @override
   String get configProfitHelper =>
       'Margin over base cost. 200% doubles the cost. Typical: 100%–300%.';
@@ -1063,7 +1101,7 @@ class EnImpl implements AppStrings {
   @override
   String get configPrinterRequired => 'Printer (required)';
   @override
-  String get configFilamentOptional => 'Filament (optional)';
+  String get configFilamentOptional => 'Filament (required)';
   @override
   String get configAddFilament => 'Add filament';
   @override

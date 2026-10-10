@@ -234,7 +234,8 @@ class DeImpl implements AppStrings {
   String get settingsCurrency => 'Währung';
   @override
   String get settingsCurrencyHelper =>
-      'Legt die Währung für Preise, Angebote und die Übersicht fest. Keine automatische Umrechnung.';
+      'Legt die Währung für Preise, Angebote und die Übersicht fest. Keine '
+      'automatische Umrechnung und keine Wechselkurse.';
 
   @override
   String get settingsCompany => 'Unternehmen';
@@ -358,6 +359,43 @@ class DeImpl implements AppStrings {
 
   @override
   String get settingsBackupLockedBody => 'Backups sind eine Pro-Funktion.';
+
+  @override
+  String get settingsBackupDisclosure =>
+      'Die Sicherung ist manuell: keine automatische Synchronisierung. Die '
+      'exportierte .3dcal-Datei ist nicht verschlüsselt; die HMAC-Signatur '
+      'prüft, dass die Datei nicht verändert wurde (Integrität), sie schützt '
+      'den Inhalt nicht.';
+
+  @override
+  String get settingsWipeTitle => 'Arbeitsdaten löschen';
+  @override
+  String get settingsWipeHelper =>
+      'Löscht auf diesem Gerät: Angebote (einschließlich Entwürfe und '
+      'Vorlagen), Kataloge, Berechnungseinstellungen und den '
+      'Sitzungsentwurf; entfernt den aktiven Drucker und startet die '
+      'Ersteinrichtung neu. Erhalten bleiben: Sprache, Design, Ihr Pro-Kauf, '
+      'Integritätsdaten der Sicherung und exportierte .3dcal-Dateien.';
+  @override
+  String get settingsWipeAction => 'Daten löschen';
+  @override
+  String get settingsWipeConfirmTitle => 'Alle Arbeitsdaten löschen?';
+  @override
+  String get settingsWipeConfirmBody =>
+      'Diese Aktion kann nicht rückgängig gemacht werden. Gelöscht werden auf '
+      'diesem Gerät: Angebote, Entwürfe, Vorlagen, Filamente, Drucker, '
+      'Berechnungseinstellungen und Mengenrabatte. Der aktive Drucker wird '
+      'entfernt und Sie müssen alles neu einrichten. Außerhalb der App '
+      'exportierte .3dcal-Dateien werden nicht gelöscht.';
+  @override
+  String get settingsWipeConfirmDelete => 'Alles löschen';
+  @override
+  String get settingsWipeCancel => 'Abbrechen';
+  @override
+  String get settingsWipeSuccess => 'Arbeitsdaten gelöscht';
+  @override
+  String get settingsWipeError =>
+      'Daten konnten nicht gelöscht werden. Bitte erneut versuchen.';
 
   @override
   String get dashboardTitle => 'Übersicht';
@@ -788,6 +826,9 @@ class DeImpl implements AppStrings {
   @override
   String get filamentGramsHelper => 'Typischerweise 1000';
   @override
+  String get filamentGramsPositiveInteger =>
+      'Gib eine ganze Grammzahl größer als null ein';
+  @override
   String get filamentDefaultToggle => 'Als Standard festlegen';
   @override
   String get filamentDefaultSubtitle =>
@@ -795,8 +836,7 @@ class DeImpl implements AppStrings {
   @override
   String get filamentNewTooltip => 'Neues Filament';
   @override
-  String filamentFreeLimitTooltip(int limit) =>
-      'Free-Limit ($limit Filamente)';
+  String filamentFreeLimitTooltip(int limit) => 'Free-Limit ($limit Filamente)';
   @override
   String filamentFreeLimitHint(int current, int limit) =>
       '$current/$limit Filamente — für mehr Pro freischalten';
@@ -1054,8 +1094,8 @@ class DeImpl implements AppStrings {
       'Wir benötigen ihn, um die Energiekosten jedes Drucks zu berechnen.';
   @override
   String get configFilamentSectionHelper =>
-      'Wenn Sie die Spule zur Hand haben, fügen Sie sie jetzt hinzu. Andernfalls '
-      'können Sie sie später unter Einstellungen → Kataloge hinzufügen.';
+      'Wir benötigen es, um die Materialkosten jedes Teils zu berechnen. '
+      'Fügen Sie mindestens eines hinzu, um Angebote zu erstellen.';
   @override
   String get configProfitHelper =>
       'Aufschlag auf die Grundkosten. 200 % verdoppeln die Kosten. Typisch: 100 %–300 %.';
@@ -1076,7 +1116,7 @@ class DeImpl implements AppStrings {
   @override
   String get configPrinterRequired => 'Drucker (erforderlich)';
   @override
-  String get configFilamentOptional => 'Filament (optional)';
+  String get configFilamentOptional => 'Filament (erforderlich)';
   @override
   String get configAddFilament => 'Filament hinzufügen';
   @override

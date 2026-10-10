@@ -232,7 +232,8 @@ class PtBrImpl implements AppStrings {
   String get settingsCurrency => 'Moeda';
   @override
   String get settingsCurrencyHelper =>
-      'Define a moeda exibida em preços, orçamentos e no painel. Não há conversão automática.';
+      'Define a moeda exibida em preços, orçamentos e no painel. Não há '
+      'conversão automática nem uso de taxas de câmbio.';
 
   @override
   String get settingsCompany => 'Empresa';
@@ -353,6 +354,42 @@ class PtBrImpl implements AppStrings {
 
   @override
   String get settingsBackupLockedBody => 'Fazer backups é um recurso Pro.';
+
+  @override
+  String get settingsBackupDisclosure =>
+      'O backup é manual: não é sincronizado automaticamente. O arquivo .3dcal '
+      'exportado não é criptografado; a assinatura HMAC verifica se o arquivo '
+      'não foi alterado (integridade), não protege seu conteúdo.';
+
+  @override
+  String get settingsWipeTitle => 'Apagar dados de trabalho';
+  @override
+  String get settingsWipeHelper =>
+      'Apaga neste dispositivo: orçamentos (incluindo rascunhos e modelos), '
+      'catálogos, ajustes de cálculo e o rascunho da sessão; remove a '
+      'impressora ativa e reinicia a configuração inicial. São mantidos: '
+      'idioma, tema, sua compra Pro, os dados de integridade do backup e os '
+      'arquivos .3dcal exportados.';
+  @override
+  String get settingsWipeAction => 'Apagar dados';
+  @override
+  String get settingsWipeConfirmTitle => 'Apagar todos os dados de trabalho?';
+  @override
+  String get settingsWipeConfirmBody =>
+      'Esta ação não pode ser desfeita. Serão apagados neste dispositivo: '
+      'orçamentos, rascunhos, modelos, filamentos, impressoras, ajustes de '
+      'cálculo e descontos por quantidade. A impressora ativa é removida e '
+      'você precisará configurar tudo novamente. Arquivos .3dcal exportados '
+      'fora do app não são apagados.';
+  @override
+  String get settingsWipeConfirmDelete => 'Apagar tudo';
+  @override
+  String get settingsWipeCancel => 'Cancelar';
+  @override
+  String get settingsWipeSuccess => 'Dados de trabalho apagados';
+  @override
+  String get settingsWipeError =>
+      'Não foi possível apagar os dados. Tente novamente.';
 
   @override
   String get dashboardTitle => 'Painel';
@@ -789,6 +826,9 @@ class PtBrImpl implements AppStrings {
   @override
   String get filamentGramsHelper => 'Normalmente 1000';
   @override
+  String get filamentGramsPositiveInteger =>
+      'Informe um número inteiro de gramas maior que zero';
+  @override
   String get filamentDefaultToggle => 'Definir como padrão';
   @override
   String get filamentDefaultSubtitle =>
@@ -1032,8 +1072,8 @@ class PtBrImpl implements AppStrings {
       'Precisamos dela para calcular o custo de energia de cada impressão.';
   @override
   String get configFilamentSectionHelper =>
-      'Se você tiver uma bobina, adicione-a agora. Caso contrário, adicione-a depois em '
-      'Configurações → Catálogos.';
+      'Precisamos dele para calcular o custo do material de cada peça. '
+      'Adicione pelo menos um para poder orçar.';
   @override
   String get configProfitHelper =>
       'Margem sobre o custo base. 200% dobra o custo. Típico: 100%–300%.';
@@ -1055,7 +1095,7 @@ class PtBrImpl implements AppStrings {
   @override
   String get configPrinterRequired => 'Impressora (obrigatória)';
   @override
-  String get configFilamentOptional => 'Filamento (opcional)';
+  String get configFilamentOptional => 'Filamento (obrigatório)';
   @override
   String get configAddFilament => 'Adicionar filamento';
   @override

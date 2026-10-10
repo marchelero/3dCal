@@ -15,6 +15,7 @@ import '../../../../core/backup/backup_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/storage/local_data_wipe_service.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme_mode_provider.dart';
@@ -32,6 +33,7 @@ import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dar
 import '../../../catalog/printers/presentation/notifiers/printers_notifier.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart';
 import '../../domain/settings.dart';
+import '../notifiers/discount_tiers_notifier.dart';
 import '../notifiers/settings_notifier.dart';
 import '../widgets/settings_widgets.dart';
 
@@ -75,9 +77,7 @@ class SettingsPage extends ConsumerWidget {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(
-            AppSnackBar.info(context, EsBO.paywallUnavailable),
-          );
+          ..showSnackBar(AppSnackBar.info(context, EsBO.paywallUnavailable));
       });
     }
     final asyncSettings = ref.watch(settingsNotifierProvider);
@@ -214,6 +214,15 @@ class _SettingsBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 const _BackupSection(),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // ── Borrar datos de trabajo (AC-004 gap-remediation) ──
+                GroupLabel(
+                  icon: Icons.delete_sweep_rounded,
+                  title: EsBO.settingsWipeTitle,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const _WipeDataSection(),
                 const SizedBox(height: AppSpacing.xxl),
 
                 if (canRestore) ...[
@@ -627,8 +636,9 @@ class _LogoPicker extends ConsumerWidget {
       if (!context.mounted) return;
       await _persistAndNotify(
         context,
-        () =>
-            ref.read(settingsNotifierProvider.notifier).updateCompanyLogo(base64),
+        () => ref
+            .read(settingsNotifierProvider.notifier)
+            .updateCompanyLogo(base64),
       );
     } catch (e) {
       if (!context.mounted) return;
@@ -1169,9 +1179,7 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          AppSnackBar.error(EsBO.settingsBackupImportInvalidFile),
-        );
+        ..showSnackBar(AppSnackBar.error(EsBO.settingsBackupImportInvalidFile));
       return;
     }
 
@@ -1341,6 +1349,15 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
             ),
           ),
         ),
+        // AC-006 (gap-remediation 2026-10-10): transparencia del backup —
+        // manual, sin sync, sin cifrado; HMAC = integridad, no cifrado.
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          EsBO.settingsBackupDisclosure,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
@@ -1351,3 +1368,115 @@ class _BackupSectionState extends ConsumerState<_BackupSection> {
 // ─────────────────────────────────────────────────
 // El botón de restaurar compras vive en `lib/shared/widgets/pro_active_badge.dart`
 // ([RestoreButton]) para reutilizarse en la sheet de beneficios y en settings.
+
+// ─────────────────────────────────────────────────
+// Borrar datos de trabajo (AC-004 gap-remediation 2026-10-10)
+// ─────────────────────────────────────────────────
+// Confirmación explícita y localizada. En éxito invalida los providers
+// fetch-once y reinicia onboarding. En fallo muestra error (nunca éxito falso).
+
+class _WipeDataSection extends ConsumerStatefulWidget {
+  const _WipeDataSection();
+
+  @override
+  ConsumerState<_WipeDataSection> createState() => _WipeDataSectionState();
+}
+
+class _WipeDataSectionState extends ConsumerState<_WipeDataSection> {
+  bool _wiping = false;
+
+  Future<void> _handleWipe() async {
+    // Mismo patron de dialogo que `_handleImport`: pop con el context del
+    // dialogo (root navigator) para no chocar con el StatefulShellRoute.
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(EsBO.settingsWipeConfirmTitle),
+        content: Text(EsBO.settingsWipeConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(EsBO.settingsWipeCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(EsBO.settingsWipeConfirmDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _wiping = true);
+    try {
+      await ref.read(localDataWipeServiceProvider).wipeWorkData();
+      if (!mounted) return;
+      // Invalidar los providers fetch-once (mismo patron que `_handleImport`)
+      // para que historial/dashboard/catalogos no sigan mostrando lo borrado.
+      ref
+        ..invalidate(calculationsNotifierProvider)
+        ..invalidate(dashboardRangeProvider)
+        ..invalidate(dashboardStatsProvider(null))
+        ..invalidate(filamentsNotifierProvider)
+        ..invalidate(printersNotifierProvider)
+        ..invalidate(settingsNotifierProvider)
+        ..invalidate(discountTiersNotifierProvider)
+        ..invalidate(currentPartialIdProvider);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.success(EsBO.settingsWipeSuccess));
+      // Reinicia onboarding: sin `onboarding_done` el splash lleva a la
+      // configuracion inicial. `context.go` lanza sin GoRouter (tests con
+      // MaterialApp suelto) — se degrada a solo snackbar.
+      try {
+        if (mounted) context.go('/language');
+      } catch (_) {
+        // Sin router disponible (entorno de test).
+      }
+    } catch (e) {
+      debugPrint('[Wipe] error borrando datos: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(AppSnackBar.error(EsBO.settingsWipeError));
+    } finally {
+      if (mounted) setState(() => _wiping = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return SettingsCard(
+      accentColor: color.error,
+      children: [
+        Text(
+          EsBO.settingsWipeHelper,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: color.error,
+              side: BorderSide(color: color.error),
+            ),
+            icon: _wiping
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.delete_sweep_rounded, size: 18),
+            label: Text(EsBO.settingsWipeAction),
+            onPressed: _wiping ? null : _handleWipe,
+          ),
+        ),
+      ],
+    );
+  }
+}

@@ -248,28 +248,97 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       try {
-      // Bug fix: "Nueva cotización" debe abrir vacío, no continuar draft.
-      if (widget.newMode) {
-        await ref.read(draftStorageProvider).clear();
+        // Bug fix: "Nueva cotización" debe abrir vacío, no continuar draft.
+        if (widget.newMode) {
+          await ref.read(draftStorageProvider).clear();
+          if (!mounted) return;
+          // Refrescar el banner "Continuar" en Home: draftStatusProvider
+          // (draft de sesion en SharedPreferences) no es reactivo y se
+          // invalida a mano. latestPartialProvider ya es StreamProvider y se
+          // actualiza solo con cada escritura a la tabla.
+          ref.invalidate(draftStatusProvider);
+          // Nueva cotizacion: soltar el puntero al parcial anterior. El
+          // borrador viejo queda en el historial (retomable), pero esta sesion
+          // arranca con identidad nueva.
+          ref.read(currentPartialIdProvider.notifier).state = null;
+          ref.read(calculatorNotifierProvider.notifier).reset();
+          // Limpiar controllers — se inicializaron con valores del draft
+          // antes de este callback (initState los crea con initial.*).
+          _weightCtrl.text = '';
+          _hoursCtrl.text = '';
+          _minutesCtrl.text = '';
+          _priceCtrl.text = '';
+          _gramsCtrl.text = '';
+          _discountCtrl.text = '0';
+          _labelCtrl.text = '';
+          _pieceLabelCtrl.text = '';
+          _extraFailureRateCtrl.text = '';
+          _extraMarkupOnMaterialsCtrl.text = '';
+          _modelingCtrl.text = '';
+          _postprocCtrl.text = '';
+          _extraCostCtrl.text = '';
+          _extraCostLabelCtrl.text = '';
+          _quantityCtrl.text = '1';
+          return;
+        }
+        // Prefill ("Reusar"): cargar la cotizacion guardada y sincronizar los
+        // controllers. NO tocar reset/draft/defaults — el state precargado es
+        // la fuente de verdad. Un solo post-frame (esta pagina) evita la race
+        // que antes pisaba el prefill con reset()/draft.
+        if (widget.prefillCalc != null) {
+          final notifier = ref.read(calculatorNotifierProvider.notifier);
+          await notifier.loadFromCalculation(widget.prefillCalc!);
+          if (!mounted) return;
+          // El prefill arranca una cotizacion NUEVA en el formulario: soltar el
+          // puntero al parcial anterior. "Reusar" crea un id nuevo (el autosave
+          // inserta un parcial nuevo); "Editar" guarda sobre prefillCalc.id.
+          ref.read(currentPartialIdProvider.notifier).state = null;
+          // Garantiza el total calculado ni bien se entra (Editar/Reusar), sin
+          // esperar a que el usuario toque un campo.
+          notifier.recompute();
+          if (!mounted) return;
+          _syncControllersFromState(ref.read(calculatorNotifierProvider));
+          _rebuildAdvancedRows();
+          _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
+          return;
+        }
+        // Cargar el draft ANTES de resetear para no dejar la UI a medio
+        // restaurar durante el gap async (evita el desync state <-> controllers
+        // que hacia perder el auto-calc al tipear en el tile de filamento).
+        final storage = ref.read(draftStorageProvider);
+        final draft = await storage.load();
         if (!mounted) return;
-        // Refrescar el banner "Continuar" en Home: draftStatusProvider
-        // (draft de sesion en SharedPreferences) no es reactivo y se
-        // invalida a mano. latestPartialProvider ya es StreamProvider y se
-        // actualiza solo con cada escritura a la tabla.
-        ref.invalidate(draftStatusProvider);
-        // Nueva cotizacion: soltar el puntero al parcial anterior. El
-        // borrador viejo queda en el historial (retomable), pero esta sesion
-        // arranca con identidad nueva.
-        ref.read(currentPartialIdProvider.notifier).state = null;
-        ref.read(calculatorNotifierProvider.notifier).reset();
-        // Limpiar controllers — se inicializaron con valores del draft
-        // antes de este callback (initState los crea con initial.*).
+        final notifier = ref.read(calculatorNotifierProvider.notifier);
+        // Resetear state al entrar (no arrastrar datos de sesion anterior).
+        notifier.reset();
+        // Restaurar la impresora que el usuario eligio en una sesion anterior
+        // (persistida en prefs). Si el id ya no existe, el fallback del
+        // provider resuelve a la default o a la primera registrada.
+        final savedPrinterId = ref
+            .read(sharedPreferencesProvider)
+            .getInt(kActivePrinterIdPrefsKey);
+        if (savedPrinterId != null && mounted) {
+          ref.read(activePrinterIdProvider.notifier).state = savedPrinterId;
+        }
+        if (draft != null) {
+          // Restaurar el draft en notifier. El STATE es la fuente unica de
+          // verdad; desde ahi se sincronizan los controllers (sync infalible).
+          // Los drafts legacy siguen sin ID y no se emparejan por contenido.
+          ref.read(currentPartialIdProvider.notifier).state = draft.partialId;
+          notifier.restoreFromDraft(draft);
+          if (!mounted) return;
+          _syncControllersFromState(ref.read(calculatorNotifierProvider));
+          _rebuildAdvancedRows();
+          _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
+          return;
+        }
+        // Sin draft: resetear todos los controllers a vacio.
         _weightCtrl.text = '';
         _hoursCtrl.text = '';
         _minutesCtrl.text = '';
+        _discountCtrl.text = '0';
         _priceCtrl.text = '';
         _gramsCtrl.text = '';
-        _discountCtrl.text = '0';
         _labelCtrl.text = '';
         _pieceLabelCtrl.text = '';
         _extraFailureRateCtrl.text = '';
@@ -278,87 +347,24 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         _postprocCtrl.text = '';
         _extraCostCtrl.text = '';
         _extraCostLabelCtrl.text = '';
-        _quantityCtrl.text = '1';
-        return;
-      }
-      // Prefill ("Reusar"): cargar la cotizacion guardada y sincronizar los
-      // controllers. NO tocar reset/draft/defaults — el state precargado es
-      // la fuente de verdad. Un solo post-frame (esta pagina) evita la race
-      // que antes pisaba el prefill con reset()/draft.
-      if (widget.prefillCalc != null) {
-        final notifier = ref.read(calculatorNotifierProvider.notifier);
-        await notifier.loadFromCalculation(widget.prefillCalc!);
-        if (!mounted) return;
-        // El prefill arranca una cotizacion NUEVA en el formulario: soltar el
-        // puntero al parcial anterior. "Reusar" crea un id nuevo (el autosave
-        // inserta un parcial nuevo); "Editar" guarda sobre prefillCalc.id.
-        ref.read(currentPartialIdProvider.notifier).state = null;
-        // Garantiza el total calculado ni bien se entra (Editar/Reusar), sin
-        // esperar a que el usuario toque un campo.
-        notifier.recompute();
-        if (!mounted) return;
-        _syncControllersFromState(ref.read(calculatorNotifierProvider));
-        _rebuildAdvancedRows();
-        _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
-        return;
-      }
-      // Cargar el draft ANTES de resetear para no dejar la UI a medio
-      // restaurar durante el gap async (evita el desync state <-> controllers
-      // que hacia perder el auto-calc al tipear en el tile de filamento).
-      final storage = ref.read(draftStorageProvider);
-      final draft = await storage.load();
-      if (!mounted) return;
-      final notifier = ref.read(calculatorNotifierProvider.notifier);
-      // Resetear state al entrar (no arrastrar datos de sesion anterior).
-      notifier.reset();
-      // Restaurar la impresora que el usuario eligio en una sesion anterior
-      // (persistida en prefs). Si el id ya no existe, el fallback del
-      // provider resuelve a la default o a la primera registrada.
-      final savedPrinterId = ref
-          .read(sharedPreferencesProvider)
-          .getInt(kActivePrinterIdPrefsKey);
-      if (savedPrinterId != null && mounted) {
-        ref.read(activePrinterIdProvider.notifier).state = savedPrinterId;
-      }
-      if (draft != null) {
-        // Restaurar el draft en notifier. El STATE es la fuente unica de
-        // verdad; desde ahi se sincronizan los controllers (sync infalible).
-        notifier.restoreFromDraft(draft);
-        if (!mounted) return;
-        _syncControllersFromState(ref.read(calculatorNotifierProvider));
-        _rebuildAdvancedRows();
-        _syncGlobalTimeFields(ref.read(calculatorNotifierProvider));
-        return;
-      }
-      // Sin draft: resetear todos los controllers a vacio.
-      _weightCtrl.text = '';
-      _hoursCtrl.text = '';
-      _minutesCtrl.text = '';
-      _discountCtrl.text = '0';
-      _priceCtrl.text = '';
-      _gramsCtrl.text = '';
-      _labelCtrl.text = '';
-      _pieceLabelCtrl.text = '';
-      _extraFailureRateCtrl.text = '';
-      _extraMarkupOnMaterialsCtrl.text = '';
-      _modelingCtrl.text = '';
-      _postprocCtrl.text = '';
-      _extraCostCtrl.text = '';
-      _extraCostLabelCtrl.text = '';
-      // Cargar defaults del filamento por defecto para precio/gramos.
-      final defaultFilament = ref.read(defaultFilamentProvider);
-      if (defaultFilament != null) {
-        ref
-            .read(calculatorNotifierProvider.notifier)
-            .loadFilamentDefaults(
-              pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(2),
-              gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(0),
-            );
-        if (!mounted) return;
-        final updated = ref.read(calculatorNotifierProvider);
-        _priceCtrl.text = updated.filamentPrice;
-        _gramsCtrl.text = updated.filamentGrams;
-      }
+        // Cargar defaults del filamento por defecto para precio/gramos.
+        final defaultFilament = ref.read(defaultFilamentProvider);
+        if (defaultFilament != null) {
+          ref
+              .read(calculatorNotifierProvider.notifier)
+              .loadFilamentDefaults(
+                pricePerBobbin: defaultFilament.pricePerBobbin.toStringAsFixed(
+                  2,
+                ),
+                gramsPerBobbin: defaultFilament.gramsPerBobbin.toStringAsFixed(
+                  0,
+                ),
+              );
+          if (!mounted) return;
+          final updated = ref.read(calculatorNotifierProvider);
+          _priceCtrl.text = updated.filamentPrice;
+          _gramsCtrl.text = updated.filamentGrams;
+        }
       } finally {
         // Terminar el loader de restauracion pase lo que pase (cualquier
         // rama: prefill, draft, nueva o vacio).
@@ -452,6 +458,9 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   CalculationDraft _buildSessionDraft() {
     final s = ref.read(calculatorNotifierProvider);
     return CalculationDraft(
+      partialId: _editingDraft
+          ? widget.prefillCalc!.id
+          : ref.read(currentPartialIdProvider),
       isAdvanced: s.mode == CalculatorMode.advanced,
       // MED-07 fix: la cantidad del lote sobrevive al cierre de la app.
       quantity: s.quantity,
@@ -541,7 +550,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   ///   armando la cotizacion; cada cambio debe persistirse en el parcial).
   /// - Editar una cotizacion definitiva -> NO autoguarda como parcial (la fila
   ///   ya es real; se actualiza con Guardar).
-  bool get _editingDraft => widget.editMode && (widget.prefillCalc?.isPartial ?? false);
+  bool get _editingDraft =>
+      widget.editMode && (widget.prefillCalc?.isPartial ?? false);
 
   void _schedulePartialSave() {
     // Editar una cotizacion DEFINITIVA no autoguarda como parcial (crearia un
@@ -583,6 +593,8 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         existingId: existingId,
       );
       ref.read(currentPartialIdProvider.notifier).state = id;
+      // Persistir la identidad junto al formulario desde el primer parcial.
+      await ref.read(draftStorageProvider).save(_buildSessionDraft());
       // NO se invalida el historial aca: el autoguardado corre cada pocos
       // segundos mientras el usuario tipea, y recargar la lista completa
       // (con `materialLabelsByCalcId`) en cada guardado volvia lenta la app en
@@ -607,9 +619,7 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
   /// fallback Settings al recomprar, comportamiento pre-fix).
   CalculationsCompanion _partialDtoWithRates(CalculatorState s) {
     try {
-      return ref
-          .read(calculatorNotifierProvider.notifier)
-          .buildPartialDto(s);
+      return ref.read(calculatorNotifierProvider.notifier).buildPartialDto(s);
     } catch (_) {
       return CalculatorNotifier.stateToPartialDto(s);
     }
@@ -657,10 +667,14 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       existingId = _editingDraft ? widget.prefillCalc!.id : _cachedPartialId;
     }
     if (state == null || repo == null) return;
-    await _persistToRepo(repo, state, existingId);
+    final id = await _persistToRepo(repo, state, existingId);
+    if (id != null && mounted) {
+      ref.read(currentPartialIdProvider.notifier).state = id;
+      await ref.read(draftStorageProvider).save(_buildSessionDraft());
+    }
   }
 
-  Future<void> _persistToRepo(
+  Future<int?> _persistToRepo(
     CalculationRepository repo,
     CalculatorState state,
     int? existingId,
@@ -669,13 +683,13 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       '[PartialSave][toRepo] existingId=$existingId '
       'editingDraft=$_editingDraft output=${state.output != null}',
     );
-    if (state.output == null) return;
+    if (state.output == null) return null;
     final materials = _partialMaterialInputs(state);
     // No sobrescribir un borrador con un estado que no tiene materiales: en
     // Advanced sin materiales validos no hay nada util que persistir y se
     // borrarian los materiales que ya estaban guardados. En Express sin peso
     // pasa lo mismo (la fila quedaria sin su material implicito).
-    if (materials.isEmpty && existingId != null) return;
+    if (materials.isEmpty && existingId != null) return null;
     final companion = _partialDtoWithRates(state);
     try {
       final id = await repo.savePartial(
@@ -684,8 +698,10 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
         existingId: existingId,
       );
       debugPrint('[PartialSave] onExit guardado id=$id');
+      return id;
     } catch (e, st) {
       debugPrint('[PartialSave] onExit ERROR: $e\n$st');
+      return null;
     }
   }
 
@@ -1202,14 +1218,21 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
 
       // 1) Guardar en el historial. Con targetId actualiza esa fila; con
       //    markDefinitive la convierte en cotizacion definitiva.
-      final id = await notifier.save(
-        clientName: result.clientName,
-        notes: result.notes,
-        conditions: result.conditions,
-        pieceImageBytes: pieceImageBytes,
-        updateId: targetId,
-        markDefinitive: convertsToDefinitive,
-      );
+      int? saveId;
+      try {
+        saveId = await notifier.save(
+          clientName: result.clientName,
+          notes: result.notes,
+          conditions: result.conditions,
+          pieceImageBytes: pieceImageBytes,
+          updateId: targetId,
+          markDefinitive: convertsToDefinitive,
+        );
+      } catch (e, st) {
+        debugPrint('[SaveDebug] save() THREW $e\n$st');
+        rethrow;
+      }
+      final id = saveId;
       if (id == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(
@@ -1458,205 +1481,208 @@ class _CalculatorPageState extends ConsumerState<CalculatorPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-        // Salida explícita: con ruta push, el leading por defecto es una
-        // flecha sutil. Un botón "cerrar" comunica mejor que vuelve al menú
-        // (sobre todo en web, donde no hay back del sistema).
-        leading: Semantics(
-          button: true,
-          label: EsBO.calcCloseAction,
-          child: IconButton(
-            icon: const Icon(Icons.close_rounded),
-            tooltip: EsBO.calcCloseAction,
-            onPressed: () async {
-              // Persistir el parcial pendiente ANTES de salir y ESPERARLO:
-              // fire-and-forget se perdia al desmontarse el arbol (web).
-              await _persistPartialSync();
-              // Cancelar el debounce pendiente: si el usuario sale dentro de
-              // la ventana de 1.5s, el timer quedaba vivo tras el pop (un
-              // `Timer is still pending` en tests y un guardado tardio).
-              _partialSaveTimer?.cancel();
-              if (!context.mounted) return;
-              // El historial se refresca solo via drift watchItems().
-              setState(() => _allowPop = true);
-              if (context.mounted) Navigator.of(context).pop();
-            },
-          ),
-        ),
-        title: Semantics(
-          header: true,
-          child: Text(
-            widget.editMode
-                // En edicion el titulo cambia: el usuario debe saber que
-                // "Guardar" va a SOBRESCRIBIR la cotizacion existente y no
-                // a crear una segunda en el historial.
-                ? ref.watch(localeStringsProvider).calcEditTitle
-                : ref.watch(localeStringsProvider).calcSheetTitle,
-          ),
-        ),
-        actions: [
-          // AppBar adaptativo: el chip de total es prioridad (SIEMPRE
-          // directo); el resto colapsa a un menu â‹® en pantallas angostas.
-          SmartAppBarActions(
-            priority: [
-              // Total chip: siempre visible en el AppBar (nunca se tapa con
-              // el teclado). Tap abre el sheet de resultado.
-              if (totalText != null)
-                Semantics(
-                  button: true,
-                  label: '${EsBO.calcResultBarTapHint}: $totalText',
-                  child: TotalChip(
-                    totalText: totalText,
-                    hasDiscount:
-                        state.output!.discountAmount > Decimal.zero ||
-                        state.showsBatchLine,
-                    onTap: _openResultSheet,
-                  ),
-                ),
-            ],
-            menuActions: [
-              (
-                icon: const Icon(Icons.help_outline_rounded),
-                label: EsBO.costHelpTitle,
-                onTap: () => showCostHelpDialog(context),
-              ),
-              (
-                icon: const Icon(Icons.folder_copy_rounded),
-                label: EsBO.calcTemplatesTitle,
-                onTap: _showTemplatesSheet,
-              ),
-              (
-                icon: const Icon(Icons.refresh_rounded),
-                label: EsBO.calcActionReset,
-                onTap: _resetAll,
-              ),
-              (
-                icon: const Icon(Icons.settings_outlined),
-                label: EsBO.settingsTitle,
-                onTap: () => context.push('/settings/standalone'),
-              ),
-            ],
-            overflowTooltip: EsBO.commonMoreActions,
-          ),
-        ],
-      ),
-      body: _isRestoring
-          // Loader mientras se restaura el prefill ("Reusar"/"Editar") o el
-          // draft: evita mostrar el formulario vacio por un instante antes de
-          // que aparezcan los valores.
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.xxl),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          : SafeArea(
-        child: Column(
-          // stretch: el step bar (Row con Expanded) y la perforacion
-          // (CustomPaint de ancho infinito) necesitan ancho acotado.
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Barra de pasos: actualiza automaticamente al hacer scroll.
-            CalcWizardStepBar(
-              labels: [
-                EsBO.calcSectionPiece,
-                EsBO.calcWizardStepPrint,
-                EsBO.calcWizardStepAdjust,
-              ],
-              current: _step,
-              onTapStep: _goStep,
+          // Salida explícita: con ruta push, el leading por defecto es una
+          // flecha sutil. Un botón "cerrar" comunica mejor que vuelve al menú
+          // (sobre todo en web, donde no hay back del sistema).
+          leading: Semantics(
+            button: true,
+            label: EsBO.calcCloseAction,
+            child: IconButton(
+              icon: const Icon(Icons.close_rounded),
+              tooltip: EsBO.calcCloseAction,
+              onPressed: () async {
+                // Persistir el parcial pendiente ANTES de salir y ESPERARLO:
+                // fire-and-forget se perdia al desmontarse el arbol (web).
+                await _persistPartialSync();
+                // Cancelar el debounce pendiente: si el usuario sale dentro de
+                // la ventana de 1.5s, el timer quedaba vivo tras el pop (un
+                // `Timer is still pending` en tests y un guardado tardio).
+                _partialSaveTimer?.cancel();
+                if (!context.mounted) return;
+                // El historial se refresca solo via drift watchItems().
+                setState(() => _allowPop = true);
+                if (context.mounted) Navigator.of(context).pop();
+              },
             ),
-            const Perforation(),
-            // Scroll continuo: las 3 secciones en una sola vista.
-            // El ScrollController detecta cual seccion esta visible y
-            // actualiza el step bar automaticamente.
-            Expanded(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _onScrollNotification,
-                child: SingleChildScrollView(
-                  controller: _scrollCtrl,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.md,
-                  ),
-                  child: MaxWidthScrollView(
-                    maxWidth: 720,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Membrete fuera de cualquier card: siempre arriba.
-                        _buildMembrete(context),
-                        const SizedBox(height: AppSpacing.lg),
-
-                        // Seccion 1: Pieza
-                        _buildScrollSection(
-                          key: _section1Key,
-                          sectionIndex: 0,
-                          theme: theme,
-                          cs: cs,
-                          child: state.mode == CalculatorMode.express
-                              ? _buildStepPieceExpress(
-                                  state,
-                                  notifier,
-                                  currency,
-                                )
-                              : _buildStepAdvancedMaterials(state, notifier),
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        // Seccion 2: Impresion
-                        _buildScrollSection(
-                          key: _section2Key,
-                          sectionIndex: 1,
-                          theme: theme,
-                          cs: cs,
-                          child: _buildStepPrint(notifier),
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        // Seccion 3: Ajustes
-                        _buildScrollSection(
-                          key: _section3Key,
-                          sectionIndex: 2,
-                          theme: theme,
-                          cs: cs,
-                          child: _buildStepAdjust(notifier, currency),
-                        ),
-                        // Padding inferior para que el ultimo paso no quede
-                        // tapado por la bottom bar.
-                        const SizedBox(height: 120),
-                      ],
+          ),
+          title: Semantics(
+            header: true,
+            child: Text(
+              widget.editMode
+                  // En edicion el titulo cambia: el usuario debe saber que
+                  // "Guardar" va a SOBRESCRIBIR la cotizacion existente y no
+                  // a crear una segunda en el historial.
+                  ? ref.watch(localeStringsProvider).calcEditTitle
+                  : ref.watch(localeStringsProvider).calcSheetTitle,
+            ),
+          ),
+          actions: [
+            // AppBar adaptativo: el chip de total es prioridad (SIEMPRE
+            // directo); el resto colapsa a un menu â‹® en pantallas angostas.
+            SmartAppBarActions(
+              priority: [
+                // Total chip: siempre visible en el AppBar (nunca se tapa con
+                // el teclado). Tap abre el sheet de resultado.
+                if (totalText != null)
+                  Semantics(
+                    button: true,
+                    label: '${EsBO.calcResultBarTapHint}: $totalText',
+                    child: TotalChip(
+                      totalText: totalText,
+                      hasDiscount:
+                          state.output!.discountAmount > Decimal.zero ||
+                          state.showsBatchLine,
+                      onTap: _openResultSheet,
                     ),
                   ),
+              ],
+              menuActions: [
+                (
+                  icon: const Icon(Icons.help_outline_rounded),
+                  label: EsBO.costHelpTitle,
+                  onTap: () => showCostHelpDialog(context),
+                ),
+                (
+                  icon: const Icon(Icons.folder_copy_rounded),
+                  label: EsBO.calcTemplatesTitle,
+                  onTap: _showTemplatesSheet,
+                ),
+                (
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: EsBO.calcActionReset,
+                  onTap: _resetAll,
+                ),
+                (
+                  icon: const Icon(Icons.settings_outlined),
+                  label: EsBO.settingsTitle,
+                  onTap: () => context.push('/settings/standalone'),
+                ),
+              ],
+              overflowTooltip: EsBO.commonMoreActions,
+            ),
+          ],
+        ),
+        body: _isRestoring
+            // Loader mientras se restaura el prefill ("Reusar"/"Editar") o el
+            // draft: evita mostrar el formulario vacio por un instante antes de
+            // que aparezcan los valores.
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.xxl),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            : SafeArea(
+                child: Column(
+                  // stretch: el step bar (Row con Expanded) y la perforacion
+                  // (CustomPaint de ancho infinito) necesitan ancho acotado.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Barra de pasos: actualiza automaticamente al hacer scroll.
+                    CalcWizardStepBar(
+                      labels: [
+                        EsBO.calcSectionPiece,
+                        EsBO.calcWizardStepPrint,
+                        EsBO.calcWizardStepAdjust,
+                      ],
+                      current: _step,
+                      onTapStep: _goStep,
+                    ),
+                    const Perforation(),
+                    // Scroll continuo: las 3 secciones en una sola vista.
+                    // El ScrollController detecta cual seccion esta visible y
+                    // actualiza el step bar automaticamente.
+                    Expanded(
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: _onScrollNotification,
+                        child: SingleChildScrollView(
+                          controller: _scrollCtrl,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.md,
+                          ),
+                          child: MaxWidthScrollView(
+                            maxWidth: 720,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Membrete fuera de cualquier card: siempre arriba.
+                                _buildMembrete(context),
+                                const SizedBox(height: AppSpacing.lg),
+
+                                // Seccion 1: Pieza
+                                _buildScrollSection(
+                                  key: _section1Key,
+                                  sectionIndex: 0,
+                                  theme: theme,
+                                  cs: cs,
+                                  child: state.mode == CalculatorMode.express
+                                      ? _buildStepPieceExpress(
+                                          state,
+                                          notifier,
+                                          currency,
+                                        )
+                                      : _buildStepAdvancedMaterials(
+                                          state,
+                                          notifier,
+                                        ),
+                                ),
+                                const SizedBox(height: AppSpacing.xl),
+                                // Seccion 2: Impresion
+                                _buildScrollSection(
+                                  key: _section2Key,
+                                  sectionIndex: 1,
+                                  theme: theme,
+                                  cs: cs,
+                                  child: _buildStepPrint(notifier),
+                                ),
+                                const SizedBox(height: AppSpacing.xl),
+                                // Seccion 3: Ajustes
+                                _buildScrollSection(
+                                  key: _section3Key,
+                                  sectionIndex: 2,
+                                  theme: theme,
+                                  cs: cs,
+                                  child: _buildStepAdjust(notifier, currency),
+                                ),
+                                // Padding inferior para que el ultimo paso no quede
+                                // tapado por la bottom bar.
+                                const SizedBox(height: 120),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      // Barra INFERIOR simplificada: solo el total / hint de validacion.
-      // El footer de navegacion (atras/adelante) se elimina porque la
-      // navegacion ahora es por scroll continuo.
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (state.showsBatchLine && totalText != null) ...[
-              BatchLines(state: state, currency: currency),
-              const Perforation(),
+        // Barra INFERIOR simplificada: solo el total / hint de validacion.
+        // El footer de navegacion (atras/adelante) se elimina porque la
+        // navegacion ahora es por scroll continuo.
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (state.showsBatchLine && totalText != null) ...[
+                BatchLines(state: state, currency: currency),
+                const Perforation(),
+              ],
+              ResultBottomBar(
+                totalText: totalText ?? 'â€”',
+                hasDiscount:
+                    state.output != null &&
+                    (state.output!.discountAmount > Decimal.zero ||
+                        state.showsBatchLine),
+                emptyHint: state.isValid
+                    ? null
+                    : _buildEmptyHint(state.missingRequiredFields),
+                onTap: _openResultSheet,
+              ),
             ],
-            ResultBottomBar(
-              totalText: totalText ?? 'â€”',
-              hasDiscount:
-                  state.output != null &&
-                  (state.output!.discountAmount > Decimal.zero ||
-                      state.showsBatchLine),
-              emptyHint: state.isValid
-                  ? null
-                  : _buildEmptyHint(state.missingRequiredFields),
-              onTap: _openResultSheet,
-            ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }

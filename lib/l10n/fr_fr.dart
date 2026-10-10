@@ -227,7 +227,8 @@ class FrImpl implements AppStrings {
   String get settingsCurrency => 'Devise';
   @override
   String get settingsCurrencyHelper =>
-      'Devise affichée dans les prix, devis et tableau de bord. Aucune conversion automatique.';
+      'Devise affichée dans les prix, devis et tableau de bord. Aucune '
+      'conversion automatique ni taux de change utilisé.';
   @override
   String get settingsCompany => 'Entreprise';
   @override
@@ -337,6 +338,44 @@ class FrImpl implements AppStrings {
   @override
   String get settingsBackupLockedBody =>
       'Les sauvegardes sont une fonctionnalité Pro.';
+
+  @override
+  String get settingsBackupDisclosure =>
+      'La sauvegarde est manuelle : aucune synchronisation automatique. Le '
+      'fichier .3dcal exporté n\'est pas chiffré ; la signature HMAC vérifie '
+      'que le fichier n\'a pas été altéré (intégrité), elle ne protège pas '
+      'son contenu.';
+
+  @override
+  String get settingsWipeTitle => 'Supprimer les données de travail';
+  @override
+  String get settingsWipeHelper =>
+      'Efface sur cet appareil : devis (y compris brouillons et modèles), '
+      'catalogues, réglages de calcul et brouillon de session ; supprime '
+      'l\'imprimante active et relance la configuration initiale. Sont '
+      'conservés : langue, thème, votre achat Pro, les données d\'intégrité '
+      'de la sauvegarde et les fichiers .3dcal exportés.';
+  @override
+  String get settingsWipeAction => 'Supprimer les données';
+  @override
+  String get settingsWipeConfirmTitle =>
+      'Supprimer toutes les données de travail ?';
+  @override
+  String get settingsWipeConfirmBody =>
+      'Cette action est irréversible. Seront effacés sur cet appareil : '
+      'devis, brouillons, modèles, filaments, imprimantes, réglages de calcul '
+      'et remises par quantité. L\'imprimante active est supprimée et vous '
+      'devrez tout reconfigurer. Les fichiers .3dcal exportés hors de '
+      'l\'application ne sont pas supprimés.';
+  @override
+  String get settingsWipeConfirmDelete => 'Tout supprimer';
+  @override
+  String get settingsWipeCancel => 'Annuler';
+  @override
+  String get settingsWipeSuccess => 'Données de travail supprimées';
+  @override
+  String get settingsWipeError =>
+      'Impossible de supprimer les données. Réessayez.';
 
   @override
   String get dashboardTitle => 'Tableau de bord';
@@ -758,6 +797,9 @@ class FrImpl implements AppStrings {
   @override
   String get filamentGramsHelper => 'Généralement 1000';
   @override
+  String get filamentGramsPositiveInteger =>
+      'Saisissez un nombre entier de grammes supérieur à zéro';
+  @override
   String get filamentDefaultToggle => 'Définir par défaut';
   @override
   String get filamentDefaultSubtitle =>
@@ -1021,7 +1063,8 @@ class FrImpl implements AppStrings {
       'Elle est nécessaire pour calculer le coût énergétique de chaque impression.';
   @override
   String get configFilamentSectionHelper =>
-      'Si vous avez la bobine sous la main, ajoutez-la maintenant. Sinon, ajoutez-la plus tard dans Paramètres → Catalogues.';
+      'Nous en avons besoin pour calculer le coût du matériau de chaque '
+      'pièce. Ajoutez-en au moins un pour pouvoir établir des devis.';
   @override
   String get configProfitHelper =>
       'Marge sur le coût de base. 200 % double le coût. Habituel : 100-300 %.';
@@ -1043,7 +1086,7 @@ class FrImpl implements AppStrings {
   @override
   String get configPrinterRequired => 'Imprimante (obligatoire)';
   @override
-  String get configFilamentOptional => 'Filament (facultatif)';
+  String get configFilamentOptional => 'Filament (obligatoire)';
   @override
   String get configAddFilament => 'Ajouter un filament';
   @override

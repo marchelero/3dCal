@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 /// Guarda todos los campos del calculator para restaurar al reabrir la app.
 class CalculationDraft {
   const CalculationDraft({
+    this.partialId,
     this.weight = '',
     this.printHours = '',
     this.printMinutes = '',
@@ -37,6 +38,7 @@ class CalculationDraft {
 
   factory CalculationDraft.fromJson(Map<String, dynamic> json) {
     return CalculationDraft(
+      partialId: _toPositiveIntOrNull(json['partialId']),
       weight: json['weight'] as String? ?? '',
       printHours: json['printHours'] as String? ?? '',
       printMinutes: json['printMinutes'] as String? ?? '',
@@ -88,6 +90,20 @@ class CalculationDraft {
     return 1;
   }
 
+  static int? _toPositiveIntOrNull(Object? value) {
+    if (value is int) return value > 0 ? value : null;
+    if (value is num && value > 0 && value == value.toInt()) {
+      return value.toInt();
+    }
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed != null && parsed > 0 ? parsed : null;
+    }
+    return null;
+  }
+
+  /// Identidad del parcial de Drift asociado a este draft, si existe.
+  final int? partialId;
   final String weight;
   final String printHours;
   final String printMinutes;
@@ -124,6 +140,7 @@ class CalculationDraft {
   final String extraCostLabel;
 
   Map<String, dynamic> toJson() => {
+    'partialId': partialId,
     'weight': weight,
     'printHours': printHours,
     'printMinutes': printMinutes,

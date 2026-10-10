@@ -15,7 +15,7 @@ Features:
 - Historial con snapshot de materiales (sobrevive a deletes) + toggle vendido + export CSV.
 - Dashboard con bar chart Cotizado vs Ganado + conversion%.
 - Export PDF + imagen de cotizacion, share por plataforma.
-- Pro (RevenueCat): paywall, gates de features, deteccion de refund/revocacion en boot.
+- Pro en **Android** (RevenueCat + Google Play): paywall, gates de features, deteccion de refund/revocacion en boot. iOS y web no ofrecen compras Pro (web es 100% gratis); iOS queda sin Pro hasta implementar StoreKit.
 - Backup/restore local con firma HMAC-SHA256 (detecta archivos alterados).
 - i18n: es_BO (default), en_US, de_DE, fr_FR, pt_BR. Moneda BOB hardcoded.
 - Draft recovery, dark mode auto, responsive (NavigationBar/NavigationRail).
@@ -27,7 +27,7 @@ Features:
 - Dart 3.13+
 - Chrome (opcional, para dev web)
 - Android SDK (opcional, para APK)
-- iOS toolchain (opcional, para iOS)
+- iOS toolchain (opcional, para iOS; **sin compras Pro** — Android es la plataforma de pagos soportada)
 
 ## Setup
 

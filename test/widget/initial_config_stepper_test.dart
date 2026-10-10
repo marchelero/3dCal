@@ -13,6 +13,12 @@ import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import 'package:tresdcal/features/catalog/printers/presentation/notifiers/printers_notifier.dart';
 import 'package:tresdcal/features/onboarding/presentation/pages/initial_config_page.dart';
+import 'package:tresdcal/l10n/de_de.dart' as de;
+import 'package:tresdcal/l10n/en_us.dart' as en;
+import 'package:tresdcal/l10n/es_bo.dart' as es;
+import 'package:tresdcal/l10n/fr_fr.dart' as fr;
+import 'package:tresdcal/l10n/pt_br.dart' as pt;
+import 'package:tresdcal/shared/widgets/numeric_input_field.dart';
 
 Future<ProviderContainer> _pumpStepper(
   WidgetTester tester, {
@@ -52,6 +58,20 @@ Future<ProviderContainer> _pumpStepper(
   return container;
 }
 
+Future<ProviderContainer> _openFilamentForm(WidgetTester tester) async {
+  final container = await _pumpStepper(tester);
+  await tester.ensureVisible(find.text('Continuar'));
+  await tester.tap(find.text('Continuar'));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.widgetWithText(TextField, 'Nombre'));
+  await tester.enterText(find.widgetWithText(TextField, 'Nombre'), 'PLA Pro');
+  await tester.enterText(
+    find.widgetWithText(TextField, 'Precio filamento (\$)'),
+    '120',
+  );
+  return container;
+}
+
 /// Selecciona marca + modelo del catalogo en el sub-form de impresora del
 /// paso 2 (via los dropdowns del PrinterCatalogSelector).
 Future<void> _selectPrinter(
@@ -71,6 +91,80 @@ Future<void> _selectPrinter(
 
 void main() {
   group('InitialConfigPage stepper', () {
+    test(
+      'mensaje para gramos positivos enteros existe en los cinco idiomas',
+      () {
+        final messages = [
+          const es.EsImpl().filamentGramsPositiveInteger,
+          const en.EnImpl().filamentGramsPositiveInteger,
+          const de.DeImpl().filamentGramsPositiveInteger,
+          const fr.FrImpl().filamentGramsPositiveInteger,
+          const pt.PtBrImpl().filamentGramsPositiveInteger,
+        ];
+
+        expect(messages, everyElement(isNotEmpty));
+        expect(messages.toSet(), hasLength(5));
+      },
+    );
+
+    testWidgets('gramos de filamento requieren entero positivo', (
+      tester,
+    ) async {
+      final container = await _openFilamentForm(tester);
+      final grams = tester.widget<NumericInputField>(
+        find.byType(NumericInputField).last,
+      );
+      final saveButton = find.widgetWithText(FilledButton, 'Guardar').last;
+      final db = container.read(appDatabaseProvider);
+
+      grams.controller.text = '';
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+      expect(find.text('Requerido'), findsOneWidget);
+      expect(await db.select(db.filaments).get(), isEmpty);
+
+      for (final invalid in ['100.5', '0', '-5']) {
+        grams.controller.text = invalid;
+        await tester.tap(saveButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text(es.EsBO.filamentGramsPositiveInteger), findsOneWidget);
+        expect(await db.select(db.filaments).get(), isEmpty);
+      }
+
+      grams.controller.text = '750';
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      final saved = await db.select(db.filaments).get();
+      expect(saved, hasLength(1));
+      expect(saved.single.gramsPerBobbin, 750);
+    });
+
+    testWidgets('error de persistencia restablece el spinner de filamento', (
+      tester,
+    ) async {
+      final container = await _openFilamentForm(tester);
+      final db = container.read(appDatabaseProvider);
+      await db.customStatement(
+        'CREATE TRIGGER reject_filament BEFORE INSERT ON filaments '
+        "BEGIN SELECT RAISE(ABORT, 'test persistence failure'); END",
+      );
+      final grams = tester.widget<NumericInputField>(
+        find.byType(NumericInputField).last,
+      );
+      grams.controller.text = '750';
+
+      final saveButton = find.widgetWithText(FilledButton, 'Guardar').last;
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text(es.EsBO.filamentErrorSave), findsOneWidget);
+      expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(await db.select(db.filaments).get(), isEmpty);
+    });
+
     testWidgets('paso 1 muestra tema (claro/oscuro) + moneda', (tester) async {
       await _pumpStepper(tester);
       // Tema: solo las dos opciones, sin "Sistema" en el setup.

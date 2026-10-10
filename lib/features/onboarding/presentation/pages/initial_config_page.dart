@@ -124,6 +124,15 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
     return null;
   }
 
+  String? _positiveIntegerGrams(String? v) {
+    if (v == null || v.trim().isEmpty) return EsBO.commonRequired;
+    final grams = int.tryParse(v.trim());
+    if (grams == null || grams <= 0) {
+      return EsBO.filamentGramsPositiveInteger;
+    }
+    return null;
+  }
+
   // ── Guardado de impresora ──
 
   Future<void> _savePrinter() async {
@@ -177,13 +186,13 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
     setState(() => _filamentSaving = true);
     final name = _filamentNameCtrl.text.trim();
     final brand = _filamentBrandCtrl.text.trim();
-    final price = Decimal.parse(
-      _filamentPriceCtrl.text.trim().replaceAll(',', '.'),
-    );
-    final grams = Decimal.parse(
-      _filamentGramsCtrl.text.trim().replaceAll(',', '.'),
-    );
     try {
+      final price = Decimal.parse(
+        _filamentPriceCtrl.text.trim().replaceAll(',', '.'),
+      );
+      final grams = Decimal.parse(
+        _filamentGramsCtrl.text.trim().replaceAll(',', '.'),
+      );
       await ref
           .read(filamentsNotifierProvider.notifier)
           .create(
@@ -520,6 +529,7 @@ class _InitialConfigPageState extends ConsumerState<InitialConfigPage> {
                         allowDecimals: false,
                         helperText: EsBO.filamentGramsHelper,
                         textInputAction: TextInputAction.done,
+                        validator: _positiveIntegerGrams,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       SizedBox(
@@ -838,8 +848,9 @@ class _ThemePicker extends ConsumerWidget {
           child: _ThemeOptionCard(
             mode: AppThemeMode.light,
             selected: selected == AppThemeMode.light,
-            onTap: () =>
-                ref.read(themeModeProvider.notifier).setMode(AppThemeMode.light),
+            onTap: () => ref
+                .read(themeModeProvider.notifier)
+                .setMode(AppThemeMode.light),
           ),
         ),
         const SizedBox(width: AppSpacing.md),
