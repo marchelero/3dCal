@@ -1,30 +1,23 @@
 # LATEST.md
 
-**Última sesión: 2026-10-09** — Release gates (3/3) RESUELTOS tras Tier 2 (6/6),
-Tier 1 (4/4) y Tier 0 (8 fixes). Suite **971/971**, analyze **0 issues**.
-Commits de Tier 0/1/2 ya pusheados: `33a2d44`, `dd85004`, `cf3c065`. **Esta sesión SIN commit**.
+**Última sesión: 2026-10-09 (tarde)** — Ronda de upgrades de stack CERRADA:
+drift **2.34.4→2.35.2** (fixes web), drift_dev **2.34.0→2.35.1**, sqlite3 **3.5.2→3.7.0**,
+flutter_riverpod **3.3.2→3.4.3** (decisión del dueño; cadena analyzer13⇒lint3.1.9⇒riverpod3.4.3),
+riverpod_generator 4.0.9, riverpod_lint 3.1.9. Web assets (`drift_worker.js`/`sqlite3.wasm`)
+refrescados del release drift-2.35.2. Solo cambió `app_database.g.dart` (cosmético, sin schema).
 
-- **Logrado (release gates, 3/3)**:
-  - URLs legales: Privacy publicada en Google Sites `calc3dprivacy` (HTTP 200 verificado);
-    `kPrivacyPolicyUrl`/`kTermsOfServiceUrl` actualizadas (terms = misma página, decisión
-    del dueño — sin página propia de Términos aún).
-  - Keystore: claves nunca en el historial de git; `*.jks` agregado al `.gitignore` raíz;
-    `security-audit` secrets PASS.
-  - `sqlite3_flutter_libs`: tombstone `0.6.0+eol` confirmado intencional (proyecto ya en
-    sqlite3 3.x); dep directa eliminada de `pubspec.yaml` → transitiva (misma versión).
-- **Tests**: **971/971** (2 corridas). `flutter analyze` → **No issues found!**.
-- **Commit de esta sesión**: NO (pendiente de verbo explícito). Tocados: `.gitignore`,
-  `pubspec.yaml/.lock`, `lib/core/constants/app_constants.dart`,
-  `docs/notes/store-compliance.md`, reporte + snapshots.
-- **USER TASK**: pegar URLs de privacy/terms en Play Console; (opcional) página propia
-  de Términos.
-- **También 2026-10-09 (sesión paralela) — F5 amortización fuera del costo/reportes**:
-  motor `coreBase` sin amortización (total idéntico con/sin precio de compra/vida útil),
-  `amortizationCost`=0, sin filas en PDF/imagen/detalle; 11 archivos + 3 tests.
-  Detalle: `docs/sessions/2026-10-09_f5-excluye-amortizacion.md`.
-- Reporte: `docs/reports/2026-10-09_release-gates.report.md`.
-- Tier 2: `docs/reports/2026-10-08_tier2-a11y-sec-docs.report.md` ·
-  Tier 1: `docs/reports/2026-10-08_tier1-deuda-tecnica.report.md` ·
-  Tier 0: `docs/reports/2026-10-08_tier0-fixes-verificados.report.md`.
-- Detalle: `docs/sessions/2026-10-08_tier2-a11y-sec-docs.md` + `2026-10-09_release-gates.md`
-  + `2026-10-09_f5-excluye-amortizacion.md`.
+- **Verificación**: `flutter test` **971/971** · `flutter analyze` **0 issues** ·
+  `flutter build web` **EXIT=0**. **SIN COMMIT** (pendiente de verbo).
+- **Pendiente**: commit/push; smoke test web manual en navegador antes de deploy.
+- Detalle: `docs/sessions/2026-10-09_dep-upgrades-drift235-riverpod343.md`.
+
+## Mismo día — ya commiteados y pusheados
+
+- **`8fd49ab`** chore: release gates 3/3 (URLs legales Google Sites, `*.jks` gitignore,
+  sqlite3_flutter_libs transitivo). USER TASK: URLs en Play Console + backup offline `.jks`.
+- **`d489725`** fix: F5 amortización fuera del costo/reportes (sesión paralela).
+- Tier 2/1/0: `cf3c065`, `dd85004`, `33a2d44`.
+- Reportes: `docs/reports/2026-10-09_release-gates.report.md`, `2026-10-08_tier2-a11y-sec-docs.report.md`,
+  `2026-10-08_tier1-deuda-tecnica.report.md`, `2026-10-08_tier0-fixes-verificados.report.md`.
+- Snapshots: `docs/sessions/2026-10-09_{dep-upgrades-drift235-riverpod343,release-gates,f5-excluye-amortizacion}.md`
+  + `2026-10-08_tier2-a11y-sec-docs.md`.

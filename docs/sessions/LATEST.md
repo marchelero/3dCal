@@ -1,42 +1,25 @@
-# Sesión 2026-10-09 — Release gates (3/3) — CERRADO
+# Sesión 2026-10-09 — Ronda de upgrades: drift 2.35 + riverpod 3.4 + sqlite3 3.7 — CERRADO
 
-**Última sesión: 2026-10-09** — los 3 gates de publicación resueltos.
-Suite **971/971**, analyze **0 issues**. **Sin commit** (pendiente de verbo explícito).
+**Última sesión: 2026-10-09 (tarde)** — upgrades de stack completados y verificados.
+Suite **971/971**, analyze **0 issues**, **build web EXIT=0**. **Sin commit** (falta verbo).
 
-- **Logrado (3/3)**:
-  - Gate 1 SEC-12 URLs legales: `u3dcal.bo` muerto → Privacy publicada por el dueño en
-    Google Sites (`sites.google.com/view/calc3dprivacy/página-principal`, HTTP 200
-    verificado); `kPrivacyPolicyUrl` y `kTermsOfServiceUrl` ambas apuntan ahí
-    (**decisión del dueño**: sin página propia de Términos aún — `/terminos` 404).
-    `docs/notes/store-compliance.md` actualizado.
-  - Gate 2 keystore: claves **nunca** en el historial de git (cualquier ruta/nombre);
-    `android/.gitignore` ya cubría `key.properties` + `**/*.jks`; hardening nuevo:
-    `*.jks` en `.gitignore` raíz. `security-audit` secrets **PASS**. Recomendado:
-    backup offline del `.jks` (único disco actual).
-  - Gate 3 `sqlite3_flutter_libs`: **falso positivo parcial** — `0.6.0+eol` es tombstone
-    intencional (paquete no-op; proyecto ya en `sqlite3` 3.x = migración hecha;
-    `drift_flutter 0.3.1` lo exige `^0.6.0+eol` transitivo). Dep directa eliminada de
-    `pubspec.yaml` según guidance upstream → queda `transitive`, misma versión/sha.
-- **Tests**: 971 → **971** (2 corridas: tras pubspec y tras URLs). Analyze → **0**.
-- **USER TASK pendiente**: copiar URLs de privacy/terms en Play Console; página propia
-  de Términos (opcional, actualiza `kTermsOfServiceUrl`).
-- **Commit**: NO (falta verbo). Tocados: `.gitignore`, `pubspec.yaml/.lock`,
-  `app_constants.dart`, `docs/notes/store-compliance.md`, reporte + snapshots.
-- Reporte: `docs/reports/2026-10-09_release-gates.report.md`.
-- Sesión previa: `docs/sessions/2026-10-08_tier2-a11y-sec-docs.md`
-  (Tier 2 6/6, commiteado `cf3c065`; Tier 1 `dd85004`; Tier 0 `33a2d44`).
-- Reportes: `docs/reports/2026-10-08_tier2-a11y-sec-docs.report.md`,
-  `2026-10-08_tier1-deuda-tecnica.report.md`, `2026-10-08_tier0-fixes-verificados.report.md`.
-- **Siguiente sugerido**: `/flow-security` (ofrecido 2026-10-09, aún sin respuesta) o
-  ronda de upgrades (`drift 2.35`, `sqlite3 3.7`) / publicación Play Console.
+- **Versiones**: drift 2.34.4→**2.35.2** (fixes web IndexedDB/OPFS), drift_dev 2.34.0→**2.35.1**,
+  sqlite3 3.5.2→**3.7.0**, flutter_riverpod 3.3.2→**3.4.3** (decisión del dueño — cadena de
+  constraints lo exigía: analyzer 13 ⇒ riverpod_lint 3.1.9 ⇒ riverpod 3.4.3), riverpod_generator
+  4.0.4→4.0.9, riverpod_lint 3.1.4→3.1.9 (+`analysis_options.yaml`), riverpod_annotation→4.0.7.
+- **Web assets**: `web/drift_worker.js` + `web/sqlite3.wasm` refrescados del release oficial
+  `drift-2.35.2` (la suite NO cubre web → smoke test manual en navegador antes de deploy).
+- **Código**: solo `app_database.g.dart` regenerado (cosmético, genéricos explícitos; sin schema).
+- **Pendiente**: commit/push; smoke web manual.
+- Detalle: `docs/sessions/2026-10-09_dep-upgrades-drift235-riverpod343.md`.
 
-## También 2026-10-09 — F5: amortización fuera del costo y de los reportes (sin commit)
+## Mismo día — Release gates (3/3) y F5 (commiteados)
 
-Sesión paralela (mismo día, otro flujo): la amortización de la impresora ya **no entra en
-`coreBase`** (express ni avanzado) ni aparece en PDF / imagen PNG / detalle en pantalla.
-`amortizationCost` de salida queda en 0; campos y params se conservan (sólo cambian valores).
-Archivos: los 11 de `lib/` + `test/` del refactor (ver detalle de riesgos y mapeo A1..A5).
-`flutter analyze` **0 issues** · `flutter test` **971/971** · **NO commit**.
-Detalle: `docs/sessions/2026-10-09_f5-excluye-amortizacion.md`.
-Advertencia: **no** correr `dart format --line-length 100` sobre el repo (el repo está a 80;
-a 100 reescribe archivos enteros).
+- **`8fd49ab` chore:** release gates 3/3 — URLs legales → Google Sites calc3dprivacy
+  (terms = misma página, decisión del dueño), `*.jks` en `.gitignore` raíz, `sqlite3_flutter_libs`
+  directa→transitiva (tombstone eol intencional). Detalle: `2026-10-09_release-gates.md`.
+- **`d489725` fix:** F5 amortización fuera del costo y de los reportes (sesión paralela).
+  Detalle: `2026-10-09_f5-excluye-amortizacion.md`.
+- USER TASK: pegar URLs privacy/terms en Play Console; backup offline del `.jks`.
+- Commits previos: `cf3c065` (Tier 2), `dd85004` (Tier 1), `33a2d44` (Tier 0).
+- Formato: NO correr `dart format --line-length 100` (repo va a 80).

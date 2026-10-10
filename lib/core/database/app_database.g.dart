@@ -5943,7 +5943,16 @@ class $$PrintersTableTableManager
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$PrintersTable, PrinterProfile>(table),
+                  BaseReferences<_$AppDatabase, $PrintersTable, PrinterProfile>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -6195,7 +6204,16 @@ class $$FilamentsTableTableManager
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$FilamentsTable, Filament>(table),
+                  BaseReferences<_$AppDatabase, $FilamentsTable, Filament>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -7323,7 +7341,7 @@ class $$CalculationsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$CalculationsTable, Calculation>(table),
                   $$CalculationsTableReferences(db, table, e),
                 ),
               )
@@ -7754,7 +7772,9 @@ class $$CalculationMaterialsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$CalculationMaterialsTable, CalculationMaterial>(
+                    table,
+                  ),
                   $$CalculationMaterialsTableReferences(db, table, e),
                 ),
               )
@@ -7958,7 +7978,16 @@ class $$SettingsTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$SettingsTableTable, Setting>(table),
+                  BaseReferences<_$AppDatabase, $SettingsTableTable, Setting>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -8212,7 +8241,16 @@ class $$EntitlementsTableTableManager
                 isActive: isActive,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$EntitlementsTable, Entitlement>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $EntitlementsTable,
+                    Entitlement
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -8402,7 +8440,16 @@ class $$DiscountTiersTableTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$DiscountTiersTableTable, DiscountTiers>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $DiscountTiersTableTable,
+                    DiscountTiers
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
