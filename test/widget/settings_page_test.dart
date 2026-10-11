@@ -639,7 +639,7 @@ void main() {
       );
     });
 
-    testWidgets('pagos no disponibles oculta restores y conserva tarjeta PRO', (
+    testWidgets('pagos no disponibles: badge PRO abre el detalle del plan', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(800, 1600);
@@ -649,16 +649,20 @@ void main() {
 
       await pumpForRestore(tester, isPro: true);
 
-      // Abrir el modal de Pro tocando el pill "PRO".
+      // Abrir el detalle del plan tocando el pill "PRO" de la cabecera.
       await tester.tap(find.text(EsBO.proBadgeLabel));
       await tester.pumpAndSettle();
 
-      expect(find.text(EsBO.settingsProRestorePurchase), findsNothing);
-      expect(find.text(EsBO.paywallUnavailable), findsOneWidget);
       expect(
-        find.widgetWithText(FilledButton, EsBO.settingsProRestorePurchase),
-        findsNothing,
+        find.byKey(const ValueKey('settingsPlanSheet')),
+        findsOneWidget,
+        reason: 'El badge PRO de la cabecera abre el sheet del plan.',
       );
+      expect(find.text(EsBO.settingsPlanAlreadyPro), findsOneWidget);
+      // El detalle del plan no ofrece restore (vive en la seccion Cuenta)
+      // ni mensajes de "pagos no disponibles".
+      expect(find.text(EsBO.settingsProRestorePurchase), findsNothing);
+      expect(find.text(EsBO.paywallUnavailable), findsNothing);
     });
 
     testWidgets('tarjeta PRO confirma acceso activo sin compra adicional', (
@@ -670,14 +674,17 @@ void main() {
 
       await pumpForRestore(tester, isPro: true);
 
-      // Abrir el modal de Pro tocando el pill "PRO".
+      // Abrir el detalle del plan tocando el pill "PRO" de la cabecera.
       await tester.tap(find.text(EsBO.proBadgeLabel));
       await tester.pumpAndSettle();
 
-      expect(find.text(EsBO.proBadgeLabel), findsOneWidget);
-      expect(find.text(EsBO.settingsProUnlocked), findsOneWidget);
-      expect(find.text(EsBO.settingsProNoAdditionalPurchase), findsOneWidget);
-      expect(find.text(EsBO.settingsProFutureUpdates), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('settingsPlanSheet')),
+        findsOneWidget,
+      );
+      expect(find.text(EsBO.settingsPlanAlreadyPro), findsOneWidget);
+      expect(find.text(EsBO.settingsPlanProIncludes), findsOneWidget);
+      expect(find.text(EsBO.settingsPlanProFeatures.first), findsWidgets);
     });
 
     testWidgets(

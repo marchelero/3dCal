@@ -17,6 +17,7 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
 import '../../../../shared/widgets/money_row.dart';
+import '../../../../shared/widgets/page_header_card.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/stat_tile.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
@@ -37,39 +38,51 @@ class DashboardPage extends ConsumerWidget {
     final currency = ref.watch(selectedCurrencyProvider);
     final isPro = ref.watch(dashboardIsProProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(EsBO.dashboardTitle)),
       body: SafeArea(
-        child: asyncStats.when(
-          loading: () => const LoadingView(),
-          error: (e, _) => ErrorView(
-            message: EsBO.dashboardErrorLoad,
-            details: e.toString(),
-            onRetry: () => ref.invalidate(dashboardStatsProvider(since)),
-          ),
-          data: (stats) {
-            if (stats.countAll == 0) {
-              return EmptyView(
-                icon: Icons.bar_chart_rounded,
-                message: EsBO.dashboardEmpty,
-                subtitle: EsBO.dashboardEmptySubtitle,
-                ctaLabel: EsBO.dashboardEmptyCta,
-                ctaIcon: Icons.home_rounded,
-                onCta: () => context.go('/'),
-              );
-            }
-            return RefreshIndicator(
-              onRefresh: () =>
-                  ref.refresh(dashboardStatsProvider(since).future),
-              child: _DashboardBody(
-                stats: stats,
-                currency: currency,
-                isPro: isPro,
-                since: since,
-                onRangeSelected: (s) =>
-                    ref.read(dashboardRangeProvider.notifier).state = s,
+        child: Column(
+          children: [
+            // Cabecera estandar del shell (card genérica) — también visible
+            // en loading/empty para no saltar de layout.
+            PageHeaderCard(
+              title: EsBO.dashboardTitle,
+              subtitle: EsBO.homeActionDashboardSub,
+              icon: Icons.bar_chart_rounded,
+            ),
+            Expanded(
+              child: asyncStats.when(
+                loading: () => const LoadingView(),
+                error: (e, _) => ErrorView(
+                  message: EsBO.dashboardErrorLoad,
+                  details: e.toString(),
+                  onRetry: () => ref.invalidate(dashboardStatsProvider(since)),
+                ),
+                data: (stats) {
+                  if (stats.countAll == 0) {
+                    return EmptyView(
+                      icon: Icons.bar_chart_rounded,
+                      message: EsBO.dashboardEmpty,
+                      subtitle: EsBO.dashboardEmptySubtitle,
+                      ctaLabel: EsBO.dashboardEmptyCta,
+                      ctaIcon: Icons.home_rounded,
+                      onCta: () => context.go('/'),
+                    );
+                  }
+                  return RefreshIndicator(
+                    onRefresh: () =>
+                        ref.refresh(dashboardStatsProvider(since).future),
+                    child: _DashboardBody(
+                      stats: stats,
+                      currency: currency,
+                      isPro: isPro,
+                      since: since,
+                      onRangeSelected: (s) =>
+                          ref.read(dashboardRangeProvider.notifier).state = s,
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );

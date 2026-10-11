@@ -14,7 +14,7 @@ import 'package:tresdcal/features/settings/domain/settings.dart';
 import 'package:tresdcal/features/settings/presentation/notifiers/settings_notifier.dart';
 import 'package:tresdcal/features/settings/presentation/pages/print_settings_page.dart';
 import 'package:tresdcal/l10n/es_bo.dart';
-import 'package:tresdcal/shared/widgets/pro_active_badge.dart';
+import 'package:tresdcal/shared/widgets/page_header_card.dart';
 
 class _FakeSettingsNotifier extends SettingsNotifier {
   @override
@@ -51,14 +51,23 @@ void main() {
   }
 
   testWidgets(
-    'Header contains ProActiveBadge, version, privacy and lock icon',
+    'Header estandar: card con titulo/subtitulo + badge de plan, '
+    'sin version, privacidad ni flecha de retroceso',
     (tester) async {
       await pumpPage(tester);
 
-      expect(find.byType(ProActiveBadge), findsOneWidget);
-      expect(find.textContaining('v$kAppVersion'), findsOneWidget);
-      expect(find.text(EsBO.settingsPrivacy), findsOneWidget);
-      expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
+      // Card generica estandar con su contenido localizado.
+      expect(find.byType(PageHeaderCard), findsOneWidget);
+      expect(find.text(EsBO.settingsPrintConfigTitle), findsOneWidget);
+      expect(find.text(EsBO.settingsPrintConfigSubtitle), findsOneWidget);
+      // Badge de plan (PRO/FREE) presente en la cabecera.
+      expect(find.byType(PlanTierBadge), findsOneWidget);
+      // Sin informacion inutil: version de la app, privacidad, candado
+      // y flecha de retroceso (es un tab del shell, no una pagina empujada).
+      expect(find.textContaining('v$kAppVersion'), findsNothing);
+      expect(find.text(EsBO.settingsPrivacy), findsNothing);
+      expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+      expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
     },
   );
 }

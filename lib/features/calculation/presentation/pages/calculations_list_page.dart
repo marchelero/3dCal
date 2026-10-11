@@ -22,9 +22,9 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/page_header_card.dart';
 import '../../../../shared/widgets/partial_save_badge.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
-import '../../../../shared/widgets/smart_app_bar_actions.dart';
 import '../../../entitlement/presentation/providers/entitlement_providers.dart'
     show isProProvider;
 import '../../data/calculation_repository.dart';
@@ -87,66 +87,63 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(EsBO.historyTitle),
-        actions: [
-          SmartAppBarActions(
-            // M3 (review): CSV directo en pantallas normales; solo el orden
-            // colapsa al menu ⋮ en angosto.
-            priority: [
-              Tooltip(
-                message: EsBO.historyExportCsv,
-                child: IconButton(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Cabecera estandar del shell (card genérica): título completo
+            // "Historial" (antes el AppBar lo recortaba a "Coti...").
+            PageHeaderCard(
+              title: EsBO.navHistory,
+              subtitle: EsBO.homeActionHistorySub,
+              icon: Icons.history_rounded,
+            ),
+          // Search bar + acciones del módulo (CSV y orden viven junto a la
+          // búsqueda, no en la cabecera).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: EsBO.historySearchMaterialsHint,
+                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 18),
+                              tooltip: EsBO.commonClearSearch,
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                notifier.search('');
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 12,
+                      ),
+                    ),
+                    onChanged: (v) {
+                      notifier.search(v);
+                      setState(() {});
+                    },
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                IconButton(
+                  tooltip: EsBO.historyExportCsv,
                   icon: const Icon(Icons.file_download_outlined, size: 20),
                   onPressed: () => _exportCsv(notifier),
                 ),
-              ),
-            ],
-            menuActions: [
-              (
-                icon: Icon(
-                  Icons.sort_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
+                IconButton(
+                  tooltip: EsBO.historySortTitle,
+                  icon: const Icon(Icons.sort_rounded, size: 20),
+                  onPressed: _showSortSheet,
                 ),
-                label: EsBO.historySortTitle,
-                onTap: _showSortSheet,
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: EsBO.historySearchMaterialsHint,
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                suffixIcon: _searchCtrl.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18),
-                        tooltip: EsBO.commonClearSearch,
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          notifier.search('');
-                          setState(() {});
-                        },
-                      )
-                    : null,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 12,
-                ),
-              ),
-              onChanged: (v) {
-                notifier.search(v);
-                setState(() {});
-              },
+              ],
             ),
           ),
           // Filter chips (Venta + Fechas + Cliente activo)
@@ -234,6 +231,7 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

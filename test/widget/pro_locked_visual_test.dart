@@ -625,8 +625,8 @@ void main() {
       await _pumpSettings(tester, seedPro: true);
 
       // Pro: el badge de BLOQUEO no debe verse en la seccion Empresa.
-      // (El ProActiveBadge de estado activo en la cabecera SÍ muestra "PRO"
-      // — es legitimo y no es el gate.)
+      // (El PlanTierBadge de la cabecera SI muestra "PRO" — es estado
+      // del plan y no es el gate.)
       expect(
         find.byType(ProBadge),
         findsNothing,

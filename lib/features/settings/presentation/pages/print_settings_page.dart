@@ -7,9 +7,7 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
-import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
@@ -17,7 +15,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
-import '../../../../shared/widgets/pro_active_badge.dart';
+import '../../../../shared/widgets/page_header_card.dart';
 import '../../../catalog/filaments/presentation/notifiers/filaments_notifier.dart';
 import '../../../catalog/printers/presentation/notifiers/printers_notifier.dart';
 import '../../domain/settings.dart';
@@ -106,7 +104,6 @@ class _PrintSettingsBody extends ConsumerWidget {
                   suffix: '%',
                   sliderLeadingIcon: Icons.trending_down_rounded,
                   sliderTrailingIcon: Icons.trending_up_rounded,
-                  showProfitPreview: true,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return EsBO.commonRequired;
@@ -189,6 +186,7 @@ class _PrintSettingsBody extends ConsumerWidget {
                   sliderMin: 0,
                   sliderMax: 500,
                   sliderDivisions: 100,
+                  showSlider: false,
                   suffix: currency.symbol,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
@@ -331,140 +329,16 @@ class _PrintSettingsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
+    final color = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Container(
-        width: double.infinity,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: color.surface,
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(color: color.outlineVariant, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.onSurface.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Banda de cota superior
-            Container(
-              height: 4,
-              decoration: BoxDecoration(color: color.tertiary),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xxl,
-                AppSpacing.xl,
-                AppSpacing.xxl,
-                AppSpacing.xxl,
-              ),
-              child: Row(
-                children: [
-                  // Flecha de retorno
-                  IconButton(
-                    tooltip: EsBO.configBack,
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      }
-                    },
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  // Sello de impresora
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          color.tertiary,
-                          color.tertiary.withValues(alpha: 0.7),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadii.xxl),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.tertiary.withValues(alpha: 0.35),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      MdiIcons.printer3d,
-                      color: color.onTertiary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.lg),
-                  // Titulo
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          EsBO.settingsPrintConfigTitle.toUpperCase(),
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                            color: color.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          EsBO.settingsPrintConfigSubtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: color.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${EsBO.appName} · v$kAppVersion',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: color.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.lock_outline_rounded,
-                              size: 14,
-                              color: color.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                EsBO.settingsPrivacy,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: color.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  const ProActiveBadge(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    // Cabecera estandar del shell: card generica (PageHeaderCard).
+    // Sin flecha de retroceso (es un tab, no una pagina empujada), sin
+    // version de app ni fila de privacidad.
+    return PageHeaderCard(
+      title: EsBO.settingsPrintConfigTitle,
+      subtitle: EsBO.settingsPrintConfigSubtitle,
+      icon: MdiIcons.printer3d,
+      accentColor: color.primary,
     );
   }
 }

@@ -107,6 +107,8 @@ class PtBrImpl implements AppStrings {
   String get settingsManageFilaments => 'Gerencie seus filamentos';
   @override
   String get settingsManagePrinters => 'Cadastre suas impressoras';
+  @override
+  String get settingsSubtitle => 'Preferências do aplicativo';
 
   // === Print settings page ===
   @override
@@ -269,6 +271,45 @@ class PtBrImpl implements AppStrings {
       'Sua compra inclui futuras melhorias do PRO sem custo adicional.';
   @override
   String get settingsProRestorePurchase => 'Restaurar compra';
+
+  @override
+  String get settingsPlanSectionTitle => 'Plano';
+  @override
+  String get settingsPlanStatusFree => 'Grátis';
+  @override
+  String get settingsPlanStatusPro => 'Plano PRO';
+  @override
+  String get settingsPlanFreeHeading => 'Grátis';
+  @override
+  String get settingsPlanProHeading => 'Pro';
+  @override
+  String get settingsPlanProIncludes => 'Tudo do Grátis, e ainda:';
+  @override
+  String get settingsPlanUnlockCta => 'Seja PRO';
+  @override
+  String get settingsPlanAlreadyPro => 'Você já tem PRO';
+  @override
+  List<String> get settingsPlanFreeFeatures => const [
+    'Calculadora de peça única',
+    'Parâmetros de custo (mão de obra, pós-processo, falha, lucro, mínimo)',
+    'Catálogo de filamentos (até 5)',
+    'Catálogo de impressoras (até 2)',
+    'Histórico de até 10 orçamentos',
+    'Exportar PDF com marca 3dCalc',
+    'Troca de moeda e tema claro/escuro',
+    'Dashboard básico com totais',
+  ];
+  @override
+  List<String> get settingsPlanProFeatures => const [
+    'PDF sem marca d\'água',
+    'Nome e logo da sua empresa no app e no PDF',
+    'Orçamentos multi-material',
+    'Custos adicionais por peça',
+    'Histórico ilimitado',
+    'Exportar para CSV',
+    'Backups (exportar/importar)',
+    'Dashboard avançado com análises',
+  ];
 
   @override
   String get settingsRestorePurchases => 'Restaurar compras';
@@ -1129,6 +1170,8 @@ class PtBrImpl implements AppStrings {
   // === Pro badge / locked visuals (UX) ===
   @override
   String get proBadgeLabel => 'PRO';
+  @override
+  String get proBadgeLabelFree => 'FREE';
   @override
   String get proLockedTooltip => 'Recurso Pro';
   @override

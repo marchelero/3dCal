@@ -25,7 +25,7 @@ import '../../../../l10n/app_locale.dart';
 import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
-import '../../../../shared/widgets/pro_active_badge.dart';
+import '../../../../shared/widgets/page_header_card.dart';
 import '../../../../shared/widgets/skeleton_widget.dart';
 import '../../data/calculation_repository.dart' hide CalculationDraft;
 import '../notifiers/calculations_notifier.dart';
@@ -121,167 +121,36 @@ class HomePage extends ConsumerWidget {
         companyName.isNotEmpty;
     final hasLogo = companyLogoBase64 != null && companyLogoBase64.isNotEmpty;
 
-    final Widget content;
-    final String semanticsLabel;
-
-    // Modo empresa: muestra logo + nombre empresa grande, app name pequeno
+    // Modo empresa: logo + nombre de la empresa. Si no, los estandares de
+    // la app (mismo estilo de tarjeta que el resto de los tabs — AC de la
+    // card genérica de cabecera).
+    final String title;
+    final Widget leading;
     if (hasCompanyConfig || hasLogo) {
-      final displayName = hasCompanyConfig ? companyName : EsBO.appName;
-      semanticsLabel = '$displayName — ${EsBO.homeHeroSemanticsSuffix}';
-      content = Row(
-        children: [
-          // Logo o icono default
-          if (hasLogo)
-            _buildCompanyLogo(theme, companyLogoBase64)
-          else
-            _defaultHeroIcon(color),
-          const SizedBox(width: AppSpacing.lg),
-          // Texto
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: color.onSurface,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Row(
-                  children: [
-                    // Badge 3dCalc
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: color.primaryContainer,
-                        borderRadius: BorderRadius.circular(AppRadii.sm),
-                      ),
-                      child: Text(
-                        EsBO.appName,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: color.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        EsBO.homeHeroTagline,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: color.onSurfaceVariant,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+      title = hasCompanyConfig ? companyName : EsBO.appName;
+      leading = hasLogo
+          ? _buildCompanyLogo(theme, companyLogoBase64)
+          : _defaultHeroIcon(color);
     } else {
-      // Modo default: solo app name
-      semanticsLabel = '${EsBO.appName} — ${EsBO.homeHeroSemanticsSuffix}';
-      content = Row(
-        children: [
-          // Sello de plano con logo
-          Semantics(excludeSemantics: true, child: _defaultHeroIcon(color)),
-          const SizedBox(width: AppSpacing.lg),
-          // Texto
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  EsBO.appName,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: color.onSurface,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  EsBO.homeHeroTagline,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: color.onSurfaceVariant,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+      title = EsBO.appName;
+      leading = _defaultHeroIcon(color);
     }
 
-    // Caratula de plano: hoja de papel con banda de cota superior
-    return Semantics(
-      header: true,
-      label: semanticsLabel,
-      child: Container(
-        width: double.infinity,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: color.surface,
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(color: color.outlineVariant, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.onSurface.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Banda de cota superior del plano
-            Container(
-              height: 4,
-              decoration: BoxDecoration(color: color.primary),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xxl,
-                AppSpacing.xl,
-                AppSpacing.xxl,
-                AppSpacing.xxl,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Contenido hero (logo + nombre + tagline) a la izquierda.
-                  Expanded(child: content),
-                  const SizedBox(width: AppSpacing.sm),
-                  // Badge PRO activo — extremo derecho de la cabecera.
-                  const ProActiveBadge(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return PageHeaderCard(
+      title: title,
+      subtitle: EsBO.homeHeroTagline,
+      leading: leading,
+      semanticsLabel: '$title — ${EsBO.homeHeroSemanticsSuffix}',
     );
   }
 
   Widget _defaultHeroIcon(ColorScheme color) {
     return Container(
-      width: 56,
-      height: 56,
+      width: 52,
+      height: 52,
       decoration: BoxDecoration(
         color: color.primary,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
       ),
       child: Image.asset(
         'assets/images/3dlogo.png',
@@ -294,11 +163,11 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildCompanyLogo(ThemeData theme, String base64) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadii.xl),
+      borderRadius: BorderRadius.circular(AppRadii.xxl),
       child: Image.memory(
         _base64ToBytes(base64),
-        width: 56,
-        height: 56,
+        width: 52,
+        height: 52,
         fit: BoxFit.contain,
         errorBuilder: (_, _, _) => _defaultHeroIcon(theme.colorScheme),
       ),

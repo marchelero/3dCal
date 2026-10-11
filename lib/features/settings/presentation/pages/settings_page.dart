@@ -25,6 +25,7 @@ import '../../../../shared/widgets/app_snack_bar.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/max_width_scroll_view.dart';
+import '../../../../shared/widgets/page_header_card.dart';
 import '../../../../shared/widgets/pro_active_badge.dart';
 import '../../../../shared/widgets/pro_badge.dart';
 import '../../../calculation/domain/dashboard_stats.dart';
@@ -331,138 +332,21 @@ class _SettingsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Container(
-        width: double.infinity,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: color.surface,
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          border: Border.all(color: color.outlineVariant, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.onSurface.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Banda de cota superior
-            Container(
-              height: 4,
-              decoration: BoxDecoration(color: color.primary),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xxl,
-                AppSpacing.xl,
-                AppSpacing.xxl,
-                AppSpacing.xxl,
-              ),
-              child: Row(
-                children: [
-                  // Flecha de retorno — solo cuando la pagina fue empujada
-                  // encima de otra (standalone). Dentro del tab del shell
-                  // `canPop == false` y no se muestra.
-                  if (showBack) ...[
-                    IconButton(
-                      tooltip: EsBO.configBack,
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      onPressed: () {
-                        if (context.canPop()) {
-                          context.pop();
-                        }
-                      },
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                  ],
-                  // Sello de engranaje
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          color.primary,
-                          color.primary.withValues(alpha: 0.7),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadii.xxl),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.primary.withValues(alpha: 0.35),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.tune_rounded,
-                      color: color.onPrimary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.lg),
-                  // Titulo
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          EsBO.settingsTitle.toUpperCase(),
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                            color: color.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${EsBO.appName} · v$kAppVersion',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: color.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.lock_outline_rounded,
-                              size: 14,
-                              color: color.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                EsBO.settingsPrivacy,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: color.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Badge PRO activo — extremo derecho de la cabecera.
-                  const SizedBox(width: AppSpacing.sm),
-                  const ProActiveBadge(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    // Cabecera estandar del shell: card generica (PageHeaderCard).
+    // Sin version de app ni fila de privacidad; la flecha de retorno solo
+    // aparece si la pagina fue empujada (standalone).
+    return PageHeaderCard(
+      title: EsBO.settingsTitle,
+      subtitle: EsBO.settingsSubtitle,
+      icon: Icons.tune_rounded,
+      onBack: showBack
+          ? () {
+              if (context.canPop()) {
+                context.pop();
+              }
+            }
+          : null,
+      backTooltip: EsBO.configBack,
     );
   }
 }

@@ -103,6 +103,8 @@ class FrImpl implements AppStrings {
   String get settingsManageFilaments => 'Gérer vos filaments';
   @override
   String get settingsManagePrinters => 'Enregistrer vos imprimantes';
+  @override
+  String get settingsSubtitle => 'Préférences de l\u2019app';
 
   // === Print settings page ===
   @override
@@ -262,6 +264,45 @@ class FrImpl implements AppStrings {
       'Votre achat inclut les futures améliorations PRO sans frais supplémentaires.';
   @override
   String get settingsProRestorePurchase => 'Restaurer l’achat';
+  @override
+  String get settingsPlanSectionTitle => 'Forfait';
+  @override
+  String get settingsPlanStatusFree => 'Gratuit';
+  @override
+  String get settingsPlanStatusPro => 'Forfait PRO';
+  @override
+  String get settingsPlanFreeHeading => 'Gratuit';
+  @override
+  String get settingsPlanProHeading => 'Pro';
+  @override
+  String get settingsPlanProIncludes => 'Tout le Gratuit, et en plus :';
+  @override
+  String get settingsPlanUnlockCta => 'Passer à PRO';
+  @override
+  String get settingsPlanAlreadyPro => 'Vous avez déjà PRO';
+  @override
+  List<String> get settingsPlanFreeFeatures => const [
+    'Calculatrice une seule pièce',
+    'Paramètres de coût (main-d’œuvre, post-traitement, échec, profit, minimum)',
+    'Catalogue de filaments (jusqu’à 5)',
+    'Catalogue d’imprimantes (jusqu’à 2)',
+    'Historique jusqu’à 10 devis',
+    'Export PDF avec la marque 3dCalc',
+    'Choix de devise et thème clair/sombre',
+    'Tableau de bord basique avec totaux',
+  ];
+  @override
+  List<String> get settingsPlanProFeatures => const [
+    'PDF sans filigrane',
+    'Nom et logo de votre entreprise dans l’app et le PDF',
+    'Devis multi-matériaux',
+    'Coûts additionnels par pièce',
+    'Historique illimité',
+    'Export CSV',
+    'Sauvegardes (export/import)',
+    'Tableau de bord avancé avec analyses',
+  ];
+
   @override
   String get settingsRestorePurchases => 'Restaurer les achats';
   @override
@@ -1137,6 +1178,8 @@ class FrImpl implements AppStrings {
 
   @override
   String get proBadgeLabel => 'PRO';
+  @override
+  String get proBadgeLabelFree => 'FREE';
   @override
   String get proLockedTooltip => 'Fonctionnalité de la version Pro';
   @override

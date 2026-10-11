@@ -67,6 +67,7 @@ class EsBO {
   static String get settingsTheme => _impl.settingsTheme;
   static String get settingsManageFilaments => _impl.settingsManageFilaments;
   static String get settingsManagePrinters => _impl.settingsManagePrinters;
+  static String get settingsSubtitle => _impl.settingsSubtitle;
 
   // === Print settings page ===
   static String get settingsPrintConfigTitle => _impl.settingsPrintConfigTitle;
@@ -174,6 +175,19 @@ class EsBO {
   static String get settingsProFutureUpdates => _impl.settingsProFutureUpdates;
   static String get settingsProRestorePurchase =>
       _impl.settingsProRestorePurchase;
+
+  static String get settingsPlanSectionTitle => _impl.settingsPlanSectionTitle;
+  static String get settingsPlanStatusFree => _impl.settingsPlanStatusFree;
+  static String get settingsPlanStatusPro => _impl.settingsPlanStatusPro;
+  static String get settingsPlanFreeHeading => _impl.settingsPlanFreeHeading;
+  static String get settingsPlanProHeading => _impl.settingsPlanProHeading;
+  static String get settingsPlanProIncludes => _impl.settingsPlanProIncludes;
+  static String get settingsPlanUnlockCta => _impl.settingsPlanUnlockCta;
+  static String get settingsPlanAlreadyPro => _impl.settingsPlanAlreadyPro;
+  static List<String> get settingsPlanFreeFeatures =>
+      _impl.settingsPlanFreeFeatures;
+  static List<String> get settingsPlanProFeatures =>
+      _impl.settingsPlanProFeatures;
 
   static String get settingsRestorePurchases => _impl.settingsRestorePurchases;
   static String get settingsRestoreSuccess => _impl.settingsRestoreSuccess;
@@ -658,6 +672,7 @@ class EsBO {
 
   // === Pro badge / locked visuals (UX) ===
   static String get proBadgeLabel => _impl.proBadgeLabel;
+  static String get proBadgeLabelFree => _impl.proBadgeLabelFree;
   static String get proLockedTooltip => _impl.proLockedTooltip;
   static String historyUsageCounter(int used, int cap) =>
       _impl.historyUsageCounter(used, cap);
@@ -1064,6 +1079,8 @@ class EsImpl implements AppStrings {
   String get settingsManageFilaments => 'Gestiona tus filamentos';
   @override
   String get settingsManagePrinters => 'Registra tus impresoras';
+  @override
+  String get settingsSubtitle => 'Preferencias de la app';
 
   // === Print settings page ===
   @override
@@ -1225,6 +1242,45 @@ class EsImpl implements AppStrings {
       'Tu compra incluye las mejoras futuras de PRO sin costo adicional.';
   @override
   String get settingsProRestorePurchase => 'Restaurar compra';
+
+  @override
+  String get settingsPlanSectionTitle => 'Plan';
+  @override
+  String get settingsPlanStatusFree => 'Gratis';
+  @override
+  String get settingsPlanStatusPro => 'Plan PRO';
+  @override
+  String get settingsPlanFreeHeading => 'Gratis';
+  @override
+  String get settingsPlanProHeading => 'Pro';
+  @override
+  String get settingsPlanProIncludes => 'Todo lo de Gratis, y además:';
+  @override
+  String get settingsPlanUnlockCta => 'Hazte PRO';
+  @override
+  String get settingsPlanAlreadyPro => 'Ya tienes PRO';
+  @override
+  List<String> get settingsPlanFreeFeatures => const [
+    'Calculadora de una sola pieza',
+    'Parámetros de costos (mano de obra, post-proceso, falla, ganancia, mínimo)',
+    'Catálogo de filamentos (hasta 5)',
+    'Catálogo de impresoras (hasta 2)',
+    'Historial de hasta 10 cotizaciones',
+    'Exportar PDF con marca 3dCalc',
+    'Cambio de moneda y tema claro/oscuro',
+    'Dashboard básico con totales',
+  ];
+  @override
+  List<String> get settingsPlanProFeatures => const [
+    'PDF sin marca de agua',
+    'Nombre y logo de tu empresa en la app y el PDF',
+    'Cotizaciones multi-material',
+    'Costos adicionales por pieza',
+    'Historial ilimitado',
+    'Exportar a CSV',
+    'Backups (exportar/importar)',
+    'Dashboard avanzado con analíticas',
+  ];
 
   @override
   String get settingsRestorePurchases => 'Restaurar compras';
@@ -2123,6 +2179,8 @@ class EsImpl implements AppStrings {
   // === Pro badge / locked visuals (UX) ===
   @override
   String get proBadgeLabel => 'PRO';
+  @override
+  String get proBadgeLabelFree => 'FREE';
   @override
   String get proLockedTooltip => 'Funcion Pro';
   @override

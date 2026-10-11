@@ -110,6 +110,8 @@ class DeImpl implements AppStrings {
   String get settingsManageFilaments => 'Filamente verwalten';
   @override
   String get settingsManagePrinters => 'Drucker registrieren';
+  @override
+  String get settingsSubtitle => 'App-Einstellungen';
 
   // === Print settings page ===
   @override
@@ -270,6 +272,45 @@ class DeImpl implements AppStrings {
       'Ihr Kauf umfasst künftige PRO-Verbesserungen ohne zusätzliche Kosten.';
   @override
   String get settingsProRestorePurchase => 'Kauf wiederherstellen';
+
+  @override
+  String get settingsPlanSectionTitle => 'Tarif';
+  @override
+  String get settingsPlanStatusFree => 'Kostenlos';
+  @override
+  String get settingsPlanStatusPro => 'PRO-Tarif';
+  @override
+  String get settingsPlanFreeHeading => 'Kostenlos';
+  @override
+  String get settingsPlanProHeading => 'Pro';
+  @override
+  String get settingsPlanProIncludes => 'Alles aus Kostenlos, und zusätzlich:';
+  @override
+  String get settingsPlanUnlockCta => 'PRO holen';
+  @override
+  String get settingsPlanAlreadyPro => 'Du hast bereits PRO';
+  @override
+  List<String> get settingsPlanFreeFeatures => const [
+    'Rechner für ein einzelnes Teil',
+    'Kostenparameter (Arbeit, Nachbearbeitung, Fehler, Gewinn, Minimum)',
+    'Filamentkatalog (bis zu 5)',
+    'Druckerkatalog (bis zu 2)',
+    'Verlauf bis zu 10 Angebote',
+    'PDF-Export mit 3dCalc-Marke',
+    'Währung und helles/dunkles Design',
+    'Basis-Dashboard mit Summen',
+  ];
+  @override
+  List<String> get settingsPlanProFeatures => const [
+    'PDF ohne Wasserzeichen',
+    'Name und Logo deiner Firma in App und PDF',
+    'Multi-Material-Angebote',
+    'Zusätzliche Kosten pro Teil',
+    'Unbegrenzter Verlauf',
+    'CSV-Export',
+    'Backups (Export/Import)',
+    'Erweitertes Dashboard mit Analysen',
+  ];
 
   @override
   String get settingsRestorePurchases => 'Käufe wiederherstellen';
@@ -1171,6 +1212,8 @@ class DeImpl implements AppStrings {
   // === Pro badge / locked visuals (UX) ===
   @override
   String get proBadgeLabel => 'PRO';
+  @override
+  String get proBadgeLabelFree => 'FREE';
   @override
   String get proLockedTooltip => 'Pro-Funktion';
   @override

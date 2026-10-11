@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../l10n/es_bo.dart';
 import '../../../../shared/widgets/numeric_input_field.dart';
 
 /// Etiqueta de grupo que subdivide el menu de ajustes.
@@ -191,7 +190,7 @@ class StatParamTile extends StatefulWidget {
     this.suffix = '',
     this.sliderLeadingIcon,
     this.sliderTrailingIcon,
-    this.showProfitPreview = false,
+    this.showSlider = true,
     this.infoTooltip,
     super.key,
   });
@@ -210,7 +209,10 @@ class StatParamTile extends StatefulWidget {
   final String suffix;
   final IconData? sliderLeadingIcon;
   final IconData? sliderTrailingIcon;
-  final bool showProfitPreview;
+
+  /// Muestra (default) u oculta la barra/slider del valor. Cuando es false
+  /// la tarjeta es solo el input numerico (ej: Cargo minimo).
+  final bool showSlider;
 
   /// Tooltip de ayuda con icono de informacion junto al titulo.
   /// Null = no se muestra el icono.
@@ -353,136 +355,73 @@ class _StatParamTileState extends State<StatParamTile> {
                       ),
                     ),
                   const SizedBox(height: AppSpacing.md),
-                  // Slider con iconos de tendencia
-                  Row(
-                    children: [
-                      if (widget.sliderLeadingIcon != null) ...[
-                        Icon(
-                          widget.sliderLeadingIcon,
-                          size: 16,
-                          color: color.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                      ],
-                      Expanded(
-                        child: SliderTheme(
-                          data: SliderThemeData(
-                            trackHeight: 6,
-                            activeTrackColor: widget.accent,
-                            inactiveTrackColor: widget.accent.withValues(
-                              alpha: 0.25,
-                            ),
-                            thumbColor: widget.accent,
-                            thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 10,
-                            ),
-                            overlayColor: widget.accent.withValues(alpha: 0.15),
-                            overlayShape: const RoundSliderOverlayShape(
-                              overlayRadius: 20,
-                            ),
-                          ),
-                          child: Slider(
-                            value: value,
-                            min: widget.sliderMin,
-                            max: widget.sliderMax,
-                            divisions: widget.sliderDivisions,
-                            label: widget.allowDecimals
-                                ? value.toStringAsFixed(2)
-                                : value.round().toString(),
-                            onChanged: _onSliderChange,
-                            onChangeEnd: _onSliderEnd,
-                          ),
-                        ),
-                      ),
-                      if (widget.sliderTrailingIcon != null) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Icon(
-                          widget.sliderTrailingIcon,
-                          size: 16,
-                          color: color.onSurfaceVariant,
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  // Valor + input (con preview si aplica)
-                  if (widget.showProfitPreview)
+                  // Slider con iconos de tendencia (opcional)
+                  if (widget.showSlider) ...[
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (widget.sliderLeadingIcon != null) ...[
+                          Icon(
+                            widget.sliderLeadingIcon,
+                            size: 16,
+                            color: color.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                        ],
                         Expanded(
-                          child: NumericInputField(
-                            label: widget.title,
-                            controller: _ctrl,
-                            allowDecimals: widget.allowDecimals,
-                            suffix: widget.suffix,
-                            validator: widget.validator,
-                            onBlur: _handleBlur,
+                          child: SliderTheme(
+                            data: SliderThemeData(
+                              trackHeight: 6,
+                              activeTrackColor: widget.accent,
+                              inactiveTrackColor: widget.accent.withValues(
+                                alpha: 0.25,
+                              ),
+                              thumbColor: widget.accent,
+                              thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 10,
+                              ),
+                              overlayColor: widget.accent.withValues(
+                                alpha: 0.15,
+                              ),
+                              overlayShape: const RoundSliderOverlayShape(
+                                overlayRadius: 20,
+                              ),
+                            ),
+                            child: Slider(
+                              value: value,
+                              min: widget.sliderMin,
+                              max: widget.sliderMax,
+                              divisions: widget.sliderDivisions,
+                              label: widget.allowDecimals
+                                  ? value.toStringAsFixed(2)
+                                  : value.round().toString(),
+                              onChanged: _onSliderChange,
+                              onChangeEnd: _onSliderEnd,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.md),
-                        Flexible(
-                          child: GainPreview(
-                            value: _current,
-                            accent: widget.accent,
+                        if (widget.sliderTrailingIcon != null) ...[
+                          const SizedBox(width: AppSpacing.sm),
+                          Icon(
+                            widget.sliderTrailingIcon,
+                            size: 16,
+                            color: color.onSurfaceVariant,
                           ),
-                        ),
+                        ],
                       ],
-                    )
-                  else
-                    NumericInputField(
-                      label: widget.title,
-                      controller: _ctrl,
-                      allowDecimals: widget.allowDecimals,
-                      suffix: widget.suffix,
-                      validator: widget.validator,
-                      onBlur: _handleBlur,
                     ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  // Valor + input
+                  NumericInputField(
+                    label: widget.title,
+                    controller: _ctrl,
+                    allowDecimals: widget.allowDecimals,
+                    suffix: widget.suffix,
+                    validator: widget.validator,
+                    onBlur: _handleBlur,
+                  ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Preview visual del porcentaje de ganancia: muestra cuanto se multiplica
-/// sobre el costo.
-class GainPreview extends StatelessWidget {
-  const GainPreview({required this.value, required this.accent, super.key});
-
-  final double value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final multiplier = 1 + (value / 100);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'x${multiplier.toStringAsFixed(1)}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: accent,
-            ),
-          ),
-          Text(
-            EsBO.settingsGainMultiplierSuffix,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],

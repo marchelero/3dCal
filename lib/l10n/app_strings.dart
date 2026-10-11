@@ -60,6 +60,9 @@ abstract class AppStrings {
   String get settingsManageFilaments;
   String get settingsManagePrinters;
 
+  /// Subtitulo estandar de la cabecera de la pagina Ajustes.
+  String get settingsSubtitle;
+
   // === Print settings page ===
   /// Titulo de la sub-pagina de configuracion de impresion.
   String get settingsPrintConfigTitle;
@@ -141,6 +144,38 @@ abstract class AppStrings {
   String get settingsProNoAdditionalPurchase;
   String get settingsProFutureUpdates;
   String get settingsProRestorePurchase;
+
+  // === Vista de Plan (Gratis/Pro) en Settings ===
+  // Ver docs/prds/2026-10-10_2313-settings-plan-view.prd.md.
+  /// Titulo de la seccion "Plan" en Settings.
+  String get settingsPlanSectionTitle;
+
+  /// Etiqueta del badge de estado cuando el usuario es Free.
+  String get settingsPlanStatusFree;
+
+  /// Etiqueta del badge de estado cuando el usuario es Pro.
+  String get settingsPlanStatusPro;
+
+  /// Encabezado de la lista de features incluidas en el plan Gratis.
+  String get settingsPlanFreeHeading;
+
+  /// Encabezado de la lista de features exclusivas de Pro.
+  String get settingsPlanProHeading;
+
+  /// Frase que introduce las features Pro ("Todo lo de Gratis, y ademas:").
+  String get settingsPlanProIncludes;
+
+  /// CTA para desbloquear Pro (navega a /paywall). Solo visible si Free.
+  String get settingsPlanUnlockCta;
+
+  /// Mensaje de estado cuando el usuario ya es Pro.
+  String get settingsPlanAlreadyPro;
+
+  /// Features incluidas siempre en el plan Gratis.
+  List<String> get settingsPlanFreeFeatures;
+
+  /// Features exclusivas del plan Pro.
+  List<String> get settingsPlanProFeatures;
 
   /// Label del boton "Restaurar compras" en settings.
   String get settingsRestorePurchases;
@@ -827,6 +862,10 @@ abstract class AppStrings {
   /// Label del badge "PRO" que marca controles gateados (modo advanced,
   /// export CSV, branding). Mismo texto en ambos idiomas.
   String get proBadgeLabel;
+
+  /// Label del badge de plan "FREE" en las cabeceras (contraparte de
+  /// [proBadgeLabel]). Mismo texto en todos los idiomas.
+  String get proBadgeLabelFree;
 
   /// Tooltip / semantics del badge "PRO" (accesibilidad).
   String get proLockedTooltip;

@@ -106,6 +106,8 @@ class EnImpl implements AppStrings {
   String get settingsManageFilaments => 'Manage your filaments';
   @override
   String get settingsManagePrinters => 'Register your printers';
+  @override
+  String get settingsSubtitle => 'App preferences';
 
   // === Print settings page ===
   @override
@@ -266,6 +268,45 @@ class EnImpl implements AppStrings {
       'Your purchase includes future PRO improvements at no additional cost.';
   @override
   String get settingsProRestorePurchase => 'Restore purchase';
+
+  @override
+  String get settingsPlanSectionTitle => 'Plan';
+  @override
+  String get settingsPlanStatusFree => 'Free';
+  @override
+  String get settingsPlanStatusPro => 'PRO plan';
+  @override
+  String get settingsPlanFreeHeading => 'Free';
+  @override
+  String get settingsPlanProHeading => 'Pro';
+  @override
+  String get settingsPlanProIncludes => 'Everything in Free, plus:';
+  @override
+  String get settingsPlanUnlockCta => 'Go PRO';
+  @override
+  String get settingsPlanAlreadyPro => 'You already have PRO';
+  @override
+  List<String> get settingsPlanFreeFeatures => const [
+    'Single-piece calculator',
+    'Cost parameters (labor, post-processing, failure, profit, minimum)',
+    'Filament catalog (up to 5)',
+    'Printer catalog (up to 2)',
+    'History up to 10 quotes',
+    'Export PDF with 3dCalc mark',
+    'Currency and light/dark theme',
+    'Basic dashboard with totals',
+  ];
+  @override
+  List<String> get settingsPlanProFeatures => const [
+    'PDF without watermark',
+    'Your company name and logo in the app and the PDF',
+    'Multi-material quotes',
+    'Per-piece additional costs',
+    'Unlimited history',
+    'Export to CSV',
+    'Backups (export/import)',
+    'Advanced dashboard with analytics',
+  ];
 
   @override
   String get settingsRestorePurchases => 'Restore purchases';
@@ -1156,6 +1197,8 @@ class EnImpl implements AppStrings {
   // === Pro badge / locked visuals (UX) ===
   @override
   String get proBadgeLabel => 'PRO';
+  @override
+  String get proBadgeLabelFree => 'FREE';
   @override
   String get proLockedTooltip => 'Pro feature';
   @override
