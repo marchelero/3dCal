@@ -347,7 +347,8 @@ class _DashboardBody extends StatelessWidget {
                               const SizedBox(height: AppSpacing.md),
                               MoneyRow(
                                 label: EsBO.dashboardPrintHours,
-                                value: '${stats.printHours.toStringAsFixed(1)}h',
+                                value:
+                                    '${stats.printHours.toStringAsFixed(1)}h',
                                 valueColor: color.onSurface,
                               ),
                               const SizedBox(height: AppSpacing.sm),
@@ -857,7 +858,8 @@ class _PrinterHealthCard extends ConsumerWidget {
       return Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => context.push('/settings/printers/${printer.id}', extra: printer),
+          onTap: () =>
+              context.push('/settings/printers/${printer.id}', extra: printer),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
@@ -910,8 +912,8 @@ class _PrinterHealthCard extends ConsumerWidget {
     final statusColor = isEnd
         ? cs.error
         : isNearEnd
-            ? Colors.orange
-            : cs.primary;
+        ? Colors.orange
+        : cs.primary;
 
     return Card(
       child: Padding(

@@ -395,9 +395,7 @@ class CalculationRepository {
     // histórico de la columna `minimum_charge_applied_snapshot`).
     final mc = draft.minimumCharge ?? Decimal.zero;
     final floorApplied =
-        mc > Decimal.zero && (o.totalFinal - o.discountAmount) < mc
-        ? 1.0
-        : 0.0;
+        mc > Decimal.zero && (o.totalFinal - o.discountAmount) < mc ? 1.0 : 0.0;
     return CalculationsCompanion(
       pieceName: Value(draft.pieceName),
       clientName: Value(draft.clientName),
@@ -471,13 +469,14 @@ class CalculationRepository {
   }) {
     return _db.transaction(() async {
       final columns = _snapshotColumns(draft);
-      final updated = await (_db.update(
-        _db.calculations,
-      )..where((c) => c.id.equals(id))).write(
-        markDefinitive
-            ? columns.copyWith(isPartial: const Value(false))
-            : columns,
-      );
+      final updated =
+          await (_db.update(
+            _db.calculations,
+          )..where((c) => c.id.equals(id))).write(
+            markDefinitive
+                ? columns.copyWith(isPartial: const Value(false))
+                : columns,
+          );
       if (updated == 0) return false;
       await _replaceMaterialsFromDraft(id, draft);
       return true;
@@ -700,34 +699,32 @@ class CalculationRepository {
           ..where(excludeTemplatesFilter())
           ..orderBy([OrderingTerm.desc(t.createdAt)]))
         .watch()
-        .asyncMap(
-          (rows) async {
-            final fallback = await _minimumChargeFallback();
-            return [
-              for (final r in rows)
-                CalculationListItem(
-                  id: r.read(t.id)!,
-                  createdAt: r.read(t.createdAt)!,
-                  pieceName: r.read(t.pieceName),
-                  clientName: r.read(t.clientName),
-                  quantity: r.read(t.quantity)!,
-                  totalHours: r.read(t.totalHours)!,
-                  discountPercentage: r.read(t.discountPercentage)!,
-                  isSold: r.read(t.isSold)!,
-                  isPartial: r.read(t.isPartial) ?? false,
-                  materialCostSnapshot: r.read(t.materialCostSnapshot)!,
-                  electricCostSnapshot: r.read(t.electricCostSnapshot)!,
-                  profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
-                  totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
-                  hasImage: r.read(hasImage) ?? false,
-                  batchDiscountPercent: r.read(t.batchDiscountPercent),
-                  batchDiscountAmount: r.read(t.batchDiscountAmount),
-                  minimumChargeSnapshot: r.read(t.minimumChargeSnapshot) ?? 0,
-                  fallbackMinimumCharge: fallback,
-                ),
-            ];
-          },
-        );
+        .asyncMap((rows) async {
+          final fallback = await _minimumChargeFallback();
+          return [
+            for (final r in rows)
+              CalculationListItem(
+                id: r.read(t.id)!,
+                createdAt: r.read(t.createdAt)!,
+                pieceName: r.read(t.pieceName),
+                clientName: r.read(t.clientName),
+                quantity: r.read(t.quantity)!,
+                totalHours: r.read(t.totalHours)!,
+                discountPercentage: r.read(t.discountPercentage)!,
+                isSold: r.read(t.isSold)!,
+                isPartial: r.read(t.isPartial) ?? false,
+                materialCostSnapshot: r.read(t.materialCostSnapshot)!,
+                electricCostSnapshot: r.read(t.electricCostSnapshot)!,
+                profitAmountSnapshot: r.read(t.profitAmountSnapshot)!,
+                totalPriceSnapshot: r.read(t.totalPriceSnapshot)!,
+                hasImage: r.read(hasImage) ?? false,
+                batchDiscountPercent: r.read(t.batchDiscountPercent),
+                batchDiscountAmount: r.read(t.batchDiscountAmount),
+                minimumChargeSnapshot: r.read(t.minimumChargeSnapshot) ?? 0,
+                fallbackMinimumCharge: fallback,
+              ),
+          ];
+        });
   }
 
   /// Cargo minimo vigente (tabla `settings`, key `minimum_charge`) como
@@ -736,9 +733,10 @@ class CalculationRepository {
   /// Es el fallback para filas legacy con `minimumChargeSnapshot == 0`;
   /// ver [CalculationListItem.fallbackMinimumCharge] (HIGH-03).
   Future<double> _minimumChargeFallback() async {
-    final row = await (_db.select(_db.settingsTable)
-          ..where((s) => s.key.equals(SettingsKeys.minimumCharge)))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.settingsTable)
+              ..where((s) => s.key.equals(SettingsKeys.minimumCharge)))
+            .getSingleOrNull();
     if (row == null) return 0;
     return double.tryParse(row.value) ?? 0;
   }
@@ -768,9 +766,7 @@ class CalculationRepository {
   /// y Home mostraba un parcial desactualizado tras el autosave.
   Stream<Calculation?> watchLatestPartial() {
     return (_db.select(_db.calculations)
-          ..where(
-            (c) => c.isPartial.equals(true) & excludeTemplatesFilter(),
-          )
+          ..where((c) => c.isPartial.equals(true) & excludeTemplatesFilter())
           ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])
           ..limit(1))
         .watch()
@@ -1039,7 +1035,10 @@ class CalculationRepository {
     return _countCalculations(since: since, includeDrafts: true);
   }
 
-  Future<int> _countCalculations({DateTime? since, bool includeDrafts = false}) async {
+  Future<int> _countCalculations({
+    DateTime? since,
+    bool includeDrafts = false,
+  }) async {
     final countExpression = _db.calculations.id.count();
     final filter = includeDrafts
         ? excludeTemplatesFilter()
@@ -1231,9 +1230,9 @@ class CalculationRepository {
       if (existingId != null) {
         // Verificar que la fila sigue existiendo (pudo borrarse desde otra
         // pantalla). Si ya no esta, cae a insert.
-        final exists = await (_db.select(_db.calculations)
-              ..where((t) => t.id.equals(existingId)))
-            .getSingleOrNull();
+        final exists = await (_db.select(
+          _db.calculations,
+        )..where((t) => t.id.equals(existingId))).getSingleOrNull();
         if (exists != null) {
           await updatePartial(existingId, companion);
           id = existingId;

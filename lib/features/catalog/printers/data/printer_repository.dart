@@ -106,10 +106,9 @@ class PrinterRepository {
 
   /// Suma horas impresas a una impresora (para estadisticas).
   Future<void> addHours(int printerId, double hours) async {
-    final printer =
-        await (_db.select(
-          _db.printers,
-        )..where((p) => p.id.equals(printerId))).getSingleOrNull();
+    final printer = await (_db.select(
+      _db.printers,
+    )..where((p) => p.id.equals(printerId))).getSingleOrNull();
     if (printer == null) return;
     final current = printer.currentHours ?? 0;
     final added = hours.ceil(); // Redondeo hacia arriba

@@ -47,42 +47,35 @@ void main() {
   }
 
   group('Reset button', () {
-    testWidgets(
-      'tap Reset con contenido - form se resetea directamente',
-      (tester) async {
-        await pumpPage(tester);
+    testWidgets('tap Reset con contenido - form se resetea directamente', (
+      tester,
+    ) async {
+      await pumpPage(tester);
 
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Peso'),
-          '100',
-        );
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Precio bobina'),
-          '120',
-        );
-        await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextField, 'Peso'), '100');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Precio bobina'),
+        '120',
+      );
+      await tester.pumpAndSettle();
 
-        await tester.tap(find.byTooltip(EsBO.calcActionReset));
-        await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(EsBO.calcActionReset));
+      await tester.pumpAndSettle();
 
-        expect(find.widgetWithText(TextField, '100'), findsNothing);
+      expect(find.widgetWithText(TextField, '100'), findsNothing);
 
-        await unmount(tester);
-      },
-    );
+      await unmount(tester);
+    });
 
-    testWidgets(
-      'tap Reset sin contenido - reset silencioso',
-      (tester) async {
-        await pumpPage(tester);
+    testWidgets('tap Reset sin contenido - reset silencioso', (tester) async {
+      await pumpPage(tester);
 
-        await tester.tap(find.byTooltip(EsBO.calcActionReset));
-        await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(EsBO.calcActionReset));
+      await tester.pumpAndSettle();
 
-        expect(find.textContaining('Completa peso'), findsWidgets);
+      expect(find.textContaining('Completa peso'), findsWidgets);
 
-        await unmount(tester);
-      },
-    );
+      await unmount(tester);
+    });
   });
 }

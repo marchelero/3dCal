@@ -303,9 +303,7 @@ class EntitlementNotifier extends AsyncNotifier<EntitlementState> {
         if (!activated) {
           // BUG-E: la store cobro pero la persistencia local fallo. Se
           // retorna PaymentError para que el paywall muestre reintento.
-          debugPrint(
-            '[Entitlement] purchase ok pero activacion local fallo',
-          );
+          debugPrint('[Entitlement] purchase ok pero activacion local fallo');
           return const PaymentError(
             'Payment successful but local activation failed. Try again.',
           );

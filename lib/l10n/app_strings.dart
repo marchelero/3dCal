@@ -285,6 +285,13 @@ abstract class AppStrings {
   /// Snackbar de error (el borrado fallo; nunca mostrar exito falso).
   String get settingsWipeError;
 
+  /// Titulo de la accion "Repetir configuracion" (MED-4): re-corre /setup
+  /// SIN borrar datos (solo baja el flag onboarding_done).
+  String get settingsRepeatSetup;
+
+  /// Explicacion de la accion "Repetir configuracion": no es destructiva.
+  String get settingsRepeatSetupHelper;
+
   // === Dashboard ===
   String get dashboardTitle;
   String get dashboardErrorLoad;
@@ -732,26 +739,79 @@ abstract class AppStrings {
   String get localeDe;
   String get localeFr;
 
-  // === Language selection (primera ejecución) ===
-  String get languagePageTitle;
-  String get languagePageSubtitle;
+  // === Setup flow (rediseño onboarding 2026-10) ===
+  /// Tagline de bienvenida del paso 0 del flujo `/setup`.
+  String get setupWelcomeTagline;
+
+  /// Estado "Pendiente" de un campo sin configurar en el ticket preview.
+  String get setupTicketPending;
+
+  /// Chip "Ver más" que abre la hoja con todas las monedas.
+  String get setupCurrencySeeAll;
+
+  /// Título del paso 2: tu impresora (obligatoria).
+  String get setupPrinterTitle;
+
+  /// Microcopy del paso 2: presets + personalizada (obligatoria).
+  String get setupPrinterSubtitle;
+
+  /// Tarjeta "Personalizada" del paso impresora.
+  String get setupPrinterCustom;
+
+  /// SnackBar hint del gate de navegación: falta registrar la impresora
+  /// para poder avanzar (obligatoriedad desde 2026-10-11).
+  String get setupNeedPrinter;
+
+  /// SnackBar al ACTUALIZAR la impresora default existente (tap otro preset
+  /// del grid o edición válida del formulario "Personalizada").
+  String get setupPrinterUpdated;
+
+  /// Título del paso 3: tu filamento (obligatorio).
+  String get setupFilamentTitle;
+
+  /// Microcopy del paso 3: chips de marca + precio (obligatorio).
+  String get setupFilamentSubtitle;
+
+  /// Helper del campo precio del filamento (rango típico localizado).
+  String get setupFilamentPriceHint;
+
+  /// SnackBar hint del gate de navegación: falta registrar el filamento
+  /// para poder avanzar (obligatoriedad desde 2026-10-11).
+  String get setupNeedFilament;
+
+  /// SnackBar al ACTUALIZAR el filamento default existente (auto-save del
+  /// formulario tras re-entrar con "editar").
+  String get setupFilamentUpdated;
+
+  /// Título del paso 4: generaliza ambas secciones (ganancia + electricidad).
+  String get setupProfitTitle;
+
+  /// Hint bajo el header de las cards de ganancia/tarifa cuando muestran
+  /// el valor de EJEMPLO del primer arranque (200 % / 1.00): avisa que son
+  /// un punto de partida a ajustar según su caso. Desaparece al editar.
+  String get setupExampleValuesHint;
+
+  /// Título del cierre del flujo (celebración).
+  String get setupDoneTitle;
+
+  /// Título del colapsable de presets populares del paso impresora.
+  String get setupPrinterPopular;
+
+  /// Título del sub-colapsable "Otros datos (opcional)" del form
+  /// impresora: vida útil, horas de uso y costo de compra.
+  String get setupPrinterExtra;
+
+  /// Subtítulo del cierre: la calculadora está lista.
+  String get setupDoneSubtitle;
+
+  /// Botón discreto "Siguiente" de la barra inferior del flujo (pasos 0–4).
+  String get setupNext;
+
+  /// Botón discreto "Atrás" de la barra inferior del flujo (pasos 1–4).
+  String get setupBack;
 
   // === Onboarding ===
-  String get onboardingTitle1;
-  String get onboardingDesc1;
-  String get onboardingTitle2;
-  String get onboardingDesc2;
-  String get onboardingTitle3;
-  String get onboardingDesc3;
-  String get onboardingTitle4;
-  String get onboardingDesc4;
-  String get onboardingTitle5;
-  String get onboardingDesc5;
   String get onboardingNext;
-  String get onboardingStart;
-
-  /// CTA de la última slide: ir a la configuración inicial (/initial-config).
-  String get onboardingConfigure;
 
   // === Initial config ===
   String get configTitle;
@@ -967,8 +1027,9 @@ abstract class AppStrings {
   @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers;
 
-  /// "Rango: 0-1000" / "Range: 0-1000" — validacion de ganancia base.
-  String get settingsProfitBaseRange;
+  /// "Rango: 0-500" / "Range: 0-500" — validacion de ganancia base
+  /// (alineada al slider 0–500; antes decia 0-1000, stale).
+  String get settingsProfitBaseRange500;
 
   /// "Rango: 0.10-5.00" / "Range: 0.10-5.00" — validacion de tarifa kWh.
   String get settingsKwhRateRange;
@@ -1434,9 +1495,6 @@ abstract class AppStrings {
 
   /// Semantics label del logo de splash.
   String get splashLogo;
-
-  /// "Página $page de $total" / "Page $page of $total".
-  String onboardingPageCounter(int page, int total);
 
   /// "Sin resultados para \"$query\"" / "No results for \"$query\"" (búsquedas).
   String commonNoResultsFor(String query);

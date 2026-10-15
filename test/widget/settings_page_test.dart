@@ -11,6 +11,7 @@ import 'package:tresdcal/core/backup/backup_signature.dart';
 import 'package:tresdcal/core/constants/app_constants.dart';
 import 'package:tresdcal/core/database/app_database.dart';
 import 'package:tresdcal/core/providers.dart';
+import 'package:tresdcal/core/router/app_router.dart';
 import 'package:tresdcal/core/storage/draft_storage.dart';
 import 'package:tresdcal/core/storage/draft_storage_providers.dart';
 import 'package:tresdcal/features/catalog/filaments/presentation/pages/filaments_page.dart';
@@ -678,10 +679,7 @@ void main() {
       await tester.tap(find.text(EsBO.proBadgeLabel));
       await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey('settingsPlanSheet')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const ValueKey('settingsPlanSheet')), findsOneWidget);
       expect(find.text(EsBO.settingsPlanAlreadyPro), findsOneWidget);
       expect(find.text(EsBO.settingsPlanProIncludes), findsOneWidget);
       expect(find.text(EsBO.settingsPlanProFeatures.first), findsWidgets);
@@ -942,10 +940,9 @@ void main() {
           routes: [
             GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
             GoRoute(
-              path: '/language',
-              builder: (_, _) => const Scaffold(
-                body: Center(child: Text('LANGUAGE_STUB_AC4')),
-              ),
+              path: '/setup',
+              builder: (_, _) =>
+                  const Scaffold(body: Center(child: Text('SETUP_STUB_WIPE'))),
             ),
           ],
         );
@@ -985,10 +982,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(
           router.routerDelegate.currentConfiguration.uri.toString(),
-          '/language',
-          reason: 'Tras borrar, onboarding debe reiniciarse en /language.',
+          '/setup',
+          reason: 'Tras borrar, onboarding debe reiniciarse en /setup.',
         );
-        expect(find.text('LANGUAGE_STUB_AC4'), findsOneWidget);
+        expect(find.text('SETUP_STUB_WIPE'), findsOneWidget);
 
         expect(
           await db.select(db.calculations).get().then((r) => r.length),
@@ -1060,6 +1057,112 @@ void main() {
         reason: 'Un wipe fallido no debe resetear onboarding.',
       );
       await tester.pumpAndSettle();
+    });
+  });
+
+  group('Repetir configuración + guard de /setup (MED-4)', () {
+    testWidgets('guard: con onboardingDone=true, go("/setup") redirige a '
+        '"/"', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        SettingsKeys.onboardingDone: true,
+      });
+      // Mismo redirect que appRouter (función pública reutilizable).
+      final router = GoRouter(
+        initialLocation: '/setup',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) =>
+                const Scaffold(body: Center(child: Text('HOME_STUB_GUARD'))),
+          ),
+          GoRoute(
+            path: '/setup',
+            redirect: setupOnboardingRedirect,
+            builder: (_, _) =>
+                const Scaffold(body: Center(child: Text('SETUP_STUB_GUARD'))),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('SETUP_STUB_GUARD'), findsNothing);
+      expect(find.text('HOME_STUB_GUARD'), findsOneWidget);
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/',
+        reason: 'el guard debe redirigir /setup a Home con el flag en true',
+      );
+    });
+
+    testWidgets('"Repetir configuración": flag true → tap → flag false + en '
+        '/setup, sin borrar datos', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      SharedPreferences.setMockInitialValues({
+        SettingsKeys.onboardingDone: true,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final router = GoRouter(
+        initialLocation: '/settings',
+        routes: [
+          GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+          // El guard real sobre /setup: flag en false tras el tap ⇒ entra.
+          GoRoute(
+            path: '/setup',
+            redirect: setupOnboardingRedirect,
+            builder: (_, _) =>
+                const Scaffold(body: Center(child: Text('SETUP_STUB_REPEAT'))),
+          ),
+        ],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          isProProvider.overrideWith((ref) => true),
+        ],
+      );
+      addTearDown(() async {
+        router.dispose();
+        container.dispose();
+        await db.close();
+      });
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final repeatTile = find.byKey(const ValueKey('settings-repeat-setup'));
+      await tester.ensureVisible(repeatTile);
+      await tester.pumpAndSettle();
+      await tester.tap(repeatTile);
+      await tester.pumpAndSettle();
+
+      expect(
+        prefs.getBool(SettingsKeys.onboardingDone),
+        isFalse,
+        reason: 'el flag debe bajar sin borrar datos (no destructivo)',
+      );
+      expect(find.text('SETUP_STUB_REPEAT'), findsOneWidget);
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/setup',
+        reason: 'con el flag en false el guard permite entrar a /setup',
+      );
+      // No destructivo: la DB queda intacta (no hay wipe en este flujo).
+      expect(
+        await db.select(db.printers).get().then((r) => r.length),
+        0,
+        reason: 'no se tocan datos (la DB arranca vacía y sigue vacía)',
+      );
     });
   });
 }

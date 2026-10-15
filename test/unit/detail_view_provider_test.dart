@@ -58,10 +58,9 @@ void main() {
         ),
       ),
     );
-    final row = (await repo.getById(id))!.copyWith(
-      quantity: quantity,
-      isAdvanced: advanced,
-    );
+    final row = (await repo.getById(
+      id,
+    ))!.copyWith(quantity: quantity, isAdvanced: advanced);
     await db.update(db.calculations).replace(row);
     return (await repo.getById(id))!;
   }
@@ -77,7 +76,10 @@ void main() {
 
   test('initialDetailViewState deriva variante y clampea cantidad', () async {
     final simple = await seed(quantity: 3);
-    expect(initialDetailViewState(simple).variant, QuoteReportVariant.clientSimple);
+    expect(
+      initialDetailViewState(simple).variant,
+      QuoteReportVariant.clientSimple,
+    );
     expect(initialDetailViewState(simple).quantity, 3);
 
     final advanced = await seed(quantity: 0, advanced: true);
@@ -88,21 +90,23 @@ void main() {
     expect(initialDetailViewState(advanced).quantity, 1);
   });
 
-  test('arranca en null y materializa el valor guardado en la primera edicion',
-      () async {
-    final calc = await seed(quantity: 5, advanced: true);
-    final sub = container.listen(detailViewProvider, (_, _) {});
-    addTearDown(sub.close);
+  test(
+    'arranca en null y materializa el valor guardado en la primera edicion',
+    () async {
+      final calc = await seed(quantity: 5, advanced: true);
+      final sub = container.listen(detailViewProvider, (_, _) {});
+      addTearDown(sub.close);
 
-    expect(container.read(detailViewProvider), isNull);
+      expect(container.read(detailViewProvider), isNull);
 
-    container.read(detailViewProvider.notifier).increment(calc);
-    expect(container.read(detailViewProvider)!.quantity, 6);
-    expect(
-      container.read(detailViewProvider)!.variant,
-      QuoteReportVariant.clientAdvanced,
-    );
-  });
+      container.read(detailViewProvider.notifier).increment(calc);
+      expect(container.read(detailViewProvider)!.quantity, 6);
+      expect(
+        container.read(detailViewProvider)!.variant,
+        QuoteReportVariant.clientAdvanced,
+      );
+    },
+  );
 
   test('setQuantity clampea y evita estados redundantes', () async {
     final calc = await seed(quantity: 3);

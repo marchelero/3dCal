@@ -100,6 +100,7 @@ Future<bool> resolveIsPro(Ref ref) async {
     }
     return ref.read(isProProvider);
   }
+
   bool isPro;
   try {
     await ref

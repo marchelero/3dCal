@@ -545,14 +545,11 @@ void main() {
       expect(out.postProcessCost, DecimalParse.fromString('3'));
     });
 
-    test(
-      'extras off (sin nada) no aporta, total = material',
-      () {
-        final out = CalculationEngine.compute(v17Input(extraMode: 'off'));
-        expect(out.extrasCost, Decimal.zero);
-        expect(out.baseCost, DecimalParse.fromString('15'));
-      },
-    );
+    test('extras off (sin nada) no aporta, total = material', () {
+      final out = CalculationEngine.compute(v17Input(extraMode: 'off'));
+      expect(out.extrasCost, Decimal.zero);
+      expect(out.baseCost, DecimalParse.fromString('15'));
+    });
 
     test('extras pct 10 sobre coreBase (15) = 1.5', () {
       final out = CalculationEngine.compute(
@@ -570,26 +567,23 @@ void main() {
       expect(out.baseCost, DecimalParse.fromString('20.5'));
     });
 
-    test(
-      'pct + fixed + pct en simultaneo: cada uno aporta su monto',
-      () {
-        final out = CalculationEngine.compute(
-          v17Input(
-            laborMode: 'pct',
-            laborPct: '10', // 1.5
-            postprocMode: 'fixed',
-            postprocFixed: '2', // 2
-            extraMode: 'pct',
-            extraPct: '5', // 0.75
-          ),
-        );
-        expect(out.laborCost, DecimalParse.fromString('1.5'));
-        expect(out.postProcessCost, DecimalParse.fromString('2'));
-        expect(out.extrasCost, DecimalParse.fromString('0.75'));
-        // 15 + 1.5 + 2 + 0.75 = 19.25
-        expect(out.baseCost, DecimalParse.fromString('19.25'));
-      },
-    );
+    test('pct + fixed + pct en simultaneo: cada uno aporta su monto', () {
+      final out = CalculationEngine.compute(
+        v17Input(
+          laborMode: 'pct',
+          laborPct: '10', // 1.5
+          postprocMode: 'fixed',
+          postprocFixed: '2', // 2
+          extraMode: 'pct',
+          extraPct: '5', // 0.75
+        ),
+      );
+      expect(out.laborCost, DecimalParse.fromString('1.5'));
+      expect(out.postProcessCost, DecimalParse.fromString('2'));
+      expect(out.extrasCost, DecimalParse.fromString('0.75'));
+      // 15 + 1.5 + 2 + 0.75 = 19.25
+      expect(out.baseCost, DecimalParse.fromString('19.25'));
+    });
 
     test('amortizacion NO entra en coreBase (F5 fuera del costo)', () {
       // El motor ignora `amortizationPerHour`: coreBase es solo material

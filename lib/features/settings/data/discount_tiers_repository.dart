@@ -28,22 +28,22 @@ class DiscountTiersRepository {
   ///
   /// Tras cada upsert/delete el stream emite la lista re-secuenciada.
   Stream<List<DiscountTier>> watchAll() {
-    return (_db.select(_db.discountTiersTable)
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.sortOrder),
-            (t) => OrderingTerm.asc(t.minQty),
-          ]))
+    return (_db.select(_db.discountTiersTable)..orderBy([
+          (t) => OrderingTerm.asc(t.sortOrder),
+          (t) => OrderingTerm.asc(t.minQty),
+        ]))
         .watch()
-        .map((rows) => rows.map<DiscountTier>(_fromRow).toList(growable: false));
+        .map(
+          (rows) => rows.map<DiscountTier>(_fromRow).toList(growable: false),
+        );
   }
 
   /// Lista única con el mismo orden que [watchAll].
   Future<List<DiscountTier>> listAll() {
-    return (_db.select(_db.discountTiersTable)
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.sortOrder),
-            (t) => OrderingTerm.asc(t.minQty),
-          ]))
+    return (_db.select(_db.discountTiersTable)..orderBy([
+          (t) => OrderingTerm.asc(t.sortOrder),
+          (t) => OrderingTerm.asc(t.minQty),
+        ]))
         .get()
         .then(
           (rows) => rows.map<DiscountTier>(_fromRow).toList(growable: false),
@@ -54,14 +54,15 @@ class DiscountTiersRepository {
   /// re-secuencia los slots. Las dos operaciones comparten transacción.
   Future<void> upsert(DiscountTier tier) {
     return _db.transaction(() async {
-      final existing = await (_db.select(_db.discountTiersTable)
-            ..where((t) => t.id.equals(tier.id)))
-          .getSingleOrNull();
+      final existing = await (_db.select(
+        _db.discountTiersTable,
+      )..where((t) => t.id.equals(tier.id))).getSingleOrNull();
       if (existing == null) {
         await _db.into(_db.discountTiersTable).insert(_toRow(tier));
       } else {
-        await (_db.update(_db.discountTiersTable)
-              ..where((t) => t.id.equals(tier.id))).write(
+        await (_db.update(
+          _db.discountTiersTable,
+        )..where((t) => t.id.equals(tier.id))).write(
           DiscountTiersTableCompanion(
             minQty: Value(tier.minQty),
             percent: Value(tier.percent.toString()),
@@ -89,18 +90,17 @@ class DiscountTiersRepository {
   ///
   /// Solo escribe filas cuyo slot cambió (UPDATE por fila mínima).
   Future<void> _resequenceSlots() async {
-    final rows = await (_db.select(_db.discountTiersTable)
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.minQty),
-            (t) => OrderingTerm.asc(t.sortOrder),
-            (t) => OrderingTerm.asc(t.id),
-          ]))
-        .get();
+    final rows =
+        await (_db.select(_db.discountTiersTable)..orderBy([
+              (t) => OrderingTerm.asc(t.minQty),
+              (t) => OrderingTerm.asc(t.sortOrder),
+              (t) => OrderingTerm.asc(t.id),
+            ]))
+            .get();
     for (var i = 0; i < rows.length; i++) {
       if (rows[i].sortOrder != i) {
-        await (_db.update(
-          _db.discountTiersTable,
-        )..where((t) => t.id.equals(rows[i].id)))
+        await (_db.update(_db.discountTiersTable)
+              ..where((t) => t.id.equals(rows[i].id)))
             .write(DiscountTiersTableCompanion(sortOrder: Value(i)));
       }
     }

@@ -54,23 +54,41 @@ void main() {
     test('texto principal y secundario en todas las superficies (>= 4.5)', () {
       expectAAText('onSurface/surface', s.onSurface, s.surface);
       expectAAText('onSurfaceVariant/surface', s.onSurfaceVariant, s.surface);
-      expectAAText('onSurfaceVariant/Lowest', s.onSurfaceVariant,
-          s.surfaceContainerLowest);
       expectAAText(
-          'onSurfaceVariant/Low', s.onSurfaceVariant, s.surfaceContainerLow);
-      expectAAText('onSurfaceVariant/Container', s.onSurfaceVariant,
-          s.surfaceContainer);
-      expectAAText('onSurfaceVariant/High', s.onSurfaceVariant,
-          s.surfaceContainerHigh);
-      expectAAText('onSurfaceVariant/Highest', s.onSurfaceVariant,
-          s.surfaceContainerHighest);
+        'onSurfaceVariant/Lowest',
+        s.onSurfaceVariant,
+        s.surfaceContainerLowest,
+      );
+      expectAAText(
+        'onSurfaceVariant/Low',
+        s.onSurfaceVariant,
+        s.surfaceContainerLow,
+      );
+      expectAAText(
+        'onSurfaceVariant/Container',
+        s.onSurfaceVariant,
+        s.surfaceContainer,
+      );
+      expectAAText(
+        'onSurfaceVariant/High',
+        s.onSurfaceVariant,
+        s.surfaceContainerHigh,
+      );
+      expectAAText(
+        'onSurfaceVariant/Highest',
+        s.onSurfaceVariant,
+        s.surfaceContainerHighest,
+      );
       expectAAText('onPrimary/primary', s.onPrimary, s.primary);
       expectAAText('error/surface', s.error, s.surface);
     });
 
     test('snack de exito: texto blanco sobre blueSuccess (>= 4.5)', () {
       expectAAText(
-          'white/blueSuccess', const Color(0xFFFFFFFF), AppTheme.blueSuccess);
+        'white/blueSuccess',
+        const Color(0xFFFFFFFF),
+        AppTheme.blueSuccess,
+      );
     });
 
     test('bordes/controles UI outline en superficies (>= 3.0)', () {
@@ -87,17 +105,26 @@ void main() {
     test('texto principal y secundario en superficies (>= 4.5)', () {
       expectAAText('onSurface/surface', s.onSurface, s.surface);
       expectAAText('onSurfaceVariant/surface', s.onSurfaceVariant, s.surface);
-      expectAAText('onSurfaceVariant/High', s.onSurfaceVariant,
-          s.surfaceContainerHigh);
-      expectAAText('onSurfaceVariant/Highest', s.onSurfaceVariant,
-          s.surfaceContainerHighest);
+      expectAAText(
+        'onSurfaceVariant/High',
+        s.onSurfaceVariant,
+        s.surfaceContainerHigh,
+      );
+      expectAAText(
+        'onSurfaceVariant/Highest',
+        s.onSurfaceVariant,
+        s.surfaceContainerHighest,
+      );
       expectAAText('onPrimary/primary', s.onPrimary, s.primary);
       expectAAText('error/surface', s.error, s.surface);
     });
 
     test('snack de exito: texto blanco sobre blueSuccess (>= 4.5)', () {
       expectAAText(
-          'white/blueSuccess', const Color(0xFFFFFFFF), AppTheme.blueSuccess);
+        'white/blueSuccess',
+        const Color(0xFFFFFFFF),
+        AppTheme.blueSuccess,
+      );
     });
 
     test('bordes/controles UI outline en superficie (>= 3.0)', () {

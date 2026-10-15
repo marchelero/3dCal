@@ -17,6 +17,7 @@ import 'package:drift/drift.dart';
 class DiscountTiersTable extends Table {
   @override
   String get tableName => 'discount_tiers';
+
   /// Id texto tipo UUID del escalón.
   TextColumn get id => text()();
 

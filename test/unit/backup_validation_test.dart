@@ -201,8 +201,7 @@ void main() {
     });
 
     test('percent no numerico es rechazado (antes reventaba al leer)', () {
-      final json = validJson()
-        ..['discountTiers'] = [tierJson(percent: 'abc')];
+      final json = validJson()..['discountTiers'] = [tierJson(percent: 'abc')];
       final error = BackupData.fromJson(json).validate();
       expect(error, contains('percent fuera de rango'));
     });
@@ -212,8 +211,7 @@ void main() {
         ..['discountTiers'] = [tierJson(percent: '99999')];
       expect(BackupData.fromJson(json).validate(), isNotNull);
 
-      final zero = validJson()
-        ..['discountTiers'] = [tierJson(percent: '0')];
+      final zero = validJson()..['discountTiers'] = [tierJson(percent: '0')];
       expect(BackupData.fromJson(zero).validate(), isNotNull);
     });
 

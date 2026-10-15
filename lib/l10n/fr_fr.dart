@@ -417,6 +417,12 @@ class FrImpl implements AppStrings {
   @override
   String get settingsWipeError =>
       'Impossible de supprimer les données. Réessayez.';
+  @override
+  String get settingsRepeatSetup => 'Reconfigurer';
+  @override
+  String get settingsRepeatSetupHelper =>
+      'Relancez la configuration initiale sans supprimer vos données '
+      'enregistrées.';
 
   @override
   String get dashboardTitle => 'Tableau de bord';
@@ -1033,41 +1039,59 @@ class FrImpl implements AppStrings {
   String get localeFr => 'Français';
 
   @override
-  String get languagePageTitle => 'Choisissez votre langue';
+  String get setupWelcomeTagline =>
+      'Configurez votre calculatrice en quelques secondes';
   @override
-  String get languagePageSubtitle =>
-      'S’applique à toute l’application. Vous pourrez la changer plus tard dans Réglages.';
+  String get setupTicketPending => 'En attente';
   @override
-  String get onboardingTitle1 => 'Bienvenue dans 3dCalc';
+  String get setupCurrencySeeAll => 'Voir tout';
   @override
-  String get onboardingDesc1 =>
-      'Calculez instantanément le prix de vos impressions 3D.\nMatériaux, électricité, main-d’œuvre et plus.';
+  String get setupPrinterTitle => 'Votre imprimante';
   @override
-  String get onboardingTitle2 => 'Deux modes de calcul';
+  String get setupPrinterSubtitle =>
+      'Choisissez un modèle populaire ou créez le vôtre. '
+      'Il est requis pour continuer.';
   @override
-  String get onboardingDesc2 =>
-      'Express : calcul rapide avec un matériau.\nAvancé : plusieurs matériaux, remise et plus.';
+  String get setupPrinterCustom => 'Personnalisée';
   @override
-  String get onboardingTitle3 => 'Catalogue intégré';
+  String get setupNeedPrinter => 'Choisissez une imprimante pour continuer';
   @override
-  String get onboardingDesc3 =>
-      'Enregistrez vos filaments et imprimantes préférés.\nSélectionnez-les instantanément dans le catalogue.';
+  String get setupPrinterUpdated => 'Imprimante mise à jour';
   @override
-  String get onboardingTitle4 => 'Tableau de bord et plus';
+  String get setupFilamentTitle => 'Votre filament';
   @override
-  String get onboardingDesc4 =>
-      'Suivez les devis et les tendances mensuelles,\nexportez en PDF et recherchez dans l’historique.';
+  String get setupFilamentSubtitle =>
+      'Choisissez une marque et le prix de la bobine. '
+      'Il est requis pour continuer.';
   @override
-  String get onboardingTitle5 => 'Configuration simple';
+  String get setupFilamentPriceHint => 'ex. 100–150';
   @override
-  String get onboardingDesc5 =>
-      'Définissez devise, imprimante, filament, bénéfice\net coût d’énergie en quelques étapes. Prêt à deviser.';
+  String get setupNeedFilament => 'Choisissez un filament pour continuer';
+  @override
+  String get setupFilamentUpdated => 'Filament mis à jour';
+  @override
+  String get setupProfitTitle => 'Votre marge et coûts';
+
+  @override
+  String get setupExampleValuesHint =>
+      "Valeurs d'exemple : adaptez-les à votre situation et vos coûts réels.";
+  @override
+  String get setupDoneTitle => 'Terminé !';
+
+  @override
+  String get setupPrinterPopular => 'Imprimantes populaires';
+
+  @override
+  String get setupPrinterExtra => 'Plus de détails (facultatif)';
+  @override
+  String get setupDoneSubtitle =>
+      'Votre calculatrice est prête. Commencez à deviser !';
+  @override
+  String get setupNext => 'Suivant';
+  @override
+  String get setupBack => 'Retour';
   @override
   String get onboardingNext => 'Suivant';
-  @override
-  String get onboardingStart => 'Commencer';
-  @override
-  String get onboardingConfigure => 'Configurer';
   @override
   String get configTitle => 'Configuration initiale';
   @override
@@ -1299,7 +1323,7 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Autres';
   @override
-  String get settingsProfitBaseRange => 'Plage : 0-1000';
+  String get settingsProfitBaseRange500 => 'Plage : 0-500';
   @override
   String get settingsKwhRateRange => 'Plage : 0,10-5,00';
   @override
@@ -1644,8 +1668,6 @@ Nous pouvons mettre à jour, suspendre ou supprimer des fonctionnalités. Ces co
   String get themeModeDark => 'Sombre';
   @override
   String get splashLogo => 'Logo 3dCalc';
-  @override
-  String onboardingPageCounter(int page, int total) => 'Page $page sur $total';
   @override
   String commonNoResultsFor(String query) => 'Aucun résultat pour « $query »';
   @override

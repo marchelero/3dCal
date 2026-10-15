@@ -88,32 +88,40 @@ void main() {
       final id = await repo.savePartial(partial(createdAt: ts));
 
       expect(id, greaterThan(0));
-      final row = await db.customSelect(
-        'SELECT * FROM calculations WHERE id = ?',
-        variables: [Variable.withInt(id)],
-      ).getSingle();
+      final row = await db
+          .customSelect(
+            'SELECT * FROM calculations WHERE id = ?',
+            variables: [Variable.withInt(id)],
+          )
+          .getSingle();
       expect(row.read<int>('is_partial'), 1);
       // El helper del test pasa pieceName='' explicito; el dto de produccion
       // lo deja ausente (columna default). Cubrimos el caso del helper.
       expect(row.read<String?>('piece_name'), anyOf(isNull, isEmpty));
     });
 
-    test('sin existingId inserta fila nueva (identidad por id, no por minuto)',
-        () async {
-      final ts = DateTime(2026, 9, 28, 12, 5);
-      final id1 = await repo.savePartial(
-        partial(createdAt: ts, pieceName: 'Vaso'),
-      );
-      final id2 = await repo.savePartial(
-        partial(createdAt: ts, pieceName: 'Vaso 2'),
-      );
+    test(
+      'sin existingId inserta fila nueva (identidad por id, no por minuto)',
+      () async {
+        final ts = DateTime(2026, 9, 28, 12, 5);
+        final id1 = await repo.savePartial(
+          partial(createdAt: ts, pieceName: 'Vaso'),
+        );
+        final id2 = await repo.savePartial(
+          partial(createdAt: ts, pieceName: 'Vaso 2'),
+        );
 
-      expect(id2, isNot(equals(id1)), reason: 'sin existingId = insert nuevo');
-      final count = await db.customSelect(
-        'SELECT COUNT(*) AS cnt FROM calculations',
-      ).getSingle();
-      expect(count.read<int>('cnt'), 2);
-    });
+        expect(
+          id2,
+          isNot(equals(id1)),
+          reason: 'sin existingId = insert nuevo',
+        );
+        final count = await db
+            .customSelect('SELECT COUNT(*) AS cnt FROM calculations')
+            .getSingle();
+        expect(count.read<int>('cnt'), 2);
+      },
+    );
 
     test('existingId → update (no duplicado, conserva createdAt)', () async {
       final ts = DateTime(2026, 9, 28, 12, 5);
@@ -121,15 +129,20 @@ void main() {
         partial(createdAt: ts, pieceName: 'Vaso'),
       );
       final id2 = await repo.savePartial(
-        partial(createdAt: ts.add(const Duration(minutes: 3)), pieceName: 'Vaso actualizado'),
+        partial(
+          createdAt: ts.add(const Duration(minutes: 3)),
+          pieceName: 'Vaso actualizado',
+        ),
         existingId: id1,
       );
 
       expect(id2, equals(id1), reason: 'Debe reusar la misma fila (upsert)');
-      final row = await db.customSelect(
-        'SELECT * FROM calculations WHERE id = ?',
-        variables: [Variable.withInt(id1)],
-      ).getSingle();
+      final row = await db
+          .customSelect(
+            'SELECT * FROM calculations WHERE id = ?',
+            variables: [Variable.withInt(id1)],
+          )
+          .getSingle();
       expect(row.read<String?>('piece_name'), 'Vaso actualizado');
       expect(
         row.read<DateTime>('created_at'),
@@ -137,36 +150,41 @@ void main() {
         reason: 'el upsert no debe tocar createdAt',
       );
 
-      final count = await db.customSelect(
-        'SELECT COUNT(*) AS cnt FROM calculations',
-      ).getSingle();
+      final count = await db
+          .customSelect('SELECT COUNT(*) AS cnt FROM calculations')
+          .getSingle();
       expect(count.read<int>('cnt'), 1, reason: 'Solo 1 fila, no duplicada');
     });
 
-    test('existingId conserva pieceName/clientName si el patch los trae ausentes', () async {
-      final ts = DateTime(2026, 9, 28, 12, 10);
-      final id = await repo.savePartial(
-        partial(createdAt: ts, pieceName: 'Taza'),
-      );
-      // Patch tipico del autosave: nombres absentes, totales nuevos.
-      await repo.savePartial(
-        CalculationsCompanion(
-          createdAt: Value(ts),
-          pieceName: const Value.absent(),
-          clientName: const Value.absent(),
-          totalPriceSnapshot: const Value(99),
-          effectiveTotalSnapshot: const Value(99),
-          isPartial: const Value(true),
-        ),
-        existingId: id,
-      );
-      final row = await db.customSelect(
-        'SELECT * FROM calculations WHERE id = ?',
-        variables: [Variable.withInt(id)],
-      ).getSingle();
-      expect(row.read<String?>('piece_name'), 'Taza');
-      expect(row.read<double>('total_price_snapshot'), 99);
-    });
+    test(
+      'existingId conserva pieceName/clientName si el patch los trae ausentes',
+      () async {
+        final ts = DateTime(2026, 9, 28, 12, 10);
+        final id = await repo.savePartial(
+          partial(createdAt: ts, pieceName: 'Taza'),
+        );
+        // Patch tipico del autosave: nombres absentes, totales nuevos.
+        await repo.savePartial(
+          CalculationsCompanion(
+            createdAt: Value(ts),
+            pieceName: const Value.absent(),
+            clientName: const Value.absent(),
+            totalPriceSnapshot: const Value(99),
+            effectiveTotalSnapshot: const Value(99),
+            isPartial: const Value(true),
+          ),
+          existingId: id,
+        );
+        final row = await db
+            .customSelect(
+              'SELECT * FROM calculations WHERE id = ?',
+              variables: [Variable.withInt(id)],
+            )
+            .getSingle();
+        expect(row.read<String?>('piece_name'), 'Taza');
+        expect(row.read<double>('total_price_snapshot'), 99);
+      },
+    );
   });
 
   group('deletePartial', () {
@@ -175,10 +193,12 @@ void main() {
       final id = await repo.savePartial(partial(createdAt: ts));
       await repo.deletePartial(id);
 
-      final row = await db.customSelect(
-        'SELECT * FROM calculations WHERE id = ?',
-        variables: [Variable.withInt(id)],
-      ).getSingleOrNull();
+      final row = await db
+          .customSelect(
+            'SELECT * FROM calculations WHERE id = ?',
+            variables: [Variable.withInt(id)],
+          )
+          .getSingleOrNull();
       expect(row, isNull);
     });
   });
@@ -191,17 +211,20 @@ void main() {
       gramsPerBobbin: 1000,
     );
 
-    test('persiste los materiales del parcial (no se perdian al reusar)', () async {
-      final ts = DateTime(2026, 9, 28, 16, 0);
-      final id = await repo.savePartial(
-        partial(createdAt: ts),
-        materials: [mat('PLA', 120), mat('ABS', 80)],
-      );
+    test(
+      'persiste los materiales del parcial (no se perdian al reusar)',
+      () async {
+        final ts = DateTime(2026, 9, 28, 16, 0);
+        final id = await repo.savePartial(
+          partial(createdAt: ts),
+          materials: [mat('PLA', 120), mat('ABS', 80)],
+        );
 
-      final mats = await repo.materialsOf(id);
-      expect(mats.length, 2);
-      expect(mats.map((m) => m.label).toSet(), {'PLA', 'ABS'});
-    });
+        final mats = await repo.materialsOf(id);
+        expect(mats.length, 2);
+        expect(mats.map((m) => m.label).toSet(), {'PLA', 'ABS'});
+      },
+    );
 
     test('upsert con existingId reemplaza (no duplica) materiales', () async {
       final ts = DateTime(2026, 9, 28, 16, 30);
@@ -231,10 +254,12 @@ void main() {
 
       await repo.deletePartial(id);
 
-      final orphans = await db.customSelect(
-        'SELECT COUNT(*) AS cnt FROM calculation_materials WHERE calculation_id = ?',
-        variables: [Variable.withInt(id)],
-      ).getSingle();
+      final orphans = await db
+          .customSelect(
+            'SELECT COUNT(*) AS cnt FROM calculation_materials WHERE calculation_id = ?',
+            variables: [Variable.withInt(id)],
+          )
+          .getSingle();
       expect(orphans.read<int>('cnt'), 0, reason: 'Sin filas huerfanas');
     });
 
@@ -279,34 +304,37 @@ void main() {
       expect(abs.materialHours, isNull);
     });
 
-    test('el upsert con existingId actualiza el desglose viejo en vez de duplicarlo', () async {
-      final ts = DateTime(2026, 9, 28, 20, 0);
-      final id1 = await repo.savePartial(
-        partial(createdAt: ts),
-        materials: [mat('PLA', 120)],
-      );
-      final id2 = await repo.savePartial(
-        partial(createdAt: ts),
-        materials: [
-          DraftMaterialInput(
-            label: 'PLA',
-            weightGrams: 120,
-            pricePerBobbin: 150,
-            gramsPerBobbin: 1000,
-            useOwnTime: true,
-            materialHours: 1,
-            materialMinutes: 15,
-          ),
-        ],
-        existingId: id1,
-      );
-      expect(id2, equals(id1));
+    test(
+      'el upsert con existingId actualiza el desglose viejo en vez de duplicarlo',
+      () async {
+        final ts = DateTime(2026, 9, 28, 20, 0);
+        final id1 = await repo.savePartial(
+          partial(createdAt: ts),
+          materials: [mat('PLA', 120)],
+        );
+        final id2 = await repo.savePartial(
+          partial(createdAt: ts),
+          materials: [
+            DraftMaterialInput(
+              label: 'PLA',
+              weightGrams: 120,
+              pricePerBobbin: 150,
+              gramsPerBobbin: 1000,
+              useOwnTime: true,
+              materialHours: 1,
+              materialMinutes: 15,
+            ),
+          ],
+          existingId: id1,
+        );
+        expect(id2, equals(id1));
 
-      final mats = await repo.materialsOf(id1);
-      expect(mats, hasLength(1));
-      expect(mats.single.useOwnTime, isTrue);
-      expect(mats.single.materialMinutes, 15.0);
-    });
+        final mats = await repo.materialsOf(id1);
+        expect(mats, hasLength(1));
+        expect(mats.single.useOwnTime, isTrue);
+        expect(mats.single.materialMinutes, 15.0);
+      },
+    );
   });
 
   group('borradores (partial): visibles en historial, fuera del cap', () {
@@ -321,14 +349,16 @@ void main() {
       expect(await repo.countAll(), 0, reason: 'borradores no cuentan');
     });
 
-    test('listItems SI muestra borradores (retomables desde historial)',
-        () async {
-      await seedDraft(0);
-      await seedDraft(1);
-      final items = await repo.listItems();
-      expect(items, hasLength(2));
-      expect(items.every((i) => i.isPartial), isTrue);
-    });
+    test(
+      'listItems SI muestra borradores (retomables desde historial)',
+      () async {
+        await seedDraft(0);
+        await seedDraft(1);
+        final items = await repo.listItems();
+        expect(items, hasLength(2));
+        expect(items.every((i) => i.isPartial), isTrue);
+      },
+    );
 
     test('con el cap lleno de borradores, un save real SI entra', () async {
       // 10 borradores (el cap free) + un save real.
@@ -362,13 +392,15 @@ void main() {
 
       await repo.savePartial(partial(createdAt: ts1, pieceName: 'Primero'));
       await repo.savePartial(partial(createdAt: ts2, pieceName: 'Segundo'));
-      await repo.savePartial(
-        partial(createdAt: tsOutside, pieceName: 'Fuera'),
-      );
+      await repo.savePartial(partial(createdAt: tsOutside, pieceName: 'Fuera'));
 
       final latest = await repo.findLatestPartialForMinute(bucket);
       expect(latest, isNotNull);
-      expect(latest!.pieceName, 'Segundo', reason: 'El mas reciente del bucket');
+      expect(
+        latest!.pieceName,
+        'Segundo',
+        reason: 'El mas reciente del bucket',
+      );
     });
 
     test('retorna null si no hay parciales en el bucket', () async {
@@ -413,7 +445,9 @@ void main() {
       final id = await repo.savePartial(
         partial(pieceName: 'Viejo', createdAt: DateTime(2026, 9, 28, 14, 0)),
       );
-      await repo.savePartial(partial(pieceName: 'Otro', createdAt: DateTime(2026, 9, 28, 13, 0)));
+      await repo.savePartial(
+        partial(pieceName: 'Otro', createdAt: DateTime(2026, 9, 28, 13, 0)),
+      );
       final existing = await repo.getById(id);
 
       final future = expectLater(
@@ -439,9 +473,7 @@ void main() {
 
       final future = expectLater(
         repo.watchLatestPartial(),
-        emitsThrough(
-          predicate<Calculation>((c) => c.pieceName == 'Primero'),
-        ),
+        emitsThrough(predicate<Calculation>((c) => c.pieceName == 'Primero')),
       );
       await repo.deletePartial(id);
       await future;

@@ -38,23 +38,22 @@ CalculationListItem _item({
   String? clientName,
   bool isSold = false,
   double total = 100.0,
-}) =>
-    CalculationListItem(
-      id: id,
-      createdAt: createdAt,
-      pieceName: pieceName,
-      clientName: clientName,
-      quantity: 1,
-      totalHours: 2,
-      discountPercentage: 0,
-      isSold: isSold,
-      isPartial: false,
-      materialCostSnapshot: 50,
-      electricCostSnapshot: 10,
-      profitAmountSnapshot: 40,
-      totalPriceSnapshot: total,
-      hasImage: false,
-    );
+}) => CalculationListItem(
+  id: id,
+  createdAt: createdAt,
+  pieceName: pieceName,
+  clientName: clientName,
+  quantity: 1,
+  totalHours: 2,
+  discountPercentage: 0,
+  isSold: isSold,
+  isPartial: false,
+  materialCostSnapshot: 50,
+  electricCostSnapshot: 10,
+  profitAmountSnapshot: 40,
+  totalPriceSnapshot: total,
+  hasImage: false,
+);
 
 GoRouter _router() => GoRouter(
   initialLocation: '/',
@@ -137,36 +136,37 @@ void main() {
   ];
 
   group('HomePage — dedup Home/Dashboard', () {
-    testWidgets(
-      'AC-001: no muestra las stats duplicadas del Dashboard',
-      (tester) async {
-        await _pumpHome(tester, items: items4);
+    testWidgets('AC-001: no muestra las stats duplicadas del Dashboard', (
+      tester,
+    ) async {
+      await _pumpHome(tester, items: items4);
 
-        expect(find.text('Cotizaciones'), findsNothing);
-        expect(find.text('Vendidas'), findsNothing);
-        expect(find.text('Conversión'), findsNothing);
-        expect(find.text('Últimas cotizaciones'), findsOneWidget);
-      },
-    );
+      expect(find.text('Cotizaciones'), findsNothing);
+      expect(find.text('Vendidas'), findsNothing);
+      expect(find.text('Conversión'), findsNothing);
+      expect(find.text('Últimas cotizaciones'), findsOneWidget);
+    });
 
-    testWidgets(
-      'AC-002: muestra solo las 3 mas recientes en orden desc',
-      (tester) async {
-        await _pumpHome(tester, items: items4);
+    testWidgets('AC-002: muestra solo las 3 mas recientes en orden desc', (
+      tester,
+    ) async {
+      await _pumpHome(tester, items: items4);
 
-        expect(find.text('Vaso'), findsOneWidget);
-        expect(find.text('Engranaje'), findsOneWidget);
-        expect(find.text('Figura'), findsOneWidget);
-        // La mas vieja queda fuera (solo 3).
-        expect(find.text('Soporte'), findsNothing);
+      expect(find.text('Vaso'), findsOneWidget);
+      expect(find.text('Engranaje'), findsOneWidget);
+      expect(find.text('Figura'), findsOneWidget);
+      // La mas vieja queda fuera (solo 3).
+      expect(find.text('Soporte'), findsNothing);
 
-        final dyVaso = tester.getTopLeft(find.text('Vaso')).dy;
-        final dyEng = tester.getTopLeft(find.text('Engranaje')).dy;
-        final dyFig = tester.getTopLeft(find.text('Figura')).dy;
-        expect(dyVaso < dyEng && dyEng < dyFig, isTrue,
-            reason: 'La mas nueva (Vaso) debe estar arriba de las otras.');
-      },
-    );
+      final dyVaso = tester.getTopLeft(find.text('Vaso')).dy;
+      final dyEng = tester.getTopLeft(find.text('Engranaje')).dy;
+      final dyFig = tester.getTopLeft(find.text('Figura')).dy;
+      expect(
+        dyVaso < dyEng && dyEng < dyFig,
+        isTrue,
+        reason: 'La mas nueva (Vaso) debe estar arriba de las otras.',
+      );
+    });
 
     testWidgets('AC-002: tap en una cotizacion navega al detalle', (
       tester,
@@ -180,22 +180,21 @@ void main() {
       expect(find.text('DETAIL_PAGE'), findsOneWidget);
     });
 
-    testWidgets(
-      'AC-003: sin cotizaciones muestra CTA "Nueva cotización"',
-      (tester) async {
-        await _pumpHome(tester, items: []);
+    testWidgets('AC-003: sin cotizaciones muestra CTA "Nueva cotización"', (
+      tester,
+    ) async {
+      await _pumpHome(tester, items: []);
 
-        expect(find.text(EsBO.homeEmptyQuotations), findsOneWidget);
-        final cta = find.widgetWithText(FilledButton, EsBO.homeEmptyCta);
-        expect(cta, findsOneWidget);
+      expect(find.text(EsBO.homeEmptyQuotations), findsOneWidget);
+      final cta = find.widgetWithText(FilledButton, EsBO.homeEmptyCta);
+      expect(cta, findsOneWidget);
 
-        await tester.ensureVisible(cta);
-        await tester.tap(cta);
-        await tester.pumpAndSettle();
+      await tester.ensureVisible(cta);
+      await tester.tap(cta);
+      await tester.pumpAndSettle();
 
-        expect(find.text('CALC_PAGE'), findsOneWidget);
-      },
-    );
+      expect(find.text('CALC_PAGE'), findsOneWidget);
+    });
 
     testWidgets('AC-004: con 1 cotizacion la muestra sin romper', (
       tester,
@@ -233,13 +232,13 @@ void main() {
       );
 
       expect(find.text(EsBO.homeDraftTitle), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, EsBO.homeDraftContinue),
-          findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, EsBO.homeDraftContinue),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('AC-007: "Continuar" navega a la calculadora', (
-      tester,
-    ) async {
+    testWidgets('AC-007: "Continuar" navega a la calculadora', (tester) async {
       const draft = CalculationDraft(weight: '120');
       await _pumpHome(
         tester,

@@ -16,7 +16,10 @@ import 'package:tresdcal/features/calculation/presentation/pages/calculator_page
 ///
 /// Verifica tambien que el stream del historial ([CalculationsNotifier])
 /// emita el borrador (no solo que este en la DB).
-Future<int> _seedDefinitiveWithMaterial(AppDatabase db, String pieceName) async {
+Future<int> _seedDefinitiveWithMaterial(
+  AppDatabase db,
+  String pieceName,
+) async {
   final id = await db
       .into(db.calculations)
       .insert(
@@ -70,74 +73,84 @@ Future<int> _seedDefinitiveWithMaterial(AppDatabase db, String pieceName) async 
 }
 
 void main() {
-  testWidgets('Reusar + editar + SALIR con X deja borrador visible en historial', (
-    tester,
-  ) async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final repo = CalculationRepository(db);
+  testWidgets(
+    'Reusar + editar + SALIR con X deja borrador visible en historial',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final repo = CalculationRepository(db);
 
-    final definitiveId = await tester.runAsync(
-      () => _seedDefinitiveWithMaterial(db, 'Pieza original'),
-    );
-    final definitive = await tester.runAsync(() => repo.getById(definitiveId!));
+      final definitiveId = await tester.runAsync(
+        () => _seedDefinitiveWithMaterial(db, 'Pieza original'),
+      );
+      final definitive = await tester.runAsync(
+        () => repo.getById(definitiveId!),
+      );
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(db),
-          sharedPreferencesProvider.overrideWithValue(prefs),
-        ],
-        child: MaterialApp(home: CalculatorPage(prefillCalc: definitive)),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+          child: MaterialApp(home: CalculatorPage(prefillCalc: definitive)),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
 
-    // Editar el peso (como el usuario: "le cambie el valor del peso").
-    await tester.enterText(find.widgetWithText(TextField, 'Peso'), '250');
-    await tester.pump(const Duration(milliseconds: 300));
+      // Editar el peso (como el usuario: "le cambie el valor del peso").
+      await tester.enterText(find.widgetWithText(TextField, 'Peso'), '250');
+      await tester.pump(const Duration(milliseconds: 300));
 
-    // SALIR con el boton X (tooltip EsBO.calcCloseAction = 'Cerrar').
-    final closeBtn = find.byIcon(Icons.close_rounded);
-    expect(closeBtn, findsOneWidget, reason: 'hay un boton X de salida');
-    await tester.tap(closeBtn);
-    // Esperar el guardado async real (await _persistPartialSync) + pop.
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 400));
-    });
-    for (var i = 0; i < 6; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    // Desmontar para cancelar el timer del debounce pendiente (si no, el test
-    // falla con "A Timer is still pending": el X no cancela _partialSaveTimer).
-    await tester.pumpWidget(const SizedBox.shrink());
-    for (var i = 0; i < 4; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
+      // SALIR con el boton X (tooltip EsBO.calcCloseAction = 'Cerrar').
+      final closeBtn = find.byIcon(Icons.close_rounded);
+      expect(closeBtn, findsOneWidget, reason: 'hay un boton X de salida');
+      await tester.tap(closeBtn);
+      // Esperar el guardado async real (await _persistPartialSync) + pop.
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+      });
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      // Desmontar para cancelar el timer del debounce pendiente (si no, el test
+      // falla con "A Timer is still pending": el X no cancela _partialSaveTimer).
+      await tester.pumpWidget(const SizedBox.shrink());
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
 
-    // 1) La DB debe tener 2 filas.
-    final items = (await tester.runAsync(repo.listItems))!;
-    final drafts = items.where((c) => c.isPartial).toList();
-    print('DB: items=${items.length} drafts=${drafts.length}');
+      // 1) La DB debe tener 2 filas.
+      final items = (await tester.runAsync(repo.listItems))!;
+      final drafts = items.where((c) => c.isPartial).toList();
+      print('DB: items=${items.length} drafts=${drafts.length}');
 
-    // 2) El stream del historial debe emitir el borrador (como lo ve la UI).
-    final historyItems = (await tester.runAsync(() async {
-      // Consumir watchItems() (el stream que usa CalculationsNotifier).
-      return repo.watchItems().first;
-    }))!;
-    print('HISTORIAL (stream): count=${historyItems.length} '
-        'drafts=${historyItems.where((c) => c.isPartial).length}');
+      // 2) El stream del historial debe emitir el borrador (como lo ve la UI).
+      final historyItems = (await tester.runAsync(() async {
+        // Consumir watchItems() (el stream que usa CalculationsNotifier).
+        return repo.watchItems().first;
+      }))!;
+      print(
+        'HISTORIAL (stream): count=${historyItems.length} '
+        'drafts=${historyItems.where((c) => c.isPartial).length}',
+      );
 
-    final okDb = items.length == 2 && drafts.length == 1;
-    final okHistory = historyItems.length == 2;
-    print('VEREDICTO: db=$okDb historial=$okHistory '
-        '${okDb && okHistory ? "PASS" : "FAIL"}');
+      final okDb = items.length == 2 && drafts.length == 1;
+      final okHistory = historyItems.length == 2;
+      print(
+        'VEREDICTO: db=$okDb historial=$okHistory '
+        '${okDb && okHistory ? "PASS" : "FAIL"}',
+      );
 
-    expect(okDb, isTrue, reason: 'DB debe tener original + borrador');
-    expect(okHistory, isTrue,
-        reason: 'el stream del historial debe mostrar 2 (incluye el borrador)');
-  });
+      expect(okDb, isTrue, reason: 'DB debe tener original + borrador');
+      expect(
+        okHistory,
+        isTrue,
+        reason: 'el stream del historial debe mostrar 2 (incluye el borrador)',
+      );
+    },
+  );
 
   testWidgets('Reusar + editar GRAMOS + BACK (PopScope) deja borrador', (
     tester,
@@ -190,9 +203,13 @@ void main() {
 
     final items = (await tester.runAsync(repo.listItems))!;
     final drafts = items.where((c) => c.isPartial).toList();
-    final historyItems = (await tester.runAsync(() => repo.watchItems().first))!;
-    print('BACK: db=${items.length} drafts=${drafts.length} '
-        'historial=${historyItems.length}');
+    final historyItems = (await tester.runAsync(
+      () => repo.watchItems().first,
+    ))!;
+    print(
+      'BACK: db=${items.length} drafts=${drafts.length} '
+      'historial=${historyItems.length}',
+    );
 
     expect(items.length, 2, reason: 'DB: original + borrador');
     expect(drafts.length, 1, reason: 'un borrador nuevo');

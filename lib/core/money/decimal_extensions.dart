@@ -24,7 +24,9 @@ String normalizeDecimalString(String value) {
   if (dot >= 0 && comma >= 0) {
     // El ultimo separador es el decimal; el otro es de miles.
     return comma > dot
-        ? value.replaceAll('.', '').replaceAll(',', '.') // es_BO
+        ? value
+              .replaceAll('.', '')
+              .replaceAll(',', '.') // es_BO
         : value.replaceAll(',', ''); // en-US
   }
   if (comma >= 0) {

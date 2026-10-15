@@ -51,10 +51,7 @@ void main() {
       );
       await notifier.upsert(tier);
 
-      final updated = tier.copyWith(
-        minQty: 25,
-        percent: Decimal.parse('15'),
-      );
+      final updated = tier.copyWith(minQty: 25, percent: Decimal.parse('15'));
       await notifier.upsert(updated);
 
       final tiers = await container.read(discountTiersNotifierProvider.future);

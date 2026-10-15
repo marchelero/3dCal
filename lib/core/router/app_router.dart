@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/calculation/presentation/pages/calculation_detail_page.dart';
 import '../../features/calculation/presentation/pages/calculations_list_page.dart';
@@ -14,14 +15,13 @@ import '../../features/catalog/printers/presentation/pages/printers_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/entitlement/presentation/pages/paywall_page.dart';
 import '../../features/legal/presentation/pages/legal_document_page.dart';
-import '../../features/onboarding/presentation/pages/initial_config_page.dart';
-import '../../features/onboarding/presentation/pages/language_selection_page.dart';
-import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/onboarding/presentation/pages/setup_flow_page.dart';
 import '../../features/settings/presentation/pages/print_settings_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../l10n/es_bo.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import '../constants/app_constants.dart';
 import '../database/app_database.dart';
 import '../theme/app_spacing.dart';
 
@@ -59,23 +59,35 @@ Page<void> _slideRight(Widget child) => CustomTransitionPage<void>(
 /// - `context.pop()` para volver.
 /// - Datos no serializables (Calculation, Filament, PrinterProfile) se pasan
 ///   via `state.extra` porque esos objetos no forman parte de la URL.
+/// Guard de /setup (MED-4, auditoría 2026-10-14): si el onboarding ya
+/// terminó (`onboarding_done=true`), cualquier entrada a /setup (deep link,
+/// refresh, botón atrás del navegador) redirige a Home. El wipe local y
+/// "Repetir configuración" setean la pref en false ANTES de navegar, así
+/// que esos flujos siguen permitidos. Pública y nombrada para que los
+/// tests puedan reusarla en sus routers stub.
+Future<String?> setupOnboardingRedirect(
+  BuildContext context,
+  GoRouterState state,
+) async {
+  final prefs = await SharedPreferences.getInstance();
+  final done = prefs.getBool(SettingsKeys.onboardingDone) ?? false;
+  return done ? '/' : null;
+}
+
 final appRouter = GoRouter(
   initialLocation: '/splash',
   errorBuilder: (context, state) => const _RouterErrorPage(),
   routes: [
     // === Splash screen (full-screen, sin shell) ===
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+    // Flujo continuo de setup de primera ejecución (rediseño onboarding
+    // 2026-10). Rutas viejas (/language, /onboarding, /initial-config)
+    // eliminadas en F4.
     GoRoute(
-      path: '/language',
-      builder: (context, state) => const LanguageSelectionPage(),
-    ),
-    GoRoute(
-      path: '/initial-config',
-      builder: (context, state) => const InitialConfigPage(),
-    ),
-    GoRoute(
-      path: '/onboarding',
-      builder: (context, state) => const OnboardingPage(),
+      path: '/setup',
+      // MED-4: guard — /setup solo es accesible con el flag en false.
+      redirect: setupOnboardingRedirect,
+      builder: (context, state) => const SetupFlowPage(),
     ),
 
     // === Shell: 5 tabs principales ===
@@ -173,9 +185,7 @@ final appRouter = GoRouter(
         // Mismo prefill que "Reusar", pero en modo edicion: al guardar
         // actualiza esta fila en vez de crear una nueva.
         return calc is Calculation
-            ? _slideRight(
-                CalculatorPage(prefillCalc: calc, editMode: true),
-              )
+            ? _slideRight(CalculatorPage(prefillCalc: calc, editMode: true))
             : _slideRight(const CalculatorPage());
       },
     ),

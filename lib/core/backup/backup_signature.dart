@@ -89,9 +89,10 @@ abstract final class BackupSignature {
   /// import recomputa al verificar.
   static Future<String> signPayload(Map<String, dynamic> payload) async {
     final keyHex = await getOrCreateKeyHex();
-    final mac = Hmac(sha256, _hexToBytes(keyHex)).convert(
-      utf8.encode(jsonEncode(payload)),
-    );
+    final mac = Hmac(
+      sha256,
+      _hexToBytes(keyHex),
+    ).convert(utf8.encode(jsonEncode(payload)));
     return mac.toString(); // hex lowercase
   }
 

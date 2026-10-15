@@ -64,16 +64,17 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
 });
 
 /// Repo de escalones de descuento por cantidad (feature A — Hito 1).
-final discountTiersRepositoryProvider = Provider<DiscountTiersRepository>((ref) {
+final discountTiersRepositoryProvider = Provider<DiscountTiersRepository>((
+  ref,
+) {
   return DiscountTiersRepository(ref.watch(appDatabaseProvider));
 });
 
 /// Stream reactivo de escalones (ordenado por `sort_order`). El calculator lo
 /// escucha para resolver el escalón aplicado sobre la cantidad del lote.
-final discountTiersProvider =
-    StreamProvider<List<DiscountTier>>((ref) {
-      return ref.watch(discountTiersRepositoryProvider).watchAll();
-    });
+final discountTiersProvider = StreamProvider<List<DiscountTier>>((ref) {
+  return ref.watch(discountTiersRepositoryProvider).watchAll();
+});
 
 /// Repos de cotizaciones.
 final calculationRepositoryProvider = Provider<CalculationRepository>((ref) {

@@ -53,9 +53,9 @@ void main() {
   }
 
   final implSets = {for (final f in implFiles) f: membersOf(f)};
-  final abstractSet = membersOf('lib/l10n/app_strings.dart').difference(
-    ignoredMembers,
-  );
+  final abstractSet = membersOf(
+    'lib/l10n/app_strings.dart',
+  ).difference(ignoredMembers);
 
   test('app_strings.dart declara miembros (no se rompe el parser)', () {
     expect(abstractSet.length, greaterThan(600));
@@ -83,7 +83,11 @@ void main() {
         isEmpty,
         reason: '$implFiles.first tiene en $file faltante: $onlyInRef',
       );
-      expect(onlyInOther, isEmpty, reason: '$file tiene extra vs ref: $onlyInOther');
+      expect(
+        onlyInOther,
+        isEmpty,
+        reason: '$file tiene extra vs ref: $onlyInOther',
+      );
     }
   });
 
@@ -100,7 +104,11 @@ void main() {
       final match = headerPattern.firstMatch(File(file).readAsStringSync());
       expect(match, isNotNull, reason: 'csvExportHeader no hallada en $file');
       final cells = cellPattern.allMatches(match!.group(1)!).length;
-      expect(cells, 13, reason: '$file declara $cells columnas; el writer emite 13');
+      expect(
+        cells,
+        13,
+        reason: '$file declara $cells columnas; el writer emite 13',
+      );
     }
   });
 }

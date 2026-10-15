@@ -10,9 +10,7 @@ void main() {
   group('isValidProvider', () {
     test('devuelve false con state invalido (initial)', () {
       final container = ProviderContainer(
-        overrides: [
-          calculatorNotifierProvider.overrideWith(_StubNotifier.new),
-        ],
+        overrides: [calculatorNotifierProvider.overrideWith(_StubNotifier.new)],
       );
       addTearDown(container.dispose);
 

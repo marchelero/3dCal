@@ -377,22 +377,25 @@ void main() {
     );
   });
 
-  test('boot cache Free + store dice INACTIVO → sigue Free sin writes', () async {
-    await setupContainer();
-    paymentService.setStoreProActive(false);
+  test(
+    'boot cache Free + store dice INACTIVO → sigue Free sin writes',
+    () async {
+      await setupContainer();
+      paymentService.setStoreProActive(false);
 
-    final state = await container.read(entitlementNotifierProvider.future);
-    expect(state, isA<EntitlementFree>());
+      final state = await container.read(entitlementNotifierProvider.future);
+      expect(state, isA<EntitlementFree>());
 
-    await _waitForAsync();
+      await _waitForAsync();
 
-    final finalState = container.read(entitlementNotifierProvider).value;
-    expect(finalState, isA<EntitlementFree>());
-    expect(repo.saveCalls, 0);
-    expect(repo.clearCalls, 0, reason: 'Nada que limpiar: ya era Free.');
-    expect(prefs.getBool(kIsProKey), isNull);
-    expect(paymentService.restoreCalls, 0);
-  });
+      final finalState = container.read(entitlementNotifierProvider).value;
+      expect(finalState, isA<EntitlementFree>());
+      expect(repo.saveCalls, 0);
+      expect(repo.clearCalls, 0, reason: 'Nada que limpiar: ya era Free.');
+      expect(prefs.getBool(kIsProKey), isNull);
+      expect(paymentService.restoreCalls, 0);
+    },
+  );
 
   test('boot cache Free + store null (offline/web) → sigue Free, '
       'SIN disparar restore() en cada boot', () async {

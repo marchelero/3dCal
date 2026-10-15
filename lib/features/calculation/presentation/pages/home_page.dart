@@ -83,9 +83,7 @@ class HomePage extends ConsumerWidget {
                           ref,
                           theme,
                           color,
-                          sessionDraft: sessionHasContent
-                              ? sessionDraft
-                              : null,
+                          sessionDraft: sessionHasContent ? sessionDraft : null,
                           dbPartial: dbPartial,
                         ),
                         const SizedBox(height: AppSpacing.lg),
@@ -353,7 +351,8 @@ class HomePage extends ConsumerWidget {
     CalculationDraft? sessionDraft,
     Calculation? dbPartial,
   }) {
-    final label = sessionDraft?.label.trim() ??
+    final label =
+        sessionDraft?.label.trim() ??
         (dbPartial?.pieceName?.trim().isNotEmpty ?? false
             ? dbPartial!.pieceName!.trim()
             : dbPartial?.clientName?.trim() ?? '');

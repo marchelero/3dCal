@@ -245,6 +245,9 @@ class EsBO {
   static String get settingsWipeCancel => _impl.settingsWipeCancel;
   static String get settingsWipeSuccess => _impl.settingsWipeSuccess;
   static String get settingsWipeError => _impl.settingsWipeError;
+  static String get settingsRepeatSetup => _impl.settingsRepeatSetup;
+  static String get settingsRepeatSetupHelper =>
+      _impl.settingsRepeatSetupHelper;
 
   // === Dashboard ===
   static String get dashboardTitle => _impl.dashboardTitle;
@@ -591,24 +594,37 @@ class EsBO {
   static String get localeDe => _impl.localeDe;
   static String get localeFr => _impl.localeFr;
 
-  // === Language selection (primera ejecución) ===
-  static String get languagePageTitle => _impl.languagePageTitle;
-  static String get languagePageSubtitle => _impl.languagePageSubtitle;
+  // === Setup flow (rediseño onboarding 2026-10) ===
+  static String get setupWelcomeTagline => _impl.setupWelcomeTagline;
+  static String get setupTicketPending => _impl.setupTicketPending;
+  static String get setupCurrencySeeAll => _impl.setupCurrencySeeAll;
+  static String get setupPrinterTitle => _impl.setupPrinterTitle;
+  static String get setupPrinterSubtitle => _impl.setupPrinterSubtitle;
+  static String get setupPrinterCustom => _impl.setupPrinterCustom;
+  static String get setupNeedPrinter => _impl.setupNeedPrinter;
+  static String get setupPrinterUpdated => _impl.setupPrinterUpdated;
+  static String get setupFilamentTitle => _impl.setupFilamentTitle;
+  static String get setupFilamentSubtitle => _impl.setupFilamentSubtitle;
+  static String get setupFilamentPriceHint => _impl.setupFilamentPriceHint;
+  static String get setupNeedFilament => _impl.setupNeedFilament;
+  static String get setupFilamentUpdated => _impl.setupFilamentUpdated;
+  static String get setupProfitTitle => _impl.setupProfitTitle;
+
+  /// Ver documentación en la interfaz.
+  static String get setupExampleValuesHint => _impl.setupExampleValuesHint;
+  static String get setupDoneTitle => _impl.setupDoneTitle;
+
+  /// Ver documentación en la interfaz.
+  static String get setupPrinterPopular => _impl.setupPrinterPopular;
+
+  /// Ver documentación en la interfaz.
+  static String get setupPrinterExtra => _impl.setupPrinterExtra;
+  static String get setupDoneSubtitle => _impl.setupDoneSubtitle;
+  static String get setupNext => _impl.setupNext;
+  static String get setupBack => _impl.setupBack;
 
   // === Onboarding ===
-  static String get onboardingTitle1 => _impl.onboardingTitle1;
-  static String get onboardingDesc1 => _impl.onboardingDesc1;
-  static String get onboardingTitle2 => _impl.onboardingTitle2;
-  static String get onboardingDesc2 => _impl.onboardingDesc2;
-  static String get onboardingTitle3 => _impl.onboardingTitle3;
-  static String get onboardingDesc3 => _impl.onboardingDesc3;
-  static String get onboardingTitle4 => _impl.onboardingTitle4;
-  static String get onboardingDesc4 => _impl.onboardingDesc4;
-  static String get onboardingTitle5 => _impl.onboardingTitle5;
-  static String get onboardingDesc5 => _impl.onboardingDesc5;
   static String get onboardingNext => _impl.onboardingNext;
-  static String get onboardingStart => _impl.onboardingStart;
-  static String get onboardingConfigure => _impl.onboardingConfigure;
 
   // === Initial config ===
   static String get configTitle => _impl.configTitle;
@@ -715,7 +731,8 @@ class EsBO {
   static String get historyEmptyCta => _impl.historyEmptyCta;
   @Deprecated('Use calcSectionPieceCosts instead')
   static String get calcSectionOthers => _impl.calcSectionOthers;
-  static String get settingsProfitBaseRange => _impl.settingsProfitBaseRange;
+  static String get settingsProfitBaseRange500 =>
+      _impl.settingsProfitBaseRange500;
   static String get settingsKwhRateRange => _impl.settingsKwhRateRange;
   static String get shareErrorNotRendered => _impl.shareErrorNotRendered;
   static String get shareErrorNoRegion => _impl.shareErrorNoRegion;
@@ -912,8 +929,6 @@ class EsBO {
   static String get themeModeDark => _impl.themeModeDark;
 
   static String get splashLogo => _impl.splashLogo;
-  static String onboardingPageCounter(int page, int total) =>
-      _impl.onboardingPageCounter(page, total);
   static String commonNoResultsFor(String query) =>
       _impl.commonNoResultsFor(query);
   static String get historyEmptySearchHint => _impl.historyEmptySearchHint;
@@ -1403,6 +1418,12 @@ class EsImpl implements AppStrings {
   @override
   String get settingsWipeError =>
       'No se pudieron borrar los datos. Inténtalo de nuevo.';
+  @override
+  String get settingsRepeatSetup => 'Repetir configuración';
+  @override
+  String get settingsRepeatSetupHelper =>
+      'Vuelve a ejecutar la configuración inicial sin borrar tus datos '
+      'guardados.';
 
   @override
   String get dashboardTitle => 'Dashboard';
@@ -2027,41 +2048,58 @@ class EsImpl implements AppStrings {
   @override
   String get localeFr => 'Francés';
   @override
-  String get languagePageTitle => 'Elige tu idioma';
+  String get setupWelcomeTagline => 'Configura tu calculadora en segundos';
   @override
-  String get languagePageSubtitle =>
-      'Se aplica a toda la aplicación. Puedes cambiarlo después en Ajustes.';
+  String get setupTicketPending => 'Pendiente';
   @override
-  String get onboardingTitle1 => 'Bienvenido a 3dCalc';
+  String get setupCurrencySeeAll => 'Ver más';
   @override
-  String get onboardingDesc1 =>
-      'Calcula el precio de impresiones 3D al instante.\nMateriales, electricidad, mano de obra y mas.';
+  String get setupPrinterTitle => 'Tu impresora';
   @override
-  String get onboardingTitle2 => 'Dos modos de calculo';
+  String get setupPrinterSubtitle =>
+      'Elige un modelo popular o crea el tuyo. '
+      'Es necesario elegir uno para continuar.';
   @override
-  String get onboardingDesc2 =>
-      'Express: cálculo rápido con un solo material.\nAvanzado: múltiples materiales, descuento y más parámetros.';
+  String get setupPrinterCustom => 'Personalizada';
   @override
-  String get onboardingTitle3 => 'Catálogo integrado';
+  String get setupNeedPrinter => 'Elige una impresora para continuar';
   @override
-  String get onboardingDesc3 =>
-      'Guarda tus filamentos e impresoras favoritos.\n Selecciónalos al instante desde el catálogo.';
+  String get setupPrinterUpdated => 'Impresora actualizada';
   @override
-  String get onboardingTitle4 => 'Dashboard & mas';
+  String get setupFilamentTitle => 'Tu filamento';
   @override
-  String get onboardingDesc4 =>
-      'Seguimiento de cotizaciones, tendencias mensuales,\nexportación a PDF e historial con búsqueda.';
+  String get setupFilamentSubtitle =>
+      'Elige una marca y el precio del rollo. '
+      'Es necesario elegir uno para continuar.';
   @override
-  String get onboardingTitle5 => 'Configuración fácil';
+  String get setupFilamentPriceHint => 'Ej: 100–150';
   @override
-  String get onboardingDesc5 =>
-      'Define moneda, impresora, filamento, ganancia\ny costo de energía en unos pocos pasos. Todo listo para cotizar.';
+  String get setupNeedFilament => 'Elige un filamento para continuar';
+  @override
+  String get setupFilamentUpdated => 'Filamento actualizado';
+  @override
+  String get setupProfitTitle => 'Tu margen y costos';
+
+  @override
+  String get setupExampleValuesHint =>
+      'Valores de ejemplo: ajustalos a tu situación y costos reales.';
+  @override
+  String get setupDoneTitle => '¡Listo!';
+
+  @override
+  String get setupPrinterPopular => 'Impresoras populares';
+
+  @override
+  String get setupPrinterExtra => 'Otros datos (opcional)';
+  @override
+  String get setupDoneSubtitle =>
+      'Tu calculadora está lista. ¡Empieza a cotizar!';
+  @override
+  String get setupNext => 'Siguiente';
+  @override
+  String get setupBack => 'Atrás';
   @override
   String get onboardingNext => 'Siguiente';
-  @override
-  String get onboardingStart => 'Comenzar';
-  @override
-  String get onboardingConfigure => 'Configurar';
   @override
   String get configTitle => 'Configuración inicial';
   @override
@@ -2308,7 +2346,7 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
   @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Otros';
   @override
-  String get settingsProfitBaseRange => 'Rango: 0-1000';
+  String get settingsProfitBaseRange500 => 'Rango: 0-500';
   @override
   String get settingsKwhRateRange => 'Rango: 0.10-5.00';
   @override
@@ -2669,8 +2707,6 @@ Podemos actualizar, suspender o retirar funciones. Estos términos también pued
 
   @override
   String get splashLogo => '3dCalc logo';
-  @override
-  String onboardingPageCounter(int page, int total) => 'Página $page de $total';
   @override
   String commonNoResultsFor(String query) => 'Sin resultados para "$query"';
   @override

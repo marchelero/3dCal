@@ -75,17 +75,11 @@ void main() {
       );
 
       // Paso 1 de 6 al inicio.
-      expect(
-        counter(EsBO.quoteGuidePageCounter(1, 6)),
-        findsOneWidget,
-      );
+      expect(counter(EsBO.quoteGuidePageCounter(1, 6)), findsOneWidget);
 
       await tester.tap(find.text(EsBO.quoteGuideNext));
       await tester.pumpAndSettle();
-      expect(
-        counter(EsBO.quoteGuidePageCounter(2, 6)),
-        findsOneWidget,
-      );
+      expect(counter(EsBO.quoteGuidePageCounter(2, 6)), findsOneWidget);
     });
 
     testWidgets('"Entendido" cierra el modal', (tester) async {

@@ -120,31 +120,28 @@ void main() {
       expect(find.text(EsBO.settingsPlanProFeatures.first), findsWidgets);
     });
 
-    testWidgets(
-      'pro: sheet con estado Pro, sin CTA y con "ya tienes PRO" '
-      '(AC-002/003)',
-      (tester) async {
-        await _pump(tester, isPro: true);
+    testWidgets('pro: sheet con estado Pro, sin CTA y con "ya tienes PRO" '
+        '(AC-002/003)', (tester) async {
+      await _pump(tester, isPro: true);
 
-        expect(find.byType(PlanTierBadge), findsOneWidget);
-        await tester.tap(find.byType(PlanTierBadge));
-        await tester.pumpAndSettle();
+      expect(find.byType(PlanTierBadge), findsOneWidget);
+      await tester.tap(find.byType(PlanTierBadge));
+      await tester.pumpAndSettle();
 
-        final badge = find.byKey(_statusBadgeKey);
-        expect(badge, findsOneWidget);
-        expect(
-          find.descendant(
-            of: badge,
-            matching: find.text(EsBO.settingsPlanStatusPro),
-          ),
-          findsOneWidget,
-        );
+      final badge = find.byKey(_statusBadgeKey);
+      expect(badge, findsOneWidget);
+      expect(
+        find.descendant(
+          of: badge,
+          matching: find.text(EsBO.settingsPlanStatusPro),
+        ),
+        findsOneWidget,
+      );
 
-        // Sin CTA de desbloqueo; en su lugar, mensaje de ya-Pro.
-        expect(find.byKey(_unlockCtaKey), findsNothing);
-        expect(find.text(EsBO.settingsPlanAlreadyPro), findsOneWidget);
-      },
-    );
+      // Sin CTA de desbloqueo; en su lugar, mensaje de ya-Pro.
+      expect(find.byKey(_unlockCtaKey), findsNothing);
+      expect(find.text(EsBO.settingsPlanAlreadyPro), findsOneWidget);
+    });
 
     testWidgets('loading: sin badge visible (no falso "FREE") (AC-007)', (
       tester,

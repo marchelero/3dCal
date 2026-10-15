@@ -36,10 +36,7 @@ void main() {
     totalOriginal: Decimal.parse('22.4'),
   );
 
-  final tier10 = DiscountTier.create(
-    minQty: 10,
-    percent: Decimal.fromInt(10),
-  );
+  final tier10 = DiscountTier.create(minQty: 10, percent: Decimal.fromInt(10));
 
   test('ejemplo PRD adaptado: N=10, escalón 10 %, manual 0', () {
     final r = BatchLotComposer.compose(

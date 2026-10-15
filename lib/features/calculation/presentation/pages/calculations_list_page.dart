@@ -97,140 +97,140 @@ class _CalculationsListPageState extends ConsumerState<CalculationsListPage> {
               subtitle: EsBO.homeActionHistorySub,
               icon: Icons.history_rounded,
             ),
-          // Search bar + acciones del módulo (CSV y orden viven junto a la
-          // búsqueda, no en la cabecera).
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    decoration: InputDecoration(
-                      hintText: EsBO.historySearchMaterialsHint,
-                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                      suffixIcon: _searchCtrl.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
-                              tooltip: EsBO.commonClearSearch,
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                notifier.search('');
-                                setState(() {});
-                              },
-                            )
-                          : null,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 12,
-                      ),
-                    ),
-                    onChanged: (v) {
-                      notifier.search(v);
-                      setState(() {});
-                    },
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                IconButton(
-                  tooltip: EsBO.historyExportCsv,
-                  icon: const Icon(Icons.file_download_outlined, size: 20),
-                  onPressed: () => _exportCsv(notifier),
-                ),
-                IconButton(
-                  tooltip: EsBO.historySortTitle,
-                  icon: const Icon(Icons.sort_rounded, size: 20),
-                  onPressed: _showSortSheet,
-                ),
-              ],
-            ),
-          ),
-          // Filter chips (Venta + Fechas + Cliente activo)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                _filterChip(EsBO.historyFilterAll, null),
-                _filterChip(EsBO.historyFilterSold, true),
-                _filterChip(EsBO.historyFilterPending, false),
-                ..._dateChips(dateRange, notifier),
-                ..._clientChips(clientFilter, notifier),
-              ],
-            ),
-          ),
-          // Barra de resumen: "N cotizaciones · total efectivo" (PRD 2026-09-11)
-          if (hasActiveFilter && async.hasValue)
-            _SummaryBar(calcs: async.value!),
-          // History usage counter (free only, sin filtros activos)
-          if (showHistoryCounter)
+            // Search bar + acciones del módulo (CSV y orden viven junto a la
+            // búsqueda, no en la cabecera).
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      EsBO.historyUsageCounter(usedCount, kFreeHistoryCap),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
+                    child: TextField(
+                      controller: _searchCtrl,
+                      decoration: InputDecoration(
+                        hintText: EsBO.historySearchMaterialsHint,
+                        prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                        suffixIcon: _searchCtrl.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, size: 18),
+                                tooltip: EsBO.commonClearSearch,
+                                onPressed: () {
+                                  _searchCtrl.clear();
+                                  notifier.search('');
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 12,
+                        ),
                       ),
+                      onChanged: (v) {
+                        notifier.search(v);
+                        setState(() {});
+                      },
                     ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  IconButton(
+                    tooltip: EsBO.historyExportCsv,
+                    icon: const Icon(Icons.file_download_outlined, size: 20),
+                    onPressed: () => _exportCsv(notifier),
+                  ),
+                  IconButton(
+                    tooltip: EsBO.historySortTitle,
+                    icon: const Icon(Icons.sort_rounded, size: 20),
+                    onPressed: _showSortSheet,
                   ),
                 ],
               ),
             ),
-          // List
-          Expanded(
-            child: async.when(
-              loading: () => const ListPageSkeleton(),
-              error: (e, _) => ErrorView(
-                message: EsBO.historyErrorLoad,
-                details: e.toString(),
-                onRetry: () => ref.invalidate(calculationsNotifierProvider),
+            // Filter chips (Venta + Fechas + Cliente activo)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  _filterChip(EsBO.historyFilterAll, null),
+                  _filterChip(EsBO.historyFilterSold, true),
+                  _filterChip(EsBO.historyFilterPending, false),
+                  ..._dateChips(dateRange, notifier),
+                  ..._clientChips(clientFilter, notifier),
+                ],
               ),
-              data: (calcs) {
-                if (calcs.isEmpty) {
-                  return EmptyView(
-                    icon: Icons.receipt_long_outlined,
-                    message: _searchCtrl.text.isNotEmpty
-                        ? EsBO.commonNoResultsFor(_searchCtrl.text)
-                        : EsBO.historyEmpty,
-                    subtitle: _searchCtrl.text.isNotEmpty
-                        ? EsBO.historyEmptySearchHint
-                        : EsBO.historyEmptyCta,
-                    ctaLabel: EsBO.homeActionNewCalc,
-                    ctaIcon: Icons.add_rounded,
-                    onCta: () => context.push('/calculator'),
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: () =>
-                      ref.refresh(calculationsNotifierProvider.future),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    itemCount: calcs.length,
-                    itemBuilder: (_, i) => _StaggeredItem(
-                      index: i,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _CalculationCard(
-                          calc: calcs[i],
-                          notifier: notifier,
+            ),
+            // Barra de resumen: "N cotizaciones · total efectivo" (PRD 2026-09-11)
+            if (hasActiveFilter && async.hasValue)
+              _SummaryBar(calcs: async.value!),
+            // History usage counter (free only, sin filtros activos)
+            if (showHistoryCounter)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        EsBO.historyUsageCounter(usedCount, kFreeHistoryCap),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  ],
+                ),
+              ),
+            // List
+            Expanded(
+              child: async.when(
+                loading: () => const ListPageSkeleton(),
+                error: (e, _) => ErrorView(
+                  message: EsBO.historyErrorLoad,
+                  details: e.toString(),
+                  onRetry: () => ref.invalidate(calculationsNotifierProvider),
+                ),
+                data: (calcs) {
+                  if (calcs.isEmpty) {
+                    return EmptyView(
+                      icon: Icons.receipt_long_outlined,
+                      message: _searchCtrl.text.isNotEmpty
+                          ? EsBO.commonNoResultsFor(_searchCtrl.text)
+                          : EsBO.historyEmpty,
+                      subtitle: _searchCtrl.text.isNotEmpty
+                          ? EsBO.historyEmptySearchHint
+                          : EsBO.historyEmptyCta,
+                      ctaLabel: EsBO.homeActionNewCalc,
+                      ctaIcon: Icons.add_rounded,
+                      onCta: () => context.push('/calculator'),
+                    );
+                  }
+                  return RefreshIndicator(
+                    onRefresh: () =>
+                        ref.refresh(calculationsNotifierProvider.future),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      itemCount: calcs.length,
+                      itemBuilder: (_, i) => _StaggeredItem(
+                        index: i,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _CalculationCard(
+                            calc: calcs[i],
+                            notifier: notifier,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );

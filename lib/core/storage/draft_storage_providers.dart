@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'calculation_draft.dart';
 import 'draft_storage.dart';
+import 'setup_draft_storage.dart';
 
 /// Provider de SharedPreferences. Overridable en tests con
 /// `SharedPreferences.setMockInitialValues({})` + override.
@@ -15,6 +16,13 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 final draftStorageProvider = Provider<DraftStorage>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return DraftStorage(prefs);
+});
+
+/// Provider de [SetupDraftStorage] (borradores de los forms de impresora/
+/// filamento del flujo /setup — MED-2).
+final setupDraftStorageProvider = Provider<SetupDraftStorage>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return SetupDraftStorage(prefs);
 });
 
 /// Provee el draft persistido (o `null` si no hay).

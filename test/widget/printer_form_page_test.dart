@@ -46,6 +46,13 @@ Future<ProviderContainer> _pumpForm(
   return container;
 }
 
+/// Despliega el sub-colapsable "Otros datos (opcional)" del form (costo,
+/// vida util, horas) — la seccion arranca plegada en modo create.
+Future<void> _expandExtra(WidgetTester tester) async {
+  await tester.tap(find.text('Otros datos (opcional)'));
+  await tester.pumpAndSettle();
+}
+
 /// Selecciona marca + modelo del catalogo via los dropdowns.
 Future<void> _selectCatalogModel(
   WidgetTester tester,
@@ -120,8 +127,28 @@ void main() {
       expect(list.first.averageWatts, 125);
     });
 
+    testWidgets('tap preset popular llena form y colapsa la seccion', (
+      tester,
+    ) async {
+      await _pumpForm(tester);
+      final presetKey = const ValueKey('printer-form-preset-Bambu Lab-P1S');
+      expect(find.byKey(presetKey), findsOneWidget);
+      await tester.tap(find.byKey(presetKey));
+      await tester.pumpAndSettle();
+
+      // Colapsado tras el tap: los presets dejan de estar en el arbol.
+      expect(find.byKey(presetKey), findsNothing);
+      // Marca del preset en el dropdown + modelo/watts en el form.
+      expect(find.text('Bambu Lab'), findsOneWidget);
+      final wattsField = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Consumo promedio (W)'),
+      );
+      expect(wattsField.controller!.text, isNotEmpty);
+    });
+
     testWidgets('F5: muestra campos de costo y vida util', (tester) async {
       await _pumpForm(tester);
+      await _expandExtra(tester);
       expect(find.widgetWithText(TextField, 'Costo (Bs)'), findsOneWidget);
       expect(
         find.widgetWithText(TextField, 'Vida útil (horas)'),
@@ -134,6 +161,7 @@ void main() {
     ) async {
       final container = await _pumpForm(tester);
       await _selectCatalogModel(tester, 'Creality', 'Ender-3 V2');
+      await _expandExtra(tester);
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '120',
@@ -162,6 +190,7 @@ void main() {
     ) async {
       await _pumpForm(tester);
       await _selectCatalogModel(tester, 'Creality', 'Ender-3 V2');
+      await _expandExtra(tester);
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '120',
@@ -193,6 +222,7 @@ void main() {
     ) async {
       await _pumpForm(tester);
       await _selectCatalogModel(tester, 'Creality', 'Ender-3 V2');
+      await _expandExtra(tester);
       await tester.enterText(
         find.widgetWithText(TextField, 'Consumo promedio (W)'),
         '120',

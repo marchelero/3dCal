@@ -12,7 +12,7 @@ import '../../../../l10n/es_bo.dart';
 /// Pantalla de carga inicial antes del home.
 ///
 /// Muestra el logo centrado con fade-in y una barra de progreso en la parte
-/// inferior. Navega a `/` (o `/language` si falta el onboarding) cuando
+/// inferior. Navega a `/` (o `/setup` si falta el onboarding) cuando
 /// la animacion termina Y la DB esta lista.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -62,8 +62,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (onboardingDone) {
       GoRouter.of(context).go('/');
     } else {
-      // Primera ejecución: idioma → onboarding → config inicial.
-      GoRouter.of(context).go('/language');
+      // Primera ejecución: flujo continuo de setup (/setup) — paso 0
+      // (bienvenida + idioma) y decisiones en un solo PageView.
+      GoRouter.of(context).go('/setup');
     }
   }
 

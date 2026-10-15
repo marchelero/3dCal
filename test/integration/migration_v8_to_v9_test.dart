@@ -226,7 +226,7 @@ void main() {
       final versionRows = await db.customSelect('PRAGMA user_version').get();
       expect(
         versionRows.first.read<int>('user_version'),
-          17,
+        17,
         reason:
             'AppDatabase debe setear user_version=16 tras onUpgrade '
             '(v8→v9 y pasos siguientes hasta el schema actual).',

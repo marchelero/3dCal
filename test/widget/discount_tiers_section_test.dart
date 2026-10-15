@@ -30,10 +30,7 @@ void main() {
       child: MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: SizedBox(
-              width: 800,
-              child: const DiscountTiersSection(),
-            ),
+            child: SizedBox(width: 800, child: const DiscountTiersSection()),
           ),
         ),
       ),
@@ -123,6 +120,43 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('entre 1 y 100'), findsOneWidget);
+    });
+
+    testWidgets('MED-1: coma decimal se normaliza y guarda 12,5 → 12.5', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(buildTest());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining('Agregar'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Cantidad mínima'),
+        '5',
+      );
+      // Locale es_BO: el usuario escribe la coma decimal. Sin la
+      // normalización, Decimal.tryParse('12,5') fallaba y el save lanzaba.
+      final percentField = find.widgetWithText(TextFormField, 'Descuento (%)');
+      await tester.enterText(percentField, '12,5');
+      await tester.tap(find.text('Guardar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('5'), findsOneWidget, reason: 'fila del escalón');
+      final tiers = await container
+          .read(discountTiersRepositoryProvider)
+          .listAll();
+      expect(tiers, hasLength(1));
+      expect(tiers.single.minQty, 5);
+      expect(
+        tiers.single.percent,
+        Decimal.parse('12.5'),
+        reason: 'la coma decimal debe persistir como 12.5',
+      );
     });
   });
 }

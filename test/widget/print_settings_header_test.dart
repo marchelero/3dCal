@@ -50,24 +50,21 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets(
-    'Header estandar: card con titulo/subtitulo + badge de plan, '
-    'sin version, privacidad ni flecha de retroceso',
-    (tester) async {
-      await pumpPage(tester);
+  testWidgets('Header estandar: card con titulo/subtitulo + badge de plan, '
+      'sin version, privacidad ni flecha de retroceso', (tester) async {
+    await pumpPage(tester);
 
-      // Card generica estandar con su contenido localizado.
-      expect(find.byType(PageHeaderCard), findsOneWidget);
-      expect(find.text(EsBO.settingsPrintConfigTitle), findsOneWidget);
-      expect(find.text(EsBO.settingsPrintConfigSubtitle), findsOneWidget);
-      // Badge de plan (PRO/FREE) presente en la cabecera.
-      expect(find.byType(PlanTierBadge), findsOneWidget);
-      // Sin informacion inutil: version de la app, privacidad, candado
-      // y flecha de retroceso (es un tab del shell, no una pagina empujada).
-      expect(find.textContaining('v$kAppVersion'), findsNothing);
-      expect(find.text(EsBO.settingsPrivacy), findsNothing);
-      expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
-      expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
-    },
-  );
+    // Card generica estandar con su contenido localizado.
+    expect(find.byType(PageHeaderCard), findsOneWidget);
+    expect(find.text(EsBO.settingsPrintConfigTitle), findsOneWidget);
+    expect(find.text(EsBO.settingsPrintConfigSubtitle), findsOneWidget);
+    // Badge de plan (PRO/FREE) presente en la cabecera.
+    expect(find.byType(PlanTierBadge), findsOneWidget);
+    // Sin informacion inutil: version de la app, privacidad, candado
+    // y flecha de retroceso (es un tab del shell, no una pagina empujada).
+    expect(find.textContaining('v$kAppVersion'), findsNothing);
+    expect(find.text(EsBO.settingsPrivacy), findsNothing);
+    expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+    expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
+  });
 }

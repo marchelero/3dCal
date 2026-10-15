@@ -110,8 +110,11 @@ class _PrintSettingsBody extends ConsumerWidget {
                     }
                     final n = int.tryParse(v.trim());
                     if (n == null) return EsBO.commonInvalidNumber;
-                    if (n < 0 || n > 1000) {
-                      return EsBO.settingsProfitBaseRange;
+                    // LOW-3 (auditoría 2026-10-14): rango del validator
+                    // alineado al del slider (0–500); antes aceptaba hasta
+                    // 1000 y el valor quedaba pinchado en el tope del slider.
+                    if (n < 0 || n > 500) {
+                      return EsBO.settingsProfitBaseRange500;
                     }
                     return null;
                   },

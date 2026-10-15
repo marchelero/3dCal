@@ -194,7 +194,8 @@ class PageHeaderCard extends ConsumerWidget {
       ),
       child: Icon(
         icon,
-        color: iconColor ??
+        color:
+            iconColor ??
             (accent.computeLuminance() > 0.5 ? Colors.black87 : Colors.white),
         size: 26,
       ),
@@ -226,7 +227,9 @@ class PlanTierBadge extends ConsumerWidget {
       label: isPro ? EsBO.settingsPlanStatusPro : EsBO.settingsPlanStatusFree,
       button: true,
       child: Tooltip(
-        message: isPro ? EsBO.settingsProUnlocked : EsBO.settingsPlanSectionTitle,
+        message: isPro
+            ? EsBO.settingsProUnlocked
+            : EsBO.settingsPlanSectionTitle,
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.pill),
           onTap: () => showPlanSheet(context),
@@ -236,7 +239,9 @@ class PlanTierBadge extends ConsumerWidget {
               vertical: 2,
             ),
             decoration: BoxDecoration(
-              color: isPro ? color.primaryContainer : color.surfaceContainerHighest,
+              color: isPro
+                  ? color.primaryContainer
+                  : color.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(AppRadii.pill),
               border: Border.all(color: fg.withValues(alpha: 0.25)),
             ),

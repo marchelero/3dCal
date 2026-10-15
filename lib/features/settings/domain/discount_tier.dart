@@ -30,10 +30,7 @@ class DiscountTier {
   /// Crea un escalón nuevo con id UUID v4 y `sortOrder = 0`. El repository
   /// re-secuencia los slots automáticamente al guardar (auto-sort), así que
   /// el caller no necesita calcular la posición.
-  factory DiscountTier.create({
-    required int minQty,
-    required Decimal percent,
-  }) {
+  factory DiscountTier.create({required int minQty, required Decimal percent}) {
     return DiscountTier(
       id: _uuidV4(),
       minQty: minQty,

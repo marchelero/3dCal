@@ -13,10 +13,7 @@ import 'package:web/web.dart' as web;
 Future<void> downloadImage(Uint8List imageBytes, String filename) async {
   // Convertir Uint8List → JSArrayBuffer para el Blob constructor de package:web.
   final data = imageBytes.buffer.toJS;
-  final blob = web.Blob(
-    [data].toJS,
-    web.BlobPropertyBag(type: 'image/png'),
-  );
+  final blob = web.Blob([data].toJS, web.BlobPropertyBag(type: 'image/png'));
   final url = web.URL.createObjectURL(blob);
   web.HTMLAnchorElement()
     ..href = url

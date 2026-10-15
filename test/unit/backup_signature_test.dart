@@ -96,40 +96,42 @@ void main() {
     expect(rows.single.name, 'PLA');
   });
 
-  test('payload alterado con firma vieja → signatureMismatch, DB intacta',
-      () async {
-    // Seed local que NO debe perderse si el restore es rechazado.
-    await db
-        .into(db.filaments)
-        .insert(
-          FilamentsCompanion.insert(
-            name: 'Local',
-            pricePerBobbin: 100,
-            gramsPerBobbin: 1000,
-            isDefault: const Value(true),
-            createdAt: DateTime.now().toUtc(),
-          ),
-        );
+  test(
+    'payload alterado con firma vieja → signatureMismatch, DB intacta',
+    () async {
+      // Seed local que NO debe perderse si el restore es rechazado.
+      await db
+          .into(db.filaments)
+          .insert(
+            FilamentsCompanion.insert(
+              name: 'Local',
+              pricePerBobbin: 100,
+              gramsPerBobbin: 1000,
+              isDefault: const Value(true),
+              createdAt: DateTime.now().toUtc(),
+            ),
+          );
 
-    final envelope = await signedEnvelope(validBackupJson());
-    final tampered = jsonDecode(envelope) as Map<String, dynamic>;
-    // Edita el payload SIN re-firmar (ataque classico: modificar el JSON
-    // en un editor externo).
-    ((tampered['backup'] as Map<String, dynamic>)['filaments'] as List)
-        .cast<Map<String, dynamic>>()
-        .first['name'] =
-        'HACKED';
+      final envelope = await signedEnvelope(validBackupJson());
+      final tampered = jsonDecode(envelope) as Map<String, dynamic>;
+      // Edita el payload SIN re-firmar (ataque classico: modificar el JSON
+      // en un editor externo).
+      ((tampered['backup'] as Map<String, dynamic>)['filaments'] as List)
+              .cast<Map<String, dynamic>>()
+              .first['name'] =
+          'HACKED';
 
-    final result = await backup.restoreFromJson(jsonEncode(tampered));
-    expect(
-      result,
-      BackupErrorCodes.signatureMismatch,
-      reason: 'La firma no coincide con el payload alterado.',
-    );
+      final result = await backup.restoreFromJson(jsonEncode(tampered));
+      expect(
+        result,
+        BackupErrorCodes.signatureMismatch,
+        reason: 'La firma no coincide con el payload alterado.',
+      );
 
-    final rows = await db.select(db.filaments).get();
-    expect(rows.single.name, 'Local', reason: 'La fila local queda intacta.');
-  });
+      final rows = await db.select(db.filaments).get();
+      expect(rows.single.name, 'Local', reason: 'La fila local queda intacta.');
+    },
+  );
 
   test('clave local NO coincide (rotación/tampering) → rechazado', () async {
     // Firma hecha con key A; la key local cambia a B con el MISMO deviceId
@@ -167,7 +169,10 @@ void main() {
 
     final result = await backup.restoreFromJson(envelope);
     expect(result, isEmpty, reason: 'Cross-device debe restaurar.');
-    expect((await db.select(db.filaments).get()).single.name, 'PLA del otro cel');
+    expect(
+      (await db.select(db.filaments).get()).single.name,
+      'PLA del otro cel',
+    );
   });
 
   test('envoltorio SIN firma (legacy raro) → aceptado con aviso', () async {
@@ -178,17 +183,23 @@ void main() {
     expect((await db.select(db.filaments).get()).single.name, 'PLA');
   });
 
-  test('backup crudo legacy (sin envoltorio) → aceptado sin tocar la clave',
-      () async {
-    // No se llama a signPayload: el camino legacy ni siquiera consulta la
-    // clave del dispositivo.
-    final raw = jsonEncode(validBackupJson());
+  test(
+    'backup crudo legacy (sin envoltorio) → aceptado sin tocar la clave',
+    () async {
+      // No se llama a signPayload: el camino legacy ni siquiera consulta la
+      // clave del dispositivo.
+      final raw = jsonEncode(validBackupJson());
 
-    final result = await backup.restoreFromJson(raw);
-    expect(result, isEmpty);
-    expect(await prefsKeyOrNull(), isNull, reason: 'No debe generarse clave.');
-    expect((await db.select(db.filaments).get()).single.name, 'PLA');
-  });
+      final result = await backup.restoreFromJson(raw);
+      expect(result, isEmpty);
+      expect(
+        await prefsKeyOrNull(),
+        isNull,
+        reason: 'No debe generarse clave.',
+      );
+      expect((await db.select(db.filaments).get()).single.name, 'PLA');
+    },
+  );
 
   test('signature no-String → invalidFile', () async {
     final envelope = jsonEncode({

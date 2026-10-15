@@ -35,5 +35,5 @@ class DiscountTiersNotifier extends AsyncNotifier<List<DiscountTier>> {
 
 final discountTiersNotifierProvider =
     AsyncNotifierProvider<DiscountTiersNotifier, List<DiscountTier>>(
-  DiscountTiersNotifier.new,
-);
+      DiscountTiersNotifier.new,
+    );

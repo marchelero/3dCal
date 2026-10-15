@@ -302,8 +302,9 @@ class _PrinterCatalogSelectorState
                     // Auto-llenar vida util del catalogo si el controller existe.
                     if (widget.usefulLifeHoursController != null &&
                         spec.usefulLifeHours != null) {
-                      widget.usefulLifeHoursController!.text =
-                          spec.usefulLifeHours.toString();
+                      widget.usefulLifeHoursController!.text = spec
+                          .usefulLifeHours
+                          .toString();
                     }
                   }
                 });

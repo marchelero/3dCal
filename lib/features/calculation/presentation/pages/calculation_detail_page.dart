@@ -51,14 +51,13 @@ import '../widgets/report_variant_selector.dart';
 /// Cifras del lote resueltas por [_DetailState._lotFigures]: fuente unica
 /// del hero, el desglose, la imagen y el PDF del detalle (HIGH-01/02,
 /// MED-10 de la auditoria 2026-10-04).
-typedef _LotFigures =
-    ({
-      Decimal unitTotal,
-      Decimal batchPct,
-      Decimal batchAmount,
-      Decimal lotTotal,
-      Decimal manualAmount,
-    });
+typedef _LotFigures = ({
+  Decimal unitTotal,
+  Decimal batchPct,
+  Decimal batchAmount,
+  Decimal lotTotal,
+  Decimal manualAmount,
+});
 
 /// Detalle de una cotizacion guardada (readonly).
 ///
@@ -99,7 +98,8 @@ class CalculationDetailPage extends ConsumerWidget {
           details: e.toString(),
           onRetry: () => ref.invalidate(_calculationByIdProvider(calcId)),
         ),
-        data: (c) => c == null ? const Center(child: Text('—')) : _Detail(calc: c),
+        data: (c) =>
+            c == null ? const Center(child: Text('—')) : _Detail(calc: c),
       ),
     );
   }
@@ -475,13 +475,15 @@ class _DetailState extends ConsumerState<_Detail> {
     final profitUnit = _money(calc.profitAmountSnapshot);
     final discountUnit = result?.output.discountAmount ?? Decimal.zero;
 
-    final totalGrams = materials.fold<Decimal>(
-      Decimal.zero,
-      (sum, m) => sum + _money(m.weightGrams),
-    ) * qtyD;
+    final totalGrams =
+        materials.fold<Decimal>(
+          Decimal.zero,
+          (sum, m) => sum + _money(m.weightGrams),
+        ) *
+        qtyD;
     final totalMinutes =
         CalculatorState.decimalHoursToMinutes(_money(calc.totalHours)) *
-            _quantity;
+        _quantity;
     final timeText = _formatMinutes(totalMinutes);
     final profit = profitUnit * qtyD;
 
@@ -563,8 +565,9 @@ class _DetailState extends ConsumerState<_Detail> {
                         value: formatCurrency(materialUnit * qtyD, currency),
                       ),
                       if (materials.length > 1)
-                        for (final m in result?.breakdown ??
-                            const <MaterialCostBreakdown>[])
+                        for (final m
+                            in result?.breakdown ??
+                                const <MaterialCostBreakdown>[])
                           _Row(
                             label: m.label,
                             value: formatCurrency(m.cost * qtyD, currency),
@@ -584,7 +587,10 @@ class _DetailState extends ConsumerState<_Detail> {
                       if (postProcessUnit > Decimal.zero)
                         _Row(
                           label: EsBO.calcDetailPostProcess,
-                          value: formatCurrency(postProcessUnit * qtyD, currency),
+                          value: formatCurrency(
+                            postProcessUnit * qtyD,
+                            currency,
+                          ),
                         ),
                       if (extrasUnit > Decimal.zero)
                         _Row(
@@ -622,7 +628,8 @@ class _DetailState extends ConsumerState<_Detail> {
                           label: EsBO.calcDetailBatchDiscount(
                             lot.batchPct.toDouble().round(),
                           ),
-                          value: '-${formatCurrency(lot.batchAmount, currency)}',
+                          value:
+                              '-${formatCurrency(lot.batchAmount, currency)}',
                           color: color.error,
                         ),
                       if (discountUnit > Decimal.zero)
@@ -654,10 +661,7 @@ class _DetailState extends ConsumerState<_Detail> {
                   SectionCard(
                     icon: Icons.sticky_note_2_outlined,
                     title: EsBO.pdfNotesTitle,
-                    child: Text(
-                      calc.notes!,
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    child: Text(calc.notes!, style: theme.textTheme.bodyMedium),
                   ),
                 ],
                 if ((calc.conditions ?? '').isNotEmpty) ...[
@@ -789,9 +793,7 @@ class _DetailState extends ConsumerState<_Detail> {
                 if (!isPro) {
                   context.push('/paywall');
                 } else {
-                  ref
-                      .read(detailViewProvider.notifier)
-                      .increment(widget.calc);
+                  ref.read(detailViewProvider.notifier).increment(widget.calc);
                   _quantityCtrl.text = '$_quantity';
                 }
               },
@@ -821,8 +823,7 @@ class _DetailState extends ConsumerState<_Detail> {
           : Column(
               children: [
                 for (var i = 0; i < materials.length; i++) ...[
-                  if (i > 0)
-                    const Divider(height: 1, indent: 44, endIndent: 8),
+                  if (i > 0) const Divider(height: 1, indent: 44, endIndent: 8),
                   _MaterialTile(
                     index: i + 1,
                     material: materials[i],
@@ -1031,7 +1032,9 @@ class _DetailState extends ConsumerState<_Detail> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
         ),
         child: SafeArea(
@@ -1242,10 +1245,7 @@ class _HeroCard extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: onC.withValues(alpha: 0.85),
-              fontSize: 13,
-            ),
+            style: TextStyle(color: onC.withValues(alpha: 0.85), fontSize: 13),
           ),
         ),
       ],
@@ -1362,9 +1362,7 @@ class _MaterialTile extends StatelessWidget {
     final cost = grams <= 0
         ? Decimal.zero
         : _money(
-            material.weightGrams *
-                material.pricePerBobbinSnapshot /
-                grams,
+            material.weightGrams * material.pricePerBobbinSnapshot / grams,
           );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -1628,16 +1626,15 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final labelStyle = (big
-            ? theme.textTheme.titleMedium
-            : theme.textTheme.bodyMedium)
-        ?.copyWith(
-          color: indent
-              ? theme.colorScheme.onSurfaceVariant
-              : color ?? theme.colorScheme.onSurface,
-          fontStyle: indent ? FontStyle.italic : null,
-          fontWeight: emphasis || big ? FontWeight.w600 : null,
-        );
+    final labelStyle =
+        (big ? theme.textTheme.titleMedium : theme.textTheme.bodyMedium)
+            ?.copyWith(
+              color: indent
+                  ? theme.colorScheme.onSurfaceVariant
+                  : color ?? theme.colorScheme.onSurface,
+              fontStyle: indent ? FontStyle.italic : null,
+              fontWeight: emphasis || big ? FontWeight.w600 : null,
+            );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -1661,14 +1658,15 @@ class _Row extends StatelessWidget {
               child: Text(
                 value,
                 style: GoogleFonts.jetBrainsMono(
-                  textStyle: (big
-                          ? theme.textTheme.titleLarge
-                          : theme.textTheme.bodyMedium)
-                      ?.copyWith(
-                        fontWeight: big ? FontWeight.bold : FontWeight.w600,
-                        color: color ?? theme.colorScheme.onSurface,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                  textStyle:
+                      (big
+                              ? theme.textTheme.titleLarge
+                              : theme.textTheme.bodyMedium)
+                          ?.copyWith(
+                            fontWeight: big ? FontWeight.bold : FontWeight.w600,
+                            color: color ?? theme.colorScheme.onSurface,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                 ),
               ),
             ),
@@ -1855,8 +1853,8 @@ _recomputeOutput(
   );
 }
 
-final _calculationByIdProvider =
-    StreamProvider.autoDispose.family<Calculation?, int>((ref, id) {
+final _calculationByIdProvider = StreamProvider.autoDispose
+    .family<Calculation?, int>((ref, id) {
       // Stream de drift (no Future cacheado): al volver del calculator el
       // autosave del borraor ya escribio la fila y el provider emite el
       // snapshot nuevo. Un FutureProvider quedaba stale hasta salir y
@@ -1865,11 +1863,8 @@ final _calculationByIdProvider =
       return repo.watchById(id);
     });
 
-final _materialsOfProvider =
-    StreamProvider.autoDispose.family<List<CalculationMaterial>, int>((
-      ref,
-      id,
-    ) {
+final _materialsOfProvider = StreamProvider.autoDispose
+    .family<List<CalculationMaterial>, int>((ref, id) {
       // Idem: el autosave del parcial reemplaza materiales (delete+insert);
       // el stream mantiene el desglose del detalle al dia.
       final repo = ref.watch(calculationRepositoryProvider);

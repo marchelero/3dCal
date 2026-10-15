@@ -58,19 +58,21 @@ class AppTheme {
   /// Color del badge "default" (estrella). Dorado de sello.
   static const Color defaultStar = Color(0xFFB07400);
 
-  /// Colores de fondo de los 4 slides del onboarding.
+  /// Colores de fondo de los pasos del onboarding (setup_flow_page).
   ///
-  /// Tonos profundos compartidos light/dark (funcionan sobre ambos schemes).
-  /// Verificados AA ≥ 4.5:1 con texto blanco al 100%:
-  ///   - azul tecnico #1B4D7A (7.6:1)
-  ///   - naranja PLA oscuro #9A3412 (5.4:1) — reemplaza al #E67E22 que fallaba
-  ///   - verde teal oscuro #0F766E (5.3:1) — reemplaza al #1A8A7A que fallaba
-  ///   - violeta #6C3483 (7.9:1)
+  /// Tonos MATE (desaturados) compartidos light/dark — pedido del usuario
+  /// 2026-10-11: la paleta anterior (naranja #9A3412 / violeta #6C3483)
+  /// se veía agresiva (naranja fuerte y fucsia). Verificados AA ≥ 4.5:1
+  /// con texto blanco al 100%:
+  ///   - azul acero #4E6E8C (5.3:1)
+  ///   - terracota mate #8E5F58 (5.4:1)
+  ///   - salvia #567362 (5.2:1)
+  ///   - malva #706284 (5.6:1)
   static const List<Color> onboardingSlideColors = [
-    Color(0xFF1B4D7A),
-    Color(0xFF9A3412),
-    Color(0xFF0F766E),
-    Color(0xFF6C3483),
+    Color(0xFF4E6E8C),
+    Color(0xFF8E5F58),
+    Color(0xFF567362),
+    Color(0xFF706284),
   ];
 
   /// Estilo para TODOS los numeros y montos: JetBrains Mono tabular.
@@ -112,9 +114,9 @@ class AppTheme {
     final paper = isLight ? const Color(0xFFF7F9FC) : const Color(0xFF111B2C);
     final ink = isLight ? const Color(0xFF1C2431) : const Color(0xFFE6EEF9);
     // T2-3 a11y: inkSoft claro de #5A6B85 (4.26:1 sobre surfaceContainerHighest,
-  // < AA 4.5) a #52627C (4.86:1); outline claro de #7C8CA3 (2.82:1 sobre
-  // surfaceContainerHigh, < 3:1 de componente UI) a #75859C (3.10:1).
-  final inkSoft = isLight ? const Color(0xFF52627C) : const Color(0xFF9FB2CC);
+    // < AA 4.5) a #52627C (4.86:1); outline claro de #7C8CA3 (2.82:1 sobre
+    // surfaceContainerHigh, < 3:1 de componente UI) a #75859C (3.10:1).
+    final inkSoft = isLight ? const Color(0xFF52627C) : const Color(0xFF9FB2CC);
     final paperEdge = isLight
         ? const Color(0xFFC4CFE0)
         : const Color(0xFF2A3A55);

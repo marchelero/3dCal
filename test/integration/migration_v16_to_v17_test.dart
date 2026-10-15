@@ -101,10 +101,7 @@ void _seedV16Schema(Database rawDb) {
   rawDb.execute('PRAGMA user_version = 16');
 }
 
-Future<Map<String, QueryRow>> _columnsOf(
-  AppDatabase db,
-  String table,
-) async {
+Future<Map<String, QueryRow>> _columnsOf(AppDatabase db, String table) async {
   final cols = await db
       .customSelect(
         'SELECT name, type, "notnull" AS isNotNull, dflt_value AS defaultValue '
@@ -157,8 +154,7 @@ void main() {
         addTearDown(() async => db.close());
         await db.customSelect('SELECT 1').get();
 
-        final calcs =
-            await db.customSelect('SELECT * FROM calculations').get();
+        final calcs = await db.customSelect('SELECT * FROM calculations').get();
         expect(calcs, hasLength(1));
         final row = calcs.first;
         expect(row.read<String>('piece_name'), 'Cotizacion legacy v16');

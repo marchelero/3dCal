@@ -110,13 +110,8 @@ class DiscountTiersSection extends ConsumerWidget {
       isScrollControlled: true,
       builder: (_) => _TierEditSheet(
         onSave: (minQty, percent) async {
-          final tier = DiscountTier.create(
-            minQty: minQty,
-            percent: percent,
-          );
-          await ref
-              .read(discountTiersNotifierProvider.notifier)
-              .upsert(tier);
+          final tier = DiscountTier.create(minQty: minQty, percent: percent);
+          await ref.read(discountTiersNotifierProvider.notifier).upsert(tier);
         },
       ),
     );
@@ -130,10 +125,7 @@ class DiscountTiersSection extends ConsumerWidget {
         initialMinQty: tier.minQty,
         initialPercent: tier.percent,
         onSave: (minQty, percent) async {
-          final updated = tier.copyWith(
-            minQty: minQty,
-            percent: percent,
-          );
+          final updated = tier.copyWith(minQty: minQty, percent: percent);
           await ref
               .read(discountTiersNotifierProvider.notifier)
               .upsert(updated);
@@ -230,10 +222,7 @@ class _TierRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 2,
-            child: Text(
-              '${tier.minQty}',
-              style: theme.textTheme.bodyMedium,
-            ),
+            child: Text('${tier.minQty}', style: theme.textTheme.bodyMedium),
           ),
           Expanded(
             flex: 2,
@@ -359,7 +348,11 @@ class _TierEditSheetState extends State<_TierEditSheet> {
                 suffixText: '%',
               ),
               validator: (v) {
-                final n = Decimal.tryParse(v ?? '');
+                // MED-1 (auditoría 2026-10-14): aceptar coma decimal como el
+                // resto de la app (patrón de profit_step/printer_step).
+                final n = Decimal.tryParse(
+                  (v ?? '').trim().replaceAll(',', '.'),
+                );
                 if (n == null) return EsBO.commonInvalidNumber;
                 if (!DiscountTier.isValidPercent(n)) {
                   return EsBO.discountTierValidationPercent;
@@ -371,8 +364,12 @@ class _TierEditSheetState extends State<_TierEditSheet> {
             FilledButton(
               onPressed: () async {
                 if (!_formKey.currentState!.validate()) return;
-                final minQty = int.parse(_minQtyController.text);
-                final percent = Decimal.parse(_percentController.text);
+                final minQty = int.parse(_minQtyController.text.trim());
+                // MED-1: normalizar coma decimal antes de parsear (mismo
+                // criterio que el validator de arriba).
+                final percent = Decimal.parse(
+                  _percentController.text.trim().replaceAll(',', '.'),
+                );
                 await widget.onSave(minQty, percent);
                 if (context.mounted) Navigator.of(context).pop();
               },

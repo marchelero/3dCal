@@ -110,7 +110,10 @@ void main() {
           manualDiscountPct: manualPct,
         );
         final expected = ManualDiscount.scaled(
-          unitDiscountAmount: ManualDiscount.pctOf(output.totalFinal, manualPct),
+          unitDiscountAmount: ManualDiscount.pctOf(
+            output.totalFinal,
+            manualPct,
+          ),
           quantity: n,
         );
         expect(result.manualDiscountAmount, expected);
@@ -120,35 +123,40 @@ void main() {
   });
 
   group('BatchLotComposer con escalón + descuento manual + piso', () {
-    test('mantiene total = max(totalFinal × N − desc_cantidad − desc_manual, piso)', () {
-      const n = 10;
-      final output = _output();
-      final tier = DiscountTier.create(minQty: 5, percent: _d('10'));
-      final manualPct = _d('5');
-      final minimumCharge = _d('50');
+    test(
+      'mantiene total = max(totalFinal × N − desc_cantidad − desc_manual, piso)',
+      () {
+        const n = 10;
+        final output = _output();
+        final tier = DiscountTier.create(minQty: 5, percent: _d('10'));
+        final manualPct = _d('5');
+        final minimumCharge = _d('50');
 
-      final result = BatchLotComposer.compose(
-        output: output,
-        quantity: n,
-        minimumCharge: minimumCharge,
-        tier: tier,
-        manualDiscountPct: manualPct,
-      );
+        final result = BatchLotComposer.compose(
+          output: output,
+          quantity: n,
+          minimumCharge: minimumCharge,
+          tier: tier,
+          manualDiscountPct: manualPct,
+        );
 
-      final nD = Decimal.fromInt(n);
-      final expectedBatch = ManualDiscount.pctOf(
-        (output.baseCost + output.failureCost + output.markupCost) * nD,
-        _d('10'),
-      );
-      final expectedManual = ManualDiscount.pctOf(output.totalFinal * nD, manualPct);
-      final after =
-          output.totalFinal * nD - expectedBatch - expectedManual;
-      final floor = minimumCharge * nD;
+        final nD = Decimal.fromInt(n);
+        final expectedBatch = ManualDiscount.pctOf(
+          (output.baseCost + output.failureCost + output.markupCost) * nD,
+          _d('10'),
+        );
+        final expectedManual = ManualDiscount.pctOf(
+          output.totalFinal * nD,
+          manualPct,
+        );
+        final after = output.totalFinal * nD - expectedBatch - expectedManual;
+        final floor = minimumCharge * nD;
 
-      expect(result.batchDiscountAmount, expectedBatch);
-      expect(result.manualDiscountAmount, expectedManual);
-      expect(result.lotTotal, after > floor ? after : floor);
-    });
+        expect(result.batchDiscountAmount, expectedBatch);
+        expect(result.manualDiscountAmount, expectedManual);
+        expect(result.lotTotal, after > floor ? after : floor);
+      },
+    );
   });
 
   group('LotTotals.batchAmount delega el porcentaje', () {

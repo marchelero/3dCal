@@ -36,8 +36,7 @@ void main() {
   DiscountTier tier(int minQty, int percent) =>
       DiscountTier.create(minQty: minQty, percent: Decimal.fromInt(percent));
 
-  Iterable<int> minQtys(List<DiscountTier> tiers) =>
-      tiers.map((t) => t.minQty);
+  Iterable<int> minQtys(List<DiscountTier> tiers) => tiers.map((t) => t.minQty);
 
   /// Inserta un escalón nuevo vía el repository y devuelve la entidad.
   Future<DiscountTier> insertTier(int minQty, int percent) async {
@@ -65,23 +64,26 @@ void main() {
       expect(all.first.sortOrder, 0);
     });
 
-    test('inserta varios y re-secuencia slots por min_qty ascendente', () async {
-      final t25 = await insertTier(25, 15);
-      final t10 = await insertTier(10, 10);
-      final t5 = await insertTier(5, 5);
+    test(
+      'inserta varios y re-secuencia slots por min_qty ascendente',
+      () async {
+        final t25 = await insertTier(25, 15);
+        final t10 = await insertTier(10, 10);
+        final t5 = await insertTier(5, 5);
 
-      final all = await repo.listAll();
-      expect(all, hasLength(3));
-      expect(minQtys(all), [5, 10, 25]);
-      expect(all[0].id, t5.id);
-      expect(all[1].id, t10.id);
-      expect(all[2].id, t25.id);
-      expect(
-        all.map((t) => t.sortOrder),
-        [0, 1, 2],
-        reason: 'Los slots deben quedar contiguos y en orden de min_qty.',
-      );
-    });
+        final all = await repo.listAll();
+        expect(all, hasLength(3));
+        expect(minQtys(all), [5, 10, 25]);
+        expect(all[0].id, t5.id);
+        expect(all[1].id, t10.id);
+        expect(all[2].id, t25.id);
+        expect(all.map((t) => t.sortOrder), [
+          0,
+          1,
+          2,
+        ], reason: 'Los slots deben quedar contiguos y en orden de min_qty.');
+      },
+    );
 
     test('DiscountTier.create genera ids UUID v4 únicos', () {
       final a = tier(10, 10);
@@ -103,7 +105,10 @@ void main() {
       final original = tier(10, 10);
       await repo.upsert(original);
 
-      final updated = original.copyWith(minQty: 25, percent: Decimal.fromInt(20));
+      final updated = original.copyWith(
+        minQty: 25,
+        percent: Decimal.fromInt(20),
+      );
       await repo.upsert(updated);
 
       final all = await repo.listAll();
@@ -172,22 +177,24 @@ void main() {
   // ---------- orden ----------
 
   group('orden', () {
-    test('listAll ordena por min_qty ascendente aunque el insert sea inverso',
-        () async {
-      await insertTier(25, 15);
-      await insertTier(10, 10);
-      await insertTier(5, 5);
-      await insertTier(50, 20);
+    test(
+      'listAll ordena por min_qty ascendente aunque el insert sea inverso',
+      () async {
+        await insertTier(25, 15);
+        await insertTier(10, 10);
+        await insertTier(5, 5);
+        await insertTier(50, 20);
 
-      final all = await repo.listAll();
-      expect(minQtys(all), [5, 10, 25, 50]);
-      expect(all.map((t) => t.percent), [
-        Decimal.fromInt(5),
-        Decimal.fromInt(10),
-        Decimal.fromInt(15),
-        Decimal.fromInt(20),
-      ]);
-    });
+        final all = await repo.listAll();
+        expect(minQtys(all), [5, 10, 25, 50]);
+        expect(all.map((t) => t.percent), [
+          Decimal.fromInt(5),
+          Decimal.fromInt(10),
+          Decimal.fromInt(15),
+          Decimal.fromInt(20),
+        ]);
+      },
+    );
   });
 
   // ---------- stream ----------
@@ -201,11 +208,11 @@ void main() {
       final future = expectLater(
         repo.watchAll(),
         emitsInOrder([
-          predicate<List<DiscountTier>>((rows) =>
-              rows.length == 1 && rows.first.id == t10.id),
           predicate<List<DiscountTier>>(
-            (rows) =>
-                _hasOrderedMinQtys(rows, [10, 25]),
+            (rows) => rows.length == 1 && rows.first.id == t10.id,
+          ),
+          predicate<List<DiscountTier>>(
+            (rows) => _hasOrderedMinQtys(rows, [10, 25]),
           ),
           predicate<List<DiscountTier>>(
             (rows) => rows.length == 1 && rows.first.minQty == 25,

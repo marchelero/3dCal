@@ -1,4 +1,19 @@
-# Sesión 2026-10-10 — Vista de plan (Gratis/Pro) en Settings — CERRADO
+# Sesión 2026-10-11 — Rediseño del onboarding / configuración inicial — PAUSADO en Fase 4
+
+**Última sesión: 2026-10-11** — first-run rehecho como **una sola ruta
+`/setup`**: PageView de 6 páginas (idioma, tema+moneda, impresora obligatoria
+con presets, filamento obligatorio, margen+kWh, cierre), nav Atrás/Siguiente
+con semáforo, ticket preview colapsable, commit-on-navigate, paleta mate AA.
+**Fases 1–3 completas + validación con el dueño; Fase 4 (borrar /language,
+/onboarding, /initial-config + strings marketing + ~7 tests por arreglar +
+suite completa + build web) NO iniciada.** Analyze 0 issues. **Sin commit.**
+
+- **PRD**: `docs/prds/2026-10-11_1045-redesign-onboarding-flow.prd.md` ·
+  **Plan**: `docs/plans/2026-10-11_1553-redesign-onboarding-flow.plan.md` ·
+  **Estado flow**: `docs/state/plan-2026-10-11T19-34-40.json` (phase=3).
+- **Detalle + checklist Fase 4**: `docs/sessions/2026-10-11_onboarding-redesign.md`.
+
+## Sesión previa — 2026-10-10 — Vista de plan (Gratis/Pro) en Settings — CERRADO
 
 **Última sesión: 2026-10-10** — sección **"Plan"** en Settings: **fila
 compacta** (título + estado + chevron) que abre un **bottom sheet** con el

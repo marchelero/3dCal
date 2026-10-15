@@ -36,24 +36,23 @@ Decimal d(String v) => Decimal.parse(v);
 void main() {
   group('LotTotals (HIGH-01)', () {
     test('sin lote ni piso = unit x N (compatibilidad)', () {
-      expect(
-        LotTotals.total(unitTotal: d('90'), quantity: 10),
-        d('900'),
-      );
+      expect(LotTotals.total(unitTotal: d('90'), quantity: 10), d('900'));
     });
 
-    test('escenario de la auditoría: 100 x 10 - lote 100 = 900 -> 800 neto',
-        () {
-      expect(
-        LotTotals.total(
-          unitTotal: d('100.00'),
-          quantity: 10,
-          batchDiscount: d('100.00'),
-        ),
-        d('900'),
-        reason: 'unit*qty - batch = 1000 - 100',
-      );
-    });
+    test(
+      'escenario de la auditoría: 100 x 10 - lote 100 = 900 -> 800 neto',
+      () {
+        expect(
+          LotTotals.total(
+            unitTotal: d('100.00'),
+            quantity: 10,
+            batchDiscount: d('100.00'),
+          ),
+          d('900'),
+          reason: 'unit*qty - batch = 1000 - 100',
+        );
+      },
+    );
 
     test('piso minimumCharge*N gana sobre (unit*N - batch)', () {
       expect(
@@ -157,17 +156,11 @@ void main() {
     });
 
     test('piso por snapshot: 100 < 150 -> 150', () {
-      expect(
-        snapshotUnit(minimumChargeSnapshot: '150')!.totalPrice,
-        d('150'),
-      );
+      expect(snapshotUnit(minimumChargeSnapshot: '150')!.totalPrice, d('150'));
     });
 
     test('filas legacy (snapshot 0) usan el fallback de Settings', () {
-      expect(
-        snapshotUnit(fallbackMinimumCharge: '120')!.totalPrice,
-        d('120'),
-      );
+      expect(snapshotUnit(fallbackMinimumCharge: '120')!.totalPrice, d('120'));
     });
 
     test('live vs snapshot con minimumCharge > 0 dan el MISMO total', () {
@@ -315,14 +308,16 @@ void main() {
       expect(await repo.totalQuoted(), d('300'));
     });
 
-    test('minimumChargeAppliedSnapshot marca 1 cuando el piso subió el precio',
-        () async {
-      final id = await createWithLot(quantity: 1, minimumCharge: d('150'));
-      final row = await repo.getById(id);
-      expect(row!.minimumChargeAppliedSnapshot, 1);
-      final plain = await createWithLot(quantity: 1);
-      expect((await repo.getById(plain))!.minimumChargeAppliedSnapshot, 0);
-    });
+    test(
+      'minimumChargeAppliedSnapshot marca 1 cuando el piso subió el precio',
+      () async {
+        final id = await createWithLot(quantity: 1, minimumCharge: d('150'));
+        final row = await repo.getById(id);
+        expect(row!.minimumChargeAppliedSnapshot, 1);
+        final plain = await createWithLot(quantity: 1);
+        expect((await repo.getById(plain))!.minimumChargeAppliedSnapshot, 0);
+      },
+    );
 
     test('HIGH-02: duplicate arrastra el escalón mayorista', () async {
       // unit 100 × 10 − lote 100 = 900 por fila.
@@ -337,31 +332,37 @@ void main() {
       expect(await repo.totalQuoted(), d('1800'), reason: '900 + 900');
     });
 
-    test('HIGH-03: fila legacy (snapshot 0) usa Settings en getter Y SQL',
-        () async {
-      // Fila pre-F2: minimumChargeSnapshot = 0.
-      final id = await createWithLot(quantity: 2);
-      expect((await repo.getById(id))!.minimumChargeSnapshot, 0);
+    test(
+      'HIGH-03: fila legacy (snapshot 0) usa Settings en getter Y SQL',
+      () async {
+        // Fila pre-F2: minimumChargeSnapshot = 0.
+        final id = await createWithLot(quantity: 2);
+        expect((await repo.getById(id))!.minimumChargeSnapshot, 0);
 
-      // Sin cargo mínimo configurado: 100 × 2 = 200 en ambas rutas.
-      expect(
-        (await repo.listItems()).firstWhere((c) => c.id == id).effectiveTotal,
-        d('200'),
-      );
-      expect(await repo.totalQuoted(), d('200'));
+        // Sin cargo mínimo configurado: 100 × 2 = 200 en ambas rutas.
+        expect(
+          (await repo.listItems()).firstWhere((c) => c.id == id).effectiveTotal,
+          d('200'),
+        );
+        expect(await repo.totalQuoted(), d('200'));
 
-      // El usuario configura el cargo mínimo DESPUÉS: el detalle/PDF ya
-      // aplicaban el fallback; ahora getter y SQL hacen lo mismo.
-      await SettingsRepository(db).setMinimumCharge(d('150'));
+        // El usuario configura el cargo mínimo DESPUÉS: el detalle/PDF ya
+        // aplicaban el fallback; ahora getter y SQL hacen lo mismo.
+        await SettingsRepository(db).setMinimumCharge(d('150'));
 
-      final item = (await repo.listItems()).firstWhere((c) => c.id == id);
-      expect(item.effectiveTotal, d('300'), reason: 'getter: max(200, 150×2)');
-      expect(
-        await repo.totalQuoted(),
-        d('300'),
-        reason: 'SQL: MISMO fallback a la tabla settings',
-      );
-    });
+        final item = (await repo.listItems()).firstWhere((c) => c.id == id);
+        expect(
+          item.effectiveTotal,
+          d('300'),
+          reason: 'getter: max(200, 150×2)',
+        );
+        expect(
+          await repo.totalQuoted(),
+          d('300'),
+          reason: 'SQL: MISMO fallback a la tabla settings',
+        );
+      },
+    );
 
     /// Borrador (`is_partial = 1`) mínimo válido — mismo shape que
     /// `_partial` de partial_save_repository_test.
@@ -404,20 +405,30 @@ void main() {
       );
     }
 
-    test('R2-MED-04: cap Free sin borradores, dashboard con borradores',
-        () async {
-      await createWithLot(quantity: 1); // real: unit 100 → 100 BOB
-      await repo.savePartial(draft()); // borrador: 50 BOB
+    test(
+      'R2-MED-04: cap Free sin borradores, dashboard con borradores',
+      () async {
+        await createWithLot(quantity: 1); // real: unit 100 → 100 BOB
+        await repo.savePartial(draft()); // borrador: 50 BOB
 
-      expect(await repo.countAll(), 1, reason: 'Free: el borrador no consume');
-      expect(
-        await repo.countAllIncludingDrafts(),
-        2,
-        reason: 'dashboard: el borrador SÍ cuenta (decisión F4)',
-      );
-      // La SUM del dashboard ya sumaba borradores (no filtraba is_partial).
-      expect(await repo.totalQuoted(), d('150'), reason: '100 real + 50 borr.');
-    });
+        expect(
+          await repo.countAll(),
+          1,
+          reason: 'Free: el borrador no consume',
+        );
+        expect(
+          await repo.countAllIncludingDrafts(),
+          2,
+          reason: 'dashboard: el borrador SÍ cuenta (decisión F4)',
+        );
+        // La SUM del dashboard ya sumaba borradores (no filtraba is_partial).
+        expect(
+          await repo.totalQuoted(),
+          d('150'),
+          reason: '100 real + 50 borr.',
+        );
+      },
+    );
 
     test('R2-MED-04: countSold cuenta borradores vendidos', () async {
       await repo.savePartial(draft(sold: true));
@@ -444,10 +455,7 @@ void main() {
     });
 
     test('draft legacy sin "quantity" cae a 1 sin romper decode', () {
-      final legacy = jsonEncode({
-        'weight': '120',
-        'printHours': '2',
-      });
+      final legacy = jsonEncode({'weight': '120', 'printHours': '2'});
       final restored = session.CalculationDraft.tryDecode(legacy)!;
       expect(restored.quantity, 1);
       expect(restored.weight, '120');
@@ -464,10 +472,7 @@ void main() {
   });
 
   group('stateToPartialDto: escalón mayorista (R2-MED-05)', () {
-    CalculatorState baseState({
-      Decimal? batchPercent,
-      Decimal? batchAmount,
-    }) {
+    CalculatorState baseState({Decimal? batchPercent, Decimal? batchAmount}) {
       return CalculatorState(
         mode: CalculatorMode.express,
         printHours: '',

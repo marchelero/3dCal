@@ -83,14 +83,24 @@ void main() {
 
   group('CalculatorState.anyMaterialOwnTime', () {
     test('false si todos los switches estan OFF', () {
-      expect(advanced(materials: [mat(), mat(label: 'ABS')]).anyMaterialOwnTime,
-          isFalse);
+      expect(
+        advanced(
+          materials: [
+            mat(),
+            mat(label: 'ABS'),
+          ],
+        ).anyMaterialOwnTime,
+        isFalse,
+      );
     });
 
     test('true si al menos uno esta ON', () {
       expect(
         advanced(
-          materials: [mat(), mat(label: 'ABS', useOwnTime: true, h: '1')],
+          materials: [
+            mat(),
+            mat(label: 'ABS', useOwnTime: true, h: '1'),
+          ],
         ).anyMaterialOwnTime,
         isTrue,
       );
@@ -99,8 +109,12 @@ void main() {
 
   group('materialsOwnTimeDecimal', () {
     test('null si ninguno tiene tiempo', () {
-      expect(advanced(materials: [mat(), mat(useOwnTime: true)]).materialsOwnTimeDecimal,
-          isNull);
+      expect(
+        advanced(
+          materials: [mat(), mat(useOwnTime: true)],
+        ).materialsOwnTimeDecimal,
+        isNull,
+      );
     });
 
     test('suma solo los materiales con switch ON', () {
@@ -141,10 +155,7 @@ void main() {
     });
 
     test('switch ON sin valor -> total null (ignora el global)', () {
-      final s = advanced(
-        printHours: '5',
-        materials: [mat(useOwnTime: true)],
-      );
+      final s = advanced(printHours: '5', materials: [mat(useOwnTime: true)]);
       expect(s.totalHoursDecimal, isNull);
     });
   });

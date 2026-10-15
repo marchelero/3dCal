@@ -101,10 +101,7 @@ Future<Filament?> showFilamentSelectorDialog(
       );
     },
     footer: atLimit
-        ? _FreeLimitHint(
-            current: filaments.length,
-            limit: kFreeFilamentLimit,
-          )
+        ? _FreeLimitHint(current: filaments.length, limit: kFreeFilamentLimit)
         : ListTile(
             leading: const Icon(Icons.add_rounded),
             // MED-11 fix (auditoria 2026-10-04): estaba hardcodeado en
@@ -121,10 +118,7 @@ Future<Filament?> showFilamentSelectorDialog(
 
 /// Hint sutil cuando el usuario Free alcanza el límite del catálogo.
 class _FreeLimitHint extends StatelessWidget {
-  const _FreeLimitHint({
-    required this.current,
-    required this.limit,
-  });
+  const _FreeLimitHint({required this.current, required this.limit});
 
   final int current;
   final int limit;

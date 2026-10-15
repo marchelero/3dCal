@@ -8,13 +8,15 @@ import '../providers.dart' show appDatabaseProvider, kActivePrinterIdPrefsKey;
 import 'draft_storage.dart';
 import 'draft_storage_providers.dart'
     show draftStorageProvider, sharedPreferencesProvider;
+import 'setup_draft_storage.dart';
 
 /// Borra los datos de trabajo locales (AC-004).
 ///
 /// Elimina, en una transacción Drift: cotizaciones (definitivas, parciales y
 /// plantillas — sus materiales por CASCADE), catálogos de filamentos e
 /// impresoras, ajustes de cálculo y escalones de descuento. Después elimina
-/// las prefs de sesión: `form_draft`, `active_printer_id` y `onboarding_done`
+/// las prefs de sesión: `form_draft`, `setup_printer_draft`,
+/// `setup_filament_draft`, `active_printer_id` y `onboarding_done`
 /// (que reinicia el onboarding para reconfigurar catálogos).
 ///
 /// **Preserva**: locale, tema, entitlement Pro (tabla + cache en prefs),
@@ -52,6 +54,11 @@ class LocalDataWipeService {
 
     // 2) Prefs de sesión: borrado explícito (idempotente, reintentable).
     await draftStorage.clear();
+    // MED-2: los borradores de los pasos del setup también son datos de
+    // sesión (sobreviven matar la app); el wipe los limpia junto con
+    // form_draft.
+    await prefs.remove(SetupDraftStorage.printerKey);
+    await prefs.remove(SetupDraftStorage.filamentKey);
     await prefs.remove(kActivePrinterIdPrefsKey);
     await prefs.remove(SettingsKeys.onboardingDone);
   }

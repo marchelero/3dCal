@@ -427,6 +427,11 @@ class EnImpl implements AppStrings {
   String get settingsWipeSuccess => 'Work data deleted';
   @override
   String get settingsWipeError => 'Could not delete the data. Try again.';
+  @override
+  String get settingsRepeatSetup => 'Repeat setup';
+  @override
+  String get settingsRepeatSetupHelper =>
+      'Run the initial setup again without deleting your saved data.';
 
   @override
   String get dashboardTitle => 'Dashboard';
@@ -1046,41 +1051,57 @@ class EnImpl implements AppStrings {
   @override
   String get localeFr => 'French';
   @override
-  String get languagePageTitle => 'Choose your language';
+  String get setupWelcomeTagline => 'Set up your calculator in seconds';
   @override
-  String get languagePageSubtitle =>
-      'Applies to the whole app. You can change it later in Settings.';
+  String get setupTicketPending => 'Pending';
   @override
-  String get onboardingTitle1 => 'Welcome to 3dCalc';
+  String get setupCurrencySeeAll => 'See all';
   @override
-  String get onboardingDesc1 =>
-      'Calculate 3D print pricing instantly.\nMaterials, electricity, labor and more.';
+  String get setupPrinterTitle => 'Your printer';
   @override
-  String get onboardingTitle2 => 'Two calculation modes';
+  String get setupPrinterSubtitle =>
+      'Pick a popular model or create your own. '
+      'You need one to continue.';
   @override
-  String get onboardingDesc2 =>
-      'Express: quick calculation with one material.\nAdvanced: multiple materials, discount and more.';
+  String get setupPrinterCustom => 'Custom';
   @override
-  String get onboardingTitle3 => 'Built-in catalog';
+  String get setupNeedPrinter => 'Pick a printer to continue';
   @override
-  String get onboardingDesc3 =>
-      'Save your favorite filaments and printers.\nPick them instantly from the catalog.';
+  String get setupPrinterUpdated => 'Printer updated';
   @override
-  String get onboardingTitle4 => 'Dashboard & more';
+  String get setupFilamentTitle => 'Your filament';
   @override
-  String get onboardingDesc4 =>
-      'Track quotations, monthly trends,\nPDF export and search history.';
+  String get setupFilamentSubtitle =>
+      'Pick a brand and the roll price. '
+      'You need one to continue.';
   @override
-  String get onboardingTitle5 => 'Easy setup';
+  String get setupFilamentPriceHint => 'E.g. 100–150';
   @override
-  String get onboardingDesc5 =>
-      'Set currency, printer, filament, profit\nand energy cost in a few steps. Ready to quote.';
+  String get setupNeedFilament => 'Pick a filament to continue';
+  @override
+  String get setupFilamentUpdated => 'Filament updated';
+  @override
+  String get setupProfitTitle => 'Your margin & costs';
+
+  @override
+  String get setupExampleValuesHint =>
+      'Example values: adjust them to your situation and real costs.';
+  @override
+  String get setupDoneTitle => 'All set!';
+
+  @override
+  String get setupPrinterPopular => 'Popular printers';
+
+  @override
+  String get setupPrinterExtra => 'More details (optional)';
+  @override
+  String get setupDoneSubtitle => 'Your calculator is ready. Start quoting!';
+  @override
+  String get setupNext => 'Next';
+  @override
+  String get setupBack => 'Back';
   @override
   String get onboardingNext => 'Next';
-  @override
-  String get onboardingStart => 'Get Started';
-  @override
-  String get onboardingConfigure => 'Set up';
   @override
   String get configTitle => 'Initial Setup';
   @override
@@ -1325,7 +1346,7 @@ We may update, suspend, or remove application features. These terms may also cha
   @Deprecated('Use calcSectionPieceCosts instead')
   String get calcSectionOthers => 'Others';
   @override
-  String get settingsProfitBaseRange => 'Range: 0-1000';
+  String get settingsProfitBaseRange500 => 'Range: 0-500';
   @override
   String get settingsKwhRateRange => 'Range: 0.10-5.00';
   @override
@@ -1682,8 +1703,6 @@ We may update, suspend, or remove application features. These terms may also cha
 
   @override
   String get splashLogo => '3dCalc logo';
-  @override
-  String onboardingPageCounter(int page, int total) => 'Page $page of $total';
   @override
   String commonNoResultsFor(String query) => 'No results for "$query"';
   @override

@@ -164,7 +164,10 @@ class AppDatabase extends _$AppDatabase {
         // para mantenibilidad: cualquier migracion futura que dependa del
         // orden de version se escribiria mal mirando el codigo. Orden
         // numerico estricto de aqui en mas.
-        await m.addColumn(calculationMaterials, calculationMaterials.useOwnTime);
+        await m.addColumn(
+          calculationMaterials,
+          calculationMaterials.useOwnTime,
+        );
         await m.addColumn(
           calculationMaterials,
           calculationMaterials.materialHours,

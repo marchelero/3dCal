@@ -197,7 +197,11 @@ class _PrinterTile extends ConsumerWidget {
               if (printer.isDefault)
                 const DefaultBadge()
               else
-                Icon(MdiIcons.printer3d, color: color.onSurfaceVariant, size: 24),
+                Icon(
+                  MdiIcons.printer3d,
+                  color: color.onSurfaceVariant,
+                  size: 24,
+                ),
               const SizedBox(width: AppSpacing.md),
               // Name + details
               Expanded(

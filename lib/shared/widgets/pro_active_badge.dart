@@ -248,9 +248,8 @@ class _RestoreButtonState extends ConsumerState<RestoreButton> {
       }
     } finally {
       if (mounted) setState(() => _isRestoring = false);
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {

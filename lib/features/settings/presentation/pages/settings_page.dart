@@ -15,6 +15,8 @@ import '../../../../core/backup/backup_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/money/currency.dart';
 import '../../../../core/providers.dart';
+import '../../../../core/storage/draft_storage_providers.dart'
+    show sharedPreferencesProvider;
 import '../../../../core/storage/local_data_wipe_service.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -224,6 +226,10 @@ class _SettingsBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 const _WipeDataSection(),
+                const SizedBox(height: AppSpacing.xxl),
+
+                // ── Repetir configuración (MED-4, NO destructivo) ──
+                const _RepeatSetupSection(),
                 const SizedBox(height: AppSpacing.xxl),
 
                 if (canRestore) ...[
@@ -1310,10 +1316,10 @@ class _WipeDataSectionState extends ConsumerState<_WipeDataSection> {
         ..hideCurrentSnackBar()
         ..showSnackBar(AppSnackBar.success(EsBO.settingsWipeSuccess));
       // Reinicia onboarding: sin `onboarding_done` el splash lleva a la
-      // configuracion inicial. `context.go` lanza sin GoRouter (tests con
-      // MaterialApp suelto) — se degrada a solo snackbar.
+      // configuracion inicial (nueva ruta `/setup`). `context.go` lanza sin
+      // GoRouter (tests con MaterialApp suelto) — se degrada a solo snackbar.
       try {
-        if (mounted) context.go('/language');
+        if (mounted) context.go('/setup');
       } catch (_) {
         // Sin router disponible (entorno de test).
       }
@@ -1359,6 +1365,71 @@ class _WipeDataSectionState extends ConsumerState<_WipeDataSection> {
             label: Text(EsBO.settingsWipeAction),
             onPressed: _wiping ? null : _handleWipe,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────
+// Repetir configuración (MED-4 auditoría 2026-10-14)
+// ─────────────────────────────────────────────────
+// Re-corre el flujo /setup SIN borrar datos (a diferencia del wipe): solo
+// baja el flag onboarding_done y navega. No es destructivo ⇒ sin diálogo
+// de confirmación; el feedback es la navegación al flujo mismo (el guard
+// de /setup en app_router ve el flag en false y permite la entrada).
+
+class _RepeatSetupSection extends ConsumerWidget {
+  const _RepeatSetupSection();
+
+  Future<void> _handleRepeatSetup(BuildContext context, WidgetRef ref) async {
+    // MED-4: flag en false ANTES de navegar (el redirect de /setup lo
+    // exige). Los datos (DB + prefs de trabajo) quedan intactos.
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setBool(SettingsKeys.onboardingDone, false);
+    if (!context.mounted) return;
+    // `context.go` lanza sin GoRouter (tests con MaterialApp suelto) — se
+    // degrada a solo el cambio de flag (mismo patrón que el wipe).
+    try {
+      context.go('/setup');
+    } catch (_) {
+      // Sin router disponible (entorno de test).
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return SettingsCard(
+      accentColor: color.secondary,
+      children: [
+        Text(
+          EsBO.settingsRepeatSetupHelper,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ListTile(
+          key: const ValueKey('settings-repeat-setup'),
+          contentPadding: EdgeInsets.zero,
+          leading: IconBadge(
+            icon: Icons.replay_rounded,
+            background: color.secondaryContainer,
+            foreground: color.onSecondaryContainer,
+          ),
+          title: Text(
+            EsBO.settingsRepeatSetup,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: color.onSurfaceVariant,
+          ),
+          onTap: () => _handleRepeatSetup(context, ref),
         ),
       ],
     );
